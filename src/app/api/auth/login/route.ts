@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const COOKIE_NAME = "acr_session";
+const COOKIE_NAME = "ml_explainer_session";
 
 export async function POST(req: NextRequest) {
   const { username, password } = (await req.json()) as {
@@ -28,9 +28,9 @@ export async function POST(req: NextRequest) {
     headers: {
       "Content-Type": "application/json",
       "x-api-key": apiKey,
-      "x-app-name": "acr-dynamic-model",
+      "x-app-name": "ml-explainer",
     },
-    body: JSON.stringify({ username, password, demo: "acr-model" }),
+    body: JSON.stringify({ username, password, demo: "ml-explainer" }),
   });
 
   if (!verifyRes.ok) {

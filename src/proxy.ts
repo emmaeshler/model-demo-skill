@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const SESSION_COOKIE = "acr_session";
+const SESSION_COOKIE = "ml_explainer_session";
 
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
