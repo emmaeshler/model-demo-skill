@@ -1,7 +1,39 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+
+const PASSWORD_RULES = [
+  { label: "At least 8 characters", test: (p: string) => p.length >= 8 },
+  { label: "One uppercase letter", test: (p: string) => /[A-Z]/.test(p) },
+  { label: "One lowercase letter", test: (p: string) => /[a-z]/.test(p) },
+  { label: "One number", test: (p: string) => /\d/.test(p) },
+  { label: "One special character (!@#$%^&*…)", test: (p: string) => /[^A-Za-z0-9]/.test(p) },
+];
+
+function validatePassword(password: string): string | null {
+  for (const rule of PASSWORD_RULES) {
+    if (!rule.test(password)) return rule.label.toLowerCase();
+  }
+  return null;
+}
+
+function PasswordChecklist({ password }: { password: string }) {
+  if (!password) return null;
+  return (
+    <ul className="mb-3 space-y-1 text-xs">
+      {PASSWORD_RULES.map((rule) => {
+        const pass = rule.test(password);
+        return (
+          <li key={rule.label} className={`flex items-center gap-1.5 ${pass ? "text-green-600" : "text-[#999]"}`}>
+            <span className="text-[10px]">{pass ? "✓" : "•"}</span>
+            {rule.label}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
 
 function I2PLogo() {
   return (
@@ -32,6 +64,7 @@ export default function LoginPage() {
   const [step, setStep] = useState<Step>("username");
   const [username, setUsername] = useState("");
   const [prefill, setPrefill] = useState<{ firstName?: string; lastName?: string }>({});
+  const [setupPassword, setSetupPassword] = useState("");
 
   async function handleUsernameSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -115,8 +148,9 @@ export default function LoginPage() {
       setError("First and last name are required.");
       return;
     }
-    if (!password || password.length < 8) {
-      setError("Password must be at least 8 characters.");
+    const pwError = validatePassword(password);
+    if (pwError) {
+      setError(`Password needs ${pwError}.`);
       return;
     }
     if (password !== confirm) {
@@ -204,6 +238,7 @@ export default function LoginPage() {
 
         {step === "password" && (
           <form onSubmit={handlePasswordSubmit} className="text-left">
+            <input type="hidden" name="username" autoComplete="username" value={username} />
             <p className="mb-4 text-sm text-[#666]">
               Signing in as <strong className="text-[#1a1a2e]">{username}</strong>
             </p>
@@ -246,6 +281,7 @@ export default function LoginPage() {
 
         {step === "setup" && (
           <form onSubmit={handleSetupSubmit} className="text-left">
+            <input type="hidden" name="username" autoComplete="username" value={username} />
             <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm text-blue-700">
               Welcome! Set up your account to get started.
             </div>
@@ -257,6 +293,7 @@ export default function LoginPage() {
               type="text"
               required
               autoFocus
+              autoComplete="given-name"
               defaultValue={prefill.firstName}
               placeholder="First name"
               className="mb-3 w-full rounded-lg border border-[#d0d0d0] px-3 py-2.5 text-sm text-[#1a1a2e] outline-none transition-colors placeholder:text-[#aaa] focus:border-[#00446a] focus:ring-1 focus:ring-[#00446a]"
@@ -268,6 +305,7 @@ export default function LoginPage() {
               name="lastName"
               type="text"
               required
+              autoComplete="family-name"
               defaultValue={prefill.lastName}
               placeholder="Last name"
               className="mb-3 w-full rounded-lg border border-[#d0d0d0] px-3 py-2.5 text-sm text-[#1a1a2e] outline-none transition-colors placeholder:text-[#aaa] focus:border-[#00446a] focus:ring-1 focus:ring-[#00446a]"
@@ -279,9 +317,13 @@ export default function LoginPage() {
               name="password"
               type="password"
               required
-              placeholder="At least 8 characters"
-              className="mb-3 w-full rounded-lg border border-[#d0d0d0] px-3 py-2.5 text-sm text-[#1a1a2e] outline-none transition-colors placeholder:text-[#aaa] focus:border-[#00446a] focus:ring-1 focus:ring-[#00446a]"
+              autoComplete="new-password"
+              placeholder="Create a password"
+              value={setupPassword}
+              onChange={(e) => setSetupPassword(e.target.value)}
+              className="mb-1 w-full rounded-lg border border-[#d0d0d0] px-3 py-2.5 text-sm text-[#1a1a2e] outline-none transition-colors placeholder:text-[#aaa] focus:border-[#00446a] focus:ring-1 focus:ring-[#00446a]"
             />
+            <PasswordChecklist password={setupPassword} />
             <label className="mb-1 block text-sm font-medium text-[#555]">
               Confirm Password
             </label>
@@ -289,6 +331,7 @@ export default function LoginPage() {
               name="confirm"
               type="password"
               required
+              autoComplete="new-password"
               placeholder="Confirm your password"
               className="mb-5 w-full rounded-lg border border-[#d0d0d0] px-3 py-2.5 text-sm text-[#1a1a2e] outline-none transition-colors placeholder:text-[#aaa] focus:border-[#00446a] focus:ring-1 focus:ring-[#00446a]"
             />
