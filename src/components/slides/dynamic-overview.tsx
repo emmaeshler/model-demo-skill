@@ -99,7 +99,7 @@ export function DynamicOverviewSlide({ step }: DynamicOverviewSlideProps) {
   const showComplete = step >= 4;
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-7.5rem)] max-w-5xl flex-col items-center justify-center gap-3 px-6">
+    <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-5xl flex-col items-center justify-center gap-3 px-6">
       <div className="text-center">
         <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
           Inside Your Dynamic Model

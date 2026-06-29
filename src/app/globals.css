@@ -55,6 +55,7 @@
 }
 
 :root {
+  --slide-h: 100vh;
   --background: #F5F8FA;
   --foreground: #06283D;
   --card: #ffffff;
@@ -132,6 +133,7 @@
   }
   html {
     @apply font-sans;
+    overscroll-behavior: none;
   }
 }
 

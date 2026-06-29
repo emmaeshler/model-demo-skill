@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { type NavGroup, SlideNav } from "@/components/slide-nav";
+import { useMode } from "@/lib/mode-context";
 import { OverviewSlide, OVERVIEW_TOTAL_STEPS } from "@/components/slides/overview-slide";
 import { OneModelSlide, ONE_MODEL_TOTAL_STEPS } from "@/components/slides/one-model";
 import { PowerSlide, POWER_TOTAL_STEPS } from "@/components/slides/power-slide";
@@ -10,6 +11,7 @@ import { ExecuteSlide, EXECUTE_TOTAL_STEPS } from "@/components/slides/execute-s
 import { RefineSlide, REFINE_TOTAL_STEPS } from "@/components/slides/refine-slide";
 import { ProfitGrowthSlide, PROFIT_GROWTH_TOTAL_STEPS } from "@/components/slides/profit-growth-slide";
 import { ClosingSummarySlide } from "@/components/slides/closing-summary";
+import { ModelIndicator } from "@/components/model-indicator";
 
 type SlideKind =
   | "intro"
@@ -72,15 +74,22 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "1 | Design",
     slides: [
-      { index: ONE_MODEL_INDEX, label: "Inputs", subStep: 0 },
-      { index: ONE_MODEL_INDEX, label: "Outputs", subStep: 1 },
+      { index: ONE_MODEL_INDEX, label: "ML Prediction", subStep: 0 },
+      { index: ONE_MODEL_INDEX, label: "Strategy", subStep: 1 },
+      { index: ONE_MODEL_INDEX, label: "Combined", subStep: 2 },
+      { index: ONE_MODEL_INDEX, label: "Inputs", subStep: 3 },
     ],
   },
   {
     label: "2 | Power",
     slides: [
-      { index: POWER_INDEX, label: "Overview", subStep: 0 },
-      { index: POWER_INDEX, label: "Data Ingestion", subStep: 1 },
+      { index: POWER_INDEX, label: "ML Prediction", subStep: 0 },
+      { index: POWER_INDEX, label: "Price Points", subStep: 1 },
+      { index: POWER_INDEX, label: "Transactions", subStep: 2 },
+      { index: POWER_INDEX, label: "Market", subStep: 3 },
+      { index: POWER_INDEX, label: "Customers", subStep: 4 },
+      { index: POWER_INDEX, label: "Outcomes", subStep: 5 },
+      { index: POWER_INDEX, label: "Drivers", subStep: 6 },
     ],
   },
   {
@@ -92,12 +101,14 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "4 | Refine",
     slides: [
-      { index: REFINE_INDEX, label: "Prices in Market", subStep: 0 },
-      { index: REFINE_INDEX, label: "Market Responds", subStep: 1 },
+      { index: REFINE_INDEX, label: "Strategic Guidance", subStep: 0 },
+      { index: REFINE_INDEX, label: "Scattered", subStep: 1 },
       { index: REFINE_INDEX, label: "Segmentation", subStep: 2 },
-      { index: REFINE_INDEX, label: "Refine: QuickParts", subStep: 3 },
-      { index: REFINE_INDEX, label: "Refine: Acme", subStep: 4 },
-      { index: REFINE_INDEX, label: "Refine: MedSupply", subStep: 5 },
+      { index: REFINE_INDEX, label: "Optimal Curve", subStep: 3 },
+      { index: REFINE_INDEX, label: "QuickParts", subStep: 4 },
+      { index: REFINE_INDEX, label: "Acme", subStep: 5 },
+      { index: REFINE_INDEX, label: "MedSupply", subStep: 6 },
+      { index: REFINE_INDEX, label: "Optimized", subStep: 7 },
     ],
   },
   {
@@ -127,19 +138,24 @@ export default function Home() {
   const [slide, setSlide] = useState(0);
   const [subStep, setSubStep] = useState(0);
   const [animationDone, setAnimationDone] = useState(false);
+  const { mode } = useMode();
   const total = SLIDES.length;
 
   const maxSteps = SUB_STEP_CONFIG[slide] ?? 0;
   const hasSubSteps = maxSteps > 0;
 
   useEffect(() => {
+    if (mode === "presenter") {
+      setAnimationDone(true);
+      return;
+    }
     setAnimationDone(false);
     const kind = SLIDES[slide]?.kind;
     if (!AUTO_ANIM_SLIDES.has(kind)) {
       const t = setTimeout(() => setAnimationDone(true), DEFAULT_DONE_MS);
       return () => clearTimeout(t);
     }
-  }, [slide, subStep]);
+  }, [slide, subStep, mode]);
 
   const markAnimationDone = useCallback(() => setAnimationDone(true), []);
 
@@ -200,7 +216,7 @@ export default function Home() {
 
   return (
     <>
-      <main className="flex min-h-screen flex-col items-center justify-start pt-14 pb-16 overflow-x-hidden">
+      <main className="flex min-h-[var(--slide-h,100vh)] flex-col items-center justify-start pt-14 pb-16 overflow-x-hidden">
         <AnimatePresence mode="wait">
         <motion.div
           key={slide}
@@ -219,8 +235,8 @@ export default function Home() {
             />
           )}
           {config.kind === "power" && <PowerSlide step={subStep} />}
-          {config.kind === "execute" && <ExecuteSlide step={subStep} />}
           {config.kind === "refine" && <RefineSlide step={subStep} />}
+          {config.kind === "execute" && <ExecuteSlide step={subStep} />}
           {config.kind === "profit-growth" && (
             <ProfitGrowthSlide
               step={subStep}
@@ -232,6 +248,7 @@ export default function Home() {
         </motion.div>
         </AnimatePresence>
       </main>
+      <ModelIndicator slideKind={config.kind} />
       <SlideNav
         current={slide}
         currentSubStep={hasSubSteps ? subStep : undefined}
@@ -241,25 +258,6 @@ export default function Home() {
         animationDone={animationDone}
       />
     </>
-  );
-}
-
-/* ── Download Button (client-only) ───────────────────────────── */
-
-function DownloadButton() {
-  const [show, setShow] = useState(false);
-  useEffect(() => {
-    setShow(!document.getElementById("__export_root"));
-  }, []);
-  if (!show) return null;
-  return (
-    <a
-      href="/Inside Your Dynamic Model - INSIGHT2PROFIT.html"
-      download="Inside Your Dynamic Model - INSIGHT2PROFIT.html"
-      className="absolute right-6 top-6 z-20 rounded-lg bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/20"
-    >
-      Download as HTML
-    </a>
   );
 }
 
@@ -354,6 +352,7 @@ function IntroBackdrop() {
 
 const MODEL_WORDS = ["Design", "Power", "Execute", "Refine", "Grow"];
 
+
 function RotatingWord() {
   const [index, setIndex] = useState(0);
 
@@ -384,11 +383,11 @@ function RotatingWord() {
 }
 
 function IntroSlide() {
-  return (
-    <div className="relative flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center overflow-hidden px-6 text-center">
-      <IntroBackdrop />
+  const { mode } = useMode();
 
-      <DownloadButton />
+  return (
+    <div className="-mt-14 -mb-16 relative flex h-[var(--slide-h,100vh)] flex-col items-center justify-center overflow-hidden px-6 text-center">
+      <IntroBackdrop />
 
       <div className="relative z-10 mx-auto max-w-3xl">
         <div className="mb-8 flex items-center justify-center gap-3">
@@ -407,10 +406,12 @@ function IntroSlide() {
           See how your pricing model turns data into decisions — and decisions into measurable profit.
         </p>
 
-        <div className="mt-10 flex items-center justify-center gap-2 text-sm text-white/40">
-          <span>Tap Next or press → to walk through the story</span>
-          <span className="inline-block animate-pulse">→</span>
-        </div>
+        {mode === "self" && (
+          <div className="mt-10 flex items-center justify-center gap-2 text-sm text-white/40">
+            <span>Tap Next or press → to walk through the story</span>
+            <span className="inline-block animate-pulse">→</span>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -420,7 +421,7 @@ function IntroSlide() {
 
 function EndSlide({ onRestart }: { onRestart: () => void }) {
   return (
-    <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-3xl flex-col items-center justify-center px-6 text-center">
+    <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-3xl flex-col items-center justify-center px-6 text-center">
       <span className="mb-4 inline-block rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
         End of Walkthrough
       </span>

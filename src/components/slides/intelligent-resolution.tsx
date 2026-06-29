@@ -379,7 +379,7 @@ export function IntelligentResolutionSlide({ step = 0 }: { step: number }) {
   const introPhase = step === 0;
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-7.5rem)] max-w-6xl flex-col items-center gap-2 px-6 pt-4">
+    <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-6xl flex-col items-center gap-2 px-6 pt-4">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -12 }}

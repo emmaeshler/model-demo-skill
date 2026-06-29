@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, ChevronDown, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, Check, Download, Monitor, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useMode } from "@/lib/mode-context";
 
 export interface NavGroup {
   label: string;
@@ -18,6 +19,62 @@ interface SlideNavProps {
   onNavigate: (index: number, subStep?: number) => void;
   presentationTitle?: string;
   animationDone?: boolean;
+}
+
+function DownloadLink() {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    setShow(!document.getElementById("__export_root"));
+  }, []);
+  if (!show) return null;
+  return (
+    <a
+      href="/Inside Your Dynamic Model - INSIGHT2PROFIT.html"
+      download="Inside Your Dynamic Model - INSIGHT2PROFIT.html"
+      className="flex items-center gap-1.5 rounded-md border border-white/15 px-2.5 py-1 text-xs font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white"
+    >
+      <Download className="size-3.5" />
+      Download
+    </a>
+  );
+}
+
+function ModeToggle() {
+  const { mode } = useMode();
+  const isPresenter = mode === "presenter";
+
+  return (
+    <button
+      disabled
+      className="group flex cursor-not-allowed items-center gap-2 rounded-full border border-white/15 px-1 py-0.5 opacity-50"
+      aria-label="Self-guided mode coming soon"
+      role="switch"
+      aria-checked={isPresenter}
+    >
+      <span
+        className={cn(
+          "flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium transition-all",
+          !isPresenter
+            ? "bg-white/15 text-white"
+            : "text-white/40",
+        )}
+      >
+        <BookOpen className="size-3" />
+        Self-Guided
+      </span>
+      <span
+        className={cn(
+          "flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium transition-all",
+          isPresenter
+            ? "bg-white/15 text-white"
+            : "text-white/40",
+        )}
+      >
+        <Monitor className="size-3" />
+        Presenter
+      </span>
+    </button>
+  );
 }
 
 export function TopBar({
@@ -105,7 +162,10 @@ export function TopBar({
             />
           </button>
 
-          <div className="ml-auto flex items-center gap-1">
+          <div className="ml-auto flex items-center gap-3">
+            <ModeToggle />
+            <DownloadLink />
+            <div className="flex items-center gap-1">
             {groups.map((g, gi) => {
               const groupDone = g.slides.every(
                 (s) =>
@@ -130,6 +190,7 @@ export function TopBar({
                 />
               );
             })}
+            </div>
           </div>
         </div>
       </header>

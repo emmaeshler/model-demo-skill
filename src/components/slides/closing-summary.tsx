@@ -55,28 +55,54 @@ const fadeUp = (delay: number) => ({
 
 export function ClosingSummarySlide() {
   return (
-    <div className="mx-auto flex h-[calc(100vh-7.5rem)] max-w-6xl flex-col items-center justify-center gap-3 px-6">
+    <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-6xl flex-col items-center justify-center gap-3 px-6">
       {/* Header */}
-      <motion.div className="text-center" {...fadeUp(0)}>
-        <span
-          className="mb-1 inline-block rounded-full px-3 py-0.5 text-[10px] font-bold tracking-[0.2em] uppercase"
-          style={{ backgroundColor: `${NAVY}10`, color: NAVY }}
-        >
-          Summary
-        </span>
-        <h2
+      <div className="text-center">
+        <div className="relative mb-1 flex h-5 items-center justify-center overflow-hidden">
+          <motion.span
+            className="absolute inline-block rounded-full px-3 py-0.5 text-[10px] font-bold tracking-[0.2em] uppercase"
+            style={{ backgroundColor: `${NAVY}10`, color: NAVY }}
+            animate={{ opacity: [0, 0.4, 0.4, 0], y: [8, 0, 0, -12] }}
+            transition={{ duration: 0.9, times: [0, 0.2, 0.6, 1] }}
+          >
+            5 · Profit Growth
+          </motion.span>
+          <motion.span
+            className="inline-block rounded-full px-3 py-0.5 text-[10px] font-bold tracking-[0.2em] uppercase"
+            style={{ backgroundColor: `${NAVY}10`, color: NAVY }}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.7 }}
+          >
+            Summary
+          </motion.span>
+        </div>
+        <motion.h2
           className="mt-1 text-xl font-bold tracking-tight sm:text-2xl"
           style={{ color: NAVY }}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 1.1, ease: "easeOut" }}
         >
           An evidence-based pricing model, end to end
-        </h2>
-        <p className="mx-auto mt-1.5 max-w-2xl text-sm text-muted-foreground">
+        </motion.h2>
+        <motion.p
+          className="mx-auto mt-1.5 max-w-2xl text-sm text-muted-foreground"
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 1.5 }}
+        >
           Five interconnected stages turn raw data into measurable profit — and every cycle makes the next one sharper.
-        </p>
-      </motion.div>
+        </motion.p>
+      </div>
 
       {/* Journey recap — 5 connected stages */}
-      <div className="w-full max-w-5xl">
+      <motion.div
+        className="w-full max-w-5xl"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8, delay: 2.2 }}
+      >
         <div className="grid grid-cols-5 gap-0">
           {STAGES.map((stage, i) => (
             <motion.div
@@ -133,7 +159,7 @@ export function ClosingSummarySlide() {
             </motion.div>
           ))}
         </div>
-      </div>
+      </motion.div>
 
       {/* Outcome KPIs */}
       <motion.div className="w-full max-w-3xl" {...fadeUp(0.7)}>

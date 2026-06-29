@@ -1,7 +1,7 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useState } from "react";
 
 const NAVY = "#00446A";
 const TEAL = "#21A5D5";
@@ -9,611 +9,997 @@ const ORANGE = "#E56910";
 const GREEN = "#2e7d32";
 const PURPLE = "#7B5EA7";
 const MUTED = "#5A6A78";
-const CARD_BG = "#F5F8FA";
-const CARD_BORDER = "#CBD5DE";
 
-export const POWER_TOTAL_STEPS = 2;
+export const POWER_TOTAL_STEPS = 8;
 
-/* ─── Narrative text per step ─── */
+const ML_GREEN = "#3A7D44";
 
-interface NarrativeSeg {
-  text: string;
-  bold?: boolean;
-  color?: string;
+/* ─── Seeded PRNG ─── */
+
+function mulberry32(seed: number) {
+  return () => {
+    let t = (seed += 0x6d2b79f5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
 }
 
-const STEP_NARRATIVES: Record<string, NarrativeSeg[]> = {
-  0: [
-    { text: "A distributor with " },
-    { text: "2,400 accounts and 15,000 SKUs", bold: true, color: TEAL },
-    { text: " needs optimized pricing across every segment. The model begins by ingesting four categories of data." },
-  ],
-  1: [
-    { text: "The model ingests " },
-    { text: "four categories of data", bold: true, color: TEAL },
-    { text: " — building a complete picture of transactions, market conditions, customers, and outcomes." },
-  ],
-  "2-raw": [
-    { text: "The " },
-    { text: "ML engine", bold: true, color: PURPLE },
-    { text: " distills millions of data points into " },
-    { text: "dense, actionable pricing signals", bold: true },
-    { text: " — precise, but hard to act on without interpretation." },
-  ],
-  "2-ai": [
-    { text: "AI guidance " },
-    { text: "builds conviction", bold: true, color: TEAL },
-    { text: " behind each recommendation, empowering teams to " },
-    { text: "confidently execute in market", bold: true },
-    { text: ". The result is a repeatable mechanism for delivering optimized pricing at scale." },
-  ],
-};
+/* ─── Chart geometry ─── */
 
-function NarrativeContent({ segs }: { segs: NarrativeSeg[] }) {
-  return (
-    <>
-      {segs.map((seg, i) =>
-        seg.bold ? (
-          <span key={i} className="font-bold" style={{ color: seg.color }}>
-            {seg.text}
-          </span>
-        ) : (
-          <span key={i}>{seg.text}</span>
-        ),
-      )}
-    </>
-  );
+const PLOT = { left: 88, right: 920, top: 30, bottom: 420 };
+const PLOT_W = PLOT.right - PLOT.left;
+const PLOT_H = PLOT.bottom - PLOT.top;
+const PLOT_CX = PLOT.left + PLOT_W / 2;
+const PLOT_CY = PLOT.top + PLOT_H / 2;
+
+const Y_TICKS = ["$80", "$70", "$60", "$50", "$40", "$30", "$20"];
+const X_TICKS = ["0", "100", "200", "300", "400", "500"];
+
+function yForTick(i: number) {
+  return PLOT.top + (i / (Y_TICKS.length - 1)) * PLOT_H;
+}
+function xForTick(i: number) {
+  return PLOT.left + (i / (X_TICKS.length - 1)) * PLOT_W;
 }
 
-function Narrative({ narrativeKey }: { narrativeKey: string }) {
-  const segs = STEP_NARRATIVES[narrativeKey] ?? STEP_NARRATIVES["0"];
-  return (
-    <AnimatePresence mode="wait">
-      <motion.p
-        key={narrativeKey}
-        className="mx-auto max-w-2xl text-center text-[1.05rem] leading-relaxed"
-        style={{ color: NAVY }}
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -6 }}
-        transition={{ duration: 0.3 }}
-      >
-        <NarrativeContent segs={segs} />
-      </motion.p>
-    </AnimatePresence>
-  );
-}
+/* ─── Driver clusters ─── */
 
-/* ─── Data ─── */
+const DRIVERS = [
+  { label: "Cost Trends", color: NAVY, cx: 230, cy: 135 },
+  { label: "Competitive Position", color: ORANGE, cx: 620, cy: 150 },
+  { label: "Volume & Elasticity", color: GREEN, cx: 250, cy: 330 },
+  { label: "Win / Loss Patterns", color: PURPLE, cx: 610, cy: 315 },
+];
 
-const INPUT_FEEDS = [
+const CLUSTER_SPREAD = [
+  { cx: 280, cy: 110 },
+  { cx: 730, cy: 110 },
+  { cx: 280, cy: 340 },
+  { cx: 730, cy: 340 },
+];
+const CLUSTER_R = 95;
+
+/* ─── Spotlight data (steps 1-4) ─── */
+
+const SPOTLIGHTS = [
   {
-    label: "Transaction History",
-    color: NAVY,
+    cluster: 0,
+    icon: "grid",
+    label: "TRANSACTION HISTORY",
     count: "14,200 records",
-    intro: "Pull every historical transaction…",
-    chips: ["Acme Corp · $58.20", "Beta Mfg · $42.10", "Coastal · $64.50", "Delta · $31.75"],
+    pills: ["Acme Corp · $58.20", "Beta Mfg · $42.10", "Coastal · $64.50", "Delta · $31.75"],
   },
   {
-    label: "Market Signals",
-    color: ORANGE,
+    cluster: 1,
+    icon: "trend",
+    label: "MARKET SIGNALS",
     count: "36 features",
-    intro: "Layer in real-time market signals…",
-    chips: ["Resin ↑ 4.2%", "Comp avg $59.10", "Q3 peak", "+2.8% growth"],
+    pills: ["Resin ↑ 4.2%", "Comp avg $59.10", "Q3 peak", "+2.8% growth"],
   },
   {
-    label: "Customer Attributes",
-    color: GREEN,
+    cluster: 2,
+    icon: "people",
+    label: "CUSTOMER ATTRIBUTES",
     count: "2,400 accounts",
-    intro: "Map customer profiles & behavior…",
-    chips: ["Strategic / Core / Opp", "Volume & contracts", "Tenure 3.2 yrs", "Product mix"],
+    pills: ["Strategic / Core / Opp", "Volume & contracts", "Tenure 3.2 yrs"],
   },
   {
-    label: "Win / Loss Patterns",
-    color: PURPLE,
+    cluster: 3,
+    icon: "chart",
+    label: "WIN / LOSS PATTERNS",
     count: "18 months",
-    intro: "Learn from 18 months of outcomes.",
-    chips: ["Win rate 87%", "Elasticity −0.34", "Discount 6.2%", "Lost gap $4.20"],
+    pills: ["Win rate 87%", "Elasticity −0.34", "Discount 6.2%", "Lost gap $4.20"],
   },
 ];
 
-const ANALYSIS_STEPS = [
-  { label: "Pattern Recognition", detail: "Analyzes 14,200 historical transactions to identify measurable price-outcome relationships", color: NAVY },
-  { label: "Feature Extraction", detail: "Weights 36 market signals and customer attributes by predictive power per segment", color: TEAL },
-  { label: "Scenario Modeling", detail: "Produces deterministic price recommendations tailored to each customer, product, and market scenario", color: PURPLE },
+const TITLES = [
+  "2,400 accounts × 15,000 SKUs",
+  "Finding cost patterns…",
+  "Reading competitive signals…",
+  "Mapping volume & elasticity…",
+  "Learning win/loss patterns…",
+  "Four pricing drivers emerge",
+  "One optimal price",
 ];
 
-const PRODUCT_OUTPUT = {
-  product: "Precision Bearing SKU #A-7200",
-  listPrice: "$17.50",
-  optimizedPrice: "$19.24",
-  confidence: "94%",
-  margin: "+9.9%",
-  rawStats: [
-    "p_opt: $19.24 | conf: 0.94 | list: $17.50",
-    "ε_price: −0.34 | elasticity_band: LOW",
-    "Δ_margin: +990bps vs. list baseline",
-    "feat_wt: cost_idx(0.38), comp_gap(0.28), vol_trend(0.21), seas(0.13)",
-    "n_obs: 14,200 txns | 18mo lookback",
-    "cost_pass: +$1.12/unit (steel_idx Q3)",
-    "comp_avg: $18.90 | headroom: +$0.34",
-  ],
-  rationale: "The model recommends $19.24 — 10% above list. Steel costs are up $1.12/unit, and the competitive average sits at $18.90, leaving room to price above. Historical transaction data across 14,200 orders confirms low price elasticity in this product category.",
-  keyDrivers: ["Steel cost pass-through (+$1.12)", "Competitive headroom ($18.90 avg)", "Low elasticity (14,200 txns)", "Q3 seasonal demand"],
-};
+const SUBTITLES = [
+  "That's 36 million unique price points — far too many for any team to set manually. The model finds the patterns hiding inside.",
+  "The model scans 14,200 transaction records to surface underlying cost trends.",
+  "36 real-time market features reveal where you stand against competitors.",
+  "2,400 accounts with distinct buying profiles show how demand responds to price.",
+  "18 months of win/loss data uncover what drives customer decisions.",
+  "Cost, competition, elasticity, and demand — isolated from the noise.",
+  "All four drivers converge into a single recommended price — for every account and SKU.",
+];
 
-/* ─── Sub-components ─── */
+/* ─── Pre-compute dot positions ─── */
 
-function TimelineInputs({ show }: { show: boolean }) {
-  const [phase, setPhase] = useState(0);
+const DOT_COUNT = 420;
+const rand = mulberry32(42);
 
-  useEffect(() => {
-    if (!show) { setPhase(0); return; }
-    const timers: ReturnType<typeof setTimeout>[] = [];
-    const delays = [
-      400,   // node 0 appears
-      1200,  // arrow 0→1 draws
-      1500,  // node 1 appears
-      2300,  // arrow 1→2 draws
-      2600,  // node 2 appears
-      3400,  // arrow 2→3 draws
-      3700,  // node 3 appears
-    ];
-    delays.forEach((d, i) => {
-      timers.push(setTimeout(() => setPhase(i + 1), d));
-    });
-    return () => timers.forEach(clearTimeout);
-  }, [show]);
+const HOTSPOTS = [
+  { x: 160, y: 280 },
+  { x: 350, y: 130 },
+  { x: 500, y: 200 },
+  { x: 280, y: 360 },
+  { x: 650, y: 300 },
+  { x: 450, y: 380 },
+  { x: 200, y: 100 },
+];
 
-  return (
-    <div className="flex flex-col gap-0 w-full max-w-3xl mx-auto">
-      {INPUT_FEEDS.map((feed, i) => {
-        const nodeVisible = phase >= i * 2 + 1;
-        const arrowVisible = phase >= i * 2 + 2;
-        return (
-          <div key={i}>
-            {/* Node row */}
-            <motion.div
-              className="flex items-center gap-3 rounded-lg px-4 py-2"
-              style={{
-                backgroundColor: nodeVisible ? "white" : "transparent",
-                boxShadow: nodeVisible ? `0 2px 12px ${feed.color}12` : "none",
-                border: nodeVisible ? `1.5px solid ${feed.color}40` : "1.5px solid transparent",
-              }}
-              initial={{ opacity: 0, x: -30 }}
-              animate={nodeVisible ? { opacity: 1, x: 0 } : { opacity: 0, x: -30 }}
-              transition={{ duration: 0.4, type: "spring", damping: 20 }}
-            >
-              <div
-                className="flex size-7 items-center justify-center rounded-lg shrink-0"
-                style={{ backgroundColor: `${feed.color}12` }}
-              >
-                <DataIcon index={i} color={feed.color} size={14} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <motion.p
-                  className="text-sm font-semibold leading-snug"
-                  style={{ color: feed.color }}
-                  initial={{ opacity: 0 }}
-                  animate={nodeVisible ? { opacity: 1 } : {}}
-                  transition={{ delay: 0.15 }}
-                >
-                  {feed.intro}
-                </motion.p>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: MUTED }}>{feed.label}</span>
-                  <span className="text-[10px]" style={{ color: `${feed.color}80` }}>·</span>
-                  <span className="text-[10px] font-medium" style={{ color: `${feed.color}90` }}>{feed.count}</span>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-1.5 max-w-[220px] justify-end">
-                {feed.chips.map((chip, j) => (
-                  <motion.span
-                    key={j}
-                    className="rounded-full px-2 py-0.5 text-[9px] font-medium whitespace-nowrap"
-                    style={{
-                      backgroundColor: `${feed.color}08`,
-                      color: `${feed.color}BB`,
-                      border: `1px solid ${feed.color}20`,
-                    }}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={nodeVisible ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
-                    transition={{ delay: 0.2 + j * 0.06 }}
-                  >
-                    {chip}
-                  </motion.span>
-                ))}
-              </div>
-            </motion.div>
+const DOTS = Array.from({ length: DOT_COUNT }, (_, i) => {
+  const cluster = i % 4;
+  const d = DRIVERS[cluster];
+  const angle = rand() * Math.PI * 2;
+  const dist = rand() * 48 + 10;
 
-            {/* Arrow connector to next node */}
-            {i < INPUT_FEEDS.length - 1 && (
-              <div className="flex justify-start pl-7 -my-1">
-                <svg width="16" height="14" viewBox="0 0 20 20">
-                  <motion.path
-                    d="M10 0 L10 14 M6 11 L10 16 L14 11"
-                    stroke={TEAL}
-                    strokeWidth={2}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    fill="none"
-                    initial={{ pathLength: 0, opacity: 0 }}
-                    animate={arrowVisible ? { pathLength: 1, opacity: 0.5 } : { pathLength: 0, opacity: 0 }}
-                    transition={{ duration: 0.35 }}
-                  />
-                </svg>
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
+  let sx: number;
+  let sy: number;
+
+  if (rand() < 0.4) {
+    const hs = HOTSPOTS[Math.floor(rand() * HOTSPOTS.length)];
+    const spread = 60 + rand() * 80;
+    const a = rand() * Math.PI * 2;
+    sx = hs.x + Math.cos(a) * rand() * spread;
+    sy = hs.y + Math.sin(a) * rand() * spread;
+  } else {
+    sx = PLOT.left + 10 + rand() * (PLOT_W - 20);
+    sy = PLOT.top + 10 + rand() * (PLOT_H - 20);
+  }
+
+  sx = Math.max(PLOT.left + 4, Math.min(PLOT.right - 4, sx));
+  sy = Math.max(PLOT.top + 4, Math.min(PLOT.bottom - 4, sy));
+
+  const sizeRoll = rand();
+  const r = sizeRoll < 0.5 ? rand() * 0.8 + 0.8
+          : sizeRoll < 0.85 ? rand() * 1.2 + 1.4
+          : rand() * 1.5 + 2.2;
+
+  const driftAngle = rand() * Math.PI * 2;
+  const driftRadius = rand() * 3 + 1.5;
+  const driftDuration = rand() * 4 + 6;
+  const driftDelay = rand() * 5;
+
+  return {
+    sx,
+    sy,
+    cx: Math.max(PLOT.left + 8, Math.min(PLOT.right - 8, d.cx + Math.cos(angle) * dist)),
+    cy: Math.max(PLOT.top + 8, Math.min(PLOT.bottom - 8, d.cy + Math.sin(angle) * dist)),
+    cluster,
+    r,
+    delay: rand() * 0.9,
+    scatterOpacity: rand() * 0.35 + 0.12,
+    driftDx: Math.cos(driftAngle) * driftRadius,
+    driftDy: Math.sin(driftAngle) * driftRadius,
+    driftDuration,
+    driftDelay,
+  };
+});
+
+/* ─── Sweep config ─── */
+
+const SWEEP_DURATION = 10;
+
+function highlightDotsForCluster(cluster: number) {
+  return DOTS
+    .map((dot, index) => ({
+      index,
+      cluster: dot.cluster,
+      normalizedX: (dot.sx - PLOT.left) / PLOT_W,
+    }))
+    .filter((d) => d.cluster === cluster)
+    .filter((_, i) => i % 3 === 0)
+    .sort((a, b) => a.normalizedX - b.normalizedX);
 }
 
-function CompactInputLabel({ feed, index }: { feed: (typeof INPUT_FEEDS)[number]; index: number }) {
-  return (
-    <motion.div
-      className="flex items-center gap-2 rounded-lg border px-3 py-2"
-      style={{ borderColor: CARD_BORDER, backgroundColor: CARD_BG }}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 0.7 }}
-      transition={{ delay: index * 0.05 }}
-    >
-      <div className="h-2 w-2 rounded-full" style={{ backgroundColor: feed.color }} />
-      <span className="text-[11px] font-semibold" style={{ color: feed.color }}>{feed.label}</span>
-      <span className="ml-auto text-[9px] text-muted-foreground">{feed.count}</span>
-    </motion.div>
-  );
-}
+/* ─── Callout dots ─── */
 
-function DigestTransition({ active, view, onViewChange }: { active: boolean; view: "ai" | "raw"; onViewChange: (v: "ai" | "raw") => void }) {
-  const p = PRODUCT_OUTPUT;
+const CALLOUTS = [
+  { label: "Acme Industrial", price: "$58.20", x: 245, y: 105, anchor: "start" as const, labelDx: 14, labelDy: -12, color: NAVY, cluster: 0 },
+  { label: "QuickParts LLC", price: "$34.50", x: 620, y: 280, anchor: "start" as const, labelDx: 14, labelDy: 4, color: ORANGE, cluster: 1 },
+  { label: "MedSupply Co", price: "$47.10", x: 420, y: 185, anchor: "end" as const, labelDx: -14, labelDy: -12, color: TEAL, cluster: 3 },
+  { label: "Coastal Dist.", price: "$62.80", x: 780, y: 72, anchor: "start" as const, labelDx: 14, labelDy: 14, color: GREEN, cluster: 2 },
+  { label: "Delta Mfg", price: "$29.40", x: 150, y: 345, anchor: "start" as const, labelDx: 14, labelDy: 2, color: PURPLE, cluster: 2 },
+];
 
+/* ─── Icons ─── */
+
+function CategoryIcon({ type, color, size = 18 }: { type: string; color: string; size?: number }) {
   return (
-    <motion.div
-      className="flex flex-col items-center justify-center gap-3 w-full"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
-    >
-      {active && (
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="none">
+      {type === "grid" && (
         <>
-          <motion.div
-            className="flex justify-center"
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <div
-              className="flex rounded-full p-0.5"
-              style={{ backgroundColor: `${NAVY}08`, border: `1px solid ${NAVY}15` }}
-            >
-              <button
-                onClick={() => onViewChange("raw")}
-                className="rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider transition-all duration-200"
-                style={{
-                  backgroundColor: view === "raw" ? NAVY : "transparent",
-                  color: view === "raw" ? "white" : MUTED,
-                }}
-              >
-                Raw Output
-              </button>
-              <button
-                onClick={() => onViewChange("ai")}
-                className="rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider transition-all duration-200"
-                style={{
-                  backgroundColor: view === "ai" ? TEAL : "transparent",
-                  color: view === "ai" ? "white" : MUTED,
-                }}
-              >
-                AI Guidance
-              </button>
-            </div>
-          </motion.div>
-
-          <motion.div
-            className="mx-auto w-full max-w-2xl rounded-xl border bg-white"
-            style={{ borderColor: `${TEAL}40`, boxShadow: `0 4px 24px ${TEAL}15`, padding: "1.5rem 2rem" }}
-            initial={{ opacity: 0, y: 24, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.5, type: "spring", damping: 20 }}
-          >
-            <div className="flex items-center justify-between mb-1">
-              <div>
-                <span className="text-base font-bold" style={{ color: NAVY }}>{p.product}</span>
-                <span className="ml-3 text-xs" style={{ color: MUTED }}>List: {p.listPrice}/unit</span>
-              </div>
-              <motion.span
-                className="rounded-full px-3 py-1 text-xs font-bold"
-                style={{ backgroundColor: `${GREEN}12`, color: GREEN }}
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.3, type: "spring" }}
-              >
-                {p.confidence} confidence
-              </motion.span>
-            </div>
-
-            <div className="flex items-baseline gap-3 mb-3 mt-2">
-              <motion.span
-                className="text-3xl font-bold"
-                style={{ color: NAVY }}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.2 }}
-              >
-                {p.optimizedPrice}
-              </motion.span>
-              <span className="text-sm font-semibold" style={{ color: ORANGE }}>{p.margin} margin vs. list</span>
-            </div>
-
-            <AnimatePresence mode="wait">
-              {view === "ai" ? (
-                <motion.div
-                  key="ai-view"
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -6 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <div className="rounded-lg border p-4 text-sm leading-relaxed"
-                    style={{ borderColor: `${TEAL}30`, backgroundColor: `${TEAL}04`, color: NAVY }}
-                  >
-                    <div className="flex items-center gap-1.5 mb-2">
-                      <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: TEAL }} />
-                      <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: TEAL }}>AI Rationale</span>
-                    </div>
-                    {p.rationale}
-                  </div>
-
-                  <div className="flex flex-wrap gap-1.5 mt-3">
-                    {p.keyDrivers.map((d, j) => (
-                      <motion.span
-                        key={j}
-                        className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
-                        style={{ backgroundColor: `${NAVY}08`, color: NAVY }}
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.05 + j * 0.04 }}
-                      >
-                        {d}
-                      </motion.span>
-                    ))}
-                  </div>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="raw-view"
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -6 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <div
-                    className="rounded-lg border p-4 font-mono text-xs leading-relaxed"
-                    style={{ borderColor: `${NAVY}25`, backgroundColor: `${NAVY}06`, color: NAVY }}
-                  >
-                    <div className="flex items-center gap-1.5 mb-2">
-                      <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: NAVY }} />
-                      <span className="text-[10px] font-bold uppercase tracking-wider font-sans" style={{ color: NAVY }}>Raw Model Output</span>
-                    </div>
-                    {p.rawStats.map((line, j) => (
-                      <motion.div
-                        key={j}
-                        className="py-0.5"
-                        style={{ color: `${NAVY}CC` }}
-                        initial={{ opacity: 0, x: -8 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: j * 0.05 }}
-                      >
-                        {line}
-                      </motion.div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
+          <rect x="2" y="2" width="7" height="7" rx="1.5" fill={color} opacity={0.7} />
+          <rect x="11" y="2" width="7" height="7" rx="1.5" fill={color} opacity={0.5} />
+          <rect x="2" y="11" width="7" height="7" rx="1.5" fill={color} opacity={0.5} />
+          <rect x="11" y="11" width="7" height="7" rx="1.5" fill={color} opacity={0.7} />
         </>
       )}
-    </motion.div>
-  );
-}
-
-
-function DataIcon({ index, color, size = 26 }: { index: number; color: string; size?: number }) {
-  const props = { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: color, strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
-  if (index === 0) return (
-    <svg {...props}>
-      <rect x="3" y="3" width="7" height="7" rx="1" />
-      <rect x="14" y="3" width="7" height="7" rx="1" />
-      <rect x="3" y="14" width="7" height="7" rx="1" />
-      <rect x="14" y="14" width="7" height="7" rx="1" />
+      {type === "trend" && (
+        <path d="M2 15 L7 9 L11 12 L18 4" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity={0.7} />
+      )}
+      {type === "people" && (
+        <>
+          <circle cx="10" cy="7" r="3.5" fill={color} opacity={0.6} />
+          <path d="M3 17.5 C3 13.5 7 12 10 12 C13 12 17 13.5 17 17.5" stroke={color} strokeWidth="2" strokeLinecap="round" opacity={0.5} />
+        </>
+      )}
+      {type === "chart" && (
+        <>
+          <rect x="3" y="10" width="3" height="7" rx="1" fill={color} opacity={0.5} />
+          <rect x="8.5" y="6" width="3" height="11" rx="1" fill={color} opacity={0.65} />
+          <rect x="14" y="3" width="3" height="14" rx="1" fill={color} opacity={0.8} />
+        </>
+      )}
     </svg>
-  );
-  if (index === 1) return (
-    <svg {...props}>
-      <path d="M3 3v18h18" />
-      <path d="M7 16l4-6 4 4 5-8" />
-    </svg>
-  );
-  if (index === 2) return (
-    <svg {...props}>
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-    </svg>
-  );
-  return (
-    <svg {...props}>
-      <path d="M12 20V10" />
-      <path d="M18 20V4" />
-      <path d="M6 20v-4" />
-      <circle cx="12" cy="7" r="2" />
-      <circle cx="18" cy="2" r="1" />
-    </svg>
-  );
-}
-
-function FlowArrow({ active }: { active: boolean }) {
-  return (
-    <div className="flex items-center justify-center px-2">
-      <svg width="40" height="24" viewBox="0 0 40 24">
-        <motion.path
-          d="M4 12 L28 12 M24 6 L32 12 L24 18"
-          stroke={TEAL}
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          fill="none"
-          animate={
-            active
-              ? { strokeOpacity: [0.2, 0.7, 0.2], pathLength: [0.4, 1, 0.4] }
-              : { strokeOpacity: 0.15 }
-          }
-          transition={{ duration: 1.8, repeat: active ? Infinity : 0, ease: "easeInOut" }}
-        />
-      </svg>
-    </div>
   );
 }
 
 /* ─── Main slide ─── */
 
 export function PowerSlide({ step = 0 }: { step: number }) {
-  const showInputs = step >= 1;
 
-  const narrativeKey = String(step);
+  /* ── Step 0: Full-screen transition moment ─────────── */
+  if (step === 0) {
+    return (
+      <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-5xl flex-col items-center justify-center px-6">
+        <motion.span
+          className="relative mb-4 inline-block rounded-full px-4 py-1 text-xs font-bold tracking-[0.2em] uppercase"
+          style={{ backgroundColor: `${ML_GREEN}15`, color: ML_GREEN }}
+          initial={{ opacity: 0, scale: 0.85 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
+        >
+          <motion.span
+            className="pointer-events-none absolute inset-0 rounded-full"
+            style={{ border: `1.5px solid ${ML_GREEN}` }}
+            initial={{ opacity: 0.6, scale: 1 }}
+            animate={{ opacity: 0, scale: 2 }}
+            transition={{ duration: 0.8, delay: 0.15, ease: "easeOut" }}
+          />
+          ML Prediction
+        </motion.span>
+
+        <motion.h2
+          className="text-center text-3xl font-bold tracking-tight sm:text-4xl"
+          style={{ color: ML_GREEN }}
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.15, ease: "easeOut" }}
+        >
+          Your data becomes the engine.
+        </motion.h2>
+
+        <motion.p
+          className="mt-4 max-w-md text-center text-base leading-relaxed"
+          style={{ color: `${NAVY}99` }}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.35, ease: "easeOut" }}
+        >
+          The ML prediction layer ingests millions of signals to find
+          the patterns that drive every price.
+        </motion.p>
+      </div>
+    );
+  }
+
+  /* ── Steps 1-7: Chart flow ─────────────────────────── */
+  const chartStep = step - 1;
+  const converged = chartStep >= 6;
+  const clustered = chartStep >= 5;
+  const sweepActive = chartStep >= 1 && !clustered;
+
+  const [introPhase, setIntroPhase] = useState(chartStep === 0 ? 0 : 4);
+
+  useEffect(() => {
+    if (chartStep !== 0) { setIntroPhase(5); return; }
+    setIntroPhase(0);
+    const t1 = setTimeout(() => setIntroPhase(1), 800);
+    const t2 = setTimeout(() => setIntroPhase(2), 1800);
+    const t3 = setTimeout(() => setIntroPhase(3), 3200);
+    const t4 = setTimeout(() => setIntroPhase(4), 5000);
+    const t5 = setTimeout(() => setIntroPhase(5), 5800);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); clearTimeout(t5); };
+  }, [chartStep]);
+
+  function dotFill(dot: (typeof DOTS)[0]) {
+    if (clustered) return DRIVERS[dot.cluster].color;
+    if (dot.cluster < chartStep) return DRIVERS[dot.cluster].color;
+    return MUTED;
+  }
+
+  function dotOpacity(dot: (typeof DOTS)[0]) {
+    if (clustered) return 0.65;
+    if (dot.cluster === chartStep - 1) return 0.7;
+    if (dot.cluster < chartStep - 1) return 0.45;
+    return dot.scatterOpacity;
+  }
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-7.5rem)] max-w-6xl flex-col items-center justify-start px-6 pt-4">
-      {/* Header */}
+    <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-7xl flex-col items-center justify-start px-6 pt-4">
+      {/* Badge */}
       <motion.span
-        className="mb-1 inline-block rounded-full px-3 py-0.5 text-[10px] font-bold uppercase tracking-[0.2em]"
+        className="mb-3 inline-block rounded-full px-3 py-0.5 text-[10px] font-bold uppercase tracking-[0.2em]"
         style={{ backgroundColor: `${NAVY}10`, color: NAVY }}
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0, scale: 0.85 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.35 }}
       >
-        Power
+        2 · Power
       </motion.span>
-      <motion.h2
-        className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
-        style={{ color: NAVY }}
-        initial={{ opacity: 0, y: -12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-      >
-        AI-powered pricing guidance
-      </motion.h2>
 
-      {/* Narrative — subtext when visuals are active */}
-      <AnimatePresence>
-        {step >= 1 && (
-          <motion.div
-            className="flex min-h-[3.5rem] items-center justify-center px-4 mt-1"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
+      {/* Title — fixed-height container so chart never resizes */}
+      <div className="relative w-full" style={{ height: 100, flexShrink: 0 }}>
+        <AnimatePresence>
+          {chartStep === 0 && (
+            <motion.div
+              key="intro-title"
+              className="absolute inset-0 flex flex-col items-center justify-start"
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.6, ease: "easeInOut" }}
+            >
+              <div className="flex flex-col items-center gap-1">
+                <motion.h2
+                  className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
+                  style={{ color: NAVY }}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{
+                    opacity: introPhase >= 3 ? 0 : 1,
+                    y: introPhase >= 3 ? -12 : 0,
+                    height: introPhase >= 3 ? 0 : "auto",
+                    marginBottom: introPhase >= 3 ? 0 : 4,
+                  }}
+                  transition={{ duration: 0.5 }}
+                >
+                  You have 2,400 accounts
+                </motion.h2>
+                <motion.h2
+                  className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
+                  style={{ color: NAVY }}
+                  initial={{ opacity: 0 }}
+                  animate={{
+                    opacity: introPhase >= 1 && introPhase < 3 ? 1 : 0,
+                    y: introPhase >= 1 && introPhase < 3 ? 0 : introPhase >= 3 ? -12 : 8,
+                    height: introPhase >= 3 ? 0 : "auto",
+                    marginBottom: introPhase >= 3 ? 0 : 4,
+                  }}
+                  transition={{ duration: 0.5 }}
+                >
+                  each with up to 15,000 SKUs
+                </motion.h2>
+                <AnimatePresence>
+                  {introPhase >= 2 && (
+                    <motion.h2
+                      className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
+                      style={{ color: TEAL }}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.6, ease: "easeOut" }}
+                    >
+                      36 million unique price points
+                    </motion.h2>
+                  )}
+                </AnimatePresence>
+              </div>
+              <motion.p
+                className="mx-auto mt-2 max-w-lg text-center text-[1.05rem] leading-relaxed"
+                style={{ color: MUTED }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: introPhase >= 3 ? 1 : 0, y: introPhase >= 3 ? 0 : 6 }}
+                transition={{ duration: 0.4 }}
+              >
+                Far too many for any team to set manually&nbsp;— the&nbsp;model finds&nbsp;the&nbsp;patterns.
+              </motion.p>
+            </motion.div>
+          )}
+          {chartStep > 0 && (
+            <motion.div
+              key={`step-title-${chartStep}`}
+              className="absolute inset-0 flex flex-col items-center justify-start"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5, delay: chartStep === 1 ? 0.5 : 0 }}
+            >
+              <motion.h2
+                className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
+                style={{ color: NAVY }}
+              >
+                {TITLES[chartStep]}
+              </motion.h2>
+              <motion.p
+                className="mx-auto mt-1 max-w-2xl text-center text-[1.05rem] leading-relaxed"
+                style={{ color: MUTED }}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: chartStep === 1 ? 0.7 : 0.15 }}
+              >
+                {SUBTITLES[chartStep]}
+              </motion.p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Chart area */}
+      <motion.div
+        className="relative w-full flex-1 min-h-0 mt-2 flex items-stretch gap-0"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{
+          opacity: chartStep === 0 && introPhase < 4 ? 0 : 1,
+          y: chartStep === 0 && introPhase < 4 ? 20 : 0,
+        }}
+        transition={{ duration: 1.0, ease: [0.22, 1, 0.36, 1] }}
+      >
+        {/* Scatter plot */}
+        <div className="relative flex-1 min-w-0 flex items-center justify-center">
+        <svg
+          viewBox="0 -40 1020 530"
+          className="w-full h-full"
+          preserveAspectRatio="xMidYMid meet"
+        >
+          {/* ── Chart chrome (fades out on cluster step) ── */}
+          <motion.g
+            animate={{ opacity: clustered ? 0 : 1 }}
+            transition={{ duration: 0.5, delay: clustered ? 0 : 0.3 }}
           >
-            <Narrative narrativeKey={narrativeKey} />
+            {Y_TICKS.map((_, i) => (
+              <line
+                key={`gy${i}`}
+                x1={PLOT.left} y1={yForTick(i)}
+                x2={PLOT.right} y2={yForTick(i)}
+                stroke={`${NAVY}0A`} strokeWidth={0.7}
+              />
+            ))}
+            {X_TICKS.map((_, i) => (
+              <line
+                key={`gx${i}`}
+                x1={xForTick(i)} y1={PLOT.top}
+                x2={xForTick(i)} y2={PLOT.bottom}
+                stroke={`${NAVY}0A`} strokeWidth={0.7}
+              />
+            ))}
+            <line x1={PLOT.left} y1={PLOT.top} x2={PLOT.left} y2={PLOT.bottom} stroke={`${NAVY}30`} strokeWidth={1.2} />
+            <line x1={PLOT.left} y1={PLOT.bottom} x2={PLOT.right} y2={PLOT.bottom} stroke={`${NAVY}30`} strokeWidth={1.2} />
+
+            {Y_TICKS.map((label, i) => {
+              const y = yForTick(i);
+              return (
+                <g key={`yt${i}`}>
+                  <line x1={PLOT.left - 4} y1={y} x2={PLOT.left} y2={y} stroke={`${NAVY}40`} strokeWidth={1} />
+                  <text x={PLOT.left - 8} y={y + 3.5} textAnchor="end" style={{ fill: MUTED, fontSize: 10, fontFamily: "inherit" }}>{label}</text>
+                </g>
+              );
+            })}
+            {X_TICKS.map((label, i) => {
+              const x = xForTick(i);
+              return (
+                <g key={`xt${i}`}>
+                  <line x1={x} y1={PLOT.bottom} x2={x} y2={PLOT.bottom + 4} stroke={`${NAVY}40`} strokeWidth={1} />
+                  <text x={x} y={PLOT.bottom + 16} textAnchor="middle" style={{ fill: MUTED, fontSize: 10, fontFamily: "inherit" }}>{label}</text>
+                </g>
+              );
+            })}
+
+            <text x={PLOT.left + PLOT_W / 2} y={PLOT.bottom + 38} textAnchor="middle"
+              style={{ fill: NAVY, fontSize: 11, fontWeight: 600, fontFamily: "inherit", letterSpacing: "0.03em" }}>
+              Monthly Transaction Volume
+            </text>
+            <text textAnchor="middle"
+              style={{ fill: NAVY, fontSize: 11, fontWeight: 600, fontFamily: "inherit", letterSpacing: "0.03em" }}
+              transform={`translate(28, ${PLOT.top + PLOT_H / 2}) rotate(-90)`}>
+              Selling Price ($)
+            </text>
+          </motion.g>
+
+          {/* ── Cluster outlines (step 5) ── */}
+          {DRIVERS.map((d, i) => (
+            <motion.circle
+              key={`ring-${i}`}
+              cx={CLUSTER_SPREAD[i].cx} cy={CLUSTER_SPREAD[i].cy} r={CLUSTER_R}
+              fill="none" stroke={d.color} strokeWidth={1.5} strokeDasharray="5 4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: clustered && !converged ? 0.25 : 0 }}
+              transition={{ delay: clustered && !converged ? 1.0 + i * 0.12 : 0, duration: 0.5 }}
+            />
+          ))}
+
+          {/* ── Scanning sweep line (steps 1-4 only) ── */}
+          {sweepActive && (
+            <motion.g
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.8, delay: chartStep === 1 ? 1.0 : 0.3 }}
+            >
+              <defs>
+                <linearGradient id="sweep-glow" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stopColor={DRIVERS[chartStep - 1]?.color ?? TEAL} stopOpacity={0} />
+                  <stop offset="40%" stopColor={DRIVERS[chartStep - 1]?.color ?? TEAL} stopOpacity={0.08} />
+                  <stop offset="100%" stopColor={DRIVERS[chartStep - 1]?.color ?? TEAL} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              {/* Faint glow trailing the line */}
+              <motion.rect
+                y={PLOT.top} width={60} height={PLOT_H}
+                fill="url(#sweep-glow)"
+                animate={{ x: [PLOT.left - 60, PLOT.right, PLOT.left - 60] }}
+                transition={{ duration: SWEEP_DURATION, repeat: Infinity, ease: "linear" }}
+              />
+              {/* The sweep line itself */}
+              <motion.line
+                x1={PLOT.left} y1={PLOT.top}
+                x2={PLOT.left} y2={PLOT.bottom}
+                stroke={DRIVERS[chartStep - 1]?.color ?? TEAL}
+                strokeWidth={1.2}
+                opacity={0.25}
+                animate={{ x1: [PLOT.left, PLOT.right, PLOT.left], x2: [PLOT.left, PLOT.right, PLOT.left] }}
+                transition={{ duration: SWEEP_DURATION, repeat: Infinity, ease: "linear" }}
+              />
+            </motion.g>
+          )}
+
+          {/* ── Data dots ── */}
+          {DOTS.map((dot, i) => {
+            const sp = CLUSTER_SPREAD[dot.cluster];
+            const origD = DRIVERS[dot.cluster];
+            const spreadCx = sp.cx + (dot.cx - origD.cx) * (CLUSTER_R / 48);
+            const spreadCy = sp.cy + (dot.cy - origD.cy) * (CLUSTER_R / 48);
+            const convAngle = (i / DOT_COUNT) * Math.PI * 2;
+            const convDist = 4 + (i % 7) * 1.5;
+            const dotEntranceDelay = chartStep === 0 ? dot.delay * 0.8 + (i % 30) * 0.008 : 0;
+
+            let targetCx: number | number[];
+            let targetCy: number | number[];
+            let targetFill = dotFill(dot);
+            let targetOpacity = dotOpacity(dot);
+            let targetR = dot.r;
+            let cxTransition: Record<string, unknown>;
+            let cyTransition: Record<string, unknown>;
+            let opacityDelay = 0.1;
+
+            if (converged) {
+              targetCx = PLOT_CX + Math.cos(convAngle) * convDist;
+              targetCy = PLOT_CY + Math.sin(convAngle) * convDist;
+              targetFill = TEAL;
+              targetOpacity = 0.3;
+              cxTransition = { duration: 1.0, delay: dot.delay * 0.3, ease: [0.22, 1, 0.36, 1] };
+              cyTransition = { duration: 1.0, delay: dot.delay * 0.3, ease: [0.22, 1, 0.36, 1] };
+              opacityDelay = dot.delay * 0.3 + 0.5;
+            } else if (clustered) {
+              targetCx = spreadCx;
+              targetCy = spreadCy;
+              targetOpacity = 0.65;
+              cxTransition = { duration: 1.4, delay: dot.delay * 0.3, ease: [0.22, 1, 0.36, 1] };
+              cyTransition = { duration: 1.4, delay: dot.delay * 0.3, ease: [0.22, 1, 0.36, 1] };
+              opacityDelay = dot.delay * 0.3;
+            } else if (chartStep === 0 && introPhase < 4) {
+              targetCx = PLOT_CX;
+              targetCy = PLOT_CY;
+              targetR = 0;
+              targetOpacity = 0;
+              cxTransition = { duration: 0.9, delay: dotEntranceDelay, ease: [0.22, 1, 0.36, 1] };
+              cyTransition = { duration: 0.9, delay: dotEntranceDelay, ease: [0.22, 1, 0.36, 1] };
+            } else if (introPhase >= 5 || chartStep > 0) {
+              targetCx = chartStep > 0
+                ? dot.sx
+                : [dot.sx, dot.sx + dot.driftDx, dot.sx - dot.driftDx * 0.6, dot.sx];
+              targetCy = chartStep > 0
+                ? dot.sy
+                : [dot.sy, dot.sy + dot.driftDy, dot.sy - dot.driftDy * 0.6, dot.sy];
+              cxTransition = chartStep > 0
+                ? { duration: 0.9, delay: dotEntranceDelay, ease: [0.22, 1, 0.36, 1] }
+                : { duration: dot.driftDuration, delay: dot.driftDelay, repeat: Infinity, ease: "easeInOut" };
+              cyTransition = chartStep > 0
+                ? { duration: 0.9, delay: dotEntranceDelay, ease: [0.22, 1, 0.36, 1] }
+                : { duration: dot.driftDuration, delay: dot.driftDelay, repeat: Infinity, ease: "easeInOut" };
+              opacityDelay = chartStep === 1 ? 0.8 + dot.delay * 0.4 : dotEntranceDelay + 0.2;
+            } else {
+              targetCx = dot.sx;
+              targetCy = dot.sy;
+              cxTransition = { duration: 0.9, delay: dotEntranceDelay, ease: [0.22, 1, 0.36, 1] };
+              cyTransition = { duration: 0.9, delay: dotEntranceDelay, ease: [0.22, 1, 0.36, 1] };
+              opacityDelay = dotEntranceDelay + 0.2;
+            }
+
+            return (
+              <motion.circle
+                key={i}
+                fill={targetFill}
+                initial={{ cx: PLOT_CX, cy: PLOT_CY, r: 0, fillOpacity: 0 }}
+                animate={{
+                  cx: targetCx,
+                  cy: targetCy,
+                  r: targetR,
+                  fillOpacity: targetOpacity,
+                }}
+                transition={{
+                  cx: cxTransition,
+                  cy: cyTransition,
+                  r: { duration: 0.5, delay: dotEntranceDelay, ease: "easeOut" },
+                  fillOpacity: { duration: 0.8, delay: opacityDelay },
+                  fill: { duration: 1.0, delay: chartStep === 1 ? 0.8 + dot.delay * 0.4 : 0.1 },
+                }}
+              />
+            );
+          })}
+
+          {/* ── Highlight rings — dots "found" by the sweep ── */}
+          {sweepActive && highlightDotsForCluster(chartStep - 1).map((hi) => {
+            const dot = DOTS[hi.index];
+            const currentDriver = DRIVERS[chartStep - 1];
+            const sweepDelay = hi.normalizedX * (SWEEP_DURATION / 2);
+            return (
+              <motion.circle
+                key={`hl-${chartStep}-${hi.index}`}
+                cx={dot.sx}
+                cy={dot.sy}
+                fill="none"
+                stroke={currentDriver.color}
+                strokeWidth={1.2}
+                initial={{ r: dot.r + 1, opacity: 0 }}
+                animate={{
+                  r: [dot.r + 1, dot.r + 7, dot.r + 10],
+                  opacity: [0, 0.6, 0],
+                }}
+                transition={{
+                  duration: 1.2,
+                  delay: sweepDelay + 0.3,
+                  repeat: Infinity,
+                  repeatDelay: SWEEP_DURATION - 1.2,
+                  ease: "easeOut",
+                }}
+              />
+            );
+          })}
+
+          {/* ── Callout annotations (step 0 only) ── */}
+          {CALLOUTS.map((c, i) => {
+            const showCallout = chartStep === 0 && introPhase >= 5;
+            const enterDelay = 0.3 + i * 0.25;
+            const exitDelay = 0.05 + i * 0.08;
+            return (
+              <motion.g key={`callout-${i}`}>
+                <motion.circle
+                  r={8} fill="none" strokeWidth={2}
+                  cx={c.x} cy={c.y} stroke={c.color}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: showCallout ? 0.5 : 0 }}
+                  transition={{ duration: 0.5, delay: showCallout ? enterDelay : exitDelay, ease: [0.22, 1, 0.36, 1] }}
+                />
+                <motion.circle
+                  r={4} cx={c.x} cy={c.y} fill={c.color}
+                  initial={{ fillOpacity: 0 }}
+                  animate={{ fillOpacity: showCallout ? 0.7 : 0 }}
+                  transition={{ duration: 0.4, delay: showCallout ? enterDelay : exitDelay }}
+                />
+                {showCallout && (
+                  <motion.circle
+                    cx={c.x} cy={c.y} r={8}
+                    fill="none" stroke={c.color} strokeWidth={1.5}
+                    initial={{ opacity: 0.5, scale: 1 }}
+                    animate={{ opacity: 0, scale: 2.5 }}
+                    transition={{ duration: 0.8, delay: enterDelay + 0.1, ease: "easeOut" }}
+                    style={{ transformOrigin: `${c.x}px ${c.y}px` }}
+                  />
+                )}
+                <motion.text
+                  x={c.x + c.labelDx} y={c.y + c.labelDy}
+                  textAnchor={c.anchor}
+                  style={{ fill: c.color, fontSize: 14, fontWeight: 600, fontFamily: "inherit" }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: showCallout ? 1 : 0 }}
+                  transition={{ duration: 0.4, delay: showCallout ? enterDelay + 0.15 : exitDelay }}
+                >
+                  {c.label}
+                </motion.text>
+                <motion.text
+                  x={c.x + c.labelDx} y={c.y + c.labelDy + 18}
+                  textAnchor={c.anchor}
+                  style={{ fill: c.color, fontSize: 15, fontWeight: 700, fontFamily: "inherit" }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: showCallout ? 1 : 0 }}
+                  transition={{ duration: 0.4, delay: showCallout ? enterDelay + 0.3 : exitDelay }}
+                >
+                  {c.price}
+                </motion.text>
+              </motion.g>
+            );
+          })}
+
+          {/* ── Cluster labels (step 5) ── */}
+          {DRIVERS.map((d, i) => {
+            const sp = CLUSTER_SPREAD[i];
+            return (
+              <motion.g key={`label-${i}`}>
+                <motion.rect
+                  x={sp.cx - 95} y={sp.cy + CLUSTER_R + 8} width={190} height={32} rx={16} fill="white"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: clustered && !converged ? 0.92 : 0 }}
+                  transition={{ delay: clustered && !converged ? 1.15 + i * 0.12 : 0, duration: 0.4 }}
+                />
+                <motion.text
+                  x={sp.cx} y={sp.cy + CLUSTER_R + 30} textAnchor="middle"
+                  style={{ fill: d.color, fontSize: 19, fontWeight: 700, fontFamily: "inherit" }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: clustered && !converged ? 1 : 0 }}
+                  transition={{ delay: clustered && !converged ? 1.2 + i * 0.12 : 0, duration: 0.4 }}
+                >
+                  {d.label}
+                </motion.text>
+              </motion.g>
+            );
+          })}
+
+          {/* ── Connecting lines (step 5) ── */}
+          {clustered && !converged && (
+            <>
+              {[
+                [CLUSTER_SPREAD[0], CLUSTER_SPREAD[1]],
+                [CLUSTER_SPREAD[2], CLUSTER_SPREAD[3]],
+                [CLUSTER_SPREAD[0], CLUSTER_SPREAD[2]],
+                [CLUSTER_SPREAD[1], CLUSTER_SPREAD[3]],
+              ].map(([a, b], i) => (
+                <motion.line
+                  key={`conn-${i}`}
+                  x1={a.cx} y1={a.cy} x2={b.cx} y2={b.cy}
+                  stroke={TEAL} strokeWidth={1} strokeDasharray="3 4"
+                  initial={{ opacity: 0, pathLength: 0 }}
+                  animate={{ opacity: 0.15, pathLength: 1 }}
+                  transition={{ delay: 1.5 + i * 0.1, duration: 0.6 }}
+                />
+              ))}
+            </>
+          )}
+          {/* ── Price reveal (step 6 — converged) ── */}
+          {converged && (() => {
+            const CR = 70;
+            const DRIVER_NODES = [
+              { ...DRIVERS[0], angle: Math.PI * 1.2, contribution: "$14.20", detail: "Cost base", sign: "" },
+              { ...DRIVERS[1], angle: Math.PI * 0.3, contribution: "+$2.40", detail: "Market premium", sign: "+" },
+              { ...DRIVERS[2], angle: Math.PI * 1.7, contribution: "+$1.80", detail: "Volume lift", sign: "+" },
+              { ...DRIVERS[3], angle: Math.PI * 0.7, contribution: "−$0.90", detail: "Win-rate adj.", sign: "−" },
+            ];
+            const NODE_DIST = 210;
+            const NODE_R = 46;
+            return (
+              <>
+                {DRIVER_NODES.map((dn, i) => {
+                  const nx = PLOT_CX + Math.cos(dn.angle) * NODE_DIST;
+                  const ny = PLOT_CY + Math.sin(dn.angle) * NODE_DIST;
+                  const edgeX = PLOT_CX + Math.cos(dn.angle) * (CR + 6);
+                  const edgeY = PLOT_CY + Math.sin(dn.angle) * (CR + 6);
+                  const cpDist = NODE_DIST * 0.45;
+                  const cpX = PLOT_CX + Math.cos(dn.angle) * cpDist;
+                  const cpY = PLOT_CY + Math.sin(dn.angle) * cpDist;
+                  const pathD = `M ${nx} ${ny} Q ${cpX} ${cpY}, ${edgeX} ${edgeY}`;
+                  const flowSteps = 30;
+                  const flowCx: number[] = [];
+                  const flowCy: number[] = [];
+                  for (let s = 0; s <= flowSteps; s++) {
+                    const t = s / flowSteps;
+                    const u = 1 - t;
+                    flowCx.push(u * u * nx + 2 * u * t * cpX + t * t * edgeX);
+                    flowCy.push(u * u * ny + 2 * u * t * cpY + t * t * edgeY);
+                  }
+                  const nodeDelay = 0.3 + i * 0.2;
+                  const lineDelay = nodeDelay + 0.4;
+                  const dotDelay = lineDelay + 0.3;
+
+                  return (
+                    <g key={`conv-driver-${i}`}>
+                      <motion.g
+                        initial={{ opacity: 0, scale: 0.6 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.5, delay: nodeDelay, ease: [0.22, 1, 0.36, 1] }}
+                        style={{ transformOrigin: `${nx}px ${ny}px` }}
+                      >
+                        <circle cx={nx} cy={ny} r={NODE_R} fill={`${dn.color}08`} stroke={dn.color} strokeWidth={1.5} opacity={0.3} />
+                        <text x={nx} y={ny - NODE_R - 8} textAnchor="middle"
+                          style={{ fontSize: 11, fontWeight: 700, fill: dn.color, fontFamily: "inherit" }}>
+                          {dn.label}
+                        </text>
+                        <text x={nx} y={ny + 4} textAnchor="middle"
+                          style={{ fontSize: 20, fontWeight: 800, fill: dn.color, fontFamily: "inherit" }}>
+                          {dn.contribution}
+                        </text>
+                        <text x={nx} y={ny + 20} textAnchor="middle"
+                          style={{ fontSize: 10, fontWeight: 500, fill: MUTED, fontFamily: "inherit" }}>
+                          {dn.detail}
+                        </text>
+                      </motion.g>
+
+                      <motion.path
+                        d={pathD} fill="none" stroke={dn.color} strokeWidth={1.5} strokeLinecap="round"
+                        initial={{ pathLength: 0, opacity: 0 }}
+                        animate={{ pathLength: 1, opacity: 0.3 }}
+                        transition={{ duration: 0.7, delay: lineDelay, ease: "easeOut" }}
+                      />
+
+                      {[0, 1.5, 3].map((extraDelay, di) => (
+                        <motion.circle
+                          key={`flow-${i}-${di}`}
+                          r={2.5} fill={dn.color}
+                          initial={{ opacity: 0 }}
+                          animate={{
+                            cx: flowCx,
+                            cy: flowCy,
+                            opacity: [0, 0.6, 0.6, 0.6, 0],
+                          }}
+                          transition={{
+                            duration: 2.5,
+                            delay: dotDelay + extraDelay,
+                            repeat: Infinity,
+                            ease: "linear",
+                          }}
+                        />
+                      ))}
+                    </g>
+                  );
+                })}
+
+                <motion.circle
+                  cx={PLOT_CX} cy={PLOT_CY} r={CR}
+                  fill="white" stroke={TEAL} strokeWidth={2.5}
+                  initial={{ opacity: 0, scale: 0.6 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.6, delay: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                  style={{ transformOrigin: `${PLOT_CX}px ${PLOT_CY}px` }}
+                />
+                <motion.circle
+                  cx={PLOT_CX} cy={PLOT_CY} r={CR}
+                  fill="none" stroke={TEAL} strokeWidth={2}
+                  initial={{ opacity: 0.5, scale: 1 }}
+                  animate={{ opacity: 0, scale: 1.4 }}
+                  transition={{ duration: 1.2, delay: 0.8, ease: "easeOut" }}
+                  style={{ transformOrigin: `${PLOT_CX}px ${PLOT_CY}px` }}
+                />
+                <motion.circle
+                  cx={PLOT_CX} cy={PLOT_CY} r={CR + 2}
+                  fill="none" stroke={TEAL} strokeWidth={1.5}
+                  animate={{ opacity: [0, 0.2, 0], scale: [1, 1.15, 1] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+                  style={{ transformOrigin: `${PLOT_CX}px ${PLOT_CY}px` }}
+                />
+                <motion.text
+                  x={PLOT_CX} y={PLOT_CY - 20}
+                  textAnchor="middle"
+                  style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", fill: MUTED, fontFamily: "inherit" }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.4, delay: 0.9 }}
+                >
+                  RECOMMENDED
+                </motion.text>
+                <motion.text
+                  x={PLOT_CX} y={PLOT_CY + 14}
+                  textAnchor="middle"
+                  initial={{ opacity: 0, scale: 0.7 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, delay: 1.0, type: "spring", stiffness: 200 }}
+                  style={{ fontSize: 36, fontWeight: 800, fill: NAVY, fontFamily: "inherit", transformOrigin: `${PLOT_CX}px ${PLOT_CY + 6}px` }}
+                >
+                  $17.50
+                </motion.text>
+                <motion.text
+                  x={PLOT_CX} y={PLOT_CY + 32}
+                  textAnchor="middle"
+                  style={{ fontSize: 10.5, fontWeight: 500, fill: MUTED, fontFamily: "inherit" }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.4, delay: 1.2 }}
+                >
+                  per unit · SKU #A-7200
+                </motion.text>
+              </>
+            );
+          })()}
+
+        </svg>
+        </div>
+
+      </motion.div>
+
+      {/* ── Bottom cards (steps 1-4, hidden at cluster step) ── */}
+      <AnimatePresence>
+        {chartStep >= 1 && !clustered && (
+          <motion.div
+            className="flex flex-wrap justify-center gap-2 w-full px-4"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            transition={{ duration: 0.6, delay: chartStep === 1 ? 0.6 : 0, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {SPOTLIGHTS.map((s, i) => {
+              const d = DRIVERS[s.cluster];
+              const isActive = clustered ? false : i === chartStep - 1;
+              const isRevealed = clustered || i < chartStep;
+              if (!isRevealed) return null;
+              return (
+                <motion.div
+                  key={s.label}
+                  className="relative overflow-hidden rounded-xl border bg-white/95 shadow-sm backdrop-blur-sm"
+                  style={{
+                    borderLeftWidth: 4,
+                    borderLeftColor: d.color,
+                    borderColor: `${d.color}20`,
+                    minWidth: 200,
+                    maxWidth: 260,
+                  }}
+                  initial={{ opacity: 0, y: 12, scale: 0.95 }}
+                  animate={{
+                    opacity: isActive ? 1 : clustered ? 0.9 : 0.55,
+                    y: 0,
+                    scale: 1,
+                  }}
+                  transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                  layout
+                >
+                  {isActive && (
+                    <motion.div
+                      className="absolute top-0 left-0 right-0 h-[2px]"
+                      style={{
+                        background: `linear-gradient(90deg, transparent, ${d.color}40, ${d.color}, ${d.color}40, transparent)`,
+                        backgroundSize: "200% 100%",
+                      }}
+                      animate={{ backgroundPosition: ["200% 0%", "-200% 0%"] }}
+                      transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                    />
+                  )}
+                  <div className="px-2.5 py-1.5">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <div className="relative flex-shrink-0">
+                        {isActive && (
+                          <motion.div
+                            className="absolute inset-0 rounded-full"
+                            style={{ backgroundColor: d.color }}
+                            animate={{ scale: [1, 1.8, 1], opacity: [0.3, 0, 0.3] }}
+                            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                          />
+                        )}
+                        <div className="relative">
+                          <CategoryIcon type={s.icon} color={d.color} size={20} />
+                        </div>
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-[0.68rem] font-bold tracking-[0.06em] uppercase truncate" style={{ color: d.color }}>
+                          {s.label}
+                        </div>
+                        <div className="text-[0.62rem]" style={{ color: MUTED }}>
+                          {s.count}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {s.pills.map((pill, pi) => (
+                        <motion.span
+                          key={pill}
+                          className="rounded-full border px-2 py-px text-[0.62rem] font-medium whitespace-nowrap"
+                          style={{
+                            borderColor: `${d.color}25`,
+                            color: d.color,
+                            backgroundColor: `${d.color}06`,
+                          }}
+                          initial={{ opacity: 0, x: -20, scale: 0.8 }}
+                          animate={{ opacity: isActive ? 1 : clustered ? 0.8 : 0.6, x: 0, scale: 1 }}
+                          transition={{
+                            duration: 0.6,
+                            delay: isActive ? 0.5 + pi * (SWEEP_DURATION / 2 / s.pills.length) : 0,
+                            ease: [0.22, 1, 0.36, 1],
+                          }}
+                        >
+                          {pill}
+                        </motion.span>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Visual area */}
-      <div className="relative w-full flex-1 min-h-0 overflow-hidden">
-        {/* Step 0: Narrative + data category icons */}
-        <AnimatePresence>
-          {step === 0 && (
-            <motion.div
-              key="hero-text"
-              className="absolute inset-0 flex flex-col items-center justify-center gap-8 px-8"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0, y: -20, transition: { duration: 0.3 } }}
-              transition={{ duration: 0.4 }}
-            >
-              <motion.p
-                className="mx-auto max-w-3xl text-center text-lg leading-relaxed sm:text-xl"
-                style={{ color: MUTED }}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-              >
-                A specialty distributor serves
-              </motion.p>
-              <motion.p
-                className="mx-auto max-w-3xl text-center text-3xl font-bold sm:text-4xl"
-                style={{ color: NAVY }}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.25 }}
-              >
-                <span style={{ color: TEAL }}>2,400 accounts</span> ×{" "}
-                <span style={{ color: ORANGE }}>15,000 SKUs</span>
-              </motion.p>
-              <motion.p
-                className="mx-auto max-w-2xl text-center text-lg leading-relaxed sm:text-xl"
-                style={{ color: MUTED }}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-              >
-                Each combination needs a tailored price. The model ingests four categories of data to produce optimized guidance for every deal.
-              </motion.p>
-
-              <motion.div
-                className="flex items-center gap-2 mt-2"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.6 }}
-              >
-                <span className="text-sm font-medium" style={{ color: TEAL }}>
-                  See how the model starts
-                </span>
-                <motion.span
-                  style={{ color: TEAL }}
-                  animate={{ x: [0, 4, 0] }}
-                  transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
-                >
-                  →
-                </motion.span>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Step 1: Input data ingestion */}
-        <AnimatePresence>
-          {showInputs && (
-            <motion.div
-              key="data-ingest"
-              className="absolute inset-0 flex items-start justify-center pt-0"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0, transition: { duration: 0.3 } }}
-              transition={{ duration: 0.3 }}
-            >
-              <div className="flex flex-col items-center justify-center flex-1">
-                <motion.div
-                  className="text-[10px] font-bold uppercase tracking-[0.15em] mb-3"
-                  style={{ color: MUTED }}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.1 }}
-                >
-                  Data Ingestion
-                </motion.div>
-                <TimelineInputs show={showInputs} />
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-      </div>
-
     </div>
   );
 }

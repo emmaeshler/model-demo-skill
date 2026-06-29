@@ -55,7 +55,7 @@ export function ModuleIntroSlide({ number, label, headline, description }: Modul
   }, []);
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-7.5rem)] max-w-5xl flex-col px-6">
+    <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-5xl flex-col px-6">
       {/* ── Breadcrumb stepper (always at top) ── */}
       <motion.div
         className="flex items-center justify-center gap-3 pt-6 pb-4"

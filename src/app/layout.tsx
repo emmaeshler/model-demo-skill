@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Raleway, Geist_Mono } from "next/font/google";
 import { DepthProvider } from "@/lib/depth-context";
+import { ModeProvider } from "@/lib/mode-context";
+import { ViewportAutoZoom } from "@/components/viewport-auto-zoom";
 import "./globals.css";
 
 const raleway = Raleway({
@@ -31,7 +33,12 @@ export default function RootLayout({
       className={`${raleway.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
-        <DepthProvider>{children}</DepthProvider>
+        <ModeProvider>
+          <div id="preview-frame" className="flex flex-1 flex-col">
+            <DepthProvider>{children}</DepthProvider>
+          </div>
+          <ViewportAutoZoom />
+        </ModeProvider>
       </body>
     </html>
   );

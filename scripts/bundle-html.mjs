@@ -118,7 +118,7 @@ const htmlClass = htmlClassMatch ? htmlClassMatch[1] : "";
 
 // ── Step 4: Build the standalone HTML ──
 const html = `<!DOCTYPE html>
-<html lang="en" class="${htmlClass}">
+<html lang="en" class="${htmlClass}" style="overscroll-behavior:none">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />

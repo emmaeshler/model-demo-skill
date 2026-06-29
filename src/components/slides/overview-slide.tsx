@@ -28,9 +28,10 @@ const LINE = MODULES.map((_, i) => ({
   y: LINE_Y,
 }));
 
+const SVG_DELAY = 2.2;
 const STEP_STAGGER = 0.9;
 const TOTAL_ANIM = MODULES.length * STEP_STAGGER;
-const COLLAPSE_DELAY = TOTAL_ANIM + 1.2;
+const COLLAPSE_DELAY = SVG_DELAY + TOTAL_ANIM + 1.2;
 
 const CARD_W = 220;
 const CARD_H = 120;
@@ -56,13 +57,13 @@ export function OverviewSlide({ step }: { step: number }) {
   }, []);
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-7.5rem)] max-w-5xl flex-col items-center justify-center px-6 pt-8">
+    <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-5xl flex-col items-center justify-center px-6 pt-8">
       <motion.span
         className="mb-1 inline-block rounded-full px-3 py-0.5 text-[10px] font-bold tracking-[0.2em] uppercase"
         style={{ backgroundColor: `${NAVY}10`, color: NAVY }}
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
+        initial={{ opacity: 0, scale: 0.85 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
       >
         Overview
       </motion.span>
@@ -70,9 +71,9 @@ export function OverviewSlide({ step }: { step: number }) {
       <motion.h2
         className="text-center text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl"
         style={{ color: NAVY }}
-        initial={{ opacity: 0, y: -12 }}
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.05 }}
+        transition={{ duration: 0.6, delay: 0.6, ease: "easeOut" }}
       >
         Five core pillars of a dynamic pricing model
       </motion.h2>
@@ -85,7 +86,7 @@ export function OverviewSlide({ step }: { step: number }) {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.4 }}
+            transition={{ duration: 0.5, delay: collapsed ? 0 : 1.1 }}
           >
             {collapsed
               ? "Each builds on the last — together they form our formula for a dynamic pricing model."
@@ -94,13 +95,18 @@ export function OverviewSlide({ step }: { step: number }) {
         </AnimatePresence>
       </div>
 
-      <div className="relative w-full flex-1 min-h-0 mt-1">
+      <motion.div
+        className="relative w-full flex-1 min-h-0 mt-1"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8, delay: 2.2 }}
+      >
         <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} className="w-full h-full">
           {/* Connecting arrows between adjacent steps */}
           {MODULES.slice(0, -1).map((m, i) => {
             const x1 = LINE[i].x + R + 6;
             const x2 = LINE[i + 1].x - R - 6;
-            const arrowDelay = i * STEP_STAGGER + 0.7;
+            const arrowDelay = SVG_DELAY + i * STEP_STAGGER + 0.7;
             return (
               <motion.g key={`arrow-${i}`}>
                 <motion.line
@@ -137,7 +143,7 @@ export function OverviewSlide({ step }: { step: number }) {
           {/* Module circles, numbers, labels, subtitles — collapse to center */}
           {MODULES.map((m, i) => {
             const pos = LINE[i];
-            const delay = i * STEP_STAGGER;
+            const delay = SVG_DELAY + i * STEP_STAGGER;
             return (
               <motion.g key={m.label}>
                 <motion.circle
@@ -318,7 +324,7 @@ export function OverviewSlide({ step }: { step: number }) {
             );
           })}
         </svg>
-      </div>
+      </motion.div>
     </div>
   );
 }

@@ -209,7 +209,7 @@ export function StaticVsDynamicSlide() {
   const [isDynamic, setIsDynamic] = useState(false);
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-7.5rem)] max-w-5xl flex-col items-center justify-center gap-6 px-6">
+    <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-5xl flex-col items-center justify-center gap-6 px-6">
       <motion.h2
         className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
         initial={{ opacity: 0, y: -12 }}

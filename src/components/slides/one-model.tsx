@@ -4,14 +4,11 @@ import { Fragment, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const NAVY = "#00446A";
-const ORANGE = "#E56910";
 const TEAL = "#21A5D5";
-const GREEN = "#2e7d32";
-const FEEDBACK = "#8A9AAA";
-const PURPLE = "#7B5EA7";
+const ML_GREEN = "#3A7D44";
+const STRAT_BLUE = "#2A7BA5";
 
-// Steps: 0=all-inputs, 1=outputs
-export const ONE_MODEL_TOTAL_STEPS = 2;
+export const ONE_MODEL_TOTAL_STEPS = 5;
 
 interface NarrativeSegment {
   text: string;
@@ -21,28 +18,45 @@ interface NarrativeSegment {
 }
 
 const STEP_NARRATIVES: Record<number, NarrativeSegment[]> = {
-  0: [{ text: "We intentionally integrate " }, { text: "four core components", bold: true, underline: true, color: NAVY }, { text: "." }],
-  1: [{ text: "The model produces " }, { text: "evidence-based pricing guidance", bold: true, underline: true, color: PURPLE }, { text: "." }],
-  2: [{ text: "Outcomes " }, { text: "feed back", bold: true, underline: true, color: FEEDBACK }, { text: " — the model " }, { text: "learns and refines", bold: true, color: NAVY }, { text: ", tightening precision with every cycle." }],
+  0: [
+    { text: "It starts with " },
+    { text: "machine learning", bold: true, underline: true, color: ML_GREEN },
+    { text: " — learning patterns from your data." },
+  ],
+  1: [
+    { text: "Then layer in " },
+    { text: "strategic guidance", bold: true, underline: true, color: STRAT_BLUE },
+    { text: " — your expertise encoded as rules." },
+  ],
+  2: [
+    { text: "Together, they form a " },
+    { text: "single unified pricing engine", bold: true, underline: true, color: NAVY },
+    { text: "." },
+  ],
+  3: [
+    { text: "We integrate " },
+    { text: "internal knowledge", bold: true, underline: true, color: NAVY },
+    { text: " with " },
+    { text: "environmental signals", bold: true, underline: true, color: TEAL },
+    { text: "." },
+  ],
+  4: [
+    { text: "We integrate " },
+    { text: "internal knowledge", bold: true, underline: true, color: NAVY },
+    { text: " with " },
+    { text: "environmental signals", bold: true, underline: true, color: TEAL },
+    { text: "." },
+  ],
 };
-
-const DIMMED_STEPS = new Set<number>();
-const PROMINENT_TEXT_STEPS = new Set([0, 1, 2]);
-
-/* ── Narrative with animated highlight ───────────────────── */
 
 function HighlightNarrative({ segments, isActive }: { segments: NarrativeSegment[]; isActive: boolean }) {
   return (
     <span>
       {segments.map((seg, si) => {
-        if (!seg.bold) {
-          return <span key={si}>{seg.text}</span>;
-        }
+        if (!seg.bold) return <span key={si}>{seg.text}</span>;
         return (
           <span key={si} className="relative inline">
-            <span style={{ fontWeight: 700, color: seg.color || NAVY }}>
-              {seg.text}
-            </span>
+            <span style={{ fontWeight: 700, color: seg.color || NAVY }}>{seg.text}</span>
             {seg.underline && isActive && (
               <motion.span
                 className="absolute bottom-0 left-0 h-[2px] rounded-full"
@@ -59,83 +73,189 @@ function HighlightNarrative({ segments, isActive }: { segments: NarrativeSegment
   );
 }
 
-/* ── Layout constants ──────────────────────────────────── */
-
-const SVG_W = 1000;
-const SVG_H = 430;
-
-const MODEL_X = 420;
-const MODEL_Y = 110;
-const MODEL_W = 200;
-const MODEL_H = 160;
-const MODEL_CX = MODEL_X + MODEL_W / 2;
-const MODEL_CY = MODEL_Y + MODEL_H / 2;
-const CONVERGE_X = MODEL_X - 6;
-const DIVERGE_X = MODEL_X + MODEL_W + 6;
-
-/* ── Input cards ─────────────────────────────────────── */
-
-const INPUT_CARD_W = 280;
-const INPUT_CARD_H = 68;
-const INPUT_CARD_X = 10;
-
-interface StreamConfig {
-  label: string;
-  subtitle: string;
-  color: string;
-  startY: number;
+function ChartIcon({ size = 36 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <rect x="4" y="18" width="6" height="10" rx="1.5" fill={ML_GREEN} opacity={0.3} />
+      <rect x="13" y="10" width="6" height="18" rx="1.5" fill={ML_GREEN} opacity={0.5} />
+      <rect x="22" y="4" width="6" height="24" rx="1.5" fill={ML_GREEN} opacity={0.8} />
+    </svg>
+  );
 }
 
-const INPUTS: StreamConfig[] = [
-  { label: "Internal Historical Data", subtitle: "Transaction, customer, and offering history for an empirical foundation", color: NAVY, startY: 22 },
-  { label: "External Environmental Data", subtitle: "Market sentiment, macro signals, and externally observed evidence", color: TEAL, startY: 112 },
-  { label: "Industry Expertise", subtitle: "Benchmarks, key drivers, and paradigms that guide strategic architecture", color: ORANGE, startY: 202 },
-  { label: "In-House Knowledge", subtitle: "Grounded in business realities and objectives to shape purposeful outcomes", color: GREEN, startY: 292 },
+function CompassIcon({ size = 36 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="16" r="13" stroke={STRAT_BLUE} strokeWidth="1.8" fill={STRAT_BLUE} fillOpacity={0.06} />
+      <polygon points="16,6 18.5,14.5 16,13 13.5,14.5" fill={STRAT_BLUE} opacity={0.7} />
+      <polygon points="16,26 13.5,17.5 16,19 18.5,17.5" fill={STRAT_BLUE} opacity={0.3} />
+      <circle cx="16" cy="16" r="2" fill={STRAT_BLUE} opacity={0.5} />
+    </svg>
+  );
+}
+
+const BAR_DATA = [
+  { h: 45, delay: 0.3 },
+  { h: 72, delay: 0.45 },
+  { h: 58, delay: 0.6 },
+  { h: 90, delay: 0.75 },
+  { h: 65, delay: 0.9 },
+  { h: 82, delay: 1.05 },
+  { h: 50, delay: 1.2 },
 ];
 
-/* ── Output cards ────────────────────────────────────── */
+function MLVisualization() {
+  const chartH = 110;
+  const barW = 16;
+  const gap = 7;
+  const totalW = BAR_DATA.length * (barW + gap) - gap;
 
-const OUTPUT_CARD_W = 200;
-const OUTPUT_CARD_H = 52;
-const OUTPUT_CARD_X = 760;
-
-interface OutputConfig {
-  label: string;
-  subtitle: string;
-  color: string;
-  endY: number;
+  return (
+    <svg width={totalW + 20} height={chartH + 25} viewBox={`0 0 ${totalW + 20} ${chartH + 25}`} className="mx-auto">
+      <motion.line
+        x1={8} y1={chartH + 5} x2={totalW + 12} y2={chartH + 5}
+        stroke={ML_GREEN} strokeWidth={1.5} opacity={0.3}
+        initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+      />
+      {BAR_DATA.map((bar, i) => (
+        <motion.rect
+          key={i} x={10 + i * (barW + gap)} width={barW} rx={3} fill={ML_GREEN}
+          initial={{ y: chartH + 5, height: 0, opacity: 0 }}
+          animate={{ y: chartH + 5 - bar.h, height: bar.h, opacity: [0, 0.3, 0.5, 0.7] }}
+          transition={{ duration: 0.6, delay: bar.delay, ease: "easeOut" }}
+        />
+      ))}
+      <motion.path
+        d={`M 18 ${chartH + 5 - 38} C 55 ${chartH + 5 - 52}, 95 ${chartH + 5 - 70}, ${totalW} ${chartH + 5 - 76}`}
+        fill="none" stroke={ML_GREEN} strokeWidth={2.5} strokeLinecap="round"
+        initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 0.8 }}
+        transition={{ duration: 1, delay: 1.4, ease: "easeOut" }}
+      />
+      {[
+        { cx: 18, cy: chartH + 5 - 38, d: 1.6 },
+        { cx: 55, cy: chartH + 5 - 52, d: 1.8 },
+        { cx: 95, cy: chartH + 5 - 65, d: 2.0 },
+        { cx: totalW, cy: chartH + 5 - 76, d: 2.2 },
+      ].map((dot, i) => (
+        <motion.circle
+          key={i} cx={dot.cx} cy={dot.cy} r={3}
+          fill="white" stroke={ML_GREEN} strokeWidth={2}
+          initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3, delay: dot.d }}
+        />
+      ))}
+    </svg>
+  );
 }
 
-const OUTPUTS: OutputConfig[] = [
-  { label: "Optimal Price", subtitle: "Scenario-specific guidance", color: PURPLE, endY: 30 },
-  { label: "Win Probability", subtitle: "Likelihood at recommended price", color: PURPLE, endY: 120 },
-  { label: "Margin Impact", subtitle: "Projected uplift vs. current", color: PURPLE, endY: 210 },
-  { label: "Confidence Score", subtitle: "Statistical certainty range", color: PURPLE, endY: 300 },
+function StratVisualization() {
+  const W = 190;
+  const H = 140;
+  const nodeR = 6;
+  const root = { x: W / 2, y: 16 };
+  const L1 = [{ x: 48, y: 58 }, { x: W - 48, y: 58 }];
+  const L2 = [{ x: 20, y: 100 }, { x: 72, y: 100 }, { x: W - 72, y: 100 }, { x: W - 20, y: 100 }];
+
+  const branches = [
+    { from: root, to: L1[0], delay: 0.5 }, { from: root, to: L1[1], delay: 0.65 },
+    { from: L1[0], to: L2[0], delay: 0.9 }, { from: L1[0], to: L2[1], delay: 1.0 },
+    { from: L1[1], to: L2[2], delay: 1.1 }, { from: L1[1], to: L2[3], delay: 1.2 },
+  ];
+
+  const allNodes = [
+    { ...root, delay: 0.3, size: 8 },
+    { ...L1[0], delay: 0.7, size: nodeR }, { ...L1[1], delay: 0.85, size: nodeR },
+    { ...L2[0], delay: 1.1, size: 5 }, { ...L2[1], delay: 1.2, size: 5 },
+    { ...L2[2], delay: 1.3, size: 5 }, { ...L2[3], delay: 1.4, size: 5 },
+  ];
+
+  return (
+    <svg width={W} height={H + 20} viewBox={`0 0 ${W} ${H + 20}`} className="mx-auto">
+      {branches.map((b, i) => (
+        <motion.path
+          key={i}
+          d={`M ${b.from.x} ${b.from.y + nodeR} Q ${b.from.x} ${(b.from.y + b.to.y) / 2 + 4}, ${b.to.x} ${b.to.y - nodeR}`}
+          fill="none" stroke={STRAT_BLUE} strokeWidth={1.5} strokeLinecap="round"
+          initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 0.35 }}
+          transition={{ duration: 0.45, delay: b.delay, ease: "easeOut" }}
+        />
+      ))}
+      {allNodes.map((n, i) => (
+        <motion.g key={i} initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3, delay: n.delay, ease: "easeOut" }}>
+          <circle cx={n.x} cy={n.y} r={n.size} fill={`${STRAT_BLUE}15`} stroke={STRAT_BLUE} strokeWidth={1.5} />
+          <circle cx={n.x} cy={n.y} r={n.size * 0.4} fill={STRAT_BLUE} opacity={0.5} />
+        </motion.g>
+      ))}
+      <motion.path
+        d={`M ${root.x} ${root.y + 8} Q ${root.x} ${(root.y + L1[1].y) / 2 + 4}, ${L1[1].x} ${L1[1].y - nodeR}`}
+        fill="none" stroke={STRAT_BLUE} strokeWidth={2.5} strokeLinecap="round"
+        initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 0.6 }}
+        transition={{ duration: 0.6, delay: 1.6, ease: "easeOut" }}
+      />
+      <motion.path
+        d={`M ${L1[1].x} ${L1[1].y + nodeR} Q ${L1[1].x} ${(L1[1].y + L2[2].y) / 2 + 4}, ${L2[2].x} ${L2[2].y - 5}`}
+        fill="none" stroke={STRAT_BLUE} strokeWidth={2.5} strokeLinecap="round"
+        initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 0.6 }}
+        transition={{ duration: 0.5, delay: 2.0, ease: "easeOut" }}
+      />
+      <motion.circle cx={L2[2].x} cy={L2[2].y} r={9} fill="none" stroke={STRAT_BLUE} strokeWidth={2}
+        initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: [0, 0.5, 0.3], scale: [0.5, 1.2, 1] }}
+        transition={{ duration: 0.6, delay: 2.3, ease: "easeOut" }}
+      />
+    </svg>
+  );
+}
+
+function BulletList({ items, color, baseDelay }: { items: string[]; color: string; baseDelay: number }) {
+  return (
+    <div className="flex flex-col gap-1.5 mt-2">
+      {items.map((point, i) => (
+        <motion.div key={i} className="flex items-center gap-2 text-[13px]" style={{ color: "#4A5568" }}
+          initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.35, delay: baseDelay + i * 0.18 }}>
+          <span className="inline-block w-1.5 h-1.5 rounded-full flex-shrink-0"
+            style={{ backgroundColor: color, opacity: 0.5 }} />
+          {point}
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
+function ConceptPanel({ title, subtitle, color, icon, bullets, visualization, bulletDelay }: {
+  title: string; subtitle: string; color: string; icon: React.ReactNode;
+  bullets: string[]; visualization: React.ReactNode; bulletDelay: number;
+}) {
+  return (
+    <div className="flex flex-col items-center text-center h-full">
+      <div className="mb-2">{icon}</div>
+      <h3 className="text-lg font-bold" style={{ color }}>{title}</h3>
+      <p className="text-xs mt-0.5 mb-3" style={{ color: "#6B7280" }}>{subtitle}</p>
+      <div className="h-[140px] flex items-center justify-center">{visualization}</div>
+      <BulletList items={bullets} color={color} baseDelay={bulletDelay} />
+    </div>
+  );
+}
+
+const ML_BULLETS = [
+  "Learns from historical win/loss patterns",
+  "Models price elasticity across segments",
+  "Generates probability-weighted forecasts",
 ];
 
-const OUTPUT_STAGGER_DELAY = 0.7;
-const OUTPUT_BASE_DELAY = 0.3;
+const STRAT_BULLETS = [
+  "Encodes competitive positioning rules",
+  "Applies business objectives and constraints",
+  "Adjusts for market-specific dynamics",
+];
 
-/* ── Bezier helpers ────────────────────────────────────── */
-
-function inputCurvePath(startY: number): string {
-  const sx = INPUT_CARD_X + INPUT_CARD_W + 2;
-  const sy = startY + INPUT_CARD_H / 2;
-  return `M ${sx} ${sy} C ${sx + 80} ${sy}, ${CONVERGE_X - 60} ${MODEL_CY}, ${CONVERGE_X} ${MODEL_CY}`;
-}
-
-function outputCurvePath(endY: number): string {
-  const ex = OUTPUT_CARD_X - 2;
-  const ey = endY + OUTPUT_CARD_H / 2;
-  return `M ${DIVERGE_X} ${MODEL_CY} C ${DIVERGE_X + 60} ${MODEL_CY}, ${ex - 80} ${ey}, ${ex} ${ey}`;
-}
+/* ── Bezier helpers for flow dots ── */
 
 function sampleCubicBezier(
-  sx: number, sy: number,
-  cp1x: number, cp1y: number,
-  cp2x: number, cp2y: number,
-  ex: number, ey: number,
-  steps: number,
+  sx: number, sy: number, cp1x: number, cp1y: number,
+  cp2x: number, cp2y: number, ex: number, ey: number, steps: number,
 ) {
   const cxArr: number[] = [];
   const cyArr: number[] = [];
@@ -148,504 +268,454 @@ function sampleCubicBezier(
   return { cxArr, cyArr };
 }
 
-/* ── Animated dot component ────────────────────────────── */
-
-function FlowDot({
-  path,
-  color,
-  delay,
-}: {
+function FlowDot({ path, color, delay }: {
   path: { sx: number; sy: number; cp1x: number; cp1y: number; cp2x: number; cp2y: number; ex: number; ey: number };
-  color: string;
-  delay: number;
+  color: string; delay: number;
 }) {
   const { cxArr, cyArr } = sampleCubicBezier(
     path.sx, path.sy, path.cp1x, path.cp1y, path.cp2x, path.cp2y, path.ex, path.ey, 50,
   );
-
   return (
-    <motion.circle
-      r={3}
-      fill={color}
-      initial={{ opacity: 0 }}
-      animate={{
-        cx: cxArr,
-        cy: cyArr,
-        opacity: [0, 0.5, 0.5, 0.5, 0],
-      }}
+    <motion.circle r={3} fill={color} initial={{ opacity: 0 }}
+      animate={{ cx: cxArr, cy: cyArr, opacity: [0, 0.5, 0.5, 0.5, 0] }}
       transition={{ duration: 4.5, delay, repeat: Infinity, ease: "linear" }}
     />
   );
 }
 
-/* ── Price feedback cycle ─────────────────────────────── */
+function UnifiedModelVisualization({ showInputs }: { showInputs: boolean }) {
+  const W = 920;
+  const H = 340;
+  const CX = W / 2;
+  const CY = 170;
+  const R = 85;
+  const GAP = 4;
 
-interface PriceState {
-  price: string;
-  subtitle: string;
-}
+  const animate = !showInputs;
+  const split = 2.4;
+  const settle = split + 0.8;
 
-const PRICE_CYCLE: PriceState[] = [
-  { price: "$18.50 / unit", subtitle: "Initial recommendation across all segments" },
-  { price: "$19.80 / unit", subtitle: "Adjusted after win-rate patterns" },
-  { price: "$19.25 / unit", subtitle: "Refined with competitive signals" },
-];
+  const CARD_W = 210;
+  const CARD_H = 54;
+  const LEFT_X = 30;
+  const RIGHT_X = W - 30 - CARD_W;
+  const CARD_1_Y = CY - CARD_H - 14;
+  const CARD_2_Y = CY + 14;
+  const ML_OFFSET = 50;
+  const STRAT_OFFSET = 50;
+  const EDGE_LEFT_ML = CX - Math.round(Math.sqrt(R * R - ML_OFFSET * ML_OFFSET));
+  const EDGE_LEFT_STRAT = CX - Math.round(Math.sqrt(R * R - STRAT_OFFSET * STRAT_OFFSET));
+  const EDGE_RIGHT_ML = CX + Math.round(Math.sqrt(R * R - ML_OFFSET * ML_OFFSET));
+  const EDGE_RIGHT_STRAT = CX + Math.round(Math.sqrt(R * R - STRAT_OFFSET * STRAT_OFFSET));
 
-const PRICE_CYCLE_MS = 3500;
+  const INTERNAL = [
+    { label: "Internal Historical Data", subtitle: "Transaction, customer, and offering history", y: CARD_1_Y, targetY: CY - ML_OFFSET, edgeX: EDGE_LEFT_ML },
+    { label: "In-House Knowledge", subtitle: "Business realities and strategic objectives", y: CARD_2_Y, targetY: CY + STRAT_OFFSET, edgeX: EDGE_LEFT_STRAT },
+  ];
 
-/* ── Timeline feedback layout ──────────────────────────── */
+  const ENVIRONMENTAL = [
+    { label: "External Environmental Data", subtitle: "Market sentiment and macro signals", y: CARD_1_Y, targetY: CY - ML_OFFSET, edgeX: EDGE_RIGHT_ML },
+    { label: "Industry Expertise", subtitle: "Benchmarks, key drivers, and paradigms", y: CARD_2_Y, targetY: CY + STRAT_OFFSET, edgeX: EDGE_RIGHT_STRAT },
+  ];
 
-const TL_Y = 200;
-const TL_LEFT = 80;
-const TL_RIGHT = 920;
-const TL_STEP_POSITIONS = [
-  { x: 140, label: "Price Set", subtitle: "Model recommends", color: TEAL, num: "1" },
-  { x: 390, label: "Market Tests", subtitle: "Deployed to deals", color: NAVY, num: "2" },
-  { x: 640, label: "Outcomes Observed", subtitle: "Win/loss data collected", color: ORANGE, num: "3" },
-  { x: 870, label: "Model Re-learns", subtitle: "Precision tightens", color: NAVY, num: "4" },
-];
-
-/* ── Input card (SVG) — title + subtitle ───────────────── */
-
-const GREY = "#B8BFC6";
-
-function InputCard({ inp, visible, enterDelay, opacity, greyed }: { inp: StreamConfig; visible: boolean; enterDelay?: number; opacity?: number; greyed?: boolean }) {
-  const cx = INPUT_CARD_X + INPUT_CARD_W / 2;
-  const targetOpacity = opacity !== undefined ? opacity : visible ? 1 : 0;
-  const strokeColor = greyed ? GREY : inp.color;
-  const textColor = greyed ? GREY : inp.color;
   return (
-    <motion.g
-      initial={enterDelay !== undefined ? { opacity: 0, x: -40 } : undefined}
-      animate={{ opacity: targetOpacity, x: 0 }}
-      transition={{ duration: 0.6, delay: visible && enterDelay !== undefined ? enterDelay : 0, ease: "easeOut" }}
-    >
-      <motion.rect
-        x={INPUT_CARD_X}
-        y={inp.startY}
-        width={INPUT_CARD_W}
-        height={INPUT_CARD_H}
-        rx={10}
-        fill="white"
-        animate={{ stroke: strokeColor }}
-        transition={{ duration: 0.4 }}
-        strokeWidth={1.2}
-      />
-      <motion.text
-        x={cx}
-        y={inp.startY + 18}
-        fontSize="13"
-        fontWeight="700"
-        animate={{ fill: textColor }}
-        transition={{ duration: 0.4 }}
-        textAnchor="middle"
-      >
-        {inp.label}
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-full max-h-[400px]">
+      <defs>
+        <clipPath id="m-top"><circle cx={CX} cy={CY - GAP / 2} r={R} /></clipPath>
+        <clipPath id="m-bot"><circle cx={CX} cy={CY + GAP / 2} r={R} /></clipPath>
+        <clipPath id="m-top-half"><rect x={0} y={0} width={W} height={CY} /></clipPath>
+        <clipPath id="m-bot-half"><rect x={0} y={CY} width={W} height={H} /></clipPath>
+      </defs>
+
+      {/* Dark navy circle — initial state (only during merge animation) */}
+      {animate && (
+        <>
+          <motion.circle cx={CX} cy={CY} r={R} fill={NAVY}
+            initial={{ scale: 0.85, opacity: 0 }}
+            animate={{ scale: 1, opacity: [0, 1, 1, 0] }}
+            transition={{ duration: split, times: [0, 0.15, 0.8, 1], ease: "easeOut" }}
+            style={{ transformOrigin: `${CX}px ${CY}px` }}
+          />
+          <motion.text x={CX} y={CY - 4} fontSize="16" fontWeight="700" fill="white" textAnchor="middle"
+            initial={{ opacity: 0 }} animate={{ opacity: [0, 1, 1, 0] }}
+            transition={{ duration: split, times: [0, 0.2, 0.8, 1] }}>
+            Pricing Model
+          </motion.text>
+          <motion.text x={CX} y={CY + 16} fontSize="10.5" fill="rgba(255,255,255,0.7)" textAnchor="middle"
+            initial={{ opacity: 0 }} animate={{ opacity: [0, 0.8, 0.8, 0] }}
+            transition={{ duration: split, times: [0, 0.25, 0.8, 1] }}>
+            One unified engine
+          </motion.text>
+
+          {/* ML flies in from left */}
+          <motion.g initial={{ opacity: 0 }} animate={{ opacity: [0, 0.9, 0.9, 0] }}
+            transition={{ duration: 1.4, delay: 0.8, times: [0, 0.15, 0.7, 1] }}>
+            <motion.g initial={{ x: -140 }} animate={{ x: 0 }}
+              transition={{ duration: 0.9, delay: 0.8, ease: [0.16, 1, 0.3, 1] }}>
+              <foreignObject x={CX - R - 80} y={CY - 18} width={36} height={36}>
+                <ChartIcon size={36} />
+              </foreignObject>
+              <text x={CX - R - 62} y={CY + 28} fontSize="11" fontWeight="700" fill={ML_GREEN} textAnchor="middle">
+                ML Prediction
+              </text>
+            </motion.g>
+          </motion.g>
+
+          {/* Strategy flies in from right */}
+          <motion.g initial={{ opacity: 0 }} animate={{ opacity: [0, 0.9, 0.9, 0] }}
+            transition={{ duration: 1.4, delay: 1.0, times: [0, 0.15, 0.7, 1] }}>
+            <motion.g initial={{ x: 140 }} animate={{ x: 0 }}
+              transition={{ duration: 0.9, delay: 1.0, ease: [0.16, 1, 0.3, 1] }}>
+              <foreignObject x={CX + R + 44} y={CY - 18} width={36} height={36}>
+                <CompassIcon size={36} />
+              </foreignObject>
+              <text x={CX + R + 62} y={CY + 28} fontSize="11" fontWeight="700" fill={STRAT_BLUE} textAnchor="middle">
+                Strategic Guidance
+              </text>
+            </motion.g>
+          </motion.g>
+        </>
+      )}
+
+      {/* Top half — green (ML) */}
+      <g clipPath="url(#m-top-half)">
+        <g clipPath="url(#m-top)">
+          <motion.circle cx={CX} cy={CY - GAP / 2} r={R} fill="#D5E6D0"
+            initial={animate ? { opacity: 0 } : { opacity: 1 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: animate ? split : 0 }}
+          />
+        </g>
+      </g>
+
+      {/* Bottom half — blue (Strategic) */}
+      <g clipPath="url(#m-bot-half)">
+        <g clipPath="url(#m-bot)">
+          <motion.circle cx={CX} cy={CY + GAP / 2} r={R} fill="#D4E8F0"
+            initial={animate ? { opacity: 0 } : { opacity: 1 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: animate ? split : 0 }}
+          />
+        </g>
+      </g>
+
+      {/* Half labels */}
+      <motion.text x={CX} y={CY - 24} fontSize="14" fontWeight="700" fill={ML_GREEN} textAnchor="middle"
+        initial={animate ? { opacity: 0 } : { opacity: 1 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: animate ? settle : 0, duration: 0.4 }}>
+        ML Prediction
       </motion.text>
-      <foreignObject
-        x={INPUT_CARD_X + 10}
-        y={inp.startY + 26}
-        width={INPUT_CARD_W - 20}
-        height={INPUT_CARD_H - 30}
-      >
-        <p
-          style={{
-            fontSize: 11,
-            lineHeight: 1.35,
-            color: greyed ? GREY : "#4A5568",
-            margin: 0,
-            textAlign: "center",
-            fontFamily: "system-ui, -apple-system, sans-serif",
-          }}
-        >
-          {inp.subtitle}
-        </p>
-      </foreignObject>
-    </motion.g>
+      <motion.text x={CX} y={CY + 34} fontSize="14" fontWeight="700" fill={STRAT_BLUE} textAnchor="middle"
+        initial={animate ? { opacity: 0 } : { opacity: 1 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: animate ? settle + 0.1 : 0, duration: 0.4 }}>
+        Strategic Guidance
+      </motion.text>
+
+      {/* "PRICING MODEL" below */}
+      <motion.text x={CX} y={CY + R + 28} fontSize="11" fontWeight="700" letterSpacing="0.14em"
+        fill={NAVY} textAnchor="middle"
+        initial={animate ? { opacity: 0, y: CY + R + 20 } : { opacity: 1, y: CY + R + 28 }}
+        animate={{ opacity: 1, y: CY + R + 28 }}
+        transition={{ delay: animate ? settle + 0.15 : 0, duration: 0.4, ease: "easeOut" }}>
+        PRICING MODEL
+      </motion.text>
+
+      {/* Pulsing glow */}
+      <motion.circle cx={CX} cy={CY - GAP / 2} r={R + 4} fill="none" stroke={ML_GREEN} strokeWidth={1.5}
+        clipPath="url(#m-top-half)"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: [0, 0.15, 0.3, 0.15] }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: animate ? settle + 0.5 : 0.5 }}
+      />
+      <motion.circle cx={CX} cy={CY + GAP / 2} r={R + 4} fill="none" stroke={STRAT_BLUE} strokeWidth={1.5}
+        clipPath="url(#m-bot-half)"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: [0, 0.15, 0.3, 0.15] }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: animate ? settle + 0.5 : 0.5 }}
+      />
+
+      {/* ── Input cards (only when showInputs) ── */}
+      {showInputs && (
+        <>
+          {/* Left side — INTERNAL (appears first) */}
+          <motion.text x={LEFT_X} y={CARD_1_Y - 10} fontSize="10" fontWeight="600" letterSpacing="0.12em" fill={NAVY}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15, duration: 0.4 }}>
+            INTERNAL
+          </motion.text>
+          {INTERNAL.map((inp, i) => {
+            const sx = LEFT_X + CARD_W + 2;
+            const sy = inp.y + CARD_H / 2;
+            const tx = inp.edgeX;
+            const ty = inp.targetY;
+            const cardColor = i === 0 ? ML_GREEN : STRAT_BLUE;
+            const lineColor = i === 0 ? ML_GREEN : STRAT_BLUE;
+            const d = `M ${sx} ${sy} C ${sx + 50} ${sy}, ${tx - 40} ${ty}, ${tx} ${ty}`;
+            const pathParams = { sx, sy, cp1x: sx + 50, cp1y: sy, cp2x: tx - 40, cp2y: ty, ex: tx, ey: ty };
+            return (
+              <Fragment key={inp.label}>
+                <motion.g initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}>
+                  <rect x={LEFT_X} y={inp.y} width={CARD_W} height={CARD_H} rx={10} fill="white" stroke={cardColor} strokeWidth={1.2} />
+                  <text x={LEFT_X + CARD_W / 2} y={inp.y + 22} fontSize="12" fontWeight="700" fill={cardColor} textAnchor="middle">{inp.label}</text>
+                  <foreignObject x={LEFT_X + 10} y={inp.y + 27} width={CARD_W - 20} height={CARD_H - 30}>
+                    <p style={{ fontSize: 10, lineHeight: 1.3, color: "#4A5568", margin: 0, textAlign: "center", fontFamily: "system-ui, -apple-system, sans-serif" }}>{inp.subtitle}</p>
+                  </foreignObject>
+                </motion.g>
+                <motion.path d={d} fill="none" stroke={lineColor} strokeWidth={1.5} strokeLinecap="round"
+                  initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 0.35 }}
+                  transition={{ duration: 0.7, delay: 0.7, ease: "easeOut" }}
+                />
+                <FlowDot path={pathParams} color={lineColor} delay={1.4} />
+              </Fragment>
+            );
+          })}
+
+          {/* Right side — ENVIRONMENTAL (appears second) */}
+          <motion.text x={RIGHT_X + CARD_W} y={CARD_1_Y - 10} fontSize="10" fontWeight="600" letterSpacing="0.12em" fill={TEAL} textAnchor="end"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2, duration: 0.4 }}>
+            ENVIRONMENTAL
+          </motion.text>
+          {ENVIRONMENTAL.map((inp, i) => {
+            const sx = RIGHT_X - 2;
+            const sy = inp.y + CARD_H / 2;
+            const tx = inp.edgeX;
+            const ty = inp.targetY;
+            const cardColor = i === 0 ? ML_GREEN : STRAT_BLUE;
+            const lineColor = i === 0 ? ML_GREEN : STRAT_BLUE;
+            const d = `M ${sx} ${sy} C ${sx - 50} ${sy}, ${tx + 40} ${ty}, ${tx} ${ty}`;
+            const pathParams = { sx, sy, cp1x: sx - 50, cp1y: sy, cp2x: tx + 40, cp2y: ty, ex: tx, ey: ty };
+            return (
+              <Fragment key={inp.label}>
+                <motion.g initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5, delay: 1.3, ease: "easeOut" }}>
+                  <rect x={RIGHT_X} y={inp.y} width={CARD_W} height={CARD_H} rx={10} fill="white" stroke={cardColor} strokeWidth={1.2} />
+                  <text x={RIGHT_X + CARD_W / 2} y={inp.y + 22} fontSize="12" fontWeight="700" fill={cardColor} textAnchor="middle">{inp.label}</text>
+                  <foreignObject x={RIGHT_X + 10} y={inp.y + 27} width={CARD_W - 20} height={CARD_H - 30}>
+                    <p style={{ fontSize: 10, lineHeight: 1.3, color: "#4A5568", margin: 0, textAlign: "center", fontFamily: "system-ui, -apple-system, sans-serif" }}>{inp.subtitle}</p>
+                  </foreignObject>
+                </motion.g>
+                <motion.path d={d} fill="none" stroke={lineColor} strokeWidth={1.5} strokeLinecap="round"
+                  initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 0.35 }}
+                  transition={{ duration: 0.7, delay: 1.8, ease: "easeOut" }}
+                />
+                <FlowDot path={pathParams} color={lineColor} delay={2.5} />
+              </Fragment>
+            );
+          })}
+        </>
+      )}
+    </svg>
   );
 }
-
-/* ── Output card ──────────────────────────────────────── */
-
-function OutputCard({ out, visible, enterDelay, opacity, greyed }: { out: OutputConfig; visible: boolean; enterDelay?: number; opacity?: number; greyed?: boolean }) {
-  const cx = OUTPUT_CARD_X + OUTPUT_CARD_W / 2;
-  const cy = out.endY + OUTPUT_CARD_H / 2;
-  const targetOpacity = opacity !== undefined ? opacity : visible ? 1 : 0;
-  const strokeColor = greyed ? GREY : out.color;
-  const textColor = greyed ? GREY : out.color;
-  return (
-    <motion.g
-      initial={enterDelay !== undefined ? { opacity: 0, x: 40 } : undefined}
-      animate={{ opacity: targetOpacity, x: 0 }}
-      transition={{ duration: 0.6, delay: visible && enterDelay !== undefined ? enterDelay : 0, ease: "easeOut" }}
-    >
-      <motion.rect
-        x={OUTPUT_CARD_X}
-        y={out.endY}
-        width={OUTPUT_CARD_W}
-        height={OUTPUT_CARD_H}
-        rx={10}
-        fill="white"
-        animate={{ stroke: strokeColor }}
-        transition={{ duration: 0.4 }}
-        strokeWidth={1.2}
-      />
-      <motion.text
-        x={cx}
-        y={cy - 5}
-        fontSize="14"
-        fontWeight="700"
-        animate={{ fill: textColor }}
-        transition={{ duration: 0.4 }}
-        textAnchor="middle"
-      >
-        {out.label}
-      </motion.text>
-      <foreignObject
-        x={OUTPUT_CARD_X + 10}
-        y={out.endY + 26}
-        width={OUTPUT_CARD_W - 20}
-        height={OUTPUT_CARD_H - 30}
-      >
-        <p
-          style={{
-            fontSize: 11,
-            lineHeight: 1.35,
-            color: greyed ? GREY : "#4A5568",
-            margin: 0,
-            textAlign: "center",
-            fontFamily: "system-ui, -apple-system, sans-serif",
-          }}
-        >
-          {out.subtitle}
-        </p>
-      </foreignObject>
-    </motion.g>
-  );
-}
-
-/* ── Main slide ────────────────────────────────────────── */
 
 interface OneModelSlideProps {
   step: number;
   onAutoAdvance?: () => void;
 }
 
-export function OneModelSlide({ step, onAutoAdvance }: OneModelSlideProps) {
-  const [priceCycle, setPriceCycle] = useState(0);
-
-  const isDimmed = DIMMED_STEPS.has(step);
-  const isProminentText = PROMINENT_TEXT_STEPS.has(step);
-  const visibleInputCount = step >= 0 ? 4 : 0;
-  const allInputsEntering = step === 0;
-  const allInputsVisible = visibleInputCount >= 4;
-
-  const showOutputs = step >= 1;
-  const showFeedback = step === 2;
-  const isOutputsEntering = step === 1;
-  const isFeedbackEntering = step === 2;
+function SplitTransition({ onDone }: { onDone: () => void }) {
+  const [phase, setPhase] = useState(0);
 
   useEffect(() => {
-    if (!showFeedback) { setPriceCycle(0); return; }
-    const timer = setInterval(() => {
-      setPriceCycle((c) => (c + 1) % PRICE_CYCLE.length);
-    }, PRICE_CYCLE_MS);
-    return () => clearInterval(timer);
-  }, [showFeedback]);
+    const timers = [
+      setTimeout(() => setPhase(1), 150),
+      setTimeout(() => setPhase(2), 600),
+      setTimeout(onDone, 900),
+    ];
+    return () => timers.forEach(clearTimeout);
+  }, [onDone]);
 
-  void onAutoAdvance;
+  const ease = [0.22, 1, 0.36, 1] as const;
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-7.5rem)] max-w-6xl flex-col items-center justify-center px-6 pt-8 relative">
-      <motion.span
-        className="mb-1 inline-block rounded-full px-3 py-0.5 text-[10px] font-bold tracking-[0.2em] uppercase"
-        style={{ backgroundColor: `${NAVY}10`, color: NAVY }}
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        Design
-      </motion.span>
-      <motion.h2
-        className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
-        style={{ color: NAVY }}
-        initial={{ opacity: 0, y: -12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-      >
+    <>
+      {/* Top half — splits up then fades */}
+      <motion.div
+        className="fixed z-50 overflow-hidden"
+        style={{ backgroundColor: `${ML_GREEN}0C`, border: `1px solid ${NAVY}12` }}
+        initial={{
+          left: "calc(50% - 75px)",
+          top: "calc(50% - 75px)",
+          width: 150,
+          height: 75,
+          borderRadius: "75px 75px 0 0",
+          opacity: 1,
+        }}
+        animate={
+          phase === 0
+            ? {
+                left: "calc(50% - 75px)",
+                top: "calc(50% - 75px)",
+                width: 150,
+                height: 75,
+                borderRadius: "75px 75px 0 0",
+                opacity: 1,
+              }
+            : phase === 1
+              ? {
+                  left: "calc(50% - 75px)",
+                  top: "calc(50% - 135px)",
+                  width: 150,
+                  height: 75,
+                  borderRadius: "75px 75px 4px 4px",
+                  opacity: 1,
+                }
+              : {
+                  left: "calc(50% - 75px)",
+                  top: "calc(50% - 135px)",
+                  width: 150,
+                  height: 75,
+                  borderRadius: "75px 75px 4px 4px",
+                  opacity: 0,
+                }
+        }
+        transition={phase === 2 ? { opacity: { duration: 0.25, ease: "easeOut" } } : { duration: 0.35, ease }}
+      />
+
+      {/* Bottom half — splits down then fades */}
+      <motion.div
+        className="fixed z-50 overflow-hidden"
+        style={{ backgroundColor: `${STRAT_BLUE}0C`, border: `1px solid ${NAVY}12` }}
+        initial={{
+          left: "calc(50% - 75px)",
+          top: "50%",
+          width: 150,
+          height: 75,
+          borderRadius: "0 0 75px 75px",
+          opacity: 1,
+        }}
+        animate={
+          phase === 0
+            ? {
+                left: "calc(50% - 75px)",
+                top: "50%",
+                width: 150,
+                height: 75,
+                borderRadius: "0 0 75px 75px",
+                opacity: 1,
+              }
+            : phase === 1
+              ? {
+                  left: "calc(50% - 75px)",
+                  top: "calc(50% + 60px)",
+                  width: 150,
+                  height: 75,
+                  borderRadius: "4px 4px 75px 75px",
+                  opacity: 1,
+                }
+              : {
+                  left: "calc(50% - 75px)",
+                  top: "calc(50% + 60px)",
+                  width: 150,
+                  height: 75,
+                  borderRadius: "4px 4px 75px 75px",
+                  opacity: 0,
+                }
+        }
+        transition={phase === 2 ? { opacity: { duration: 0.25, ease: "easeOut" } } : { duration: 0.35, ease }}
+      />
+    </>
+  );
+}
+
+export function OneModelSlide({ step, onAutoAdvance }: OneModelSlideProps) {
+  const showML = step >= 0;
+  const showStrat = step >= 1;
+  const showUnified = step >= 2;
+  const showInputs = step >= 3;
+  const showSplit = step >= 4;
+
+  return (
+    <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-6xl flex-col items-center justify-center px-6 pt-8 relative">
+      <div className="relative mb-1 flex h-5 shrink-0 items-center justify-center overflow-hidden">
+        {step === 0 && (
+          <motion.span
+            className="absolute inline-block rounded-full px-3 py-0.5 text-[10px] font-bold tracking-[0.2em] uppercase"
+            style={{ backgroundColor: `${NAVY}10`, color: NAVY }}
+            animate={{ opacity: [0, 0.4, 0.4, 0], y: [8, 0, 0, -12] }}
+            transition={{ duration: 0.9, times: [0, 0.2, 0.6, 1] }}
+          >
+            Overview
+          </motion.span>
+        )}
+        <motion.span
+          className="inline-block rounded-full px-3 py-0.5 text-[10px] font-bold tracking-[0.2em] uppercase"
+          style={{ backgroundColor: `${NAVY}10`, color: NAVY }}
+          initial={step === 0 ? { opacity: 0, y: 12 } : false}
+          animate={{ opacity: showSplit ? 0 : 1, y: 0 }}
+          transition={{ duration: 0.35, delay: step === 0 ? 0.7 : 0 }}
+        >
+          1 · Design
+        </motion.span>
+      </div>
+      <motion.h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: NAVY }}
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: showSplit ? 0 : 1, y: showSplit ? -8 : 0 }}
+        transition={{ duration: showSplit ? 0.3 : 0.6, delay: step === 0 ? 1.1 : 0, ease: "easeOut" }}>
         Core components of the ideal pricing model
       </motion.h2>
 
-      {/* Narrative line */}
-      <div className="flex min-h-[3rem] items-center justify-center px-4">
+      <motion.div
+        className="flex min-h-[3rem] items-center justify-center px-4"
+        animate={{ opacity: showSplit ? 0 : 1 }}
+        transition={{ duration: 0.3 }}
+      >
         <AnimatePresence mode="wait">
-          <motion.p
-            key={step}
-            className="max-w-2xl text-center leading-relaxed"
-            style={{
-              color: NAVY,
-              fontSize: isProminentText ? "1.15rem" : "0.875rem",
-            }}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
+          <motion.p key={step >= 4 ? 3 : step} className="max-w-2xl text-center leading-relaxed"
+            style={{ color: NAVY, fontSize: "1.15rem" }}
+            initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.3 }}
-          >
-            <HighlightNarrative segments={STEP_NARRATIVES[step]} isActive={isProminentText} />
+            transition={{ duration: 0.5, delay: step === 0 ? 1.1 : 0 }}>
+            <HighlightNarrative segments={STEP_NARRATIVES[step]} isActive />
           </motion.p>
         </AnimatePresence>
-      </div>
+      </motion.div>
 
-      {/* Diagram area */}
-      <div className="relative w-full max-w-5xl flex-1 min-h-0 overflow-hidden">
-        <motion.div
-          className="w-full h-full"
-          animate={{ opacity: isDimmed ? 0.15 : 1 }}
-          transition={{ opacity: { duration: isDimmed ? 0.3 : 0.6 } }}
-        >
-      <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} className="w-full h-full">
-        {/* ── Section labels ── */}
-        <motion.text
-          x={INPUT_CARD_X}
-          y={10}
-          fontSize="11"
-          fontWeight="600"
-          letterSpacing="0.12em"
-          fill={FEEDBACK}
-          animate={{ opacity: visibleInputCount > 0 && !showFeedback ? 1 : 0 }}
-          transition={{ duration: 0.4, delay: allInputsEntering ? 0.1 : 0 }}
-        >
-          FOUR CORE COMPONENTS
-        </motion.text>
-
-        <motion.text
-          x={OUTPUT_CARD_X + OUTPUT_CARD_W}
-          y={10}
-          fontSize="11"
-          fontWeight="600"
-          letterSpacing="0.12em"
-          fill={FEEDBACK}
-          textAnchor="end"
-          initial={isOutputsEntering ? { opacity: 0 } : undefined}
-          animate={{ opacity: showOutputs && !showFeedback ? 1 : 0 }}
-          transition={{ duration: 0.4, delay: isOutputsEntering ? OUTPUT_BASE_DELAY : 0 }}
-        >
-          MODEL OUTPUTS (ILLUSTRATIVE)
-        </motion.text>
-
-        {/* ── Input streams ── */}
-        {INPUTS.map((inp, i) => {
-          const isVisible = i < visibleInputCount;
-          const isEntering = allInputsEntering;
-          const d = inputCurvePath(inp.startY);
-          const sx = INPUT_CARD_X + INPUT_CARD_W + 2;
-          const sy = inp.startY + INPUT_CARD_H / 2;
-          const pathParams = {
-            sx, sy,
-            cp1x: sx + 80, cp1y: sy,
-            cp2x: CONVERGE_X - 60, cp2y: MODEL_CY,
-            ex: CONVERGE_X, ey: MODEL_CY,
-          };
-
-          const cardOpacity = !isVisible ? 0 : showFeedback ? 0 : 1;
-          const curveColor = showFeedback ? GREY : inp.color;
-          const curveOpacity = !isVisible ? 0 : showFeedback ? 0 : 0.35;
-
-          return (
-            <Fragment key={inp.label}>
-              <InputCard
-                inp={inp}
-                visible={isVisible}
-                enterDelay={isEntering ? 0.1 + i * 0.12 : undefined}
-                opacity={cardOpacity}
-                greyed={showFeedback}
-              />
-              <motion.path
-                d={d}
-                fill="none"
-                stroke={curveColor}
-                strokeWidth={1.5}
-                strokeLinecap="round"
-                initial={isEntering ? { pathLength: 0, opacity: 0 } : undefined}
-                animate={{ opacity: curveOpacity, pathLength: isVisible ? 1 : 0 }}
-                transition={{ duration: 0.8, delay: isEntering ? 0.3 + i * 0.12 : 0, ease: "easeOut" }}
-              />
-              {isVisible && !showFeedback && (
-                <FlowDot path={pathParams} color={inp.color} delay={isEntering ? 0.7 + i * 0.15 : 0.5 + i * 0.8} />
-              )}
-            </Fragment>
-          );
-        })}
-
-        {/* ── Output streams ── */}
-        {OUTPUTS.map((out, i) => {
-          const d = outputCurvePath(out.endY);
-          const ex = OUTPUT_CARD_X - 2;
-          const ey = out.endY + OUTPUT_CARD_H / 2;
-          const pathParams = {
-            sx: DIVERGE_X, sy: MODEL_CY,
-            cp1x: DIVERGE_X + 60, cp1y: MODEL_CY,
-            cp2x: ex - 80, cp2y: ey,
-            ex, ey,
-          };
-          const staggerDelay = OUTPUT_BASE_DELAY + i * OUTPUT_STAGGER_DELAY;
-
-          const cardOpacity = !showOutputs ? 0 : showFeedback ? 0 : 1;
-          const curveColor = showFeedback ? GREY : out.color;
-          const curveOpacity = !showOutputs ? 0 : showFeedback ? 0 : 0.35;
-
-          return (
-            <Fragment key={out.label}>
-              <OutputCard
-                out={out}
-                visible={showOutputs}
-                enterDelay={isOutputsEntering ? staggerDelay : undefined}
-                opacity={cardOpacity}
-                greyed={showFeedback}
-              />
-              <motion.path
-                d={d}
-                fill="none"
-                stroke={curveColor}
-                strokeWidth={1.5}
-                strokeLinecap="round"
-                initial={isOutputsEntering ? { pathLength: 0, opacity: 0 } : undefined}
-                animate={{ opacity: curveOpacity, pathLength: showOutputs ? 1 : 0 }}
-                transition={{ duration: 0.8, delay: isOutputsEntering ? staggerDelay + 0.3 : 0, ease: "easeOut" }}
-              />
-              {showOutputs && !showFeedback && (
-                <FlowDot path={pathParams} color={out.color} delay={isOutputsEntering ? staggerDelay + 0.8 : 0.6 + i * 0.8} />
-              )}
-            </Fragment>
-          );
-        })}
-
-        {/* ── Feedback: left-to-right timeline ── */}
-        {showFeedback && (
-          <motion.g initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
-
-            {/* ── Main timeline line ── */}
-            <motion.line
-              x1={TL_LEFT} y1={TL_Y} x2={TL_RIGHT} y2={TL_Y}
-              stroke="#CBD5E1" strokeWidth={2}
-              initial={{ pathLength: 0, opacity: 0 }}
-              animate={{ pathLength: 1, opacity: 1 }}
-              transition={{ duration: 0.8, delay: isFeedbackEntering ? 0.1 : 0 }}
-            />
-
-            {/* ── Timeline steps ── */}
-            {TL_STEP_POSITIONS.map((s, i) => (
-              <motion.g
-                key={s.label}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: isFeedbackEntering ? 0.2 + i * 0.25 : 0 }}
-              >
-                {/* Node circle */}
-                <circle cx={s.x} cy={TL_Y} r={16} fill={s.color} />
-                <text x={s.x} y={TL_Y + 4.5} fontSize="11" fontWeight="700" fill="white" textAnchor="middle">{s.num}</text>
-                {/* Label below */}
-                <text x={s.x} y={TL_Y + 36} fontSize="13" fontWeight="700" fill={NAVY} textAnchor="middle">{s.label}</text>
-                <text x={s.x} y={TL_Y + 52} fontSize="10" fill="#64748B" textAnchor="middle">{s.subtitle}</text>
-
-                {/* Arrow connector to next step */}
-                {i < TL_STEP_POSITIONS.length - 1 && (
-                  <motion.polygon
-                    points={`${s.x + 18},${TL_Y} ${s.x + 24},${TL_Y - 4} ${s.x + 24},${TL_Y + 4}`}
-                    fill={s.color}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 0.5 }}
-                    transition={{ duration: 0.3, delay: isFeedbackEntering ? 0.4 + i * 0.25 : 0 }}
-                  />
+      <motion.div
+        className="relative w-full max-w-5xl flex-1 min-h-0 flex items-start justify-center overflow-hidden pt-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: showSplit ? 0 : 1 }}
+        transition={{ duration: showSplit ? 0.3 : 0.8, delay: step === 0 ? 2.2 : 0 }}
+      >
+        <AnimatePresence mode="wait">
+          {!showUnified && (
+            <motion.div key="columns" className="flex w-full items-start justify-center gap-10"
+              exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.35 }}>
+              <motion.div className="max-w-[340px]"
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: showML ? 1 : 0, y: 0 }}
+                transition={{ duration: 0.6, ease: "easeOut" }}>
+                <ConceptPanel title="ML Prediction" subtitle="Data-driven statistical analysis"
+                  color={ML_GREEN} icon={<ChartIcon />} bullets={ML_BULLETS}
+                  visualization={<MLVisualization />} bulletDelay={1.5} />
+              </motion.div>
+              <motion.div className="max-w-[340px]"
+                initial={{ opacity: 0, x: 60, width: 0 }}
+                animate={{ opacity: showStrat ? 1 : 0, x: showStrat ? 0 : 60, width: showStrat ? 340 : 0 }}
+                transition={{ duration: 0.6, ease: "easeOut" }}>
+                {showStrat && (
+                  <ConceptPanel title="Strategic Guidance" subtitle="Expert knowledge & market intelligence"
+                    color={STRAT_BLUE} icon={<CompassIcon />} bullets={STRAT_BULLETS}
+                    visualization={<StratVisualization />} bulletDelay={1.3} />
                 )}
-              </motion.g>
-            ))}
+              </motion.div>
+            </motion.div>
+          )}
+          {showUnified && (
+            <motion.div key="unified" className="flex items-center justify-center w-full"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              transition={{ duration: 0.4 }}>
+              <UnifiedModelVisualization showInputs={showInputs} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
 
-            {/* ── Dashed learning arc: from step 4 back to step 1 ── */}
-            <motion.path
-              d={`M ${TL_STEP_POSITIONS[3].x} ${TL_Y - 18} C ${TL_STEP_POSITIONS[3].x - 80} ${TL_Y - 120}, ${TL_STEP_POSITIONS[0].x + 80} ${TL_Y - 120}, ${TL_STEP_POSITIONS[0].x} ${TL_Y - 18}`}
-              fill="none" stroke={TEAL} strokeWidth={2} strokeDasharray="10 6"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.6 }}
-              transition={{ duration: 0.8, delay: isFeedbackEntering ? 1.2 : 0 }}
-            />
-            <motion.polygon
-              points={`${TL_STEP_POSITIONS[0].x},${TL_Y - 18} ${TL_STEP_POSITIONS[0].x - 5},${TL_Y - 26} ${TL_STEP_POSITIONS[0].x + 5},${TL_Y - 26}`}
-              fill={TEAL}
-              initial={{ opacity: 0 }} animate={{ opacity: 0.6 }}
-              transition={{ duration: 0.3, delay: isFeedbackEntering ? 1.8 : 0 }}
-            />
-            <motion.text
-              x={(TL_STEP_POSITIONS[0].x + TL_STEP_POSITIONS[3].x) / 2}
-              y={TL_Y - 108}
-              fontSize="10" fontWeight="600" fill={TEAL} textAnchor="middle"
-              initial={{ opacity: 0 }} animate={{ opacity: 0.7 }}
-              transition={{ duration: 0.4, delay: isFeedbackEntering ? 1.4 : 0 }}
-            >
-              Continuous learning loop
-            </motion.text>
-
-            {/* ── Cycling price card below timeline ── */}
-            <motion.g
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: isFeedbackEntering ? 0.6 : 0 }}
-            >
-              <rect x={330} y={TL_Y + 68} width={340} height={100} rx={16} fill={NAVY} />
-              <text x={500} y={TL_Y + 88} fontSize="10" fontWeight="700" letterSpacing="0.14em" fill="rgba(255,255,255,0.45)" textAnchor="middle">RECOMMENDATION</text>
-              <AnimatePresence mode="wait">
-                <motion.g key={priceCycle} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.3 }}>
-                  <text x={500} y={TL_Y + 126} fontSize="28" fontWeight="700" fill="white" textAnchor="middle">{PRICE_CYCLE[priceCycle].price}</text>
-                  <text x={500} y={TL_Y + 146} fontSize="11" fill="rgba(255,255,255,0.5)" textAnchor="middle">{PRICE_CYCLE[priceCycle].subtitle}</text>
-                </motion.g>
-              </AnimatePresence>
-              {PRICE_CYCLE.map((_, pi) => (
-                <motion.circle key={pi} cx={500 + (pi - 1) * 12} cy={TL_Y + 160} r={3}
-                  fill={pi === priceCycle ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.2)"} />
-              ))}
-            </motion.g>
-          </motion.g>
-        )}
-
-        {/* ── Absorbing glow (all inputs visible, before feedback) ── */}
-        <motion.rect
-          x={MODEL_X - 4} y={MODEL_Y - 4} width={MODEL_W + 8} height={MODEL_H + 8} rx={20}
-          fill="none" stroke={NAVY} strokeWidth={2}
-          animate={{ opacity: allInputsVisible && !showFeedback ? [0.1, 0.3, 0.1] : 0 }}
-          transition={allInputsVisible && !showFeedback ? { duration: 3.5, repeat: Infinity, ease: "easeInOut" } : { duration: 0.3 }}
-        />
-
-        {/* ── Center model box ── */}
-        <motion.g
-          initial={{ opacity: 0 }}
-          animate={{ opacity: showFeedback ? 0 : 1 }}
-          transition={{ duration: showFeedback ? 0.4 : 0.8, ease: "easeOut" }}
-          style={{ transformOrigin: `${MODEL_CX}px ${MODEL_CY}px` }}
-        >
-          <rect x={MODEL_X} y={MODEL_Y} width={MODEL_W} height={MODEL_H} rx={16} fill={NAVY} />
-          <g>
-            <text x={MODEL_CX} y={MODEL_CY - 18} fontSize="19" fontWeight="700" fill="white" textAnchor="middle">
-              Pricing Model
-            </text>
-            <text x={MODEL_CX} y={MODEL_CY + 4} fontSize="12" fill="rgba(255,255,255,0.65)" textAnchor="middle">
-              ML-powered optimization
-            </text>
-            <motion.rect
-              x={MODEL_CX - 35} y={MODEL_CY + 24} height={3} rx={1.5} fill="rgba(255,255,255,0.2)"
-              animate={{ width: [50, 65, 35, 60, 50] }}
-              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-            />
-            <motion.rect
-              x={MODEL_CX - 35} y={MODEL_CY + 33} height={3} rx={1.5} fill="rgba(255,255,255,0.12)"
-              animate={{ width: [65, 35, 55, 30, 65] }}
-              transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
-            />
-          </g>
-        </motion.g>
-
-      </svg>
-        </motion.div>
-      </div>
+      {showSplit && onAutoAdvance && (
+        <SplitTransition onDone={onAutoAdvance} />
+      )}
     </div>
   );
 }

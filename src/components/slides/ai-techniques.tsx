@@ -37,7 +37,7 @@ const fadeUp = (delay: number) => ({
 
 export function AiTechniquesSlide() {
   return (
-    <div className="mx-auto flex h-[calc(100vh-7.5rem)] max-w-5xl flex-col justify-center gap-6 px-6">
+    <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-5xl flex-col justify-center gap-6 px-6">
       <motion.div {...fadeUp(0)}>
         <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl">
           AI Techniques
