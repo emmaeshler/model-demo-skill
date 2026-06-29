@@ -258,6 +258,18 @@ export function RefineSlide({ step }: { step: number }) {
     );
   }
 
+  /* ── Intro phase for chartStep 0 animated title build ── */
+  const [introPhase, setIntroPhase] = useState(chartStep === 0 ? 0 : 4);
+  useEffect(() => {
+    if (chartStep !== 0) { setIntroPhase(4); return; }
+    setIntroPhase(0);
+    const t1 = setTimeout(() => setIntroPhase(1), 800);
+    const t2 = setTimeout(() => setIntroPhase(2), 1800);
+    const t3 = setTimeout(() => setIntroPhase(3), 3200);
+    const t4 = setTimeout(() => setIntroPhase(4), 4200);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
+  }, [chartStep]);
+
   /* ── Steps 1-6: Chart animation ────────────────────── */
 
   const showSegments = chartStep === 1 || chartStep === 2;
@@ -316,38 +328,98 @@ export function RefineSlide({ step }: { step: number }) {
       </div>
 
       {/* Title — fixed-height container so chart never resizes */}
-      <div className="relative w-full" style={{ height: 80, flexShrink: 0 }}>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={`title-${chartStep}`}
-            className="absolute inset-0 flex flex-col items-center justify-start"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: chipReady ? 1 : 0, y: chipReady ? 0 : 12 }}
-            exit={{ opacity: 0 }}
-            transition={{
-              duration: 0.5,
-              delay: chartStep === 0 ? 0.3 : 0,
-              ease: "easeOut",
-            }}
-          >
-            <motion.h2
-              className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
-              style={{ color: NAVY }}
+      <div className="relative w-full" style={{ height: 100, flexShrink: 0 }}>
+        <AnimatePresence>
+          {chartStep === 0 && (
+            <motion.div
+              key="intro-title"
+              className="absolute inset-0 flex flex-col items-center justify-start"
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.6, ease: "easeInOut" }}
             >
-              {heading}
-            </motion.h2>
-            {STEP_CONTEXT[chartStep] && (
+              <div className="flex flex-col items-center gap-1">
+                <motion.h2
+                  className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
+                  style={{ color: NAVY }}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{
+                    opacity: introPhase >= 3 ? 0 : 1,
+                    y: introPhase >= 3 ? -12 : 0,
+                    height: introPhase >= 3 ? 0 : "auto",
+                    marginBottom: introPhase >= 3 ? 0 : 4,
+                  }}
+                  transition={{ duration: 0.5 }}
+                >
+                  Execute priced one deal at a time
+                </motion.h2>
+                <motion.h2
+                  className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
+                  style={{ color: NAVY }}
+                  initial={{ opacity: 0 }}
+                  animate={{
+                    opacity: introPhase >= 1 && introPhase < 3 ? 1 : 0,
+                    y: introPhase >= 1 && introPhase < 3 ? 0 : introPhase >= 3 ? -12 : 8,
+                    height: introPhase >= 3 ? 0 : "auto",
+                    marginBottom: introPhase >= 3 ? 0 : 4,
+                  }}
+                  transition={{ duration: 0.5 }}
+                >
+                  Now step back and look at all of them
+                </motion.h2>
+                <AnimatePresence>
+                  {introPhase >= 2 && (
+                    <motion.h2
+                      className="text-center text-3xl font-bold tracking-tight sm:text-4xl"
+                      style={{ color: STRAT_BLUE }}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.6, ease: "easeOut" }}
+                    >
+                      Every price, refined together
+                    </motion.h2>
+                  )}
+                </AnimatePresence>
+              </div>
               <motion.p
-                className="mx-auto mt-1 max-w-2xl text-center text-[1.05rem] leading-relaxed"
+                className="mx-auto mt-2 max-w-lg text-center text-[1.05rem] leading-relaxed"
                 style={{ color: MUTED }}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: chartStep === 0 ? 0.5 : 0.15 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: introPhase >= 3 ? 1 : 0, y: introPhase >= 3 ? 0 : 6 }}
+                transition={{ duration: 0.4 }}
               >
-                {STEP_CONTEXT[chartStep].body}
+                The strategic layer looks across your entire portfolio&nbsp;— aligning
+                each price to the optimal demand&nbsp;curve.
               </motion.p>
-            )}
-          </motion.div>
+            </motion.div>
+          )}
+          {chartStep > 0 && (
+            <motion.div
+              key={`step-title-${chartStep}`}
+              className="absolute inset-0 flex flex-col items-center justify-start"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5, delay: chartStep === 1 ? 0.5 : 0 }}
+            >
+              <motion.h2
+                className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
+                style={{ color: NAVY }}
+              >
+                {heading}
+              </motion.h2>
+              {STEP_CONTEXT[chartStep] && (
+                <motion.p
+                  className="mx-auto mt-1 max-w-2xl text-center text-[1.05rem] leading-relaxed"
+                  style={{ color: MUTED }}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: chartStep === 1 ? 0.7 : 0.15 }}
+                >
+                  {STEP_CONTEXT[chartStep].body}
+                </motion.p>
+              )}
+            </motion.div>
+          )}
         </AnimatePresence>
       </div>
 
@@ -355,9 +427,12 @@ export function RefineSlide({ step }: { step: number }) {
       <motion.div
         className="w-full flex-1 min-h-0 mt-1 flex flex-col"
         style={{ maxHeight: "calc(100% - 160px)" }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8, delay: chartStep === 0 ? 0.4 : 0 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{
+          opacity: chartStep === 0 && introPhase < 3 ? 0 : 1,
+          y: chartStep === 0 && introPhase < 3 ? 20 : 0,
+        }}
+        transition={{ duration: 1.0, ease: [0.22, 1, 0.36, 1] }}
       >
         {/* Chart */}
         <div className="relative min-w-0 flex-1 flex items-center justify-center">
