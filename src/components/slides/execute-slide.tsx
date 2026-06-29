@@ -329,7 +329,7 @@ export function ModelOutputsOverview({ step }: { step: number }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
         >
-          3 · Refine
+          3 · Execute
         </motion.span>
       </div>
       <motion.h2
@@ -575,11 +575,11 @@ export function ExecuteSlide({
           <div className="relative mb-1 flex h-5 shrink-0 items-center justify-center overflow-hidden">
             <motion.span
               className="absolute inline-block rounded-full px-3 py-0.5 text-[10px] font-bold tracking-[0.2em] uppercase"
-              style={{ backgroundColor: `${TEAL}12`, color: TEAL }}
+              style={{ backgroundColor: `${NAVY}10`, color: NAVY }}
               animate={{ opacity: [0, 0.4, 0.4, 0], y: [8, 0, 0, -12] }}
               transition={{ duration: 0.9, times: [0, 0.2, 0.6, 1] }}
             >
-              3 · Refine
+              2 · Power
             </motion.span>
             <motion.span
               className="inline-block rounded-full px-3 py-0.5 text-[10px] font-bold tracking-[0.2em] uppercase"
@@ -588,7 +588,7 @@ export function ExecuteSlide({
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, delay: 0.7 }}
             >
-              4 · Execute
+              3 · Execute
             </motion.span>
           </div>
           <motion.h2

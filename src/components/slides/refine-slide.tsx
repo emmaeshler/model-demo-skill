@@ -5,12 +5,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { makeCurve } from "../visuals/demand-curve";
 
 const NAVY = "#00446A";
-const ORANGE = "#E56910";
-const TEAL = "#21A5D5";
+const ORANGE = "#C27A3A";
+const TEAL = "#4A8FA8";
 const MUTED = "#8A9AAA";
 const STRAT_BLUE = "#2A7BA5";
-const GREEN = "#2D8B4E";
-const RED = "#C0392B";
+const GREEN = "#4A8A5C";
+const RED = "#A65A52";
 
 export const REFINE_TOTAL_STEPS = 8;
 
@@ -76,7 +76,7 @@ const SCATTER_DOTS: ScatterDot[] = Array.from({ length: DOT_COUNT }, () => ({
   offsetY: (rng() - 0.35) * 120,
   jitterX: (rng() - 0.5) * 14,
   status: pickStatus(),
-  r: (() => { const s = rng(); return s < 0.5 ? 0.8 + rng() * 0.8 : s < 0.85 ? 1.4 + rng() * 1.2 : 2.2 + rng() * 1.5; })(),
+  r: (() => { const s = rng(); return s < 0.5 ? 0.4 + rng() * 0.4 : s < 0.85 ? 0.7 + rng() * 0.6 : 1.1 + rng() * 0.7; })(),
   driftDx: (rng() - 0.5) * 4,
   driftDy: (rng() - 0.5) * 3,
   driftDuration: 4 + rng() * 4,
@@ -151,6 +151,18 @@ const STEP_CONTEXT: Record<number, { title: string; body: string }> = {
   2: {
     title: "The optimal demand curve",
     body: "The model fits a demand curve to the data — the price each deal should hit.",
+  },
+  3: {
+    title: "QuickParts",
+    body: "Let’s examine how the model adjusts pricing for specific deals relative to the curve.",
+  },
+  4: {
+    title: "Acme",
+    body: "Let’s examine how the model adjusts pricing for specific deals relative to the curve.",
+  },
+  5: {
+    title: "MedSupply",
+    body: "Let’s examine how the model adjusts pricing for specific deals relative to the curve.",
   },
   6: {
     title: "Every price, optimized",
@@ -249,10 +261,10 @@ export function RefineSlide({ step }: { step: number }) {
   /* ── Steps 1-6: Chart animation ────────────────────── */
 
   const showSegments = chartStep === 1 || chartStep === 2;
-  const segmentOpacity = chartStep === 1 ? 0.15 : 0.05;
+  const segmentOpacity = chartStep === 1 ? 0.15 : 0.04;
   const showCurve = chartStep >= 2;
   const isSpotlight = chartStep >= 3 && chartStep <= 5;
-  const dotOpacityBase = chartStep === 1 ? 0.2 : isSpotlight ? 0 : 1;
+  const dotOpacityBase = chartStep === 1 ? 0.2 : chartStep === 2 ? 0.15 : isSpotlight ? 0 : 1;
   const spotlightIdx = isSpotlight ? chartStep - 3 : -1;
   const isAllToCurve = chartStep >= 6;
 
@@ -264,7 +276,9 @@ export function RefineSlide({ step }: { step: number }) {
         ? "The optimal demand curve"
         : chartStep === 0
           ? "Prices are scattered across the board"
-          : "Detect patterns, refine pricing guidance";
+          : isSpotlight
+            ? "How the model adjusts specific deals"
+            : "Detect patterns, refine pricing guidance";
 
   const activeHighlight = isSpotlight ? SEGMENT_HIGHLIGHTS[spotlightIdx] : null;
   const isLifted = isSpotlight && liftedDots.has(spotlightIdx);
@@ -284,7 +298,7 @@ export function RefineSlide({ step }: { step: number }) {
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.35 }}
             >
-              2 · Power
+              3 · Execute
             </motion.span>
           ) : (
             <motion.span
@@ -335,16 +349,6 @@ export function RefineSlide({ step }: { step: number }) {
             )}
           </motion.div>
         </AnimatePresence>
-      </div>
-
-      {/* Legend */}
-      <div className="flex items-center justify-center gap-5 shrink-0 mt-1">
-        {LEGEND_ITEMS.map((item) => (
-          <div key={item.label} className="flex items-center gap-1.5">
-            <span className="size-2 rounded-full" style={{ backgroundColor: item.color }} />
-            <span className="text-[0.68rem] font-semibold" style={{ color: NAVY }}>{item.label}</span>
-          </div>
-        ))}
       </div>
 
       {/* Chart area */}
@@ -418,6 +422,16 @@ export function RefineSlide({ step }: { step: number }) {
               className="w-full h-full"
               preserveAspectRatio="xMidYMid meet"
             >
+              {/* Legend — top-right inside chart */}
+              <g>
+                {LEGEND_ITEMS.map((item, li) => (
+                  <g key={item.label} transform={`translate(${CURVE_SLOT.x + CURVE_SLOT.w - 168 + li * 56}, 0)`}>
+                    <circle cx={0} cy={0} r={2.5} fill={item.color} />
+                    <text x={5} y={3} fontSize="7" fontWeight="600" fill={NAVY}>{item.label}</text>
+                  </g>
+                ))}
+              </g>
+
               {/* Axes */}
               <line
                 x1={CURVE_SLOT.x}
@@ -440,16 +454,16 @@ export function RefineSlide({ step }: { step: number }) {
                 y={CURVE_SLOT.y + CURVE_SLOT.h / 2}
                 textAnchor="middle"
                 transform={`rotate(-90, 30, ${CURVE_SLOT.y + CURVE_SLOT.h / 2})`}
-                style={{ fill: NAVY, fontSize: 10, fontWeight: 600, fontFamily: "inherit" }}
+                style={{ fill: MUTED, fontSize: 7, fontWeight: 500, fontFamily: "inherit" }}
               >
                 Price
               </text>
 
               <text
                 x={CURVE_SLOT.x + CURVE_SLOT.w / 2}
-                y={BASE_Y + 18}
+                y={BASE_Y + 14}
                 textAnchor="middle"
-                style={{ fill: NAVY, fontSize: 10, fontWeight: 600, fontFamily: "inherit" }}
+                style={{ fill: MUTED, fontSize: 7, fontWeight: 500, fontFamily: "inherit" }}
               >
                 Volume
               </text>
@@ -487,7 +501,7 @@ export function RefineSlide({ step }: { step: number }) {
                         textAnchor="middle"
                         style={{ stroke: "white", strokeWidth: 3, paintOrder: "stroke" as const }}
                         initial={{ opacity: 0 }}
-                        animate={{ opacity: chartStep === 1 ? 1 : 0.3 }}
+                        animate={{ opacity: chartStep === 1 ? 1 : 0.12 }}
                         transition={{ duration: 0.5, delay: chartStep === 1 ? 0.2 + zi * 0.12 : 0 }}
                       >
                         {zone.label}
@@ -542,7 +556,7 @@ export function RefineSlide({ step }: { step: number }) {
                 const isBelowCurve = scatterY > pt.y;
                 const targetY = isAllToCurve ? (isBelowCurve ? pt.y : scatterY) : scatterY;
                 const dotColor = STATUS_COLORS[dot.status];
-                const dotOpacity = isSpotlight ? 0 : showSegments ? 0.35 : 1;
+                const dotOpacity = dotOpacityBase;
 
                 const driftCx = isAllToCurve
                   ? baseCx
@@ -585,7 +599,7 @@ export function RefineSlide({ step }: { step: number }) {
               })}
 
               {/* Highlight product dots — start below curve, animate to curve */}
-              {showDots && SEGMENT_HIGHLIGHTS.map((seg, si) => {
+              {SEGMENT_HIGHLIGHTS.map((seg, si) => {
                 const visible =
                   isAllToCurve || (isSpotlight && si <= spotlightIdx);
                 if (!visible) return null;
