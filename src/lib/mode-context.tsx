@@ -25,7 +25,8 @@ export function ModeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const param = new URLSearchParams(window.location.search).get("mode");
     if (param === "presenter" || param === "self") {
-      setModeState(param);
+      const t = setTimeout(() => setModeState(param));
+      return () => clearTimeout(t);
     }
   }, []);
 

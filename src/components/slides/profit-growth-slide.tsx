@@ -198,11 +198,11 @@ export function ProfitGrowthSlide({ step = 0, onAutoAdvance }: { step: number; o
 
   useEffect(() => {
     if (!showScan || showSweep) {
-      setModelScanIdx(-1);
-      return;
+      const t = setTimeout(() => setModelScanIdx(-1));
+      return () => clearTimeout(t);
     }
     let cycle = 0;
-    setModelScanIdx(0);
+    setTimeout(() => setModelScanIdx(0));
     const timer = setInterval(() => {
       cycle++;
       if (cycle >= MODEL_SCAN_GROUPS.length) {
@@ -226,20 +226,24 @@ export function ProfitGrowthSlide({ step = 0, onAutoAdvance }: { step: number; o
 
   useEffect(() => {
     if (!showSweep) {
-      setSweepStarted(false);
-      return;
+      const t = setTimeout(() => setSweepStarted(false));
+      return () => clearTimeout(t);
     }
-    setSweepStarted(true);
+    const t = setTimeout(() => setSweepStarted(true));
+    return () => clearTimeout(t);
   }, [showSweep]);
 
   const [headingPhase, setHeadingPhase] = useState(step === 0 ? 0 : 2);
 
   useEffect(() => {
-    if (step !== 0) { setHeadingPhase(2); return; }
-    setHeadingPhase(0);
+    if (step !== 0) {
+      const t0 = setTimeout(() => setHeadingPhase(2));
+      return () => clearTimeout(t0);
+    }
+    const t0 = setTimeout(() => setHeadingPhase(0));
     const t1 = setTimeout(() => setHeadingPhase(1), 600);
     const t2 = setTimeout(() => setHeadingPhase(2), 1200);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); };
   }, [step]);
 
   return (

@@ -238,7 +238,35 @@ function CategoryIcon({ type, color, size = 18 }: { type: string; color: string;
 
 /* ─── Main slide ─── */
 
-export function PowerSlide({ step = 0 }: { step: number }) {
+export function PowerSlide({ step = 0, onAutoAdvance }: { step: number; onAutoAdvance?: () => void }) {
+  const chartStep = step - 1;
+
+  useEffect(() => {
+    if (!onAutoAdvance || chartStep < 1 || chartStep > 4) return;
+    const spotlight = SPOTLIGHTS[chartStep - 1];
+    const pillCount = spotlight.pills.length;
+    const lastPillDelay = 0.5 + (pillCount - 1) * (SWEEP_DURATION / 2 / pillCount);
+    const lastPillDone = lastPillDelay + 0.6;
+    const cardEntranceDelay = chartStep === 1 ? 0.6 : 0;
+    const totalMs = (cardEntranceDelay + lastPillDone + 1.5) * 1000;
+    const timer = setTimeout(onAutoAdvance, totalMs);
+    return () => clearTimeout(timer);
+  }, [chartStep, onAutoAdvance]);
+
+  const [introPhase, setIntroPhase] = useState(chartStep === 0 ? 0 : 4);
+  useEffect(() => {
+    if (chartStep !== 0) {
+      const t0 = setTimeout(() => setIntroPhase(5));
+      return () => clearTimeout(t0);
+    }
+    const t0 = setTimeout(() => setIntroPhase(0));
+    const t1 = setTimeout(() => setIntroPhase(1), 800);
+    const t2 = setTimeout(() => setIntroPhase(2), 1800);
+    const t3 = setTimeout(() => setIntroPhase(3), 3200);
+    const t4 = setTimeout(() => setIntroPhase(4), 5000);
+    const t5 = setTimeout(() => setIntroPhase(5), 5800);
+    return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); clearTimeout(t5); };
+  }, [chartStep]);
 
   /* ── Step 0: Full-screen transition moment ─────────── */
   if (step === 0) {
@@ -286,23 +314,9 @@ export function PowerSlide({ step = 0 }: { step: number }) {
   }
 
   /* ── Steps 1-7: Chart flow ─────────────────────────── */
-  const chartStep = step - 1;
   const converged = chartStep >= 6;
   const clustered = chartStep >= 5;
   const sweepActive = chartStep >= 1 && !clustered;
-
-  const [introPhase, setIntroPhase] = useState(chartStep === 0 ? 0 : 4);
-
-  useEffect(() => {
-    if (chartStep !== 0) { setIntroPhase(5); return; }
-    setIntroPhase(0);
-    const t1 = setTimeout(() => setIntroPhase(1), 800);
-    const t2 = setTimeout(() => setIntroPhase(2), 1800);
-    const t3 = setTimeout(() => setIntroPhase(3), 3200);
-    const t4 = setTimeout(() => setIntroPhase(4), 5000);
-    const t5 = setTimeout(() => setIntroPhase(5), 5800);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); clearTimeout(t5); };
-  }, [chartStep]);
 
   function dotFill(dot: (typeof DOTS)[0]) {
     if (clustered) return DRIVERS[dot.cluster].color;

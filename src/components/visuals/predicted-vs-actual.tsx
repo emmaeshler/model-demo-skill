@@ -16,7 +16,7 @@ const PEAK_T = 0.55;
 const PEAK_H = 0.85;
 
 function parabolaYAt(t: number) {
-  let y =
+  const y =
     SLOT.y +
     SLOT.h * (1 - (1 - Math.pow((t - PEAK_T) * 2.6, 2)) * PEAK_H * 0.85);
   return Math.max(SLOT.y + 10, Math.min(SLOT.y + SLOT.h - 10, y));
@@ -55,7 +55,7 @@ function buildDots(): DotPair[] {
 
 export function PredictedVsActualVisual() {
   const [showActual, setShowActual] = useState(false);
-  const dots = useMemo(buildDots, []);
+  const dots = useMemo(() => buildDots(), []);
   const parabD = useMemo(
     () => makeParabolaPath(SLOT, PEAK_T, PEAK_H),
     [],

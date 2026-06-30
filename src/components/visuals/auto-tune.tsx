@@ -46,7 +46,7 @@ function buildDots(): DotState[] {
 
 export function AutoTuneVisual() {
   const [converged, setConverged] = useState(false);
-  const dots = useMemo(buildDots, []);
+  const dots = useMemo(() => buildDots(), []);
   const curve = useMemo(() => makeCurve(SLOT), []);
 
   useEffect(() => {

@@ -24,7 +24,8 @@ interface SlideNavProps {
 function DownloadLink() {
   const [show, setShow] = useState(false);
   useEffect(() => {
-    setShow(!document.getElementById("__export_root"));
+    const t = setTimeout(() => setShow(!document.getElementById("__export_root")));
+    return () => clearTimeout(t);
   }, []);
   if (!show) return null;
   return (

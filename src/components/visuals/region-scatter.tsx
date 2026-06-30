@@ -77,7 +77,7 @@ function buildDots(): Dot[] {
 
 export function RegionScatterVisual() {
   const [revealed, setRevealed] = useState(false);
-  const dots = useMemo(buildDots, []);
+  const dots = useMemo(() => buildDots(), []);
 
   useEffect(() => {
     const timer = setTimeout(() => setRevealed(true), 800);

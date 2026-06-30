@@ -146,15 +146,16 @@ export default function Home() {
 
   useEffect(() => {
     if (mode === "presenter") {
-      setAnimationDone(true);
-      return;
+      const t = setTimeout(() => setAnimationDone(true));
+      return () => clearTimeout(t);
     }
-    setAnimationDone(false);
+    const t0 = setTimeout(() => setAnimationDone(false));
     const kind = SLIDES[slide]?.kind;
     if (!AUTO_ANIM_SLIDES.has(kind)) {
       const t = setTimeout(() => setAnimationDone(true), DEFAULT_DONE_MS);
-      return () => clearTimeout(t);
+      return () => { clearTimeout(t0); clearTimeout(t); };
     }
+    return () => clearTimeout(t0);
   }, [slide, subStep, mode]);
 
   const markAnimationDone = useCallback(() => setAnimationDone(true), []);
@@ -234,7 +235,12 @@ export default function Home() {
               onAutoAdvance={() => navigate(slide + 1)}
             />
           )}
-          {config.kind === "power" && <PowerSlide step={subStep} />}
+          {config.kind === "power" && (
+            <PowerSlide
+              step={subStep}
+              onAutoAdvance={() => navigate(slide + 1)}
+            />
+          )}
           {config.kind === "refine" && <RefineSlide step={subStep} />}
           {config.kind === "execute" && <ExecuteSlide step={subStep} />}
           {config.kind === "profit-growth" && (

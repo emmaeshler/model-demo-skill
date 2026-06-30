@@ -359,12 +359,12 @@ export function WalkthroughDiagram({ beat, skipEntrance = false, onNodeClick, on
 
   useEffect(() => {
     if (skipEntrance) {
-      setFast(true);
-      return;
+      const t = setTimeout(() => setFast(true));
+      return () => clearTimeout(t);
     }
     if (beat > 0) {
-      setFast(true);
-      return;
+      const t = setTimeout(() => setFast(true));
+      return () => clearTimeout(t);
     }
     const timer = setTimeout(() => setFast(true), 3000);
     return () => clearTimeout(timer);

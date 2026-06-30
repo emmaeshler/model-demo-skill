@@ -201,14 +201,31 @@ export function RefineSlide({ step }: { step: number }) {
   useEffect(() => {
     if (chartStep >= 3 && chartStep <= 5) {
       const idx = chartStep - 3;
-      setLiftedDots((prev) => {
+      const t = setTimeout(() => setLiftedDots((prev) => {
         const next = new Set(prev);
         for (let i = 0; i < idx; i++) next.add(i);
         return next;
-      });
+      }));
+      return () => clearTimeout(t);
     } else {
-      setLiftedDots(new Set());
+      const t = setTimeout(() => setLiftedDots(new Set()));
+      return () => clearTimeout(t);
     }
+  }, [chartStep]);
+
+  /* ── Intro phase for chartStep 0 animated title build ── */
+  const [introPhase, setIntroPhase] = useState(chartStep === 0 ? 0 : 4);
+  useEffect(() => {
+    if (chartStep !== 0) {
+      const t0 = setTimeout(() => setIntroPhase(4));
+      return () => clearTimeout(t0);
+    }
+    const t0 = setTimeout(() => setIntroPhase(0));
+    const t1 = setTimeout(() => setIntroPhase(1), 800);
+    const t2 = setTimeout(() => setIntroPhase(2), 1800);
+    const t3 = setTimeout(() => setIntroPhase(3), 3200);
+    const t4 = setTimeout(() => setIntroPhase(4), 4200);
+    return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
   }, [chartStep]);
 
   /* ── Step 0: Full-screen transition moment ─────────── */
@@ -257,18 +274,6 @@ export function RefineSlide({ step }: { step: number }) {
       </div>
     );
   }
-
-  /* ── Intro phase for chartStep 0 animated title build ── */
-  const [introPhase, setIntroPhase] = useState(chartStep === 0 ? 0 : 4);
-  useEffect(() => {
-    if (chartStep !== 0) { setIntroPhase(4); return; }
-    setIntroPhase(0);
-    const t1 = setTimeout(() => setIntroPhase(1), 800);
-    const t2 = setTimeout(() => setIntroPhase(2), 1800);
-    const t3 = setTimeout(() => setIntroPhase(3), 3200);
-    const t4 = setTimeout(() => setIntroPhase(4), 4200);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
-  }, [chartStep]);
 
   /* ── Steps 1-6: Chart animation ────────────────────── */
 
