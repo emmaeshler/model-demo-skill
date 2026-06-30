@@ -114,9 +114,11 @@ function ModelVisualization({ step }: { step: number }) {
   const CY = 170;
   const R = 105;
   const GAP = 4;
+  const SPLIT_Y = 10;
 
   const showInputs = step === 0 || step >= 4;
   const showNavy = step <= 1;
+  const showSplit = step >= 2;
   const showLabels = step >= 2;
   const showSegments = step >= 3;
   const isZoomed = step >= 1 && step <= 3;
@@ -148,49 +150,56 @@ function ModelVisualization({ step }: { step: number }) {
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-full max-h-[400px]">
       <defs>
-        <clipPath id="m-top"><circle cx={CX} cy={CY - GAP / 2} r={R} /></clipPath>
-        <clipPath id="m-bot"><circle cx={CX} cy={CY + GAP / 2} r={R} /></clipPath>
         <clipPath id="m-top-half"><rect x={0} y={0} width={W} height={CY} /></clipPath>
         <clipPath id="m-bot-half"><rect x={0} y={CY} width={W} height={H} /></clipPath>
       </defs>
 
-      {/* ── Navy circle (steps 0–1, fades at step 2) ── */}
+      {/* ── Semicircle halves (sit behind navy; split at step 2, colorize at step 3) ── */}
+      <motion.path
+        d={`M ${CX - R},${CY} A ${R},${R} 0 0,1 ${CX + R},${CY} Z`}
+        animate={{
+          y: showSplit ? -SPLIT_Y : 0,
+          fill: showSegments ? "#D5E6D0" : NAVY,
+        }}
+        transition={{
+          y: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
+          fill: { duration: 0.8, delay: 0.2 },
+        }}
+      />
+      <motion.path
+        d={`M ${CX - R},${CY} A ${R},${R} 0 0,0 ${CX + R},${CY} Z`}
+        animate={{
+          y: showSplit ? SPLIT_Y : 0,
+          fill: showSegments ? "#D4E8F0" : NAVY,
+        }}
+        transition={{
+          y: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
+          fill: { duration: 0.8, delay: 0.2 },
+        }}
+      />
+
+      {/* ── Navy circle on top (steps 0–1, fades quickly to reveal halves) ── */}
       <motion.circle cx={CX} cy={CY} r={R} fill={NAVY}
         initial={{ opacity: 0, scale: 0.85 }}
         animate={{ opacity: showNavy ? 1 : 0, scale: 1 }}
-        transition={{ duration: 0.5 }}
+        transition={{
+          opacity: { duration: showNavy ? 0.5 : 0.15 },
+          scale: { duration: 0.5 },
+        }}
         style={{ transformOrigin: `${CX}px ${CY}px` }}
       />
       <motion.text x={CX} y={CY - 4} fontSize="16" fontWeight="700" fill="white" textAnchor="middle"
         initial={{ opacity: 0 }}
         animate={{ opacity: showNavy ? 1 : 0 }}
-        transition={{ duration: 0.4, delay: showNavy && step === 0 ? 0.3 : 0 }}>
+        transition={{ duration: showNavy ? 0.4 : 0.15, delay: showNavy && step === 0 ? 0.3 : 0 }}>
         Pricing Model
       </motion.text>
       <motion.text x={CX} y={CY + 16} fontSize="10.5" fill="rgba(255,255,255,0.7)" textAnchor="middle"
         initial={{ opacity: 0 }}
         animate={{ opacity: showNavy ? 0.8 : 0 }}
-        transition={{ duration: 0.4, delay: showNavy && step === 0 ? 0.4 : 0 }}>
+        transition={{ duration: showNavy ? 0.4 : 0.15, delay: showNavy && step === 0 ? 0.4 : 0 }}>
         One unified engine
       </motion.text>
-
-      {/* ── Segmented halves (fade in at step 3) ── */}
-      <g clipPath="url(#m-top-half)">
-        <g clipPath="url(#m-top)">
-          <motion.circle cx={CX} cy={CY - GAP / 2} r={R} fill="#D5E6D0"
-            animate={{ opacity: showSegments ? 1 : 0 }}
-            transition={{ duration: 1.0, delay: showSegments ? 0.3 : 0 }}
-          />
-        </g>
-      </g>
-      <g clipPath="url(#m-bot-half)">
-        <g clipPath="url(#m-bot)">
-          <motion.circle cx={CX} cy={CY + GAP / 2} r={R} fill="#D4E8F0"
-            animate={{ opacity: showSegments ? 1 : 0 }}
-            transition={{ duration: 1.0, delay: showSegments ? 0.5 : 0 }}
-          />
-        </g>
-      </g>
 
       {/* ── ML icon (independent position) ── */}
       <motion.g
@@ -198,7 +207,7 @@ function ModelVisualization({ step }: { step: number }) {
         transition={{ opacity: { duration: 0.8, delay: showLabels && !showSegments ? 0.1 : 0 } }}
       >
         <motion.g
-          animate={{ x: showSegments ? CX - 18 : CX - 150 - 18, y: showSegments ? CY - 66 : CY - 50 }}
+          animate={{ x: showSegments ? CX - 18 : CX - 150 - 18, y: showSegments ? CY - 66 - SPLIT_Y : CY - 50 }}
           transition={{ duration: 1.6, ease: [0.33, 1, 0.68, 1] }}
         >
           <g transform="scale(1.8)">
@@ -220,7 +229,7 @@ function ModelVisualization({ step }: { step: number }) {
         transition={{ opacity: { duration: 0.8, delay: showLabels && !showSegments ? 0.25 : 0 } }}
       >
         <motion.g
-          animate={{ x: showSegments ? CX - 18 : CX + 150 - 18, y: showSegments ? CY + 38 : CY - 50 }}
+          animate={{ x: showSegments ? CX - 18 : CX + 150 - 18, y: showSegments ? CY + 38 + SPLIT_Y : CY - 50 }}
           transition={{ duration: 1.6, ease: [0.33, 1, 0.68, 1] }}
         >
           <g transform="scale(1.8)">
@@ -234,24 +243,24 @@ function ModelVisualization({ step }: { step: number }) {
 
       {/* ── ML text labels ── */}
       <motion.text fontSize="14" fontWeight="700" fill={ML_GREEN} textAnchor="middle"
-        animate={{ x: showSegments ? CX : CX - 150, y: showSegments ? CY - 24 : CY + 4, opacity: showLabels ? 1 : 0 }}
+        animate={{ x: showSegments ? CX : CX - 150, y: showSegments ? CY - 24 - SPLIT_Y : CY + 4, opacity: showLabels ? 1 : 0 }}
         transition={{ duration: 1.6, ease: [0.33, 1, 0.68, 1], opacity: { duration: 0.5, delay: showLabels ? 0.15 : 0 } }}>
         ML Prediction
       </motion.text>
       <motion.text fontSize="9.5" fill={ML_GREEN} textAnchor="middle"
-        animate={{ x: showSegments ? CX : CX - 150, y: showSegments ? CY - 10 : CY + 18, opacity: showLabels ? 0.6 : 0 }}
+        animate={{ x: showSegments ? CX : CX - 150, y: showSegments ? CY - 10 - SPLIT_Y : CY + 18, opacity: showLabels ? 0.6 : 0 }}
         transition={{ duration: 1.6, ease: [0.33, 1, 0.68, 1], opacity: { duration: 0.5, delay: showLabels ? 0.2 : 0 } }}>
         Data-driven pattern recognition
       </motion.text>
 
       {/* ── Strategic text labels ── */}
       <motion.text fontSize="14" fontWeight="700" fill={STRAT_BLUE} textAnchor="middle"
-        animate={{ x: showSegments ? CX : CX + 150, y: showSegments ? CY + 34 : CY + 4, opacity: showLabels ? 1 : 0 }}
+        animate={{ x: showSegments ? CX : CX + 150, y: showSegments ? CY + 34 + SPLIT_Y : CY + 4, opacity: showLabels ? 1 : 0 }}
         transition={{ duration: 1.6, ease: [0.33, 1, 0.68, 1], opacity: { duration: 0.5, delay: showLabels ? 0.3 : 0 } }}>
         Strategic Guidance
       </motion.text>
       <motion.text fontSize="9.5" fill={STRAT_BLUE} textAnchor="middle"
-        animate={{ x: showSegments ? CX : CX + 150, y: showSegments ? CY + 48 : CY + 18, opacity: showLabels ? 0.6 : 0 }}
+        animate={{ x: showSegments ? CX : CX + 150, y: showSegments ? CY + 48 + SPLIT_Y : CY + 18, opacity: showLabels ? 0.6 : 0 }}
         transition={{ duration: 1.6, ease: [0.33, 1, 0.68, 1], opacity: { duration: 0.5, delay: showLabels ? 0.35 : 0 } }}>
         Expert knowledge & market rules
       </motion.text>
@@ -265,15 +274,27 @@ function ModelVisualization({ step }: { step: number }) {
       </motion.text>
 
       {/* Pulsing glow */}
-      <motion.circle cx={CX} cy={CY - GAP / 2} r={R + 4} fill="none" stroke={ML_GREEN} strokeWidth={1.5}
+      <motion.circle cx={CX} cy={CY} r={R + 4} fill="none" stroke={ML_GREEN} strokeWidth={1.5}
         clipPath="url(#m-top-half)"
-        animate={{ opacity: showSegments ? [0, 0.15, 0.3, 0.15] : [0] }}
-        transition={showSegments ? { duration: 3, repeat: Infinity, ease: "easeInOut", delay: 1 } : { duration: 0.3 }}
+        animate={{
+          y: showSplit ? -SPLIT_Y : 0,
+          opacity: showSegments ? [0, 0.15, 0.3, 0.15] : [0],
+        }}
+        transition={{
+          y: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
+          opacity: showSegments ? { duration: 3, repeat: Infinity, ease: "easeInOut", delay: 1 } : { duration: 0.3 },
+        }}
       />
-      <motion.circle cx={CX} cy={CY + GAP / 2} r={R + 4} fill="none" stroke={STRAT_BLUE} strokeWidth={1.5}
+      <motion.circle cx={CX} cy={CY} r={R + 4} fill="none" stroke={STRAT_BLUE} strokeWidth={1.5}
         clipPath="url(#m-bot-half)"
-        animate={{ opacity: showSegments ? [0, 0.15, 0.3, 0.15] : [0] }}
-        transition={showSegments ? { duration: 3, repeat: Infinity, ease: "easeInOut", delay: 1 } : { duration: 0.3 }}
+        animate={{
+          y: showSplit ? SPLIT_Y : 0,
+          opacity: showSegments ? [0, 0.15, 0.3, 0.15] : [0],
+        }}
+        transition={{
+          y: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
+          opacity: showSegments ? { duration: 3, repeat: Infinity, ease: "easeInOut", delay: 1 } : { duration: 0.3 },
+        }}
       />
 
       {/* ── Input cards and connections ── */}
@@ -374,25 +395,21 @@ export function OneModelSlide({ step, onAutoAdvance }: OneModelSlideProps) {
   const isZoomed = step >= 1 && step <= 3;
 
   useEffect(() => {
-    if (step === 3 && onAutoAdvance) {
-      const timer = setTimeout(onAutoAdvance, 2500);
+    if (!onAutoAdvance) return;
+    const AUTO_DELAYS: Record<number, number> = {
+      1: 2000,
+      2: 2500,
+      3: 2500,
+    };
+    const delay = AUTO_DELAYS[step];
+    if (delay !== undefined) {
+      const timer = setTimeout(onAutoAdvance, delay);
       return () => clearTimeout(timer);
     }
   }, [step, onAutoAdvance]);
 
   return (
     <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-6xl flex-col items-center justify-center px-6 pt-8 relative">
-      <div className="relative mb-1 flex h-5 shrink-0 items-center justify-center overflow-hidden">
-        <motion.span
-          className="inline-block rounded-full px-3 py-0.5 text-[10px] font-bold tracking-[0.2em] uppercase"
-          style={{ backgroundColor: `${NAVY}10`, color: NAVY }}
-          initial={step === 0 ? { opacity: 0, y: 12 } : false}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: step === 0 ? 0.3 : 0 }}
-        >
-          1 · Design
-        </motion.span>
-      </div>
       <motion.h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: NAVY }}
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}

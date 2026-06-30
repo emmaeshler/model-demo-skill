@@ -235,50 +235,8 @@ export function ProfitGrowthSlide({ step = 0, onAutoAdvance, skipAnimation }: { 
     return () => clearTimeout(t);
   }, [showSweep, skipAnimation]);
 
-  const [headingPhase, setHeadingPhase] = useState(skipAnimation ? 2 : step === 0 ? 0 : 2);
-
-  useEffect(() => {
-    if (skipAnimation) { setHeadingPhase(2); return; }
-    if (step !== 0) {
-      const t0 = setTimeout(() => setHeadingPhase(2));
-      return () => clearTimeout(t0);
-    }
-    const t0 = setTimeout(() => setHeadingPhase(0));
-    const t1 = setTimeout(() => setHeadingPhase(1), 600);
-    const t2 = setTimeout(() => setHeadingPhase(2), 1200);
-    return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); };
-  }, [step, skipAnimation]);
-
   return (
     <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-6xl flex-col items-center justify-center px-6 pt-8">
-      <div className="mb-1 relative h-5 flex items-center justify-center overflow-hidden">
-        <AnimatePresence mode="wait">
-          {step === 0 && headingPhase < 2 ? (
-            <motion.span
-              key="execute-badge"
-              className="inline-block rounded-full px-3 py-0.5 text-[10px] font-bold tracking-[0.2em] uppercase"
-              style={{ backgroundColor: `${NAVY}10`, color: NAVY }}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: headingPhase === 0 ? 1 : 0.4, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.35 }}
-            >
-              4 · Execute
-            </motion.span>
-          ) : (
-            <motion.span
-              key="profit-badge"
-              className="inline-block rounded-full px-3 py-0.5 text-[10px] font-bold tracking-[0.2em] uppercase"
-              style={{ backgroundColor: `${NAVY}10`, color: NAVY }}
-              initial={step === 0 ? { opacity: 0, y: 12 } : { opacity: 1, y: 0 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35 }}
-            >
-              5 · Profit Growth
-            </motion.span>
-          )}
-        </AnimatePresence>
-      </div>
       <motion.h2
         className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
         style={{ color: NAVY }}

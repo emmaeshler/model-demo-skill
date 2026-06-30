@@ -12,7 +12,7 @@ const STRAT_BLUE = "#2A7BA5";
 const GREEN = "#4A8A5C";
 const RED = "#A65A52";
 
-export const REFINE_TOTAL_STEPS = 11;
+export const REFINE_TOTAL_STEPS = 10;
 
 const CURVE_SLOT = { x: 50, y: 20, w: 460, h: 140 };
 const BASE_Y = CURVE_SLOT.y + CURVE_SLOT.h;
@@ -192,14 +192,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
     };
   }, []);
 
-  const chartStep = step - 1;
-  const [chipReady, setChipReady] = useState(skipAnimation || chartStep > 0);
-  useEffect(() => {
-    if (skipAnimation || chartStep !== 0 || chipReady) return;
-    const t = setTimeout(() => setChipReady(true), 600);
-    return () => clearTimeout(t);
-  }, [chartStep, chipReady, skipAnimation]);
-
+  const chartStep = step;
   /* ── Intro phase for chartStep 0 animated title build ── */
   const [introPhase, setIntroPhase] = useState(skipAnimation ? 4 : chartStep === 0 ? 0 : 4);
   useEffect(() => {
@@ -215,29 +208,6 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
     const t4 = setTimeout(() => setIntroPhase(4), 4600);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
   }, [chartStep, skipAnimation]);
-
-  /* ── Step 0: Brief section label ────────────────────── */
-  useEffect(() => {
-    if (skipAnimation || step !== 0 || !onAutoAdvance) return;
-    const t = setTimeout(onAutoAdvance, 2800);
-    return () => clearTimeout(t);
-  }, [step, onAutoAdvance, skipAnimation]);
-
-  if (step === 0) {
-    return (
-      <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-5xl flex-col items-center justify-center px-6">
-        <motion.span
-          className="inline-block rounded-full px-5 py-1.5 text-sm font-bold tracking-[0.2em] uppercase"
-          style={{ backgroundColor: `${STRAT_BLUE}12`, color: STRAT_BLUE }}
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: [0, 1, 1, 0], scale: [0.9, 1, 1, 0.95] }}
-          transition={{ duration: 2.0, times: [0, 0.15, 0.6, 1], ease: "easeOut" }}
-        >
-          Strategic Guidance
-        </motion.span>
-      </div>
-    );
-  }
 
   /* ── Chart animation ────────────────────────────────── */
 
@@ -267,35 +237,6 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
 
   return (
     <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-7xl flex-col items-center justify-start px-6 pt-4">
-      {/* Badge */}
-      <div className="relative mb-3 flex h-5 shrink-0 items-center justify-center overflow-hidden">
-        <AnimatePresence mode="wait">
-          {!chipReady ? (
-            <motion.span
-              key="execute-chip"
-              className="inline-block rounded-full px-3 py-0.5 text-[10px] font-bold tracking-[0.2em] uppercase"
-              style={{ backgroundColor: `${NAVY}10`, color: NAVY }}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 0.4, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.35 }}
-            >
-              3 · Execute
-            </motion.span>
-          ) : (
-            <motion.span
-              key="refine-chip"
-              className="inline-block rounded-full px-3 py-0.5 text-[10px] font-bold tracking-[0.2em] uppercase"
-              style={{ backgroundColor: `${TEAL}12`, color: TEAL }}
-              initial={chartStep === 0 ? { opacity: 0, y: 12 } : false}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35 }}
-            >
-              Refine
-            </motion.span>
-          )}
-        </AnimatePresence>
-      </div>
 
       {/* Title — fixed-height container so chart never resizes */}
       <div className="relative w-full" style={{ height: 100, flexShrink: 0 }}>

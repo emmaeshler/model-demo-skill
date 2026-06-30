@@ -86,14 +86,15 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "2 | Power",
     slides: [
-      { index: POWER_INDEX, label: "ML Prediction", subStep: 0 },
-      { index: POWER_INDEX, label: "Price Points", subStep: 1 },
-      { index: POWER_INDEX, label: "Transactions", subStep: 2 },
-      { index: POWER_INDEX, label: "Market", subStep: 3 },
-      { index: POWER_INDEX, label: "Customers", subStep: 4 },
-      { index: POWER_INDEX, label: "Outcomes", subStep: 5 },
-      { index: POWER_INDEX, label: "Factors", subStep: 6 },
-      { index: POWER_INDEX, label: "Customize", subStep: 7 },
+      { index: POWER_INDEX, label: "Price Points", subStep: 0 },
+      { index: POWER_INDEX, label: "Transactions", subStep: 1 },
+      { index: POWER_INDEX, label: "Market", subStep: 2 },
+      { index: POWER_INDEX, label: "Customers", subStep: 3 },
+      { index: POWER_INDEX, label: "Outcomes", subStep: 4 },
+      { index: POWER_INDEX, label: "Factors", subStep: 5 },
+      { index: POWER_INDEX, label: "Customize", subStep: 6 },
+      { index: POWER_INDEX, label: "Feed", subStep: 7 },
+      { index: POWER_INDEX, label: "Convergence", subStep: 8 },
     ],
   },
   {
@@ -105,14 +106,13 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "4 | Refine",
     slides: [
-      { index: REFINE_INDEX, label: "Strategic Guidance", subStep: 0 },
-      { index: REFINE_INDEX, label: "Scattered", subStep: 1 },
-      { index: REFINE_INDEX, label: "Segmentation", subStep: 2 },
-      { index: REFINE_INDEX, label: "Optimal Curve", subStep: 3 },
-      { index: REFINE_INDEX, label: "QuickParts", subStep: 4 },
-      { index: REFINE_INDEX, label: "Acme", subStep: 6 },
-      { index: REFINE_INDEX, label: "MedSupply", subStep: 8 },
-      { index: REFINE_INDEX, label: "Optimized", subStep: 10 },
+      { index: REFINE_INDEX, label: "Scattered", subStep: 0 },
+      { index: REFINE_INDEX, label: "Segmentation", subStep: 1 },
+      { index: REFINE_INDEX, label: "Optimal Curve", subStep: 2 },
+      { index: REFINE_INDEX, label: "QuickParts", subStep: 3 },
+      { index: REFINE_INDEX, label: "Acme", subStep: 5 },
+      { index: REFINE_INDEX, label: "MedSupply", subStep: 7 },
+      { index: REFINE_INDEX, label: "Optimized", subStep: 9 },
     ],
   },
   {
@@ -627,7 +627,7 @@ function IntroSlide() {
           <span className="block">Dynamic Model</span>
         </h1>
 
-        <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-white/70">
+        <p className="mx-auto max-w-xl text-lg leading-relaxed text-white/70">
           See how your pricing model turns data into decisions — and decisions into measurable profit.
         </p>
 

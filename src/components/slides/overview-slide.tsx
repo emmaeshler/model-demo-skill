@@ -62,16 +62,6 @@ export function OverviewSlide({ step, skipAnimation }: { step: number; skipAnima
 
   return (
     <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-5xl flex-col items-center justify-center px-6 pt-8">
-      <motion.span
-        className="mb-1 inline-block rounded-full px-3 py-0.5 text-[10px] font-bold tracking-[0.2em] uppercase"
-        style={{ backgroundColor: `${NAVY}10`, color: NAVY }}
-        initial={{ opacity: 0, scale: 0.85 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-      >
-        Overview
-      </motion.span>
-
       <motion.h2
         className="text-center text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl"
         style={{ color: NAVY }}

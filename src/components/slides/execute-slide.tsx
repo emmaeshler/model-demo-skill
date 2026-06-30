@@ -321,17 +321,6 @@ export function ModelOutputsOverview({ step }: { step: number }) {
 
   return (
     <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-6xl flex-col items-center justify-center px-6 relative">
-      <div className="mb-1 relative h-5 flex items-center justify-center overflow-hidden">
-        <motion.span
-          className="inline-block rounded-full px-3 py-0.5 text-[10px] font-bold tracking-[0.2em] uppercase"
-          style={{ backgroundColor: `${TEAL}12`, color: TEAL }}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35 }}
-        >
-          3 · Execute
-        </motion.span>
-      </div>
       <motion.h2
         className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
         style={{ color: NAVY }}
@@ -575,25 +564,6 @@ export function ExecuteSlide({
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-6xl flex-col items-center justify-center px-6 pt-8 relative"
         >
-          <div className="relative mb-1 flex h-5 shrink-0 items-center justify-center overflow-hidden">
-            <motion.span
-              className="absolute inline-block rounded-full px-3 py-0.5 text-[10px] font-bold tracking-[0.2em] uppercase"
-              style={{ backgroundColor: `${NAVY}10`, color: NAVY }}
-              animate={{ opacity: [0, 0.4, 0.4, 0], y: [8, 0, 0, -12] }}
-              transition={{ duration: 0.9, times: [0, 0.2, 0.6, 1] }}
-            >
-              2 · Power
-            </motion.span>
-            <motion.span
-              className="inline-block rounded-full px-3 py-0.5 text-[10px] font-bold tracking-[0.2em] uppercase"
-              style={{ backgroundColor: `${NAVY}10`, color: NAVY }}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, delay: 0.7 }}
-            >
-              3 · Execute
-            </motion.span>
-          </div>
           <motion.h2
             className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
             style={{ color: NAVY }}

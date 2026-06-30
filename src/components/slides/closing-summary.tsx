@@ -58,25 +58,6 @@ export function ClosingSummarySlide() {
     <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-6xl flex-col items-center justify-center gap-3 px-6">
       {/* Header */}
       <div className="text-center">
-        <div className="relative mb-1 flex h-5 items-center justify-center overflow-hidden">
-          <motion.span
-            className="absolute inline-block rounded-full px-3 py-0.5 text-[10px] font-bold tracking-[0.2em] uppercase"
-            style={{ backgroundColor: `${NAVY}10`, color: NAVY }}
-            animate={{ opacity: [0, 0.4, 0.4, 0], y: [8, 0, 0, -12] }}
-            transition={{ duration: 0.9, times: [0, 0.2, 0.6, 1] }}
-          >
-            5 · Profit Growth
-          </motion.span>
-          <motion.span
-            className="inline-block rounded-full px-3 py-0.5 text-[10px] font-bold tracking-[0.2em] uppercase"
-            style={{ backgroundColor: `${NAVY}10`, color: NAVY }}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, delay: 0.7 }}
-          >
-            Summary
-          </motion.span>
-        </div>
         <motion.h2
           className="mt-1 text-xl font-bold tracking-tight sm:text-2xl"
           style={{ color: NAVY }}
