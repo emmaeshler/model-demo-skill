@@ -30,7 +30,7 @@ function Segment({
   animate: boolean;
   shifting?: boolean;
 }) {
-  const baseDelay = position === "top" ? 0 : 0.1;
+  const baseDelay = position === "top" ? 0 : 0.25;
 
   return (
     <motion.div
@@ -41,11 +41,11 @@ function Segment({
       initial={shouldAnimate ? { scaleY: 0 } : false}
       animate={{
         scaleY: 1,
-        backgroundColor: active ? `${color}0C` : "transparent",
+        backgroundColor: active ? `${color}15` : "transparent",
       }}
       transition={{
         scaleY: {
-          duration: 0.6,
+          duration: 1.2,
           delay: shouldAnimate ? baseDelay : 0,
           ease: [0.22, 1, 0.36, 1],
         },
@@ -58,11 +58,11 @@ function Segment({
         initial={shouldAnimate ? { opacity: 0 } : false}
         animate={{
           opacity: 1,
-          width: shifting && active ? [2, 6, 4] : active ? 4 : 2,
+          width: shifting && active ? [2, 10, 5] : active ? 5 : 2,
           backgroundColor: active ? color : `${NAVY}18`,
         }}
         transition={{
-          opacity: { duration: 0.3, delay: shouldAnimate ? baseDelay + 0.35 : 0 },
+          opacity: { duration: 0.5, delay: shouldAnimate ? baseDelay + 0.6 : 0 },
           width: { duration: shifting ? 0.7 : 0.35, delay: shifting ? 0.1 : 0 },
           backgroundColor: { duration: shifting ? 0.5 : 0.35, delay: shifting ? 0.1 : 0 },
         }}
@@ -75,9 +75,9 @@ function Segment({
             className="pointer-events-none absolute inset-0"
             style={{ backgroundColor: color }}
             initial={{ opacity: 0, y: position === "top" ? "100%" : "-100%" }}
-            animate={{ opacity: [0, 0.25, 0.25, 0], y: [position === "top" ? "100%" : "-100%", "0%", "0%", "0%"] }}
+            animate={{ opacity: [0, 0.3, 0.3, 0], y: [position === "top" ? "100%" : "-100%", "0%", "0%", "0%"] }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], times: [0, 0.25, 0.65, 1] }}
+            transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1], times: [0, 0.2, 0.6, 1] }}
           />
         )}
       </AnimatePresence>
@@ -87,13 +87,13 @@ function Segment({
         style={{ writingMode: "vertical-lr" }}
         initial={shouldAnimate ? { opacity: 0 } : false}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.35, delay: shouldAnimate ? baseDelay + 0.4 : 0 }}
+        transition={{ duration: 0.5, delay: shouldAnimate ? baseDelay + 0.8 : 0 }}
       >
         <motion.span
           className="text-[10px] font-bold tracking-wide whitespace-nowrap rotate-180"
           animate={{
-            color: active ? color : `${NAVY}55`,
-            scale: shifting && active ? [1, 1.2, 1] : 1,
+            color: active ? color : `${NAVY}40`,
+            scale: shifting && active ? [1, 1.4, 1] : 1,
           }}
           transition={{
             color: { duration: shifting ? 0.5 : 0.35, delay: shifting ? 0.1 : 0 },
@@ -111,7 +111,7 @@ function Segment({
             initial={{ opacity: 0, scale: 0 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0 }}
-            transition={{ duration: 0.3, delay: shifting ? 0.4 : 0.1 }}
+            transition={{ duration: 0.4, delay: shifting ? 0.4 : 0.3 }}
           >
             <div
               className="h-1.5 w-1.5 rounded-full"
@@ -124,9 +124,10 @@ function Segment({
   );
 }
 
-export function ModelIndicator({ slideKind }: { slideKind: string }) {
+export function ModelIndicator({ slideKind, subStep = 0 }: { slideKind: string; subStep?: number }) {
   const highlight = SECTION_HIGHLIGHTS[slideKind] ?? "both";
-  const show = slideKind in SECTION_HIGHLIGHTS;
+  const show = slideKind in SECTION_HIGHLIGHTS
+    && !((slideKind === "power" || slideKind === "refine") && subStep === 0);
 
   const mlActive = highlight === "ml" || highlight === "both";
   const stratActive = highlight === "strat" || highlight === "both";
@@ -135,7 +136,7 @@ export function ModelIndicator({ slideKind }: { slideKind: string }) {
   const [shifting, setShifting] = useState(false);
 
   const prevShowRef = useRef(false);
-  const skipAnimation = true;
+  const skipAnimation = !prevShowRef.current;
 
   useEffect(() => {
     if (show) prevShowRef.current = true;

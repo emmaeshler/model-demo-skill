@@ -14,6 +14,12 @@ export const POWER_TOTAL_STEPS = 8;
 
 const ML_GREEN = "#3A7D44";
 
+const SOLID_TINTS: Record<string, string> = {
+  [ORANGE]: "#FEF4EC",
+  [NAVY]: "#E8F1F6",
+  [PURPLE]: "#F0ECF6",
+};
+
 /* ─── Seeded PRNG ─── */
 
 function mulberry32(seed: number) {
@@ -52,13 +58,49 @@ const DRIVERS = [
   { label: "Win / Loss Patterns", color: PURPLE, cx: 610, cy: 315 },
 ];
 
-const CLUSTER_SPREAD = [
-  { cx: 280, cy: 110 },
-  { cx: 730, cy: 110 },
-  { cx: 280, cy: 340 },
-  { cx: 730, cy: 340 },
+/* ─── Triangle factor layout ─── */
+
+const TRIANGLE_VERTS = {
+  product: { x: 504, y: 55, label: "PRODUCT", color: ORANGE },
+  customer: { x: 195, y: 395, label: "CUSTOMER", color: NAVY },
+  order: { x: 813, y: 395, label: "ORDER", color: PURPLE },
+};
+
+const TRIANGLE_FACTORS: { label: string; category: "product" | "customer" | "order"; emphasis?: "highlight" | "crossoff" }[] = [
+  { label: "Product mix", category: "product" },
+  { label: "Product family", category: "product" },
+  { label: "Price sensitivity", category: "product" },
+  { label: "Product specialization", category: "product" },
+  { label: "Competitive price point", category: "product" },
+  { label: "Willingness to pay", category: "product" },
+  { label: "Cost to serve", category: "product" },
+  { label: "Customer channel", category: "customer" },
+  { label: "End market", category: "customer", emphasis: "crossoff" },
+  { label: "Sales rep", category: "customer", emphasis: "highlight" },
+  { label: "Region", category: "customer" },
+  { label: "Size of customer", category: "customer" },
+  { label: "Customer tenure", category: "customer" },
+  { label: "Product mix", category: "customer" },
+  { label: "Order frequency", category: "order" },
+  { label: "Order size", category: "order" },
+  { label: "Lead time", category: "order" },
+  { label: "Payment terms", category: "order" },
+  { label: "Contract type", category: "order" },
+  { label: "Seasonality", category: "order" },
+  { label: "Delivery method", category: "order" },
 ];
-const CLUSTER_R = 95;
+
+const CATEGORY_LAYOUT = [
+  { key: "product" as const, x: 310, y: 55, w: 388, h: 180, color: ORANGE, labelDelay: 0.2, baseDelay: 3.8 },
+  { key: "customer" as const, x: 0, y: 330, w: 340, h: 165, color: NAVY, labelDelay: 0.3, baseDelay: 5.6 },
+  { key: "order" as const, x: 680, y: 330, w: 340, h: 165, color: PURPLE, labelDelay: 0.4, baseDelay: 7.4 },
+];
+
+const CUSTOMIZE_ACTIONS = [
+  { text: "For this market, competitive intelligence is a key factor" },
+  { text: "For this client, end market isn’t a relevant factor" },
+  { text: "Sales rep is a key pricing driver for this business" },
+];
 
 /* ─── Spotlight data (steps 1-4) ─── */
 
@@ -99,7 +141,8 @@ const TITLES = [
   "Reading competitive signals…",
   "Mapping volume & elasticity…",
   "Learning win/loss patterns…",
-  "Four pricing drivers emerge",
+  "21 pricing factors identified",
+  "Customized for your business",
   "One optimal price",
 ];
 
@@ -109,24 +152,15 @@ const SUBTITLES = [
   "36 real-time market features reveal where you stand against competitors.",
   "2,400 accounts with distinct buying profiles show how demand responds to price.",
   "18 months of win/loss data uncover what drives customer decisions.",
-  "Cost, competition, elasticity, and demand — isolated from the noise.",
-  "All four drivers converge into a single recommended price — for every account and SKU.",
+  "The model identifies the variables that drive every price — grouped by product, customer, and order.",
+  "Based on your data, certain factors matter more — and others fall away.",
+  "All three dimensions converge into a single recommended price — for every account and SKU.",
 ];
 
 /* ─── Pre-compute dot positions ─── */
 
 const DOT_COUNT = 420;
 const rand = mulberry32(42);
-
-const HOTSPOTS = [
-  { x: 160, y: 280 },
-  { x: 350, y: 130 },
-  { x: 500, y: 200 },
-  { x: 280, y: 360 },
-  { x: 650, y: 300 },
-  { x: 450, y: 380 },
-  { x: 200, y: 100 },
-];
 
 const DOTS = Array.from({ length: DOT_COUNT }, (_, i) => {
   const cluster = i % 4;
@@ -137,15 +171,41 @@ const DOTS = Array.from({ length: DOT_COUNT }, (_, i) => {
   let sx: number;
   let sy: number;
 
-  if (rand() < 0.4) {
-    const hs = HOTSPOTS[Math.floor(rand() * HOTSPOTS.length)];
-    const spread = 60 + rand() * 80;
-    const a = rand() * Math.PI * 2;
-    sx = hs.x + Math.cos(a) * rand() * spread;
-    sy = hs.y + Math.sin(a) * rand() * spread;
+  const zone = rand();
+  if (zone < 0.28) {
+    // Upper-left cluster: high price, low volume
+    const rawX = 0.10 + (rand() - 0.5) * 0.16 + (rand() - 0.5) * 0.08;
+    const rawY = 0.15 + (rand() - 0.5) * 0.20 + (rand() - 0.5) * 0.08;
+    sx = PLOT.left + rawX * PLOT_W;
+    sy = PLOT.top + rawY * PLOT_H;
+  } else if (zone < 0.56) {
+    // Lower-left cluster: low price, low volume
+    const rawX = 0.13 + (rand() - 0.5) * 0.20 + (rand() - 0.5) * 0.08;
+    const rawY = 0.73 + (rand() - 0.5) * 0.24 + (rand() - 0.5) * 0.08;
+    sx = PLOT.left + rawX * PLOT_W;
+    sy = PLOT.top + rawY * PLOT_H;
+  } else if (zone < 0.72) {
+    // Bridge between clusters (the bend of the boomerang)
+    const rawX = 0.08 + rand() * 0.16;
+    const rawY = 0.30 + rand() * 0.30;
+    sx = PLOT.left + rawX * PLOT_W;
+    sy = PLOT.top + rawY * PLOT_H;
+  } else if (zone < 0.90) {
+    // Trail sweeping right from lower cluster
+    const t = rand();
+    const rawX = 0.25 + t * 0.45;
+    const rawY = 0.55 + t * 0.20 + (rand() - 0.5) * 0.18;
+    sx = PLOT.left + rawX * PLOT_W;
+    sy = PLOT.top + rawY * PLOT_H;
   } else {
-    sx = PLOT.left + 10 + rand() * (PLOT_W - 20);
-    sy = PLOT.top + 10 + rand() * (PLOT_H - 20);
+    // Sparse fill (avoid upper right)
+    const rawX = rand() * 0.80;
+    let rawY = rand() * 0.85 + 0.05;
+    if (rawX > 0.45 && rawY < 0.35) {
+      rawY = 0.40 + rand() * 0.50;
+    }
+    sx = PLOT.left + rawX * PLOT_W;
+    sy = PLOT.top + rawY * PLOT_H;
   }
 
   sx = Math.max(PLOT.left + 4, Math.min(PLOT.right - 4, sx));
@@ -174,6 +234,52 @@ const DOTS = Array.from({ length: DOT_COUNT }, (_, i) => {
     driftDy: Math.sin(driftAngle) * driftRadius,
     driftDuration,
     driftDelay,
+  };
+});
+
+/* ─── Triangle-edge targets for dots ─── */
+
+const triRand = mulberry32(99);
+const TRI_EDGES = [
+  { fx: TRIANGLE_VERTS.product.x, fy: TRIANGLE_VERTS.product.y, tx: TRIANGLE_VERTS.customer.x, ty: TRIANGLE_VERTS.customer.y },
+  { fx: TRIANGLE_VERTS.product.x, fy: TRIANGLE_VERTS.product.y, tx: TRIANGLE_VERTS.order.x, ty: TRIANGLE_VERTS.order.y },
+  { fx: TRIANGLE_VERTS.customer.x, fy: TRIANGLE_VERTS.customer.y, tx: TRIANGLE_VERTS.order.x, ty: TRIANGLE_VERTS.order.y },
+];
+const TRI_TARGETS = Array.from({ length: DOT_COUNT }, (_, i) => {
+  const edgeIdx = i % 3;
+  const edge = TRI_EDGES[edgeIdx];
+  const t = Math.max(0.03, Math.min(0.97, (Math.floor(i / 3) + triRand() * 0.3) / Math.ceil(DOT_COUNT / 3)));
+  const dx = edge.tx - edge.fx;
+  const dy = edge.ty - edge.fy;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  const perpX = -dy / len;
+  const perpY = dx / len;
+  const offset = (triRand() - 0.5) * 12;
+  return {
+    x: edge.fx + dx * t + perpX * offset,
+    y: edge.fy + dy * t + perpY * offset,
+  };
+});
+
+/* ─── Cluster targets (intermediate step before triangle) ─── */
+
+const CLUSTER_VERTS = [TRIANGLE_VERTS.product, TRIANGLE_VERTS.customer, TRIANGLE_VERTS.order];
+const CLUSTER_COLORS = [ORANGE, NAVY, PURPLE];
+
+const clusterRand = mulberry32(77);
+const CLUSTER_TARGETS = Array.from({ length: DOT_COUNT }, (_, i) => {
+  const target = TRI_TARGETS[i];
+  const dProd = Math.hypot(target.x - TRIANGLE_VERTS.product.x, target.y - TRIANGLE_VERTS.product.y);
+  const dCust = Math.hypot(target.x - TRIANGLE_VERTS.customer.x, target.y - TRIANGLE_VERTS.customer.y);
+  const dOrd = Math.hypot(target.x - TRIANGLE_VERTS.order.x, target.y - TRIANGLE_VERTS.order.y);
+  const ci = dProd <= dCust && dProd <= dOrd ? 0 : dCust <= dOrd ? 1 : 2;
+  const vert = CLUSTER_VERTS[ci];
+  const angle = clusterRand() * Math.PI * 2;
+  const dist = clusterRand() * 30 + 5;
+  return {
+    x: vert.x + Math.cos(angle) * dist,
+    y: vert.y + Math.sin(angle) * dist,
+    ci,
   };
 });
 
@@ -238,11 +344,11 @@ function CategoryIcon({ type, color, size = 18 }: { type: string; color: string;
 
 /* ─── Main slide ─── */
 
-export function PowerSlide({ step = 0, onAutoAdvance }: { step: number; onAutoAdvance?: () => void }) {
+export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: number; onAutoAdvance?: () => void; skipAnimation?: boolean }) {
   const chartStep = step - 1;
 
   useEffect(() => {
-    if (!onAutoAdvance || chartStep < 1 || chartStep > 4) return;
+    if (skipAnimation || !onAutoAdvance || chartStep < 1 || chartStep > 4) return;
     const spotlight = SPOTLIGHTS[chartStep - 1];
     const pillCount = spotlight.pills.length;
     const lastPillDelay = 0.5 + (pillCount - 1) * (SWEEP_DURATION / 2 / pillCount);
@@ -251,81 +357,82 @@ export function PowerSlide({ step = 0, onAutoAdvance }: { step: number; onAutoAd
     const totalMs = (cardEntranceDelay + lastPillDone + 1.5) * 1000;
     const timer = setTimeout(onAutoAdvance, totalMs);
     return () => clearTimeout(timer);
-  }, [chartStep, onAutoAdvance]);
+  }, [chartStep, onAutoAdvance, skipAnimation]);
 
-  const [introPhase, setIntroPhase] = useState(chartStep === 0 ? 0 : 4);
+  const [introPhase, setIntroPhase] = useState(skipAnimation ? 5 : chartStep === 0 ? 0 : 4);
+  const [customizePhase, setCustomizePhase] = useState(chartStep > 6 || (skipAnimation && chartStep >= 6) ? 2 : -1);
+  const [trianglePhase, setTrianglePhase] = useState(chartStep > 5 || (skipAnimation && chartStep >= 5) ? 1 : 0);
   useEffect(() => {
+    if (skipAnimation) { setIntroPhase(5); return; }
     if (chartStep !== 0) {
       const t0 = setTimeout(() => setIntroPhase(5));
       return () => clearTimeout(t0);
     }
+    const settle = 700;
     const t0 = setTimeout(() => setIntroPhase(0));
-    const t1 = setTimeout(() => setIntroPhase(1), 800);
-    const t2 = setTimeout(() => setIntroPhase(2), 1800);
-    const t3 = setTimeout(() => setIntroPhase(3), 3200);
-    const t4 = setTimeout(() => setIntroPhase(4), 5000);
-    const t5 = setTimeout(() => setIntroPhase(5), 5800);
+    const t1 = setTimeout(() => setIntroPhase(1), settle + 800);
+    const t2 = setTimeout(() => setIntroPhase(2), settle + 1800);
+    const t3 = setTimeout(() => setIntroPhase(3), settle + 3200);
+    const t4 = setTimeout(() => setIntroPhase(4), settle + 5000);
+    const t5 = setTimeout(() => setIntroPhase(5), settle + 5800);
     return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); clearTimeout(t5); };
-  }, [chartStep]);
+  }, [chartStep, skipAnimation]);
 
-  /* ── Step 0: Full-screen transition moment ─────────── */
+  /* ── Step 0: Brief section label ────────────────────── */
+  useEffect(() => {
+    if (skipAnimation || step !== 0 || !onAutoAdvance) return;
+    const t = setTimeout(onAutoAdvance, 2800);
+    return () => clearTimeout(t);
+  }, [step, onAutoAdvance, skipAnimation]);
+
+  useEffect(() => {
+    if (chartStep < 5) { setTrianglePhase(0); return; }
+    if (chartStep > 5 || skipAnimation) { setTrianglePhase(1); return; }
+    setTrianglePhase(0);
+    const t = setTimeout(() => setTrianglePhase(1), 2000);
+    return () => clearTimeout(t);
+  }, [chartStep, skipAnimation]);
+
+  useEffect(() => {
+    if (chartStep < 6) { setCustomizePhase(-1); return; }
+    if (chartStep > 6 || skipAnimation) { setCustomizePhase(2); return; }
+    setCustomizePhase(-1);
+    const t0 = setTimeout(() => setCustomizePhase(0), 800);
+    const t1 = setTimeout(() => setCustomizePhase(1), 3000);
+    const t2 = setTimeout(() => setCustomizePhase(2), 5200);
+    return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); };
+  }, [chartStep, skipAnimation]);
+
   if (step === 0) {
     return (
       <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-5xl flex-col items-center justify-center px-6">
         <motion.span
-          className="relative mb-4 inline-block rounded-full px-4 py-1 text-xs font-bold tracking-[0.2em] uppercase"
-          style={{ backgroundColor: `${ML_GREEN}15`, color: ML_GREEN }}
-          initial={{ opacity: 0, scale: 0.85 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.35, ease: "easeOut" }}
+          className="inline-block rounded-full px-5 py-1.5 text-sm font-bold tracking-[0.2em] uppercase"
+          style={{ backgroundColor: `${ML_GREEN}12`, color: ML_GREEN }}
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: [0, 1, 1, 0], scale: [0.9, 1, 1, 0.95] }}
+          transition={{ duration: 2.0, times: [0, 0.15, 0.6, 1], ease: "easeOut" }}
         >
-          <motion.span
-            className="pointer-events-none absolute inset-0 rounded-full"
-            style={{ border: `1.5px solid ${ML_GREEN}` }}
-            initial={{ opacity: 0.6, scale: 1 }}
-            animate={{ opacity: 0, scale: 2 }}
-            transition={{ duration: 0.8, delay: 0.15, ease: "easeOut" }}
-          />
           ML Prediction
         </motion.span>
-
-        <motion.h2
-          className="text-center text-3xl font-bold tracking-tight sm:text-4xl"
-          style={{ color: ML_GREEN }}
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.15, ease: "easeOut" }}
-        >
-          Your data becomes the engine.
-        </motion.h2>
-
-        <motion.p
-          className="mt-4 max-w-md text-center text-base leading-relaxed"
-          style={{ color: `${NAVY}99` }}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.35, ease: "easeOut" }}
-        >
-          The ML prediction layer ingests millions of signals to find
-          the patterns that drive every price.
-        </motion.p>
       </div>
     );
   }
 
-  /* ── Steps 1-7: Chart flow ─────────────────────────── */
-  const converged = chartStep >= 6;
-  const clustered = chartStep >= 5;
-  const sweepActive = chartStep >= 1 && !clustered;
+  /* ── Chart flow ─────────────────────────────────────── */
+  const triangleVisible = chartStep >= 5;
+  const customized = chartStep >= 6;
+  const converged = chartStep >= 7;
+  const sweepActive = chartStep >= 1 && chartStep <= 4;
 
   function dotFill(dot: (typeof DOTS)[0]) {
-    if (clustered) return DRIVERS[dot.cluster].color;
+    if (triangleVisible) return TEAL;
     if (dot.cluster < chartStep) return DRIVERS[dot.cluster].color;
     return MUTED;
   }
 
   function dotOpacity(dot: (typeof DOTS)[0]) {
-    if (clustered) return 0.65;
+    if (triangleVisible) return 0.35;
     if (dot.cluster === chartStep - 1) return 0.7;
     if (dot.cluster < chartStep - 1) return 0.45;
     return dot.scatterOpacity;
@@ -346,13 +453,13 @@ export function PowerSlide({ step = 0, onAutoAdvance }: { step: number; onAutoAd
 
       {/* Title — fixed-height container so chart never resizes */}
       <div className="relative w-full" style={{ height: 100, flexShrink: 0 }}>
-        <AnimatePresence>
+        <AnimatePresence mode="wait">
           {chartStep === 0 && (
             <motion.div
               key="intro-title"
               className="absolute inset-0 flex flex-col items-center justify-start"
               exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.6, ease: "easeInOut" }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
             >
               <div className="flex flex-col items-center gap-1">
                 <motion.h2
@@ -414,8 +521,8 @@ export function PowerSlide({ step = 0, onAutoAdvance }: { step: number; onAutoAd
               className="absolute inset-0 flex flex-col items-center justify-start"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.5, delay: chartStep === 1 ? 1.0 : 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.35, delay: chartStep === 1 ? 1.0 : 0 }}
             >
               <motion.h2
                 className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
@@ -456,8 +563,8 @@ export function PowerSlide({ step = 0, onAutoAdvance }: { step: number; onAutoAd
         >
           {/* ── Chart chrome (fades out on cluster step) ── */}
           <motion.g
-            animate={{ opacity: clustered ? 0 : 1 }}
-            transition={{ duration: 0.5, delay: clustered ? 0 : 0.3 }}
+            animate={{ opacity: triangleVisible ? 0 : 1 }}
+            transition={{ duration: 0.5, delay: triangleVisible ? 0 : 0.3 }}
           >
             {Y_TICKS.map((_, i) => (
               <line
@@ -508,17 +615,17 @@ export function PowerSlide({ step = 0, onAutoAdvance }: { step: number; onAutoAd
             </text>
           </motion.g>
 
-          {/* ── Cluster outlines (step 5) ── */}
-          {DRIVERS.map((d, i) => (
-            <motion.circle
-              key={`ring-${i}`}
-              cx={CLUSTER_SPREAD[i].cx} cy={CLUSTER_SPREAD[i].cy} r={CLUSTER_R}
-              fill="none" stroke={d.color} strokeWidth={1.5} strokeDasharray="5 4"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: clustered && !converged ? 0.25 : 0 }}
-              transition={{ delay: clustered && !converged ? 1.0 + i * 0.12 : 0, duration: 0.5 }}
-            />
-          ))}
+          {/* ── Triangle outline (step 5+) ── */}
+          <motion.polygon
+            points={`${TRIANGLE_VERTS.product.x},${TRIANGLE_VERTS.product.y} ${TRIANGLE_VERTS.customer.x},${TRIANGLE_VERTS.customer.y} ${TRIANGLE_VERTS.order.x},${TRIANGLE_VERTS.order.y}`}
+            fill="none"
+            stroke={TEAL}
+            strokeWidth={1.5}
+            strokeDasharray="5 4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: trianglePhase >= 1 && !converged ? 0.25 : 0 }}
+            transition={{ delay: trianglePhase >= 1 && !converged ? 0.5 : 0, duration: 0.6 }}
+          />
 
           {/* ── Scanning sweep line (steps 1-4 only) ── */}
           {sweepActive && (
@@ -556,13 +663,9 @@ export function PowerSlide({ step = 0, onAutoAdvance }: { step: number; onAutoAd
 
           {/* ── Data dots ── */}
           {DOTS.map((dot, i) => {
-            const sp = CLUSTER_SPREAD[dot.cluster];
-            const origD = DRIVERS[dot.cluster];
-            const spreadCx = sp.cx + (dot.cx - origD.cx) * (CLUSTER_R / 48);
-            const spreadCy = sp.cy + (dot.cy - origD.cy) * (CLUSTER_R / 48);
             const convAngle = (i / DOT_COUNT) * Math.PI * 2;
             const convDist = 4 + (i % 7) * 1.5;
-            const dotEntranceDelay = chartStep === 0 ? dot.delay * 0.8 + (i % 30) * 0.008 : 0;
+            const dotEntranceDelay = chartStep === 0 ? dot.delay * 1.6 + (i % 40) * 0.012 : 0;
 
             let targetCx: number | number[];
             let targetCy: number | number[];
@@ -581,20 +684,33 @@ export function PowerSlide({ step = 0, onAutoAdvance }: { step: number; onAutoAd
               cxTransition = { duration: 1.0, delay: dot.delay * 0.3, ease: [0.22, 1, 0.36, 1] };
               cyTransition = { duration: 1.0, delay: dot.delay * 0.3, ease: [0.22, 1, 0.36, 1] };
               opacityDelay = dot.delay * 0.3 + 0.5;
-            } else if (clustered) {
-              targetCx = spreadCx;
-              targetCy = spreadCy;
-              targetOpacity = 0.65;
+            } else if (triangleVisible && trianglePhase >= 1) {
+              const tri = TRI_TARGETS[i];
+              targetCx = tri.x;
+              targetCy = tri.y;
+              targetFill = TEAL;
+              targetOpacity = 0.35;
+              targetR = dot.r * 0.7;
               cxTransition = { duration: 1.4, delay: dot.delay * 0.3, ease: [0.22, 1, 0.36, 1] };
               cyTransition = { duration: 1.4, delay: dot.delay * 0.3, ease: [0.22, 1, 0.36, 1] };
               opacityDelay = dot.delay * 0.3;
+            } else if (triangleVisible) {
+              const cl = CLUSTER_TARGETS[i];
+              targetCx = cl.x;
+              targetCy = cl.y;
+              targetFill = CLUSTER_COLORS[cl.ci];
+              targetOpacity = 0.55;
+              targetR = dot.r * 0.8;
+              cxTransition = { duration: 1.2, delay: dot.delay * 0.3, ease: [0.22, 1, 0.36, 1] };
+              cyTransition = { duration: 1.2, delay: dot.delay * 0.3, ease: [0.22, 1, 0.36, 1] };
+              opacityDelay = dot.delay * 0.3;
             } else if (chartStep === 0 && introPhase < 4) {
-              targetCx = PLOT_CX;
-              targetCy = PLOT_CY;
+              targetCx = dot.sx;
+              targetCy = dot.sy - 18;
               targetR = 0;
               targetOpacity = 0;
-              cxTransition = { duration: 0.9, delay: dotEntranceDelay, ease: [0.22, 1, 0.36, 1] };
-              cyTransition = { duration: 0.9, delay: dotEntranceDelay, ease: [0.22, 1, 0.36, 1] };
+              cxTransition = { duration: 0.01 };
+              cyTransition = { duration: 0.01 };
             } else if (introPhase >= 5 || chartStep > 0) {
               targetCx = chartStep > 0
                 ? dot.sx
@@ -617,16 +733,16 @@ export function PowerSlide({ step = 0, onAutoAdvance }: { step: number; onAutoAd
             } else {
               targetCx = dot.sx;
               targetCy = dot.sy;
-              cxTransition = { duration: 0.9, delay: dotEntranceDelay, ease: [0.22, 1, 0.36, 1] };
-              cyTransition = { duration: 0.9, delay: dotEntranceDelay, ease: [0.22, 1, 0.36, 1] };
-              opacityDelay = dotEntranceDelay + 0.2;
+              cxTransition = { duration: 0.5, delay: dotEntranceDelay, ease: [0.22, 1, 0.36, 1] };
+              cyTransition = { duration: 0.6, delay: dotEntranceDelay, ease: [0.22, 1, 0.36, 1] };
+              opacityDelay = dotEntranceDelay;
             }
 
             return (
               <motion.circle
                 key={i}
                 fill={targetFill}
-                initial={{ cx: PLOT_CX, cy: PLOT_CY, r: 0, fillOpacity: 0 }}
+                initial={{ cx: dot.sx, cy: dot.sy - 18, r: 0, fillOpacity: 0 }}
                 animate={{
                   cx: targetCx,
                   cy: targetCy,
@@ -727,64 +843,137 @@ export function PowerSlide({ step = 0, onAutoAdvance }: { step: number; onAutoAd
             );
           })}
 
-          {/* ── Cluster labels (step 5) ── */}
-          {DRIVERS.map((d, i) => {
-            const sp = CLUSTER_SPREAD[i];
+          {/* ── Triangle labels + factor pills (step 5+, sequential) ── */}
+          {triangleVisible && !converged && CATEGORY_LAYOUT.map((cat) => {
+            const vert = TRIANGLE_VERTS[cat.key];
             return (
-              <motion.g key={`label-${i}`}>
-                <motion.rect
-                  x={sp.cx - 95} y={sp.cy + CLUSTER_R + 8} width={190} height={32} rx={16} fill="white"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: clustered && !converged ? 0.92 : 0 }}
-                  transition={{ delay: clustered && !converged ? 1.15 + i * 0.12 : 0, duration: 0.4 }}
-                />
-                <motion.text
-                  x={sp.cx} y={sp.cy + CLUSTER_R + 30} textAnchor="middle"
-                  style={{ fill: d.color, fontSize: 19, fontWeight: 700, fontFamily: "inherit" }}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: clustered && !converged ? 1 : 0 }}
-                  transition={{ delay: clustered && !converged ? 1.2 + i * 0.12 : 0, duration: 0.4 }}
-                >
-                  {d.label}
-                </motion.text>
-              </motion.g>
+              <foreignObject key={`cat-group-${cat.key}`} x={cat.x} y={cat.y} width={cat.w} height={cat.h}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                  <motion.div
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 800,
+                      color: cat.color,
+                      letterSpacing: "0.12em",
+                      fontFamily: "inherit",
+                      textAlign: "center",
+                      backgroundColor: SOLID_TINTS[cat.color] ?? "white",
+                      borderRadius: 4,
+                      padding: "2px 12px",
+                    }}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: cat.labelDelay, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    {vert.label}
+                  </motion.div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 5, justifyContent: "center" }}>
+                {TRIANGLE_FACTORS.filter(f => f.category === cat.key).map((f, fi) => {
+                  const isCrossed = customizePhase >= 1 && f.emphasis === "crossoff";
+                  const isHighlighted = customizePhase >= 2 && f.emphasis === "highlight";
+                  return (
+                    <motion.span
+                      key={`${cat.key}-${f.label}`}
+                      style={{
+                        display: "inline-block",
+                        borderRadius: 12,
+                        border: `1.5px solid ${isHighlighted ? TEAL : isCrossed ? `${MUTED}40` : `${cat.color}30`}`,
+                        padding: "3px 10px",
+                        fontSize: 11,
+                        fontWeight: isHighlighted ? 700 : 500,
+                        fontFamily: "inherit",
+                        whiteSpace: "nowrap",
+                        color: isCrossed ? MUTED : isHighlighted ? TEAL : cat.color,
+                        backgroundColor: isHighlighted ? "#E5F5FA" : isCrossed ? "#F3F4F5" : (SOLID_TINTS[cat.color] ?? "white"),
+                        textDecoration: isCrossed ? "line-through" : "none",
+                        transition: "color 0.5s ease, border-color 0.5s ease, background-color 0.5s ease",
+                      }}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{
+                        opacity: isCrossed ? [1, 1, 0.35] : 1,
+                        scale: isHighlighted ? [1, 1.25, 1.12] : isCrossed ? [1, 1.2, 0.95] : 1,
+                        boxShadow: isHighlighted
+                          ? ["0 0 0px transparent", `0 0 16px ${TEAL}60`, `0 0 8px ${TEAL}30`]
+                          : isCrossed
+                            ? ["0 0 0px transparent", `0 0 14px ${cat.color}60`, "0 0 0px transparent"]
+                            : "0 0 0px transparent",
+                      }}
+                      transition={{
+                        duration: (isCrossed || isHighlighted) ? 1.0 : 0.5,
+                        times: (isCrossed || isHighlighted) ? [0, 0.3, 1] : undefined,
+                        delay: !customized ? cat.baseDelay + fi * 0.12 : 0,
+                        ease: [0.22, 1, 0.36, 1],
+                      }}
+                    >
+                      {f.label}
+                    </motion.span>
+                  );
+                })}
+                {cat.key === "product" && customizePhase >= 0 && (
+                  <motion.span
+                    style={{
+                      display: "inline-block",
+                      borderRadius: 12,
+                      border: `1.5px solid ${ML_GREEN}`,
+                      padding: "3px 10px",
+                      fontSize: 11,
+                      fontWeight: 700,
+                      fontFamily: "inherit",
+                      whiteSpace: "nowrap",
+                      color: ML_GREEN,
+                      backgroundColor: "#ECF4ED",
+                    }}
+                    initial={{ opacity: 0, scale: 0 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.15, duration: 0.5, type: "spring", stiffness: 200 }}
+                  >
+                    + Competitive intelligence
+                  </motion.span>
+                )}
+                  </div>
+                </div>
+              </foreignObject>
             );
           })}
 
-          {/* ── Connecting lines (step 5) ── */}
-          {clustered && !converged && (
-            <>
-              {[
-                [CLUSTER_SPREAD[0], CLUSTER_SPREAD[1]],
-                [CLUSTER_SPREAD[2], CLUSTER_SPREAD[3]],
-                [CLUSTER_SPREAD[0], CLUSTER_SPREAD[2]],
-                [CLUSTER_SPREAD[1], CLUSTER_SPREAD[3]],
-              ].map(([a, b], i) => (
-                <motion.line
-                  key={`conn-${i}`}
-                  x1={a.cx} y1={a.cy} x2={b.cx} y2={b.cy}
-                  stroke={TEAL} strokeWidth={1} strokeDasharray="3 4"
-                  initial={{ opacity: 0, pathLength: 0 }}
-                  animate={{ opacity: 0.15, pathLength: 1 }}
-                  transition={{ delay: 1.5 + i * 0.1, duration: 0.6 }}
-                />
-              ))}
-            </>
+          {/* ── Customize action text (step 6) ── */}
+          {customized && !converged && customizePhase >= 0 && customizePhase < CUSTOMIZE_ACTIONS.length && (
+            <foreignObject x={210} y={270} width={600} height={50}>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={customizePhase}
+                  style={{
+                    textAlign: "center",
+                    fontSize: 14,
+                    color: NAVY,
+                    fontStyle: "italic",
+                    fontFamily: "inherit",
+                    fontWeight: 500,
+                  }}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 0.7, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.35 }}
+                >
+                  {CUSTOMIZE_ACTIONS[customizePhase].text}
+                </motion.div>
+              </AnimatePresence>
+            </foreignObject>
           )}
-          {/* ── Price reveal (step 6 — converged) ── */}
+
+          {/* ── Price reveal (step 7 — converged) ── */}
           {converged && (() => {
             const CR = 70;
-            const DRIVER_NODES = [
-              { ...DRIVERS[0], angle: Math.PI * 1.2, contribution: "$14.20", detail: "Cost base", sign: "" },
-              { ...DRIVERS[1], angle: Math.PI * 0.3, contribution: "+$2.40", detail: "Market premium", sign: "+" },
-              { ...DRIVERS[2], angle: Math.PI * 1.7, contribution: "+$1.80", detail: "Volume lift", sign: "+" },
-              { ...DRIVERS[3], angle: Math.PI * 0.7, contribution: "−$0.90", detail: "Win-rate adj.", sign: "−" },
+            const CONV_NODES = [
+              { label: "Product", color: ORANGE, angle: Math.PI * 0.3, contribution: "+$3.80", detail: "Product factors" },
+              { label: "Customer", color: NAVY, angle: Math.PI * 1.2, contribution: "$11.30", detail: "Customer base" },
+              { label: "Order", color: PURPLE, angle: Math.PI * 0.7, contribution: "+$2.40", detail: "Order patterns" },
             ];
             const NODE_DIST = 210;
             const NODE_R = 46;
             return (
               <>
-                {DRIVER_NODES.map((dn, i) => {
+                {CONV_NODES.map((dn, i) => {
                   const nx = PLOT_CX + Math.cos(dn.angle) * NODE_DIST;
                   const ny = PLOT_CY + Math.sin(dn.angle) * NODE_DIST;
                   const edgeX = PLOT_CX + Math.cos(dn.angle) * (CR + 6);
@@ -807,7 +996,7 @@ export function PowerSlide({ step = 0, onAutoAdvance }: { step: number; onAutoAd
                   const dotDelay = lineDelay + 0.3;
 
                   return (
-                    <g key={`conv-driver-${i}`}>
+                    <g key={`conv-node-${i}`}>
                       <motion.g
                         initial={{ opacity: 0, scale: 0.6 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -922,7 +1111,7 @@ export function PowerSlide({ step = 0, onAutoAdvance }: { step: number; onAutoAd
 
       {/* ── Bottom cards (steps 1-4, hidden at cluster step) ── */}
       <AnimatePresence>
-        {chartStep >= 1 && !clustered && (
+        {chartStep >= 1 && !triangleVisible && (
           <motion.div
             className="flex flex-wrap justify-center gap-2 w-full px-4"
             initial={{ opacity: 0, y: 16 }}
@@ -932,8 +1121,8 @@ export function PowerSlide({ step = 0, onAutoAdvance }: { step: number; onAutoAd
           >
             {SPOTLIGHTS.map((s, i) => {
               const d = DRIVERS[s.cluster];
-              const isActive = clustered ? false : i === chartStep - 1;
-              const isRevealed = clustered || i < chartStep;
+              const isActive = triangleVisible ? false : i === chartStep - 1;
+              const isRevealed = triangleVisible || i < chartStep;
               if (!isRevealed) return null;
               return (
                 <motion.div
@@ -948,7 +1137,7 @@ export function PowerSlide({ step = 0, onAutoAdvance }: { step: number; onAutoAd
                   }}
                   initial={{ opacity: 0, y: 12, scale: 0.95 }}
                   animate={{
-                    opacity: isActive ? 1 : clustered ? 0.9 : 0.55,
+                    opacity: isActive ? 1 : triangleVisible ? 0.9 : 0.55,
                     y: 0,
                     scale: 1,
                   }}
@@ -1001,7 +1190,7 @@ export function PowerSlide({ step = 0, onAutoAdvance }: { step: number; onAutoAd
                             backgroundColor: `${d.color}06`,
                           }}
                           initial={{ opacity: 0, x: -20, scale: 0.8 }}
-                          animate={{ opacity: isActive ? 1 : clustered ? 0.8 : 0.6, x: 0, scale: 1 }}
+                          animate={{ opacity: isActive ? 1 : triangleVisible ? 0.8 : 0.6, x: 0, scale: 1 }}
                           transition={{
                             duration: 0.6,
                             delay: isActive ? 0.5 + pi * (SWEEP_DURATION / 2 / s.pills.length) : 0,

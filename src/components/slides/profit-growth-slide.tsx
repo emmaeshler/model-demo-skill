@@ -166,7 +166,7 @@ const STEP_NARRATIVES = [
 /* ── Main slide ── */
 export const PROFIT_GROWTH_TOTAL_STEPS = 5;
 
-export function ProfitGrowthSlide({ step = 0, onAutoAdvance }: { step: number; onAutoAdvance?: () => void }) {
+export function ProfitGrowthSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: number; onAutoAdvance?: () => void; skipAnimation?: boolean }) {
   const showChart = step >= 1;
   const announcing = step === 2;
   const showScan = step >= 3;
@@ -174,11 +174,11 @@ export function ProfitGrowthSlide({ step = 0, onAutoAdvance }: { step: number; o
   const [highlightIdx, setHighlightIdx] = useState(0);
   const [leakage, setLeakage] = useState(0);
   const [modelScanIdx, setModelScanIdx] = useState(-1);
-  const [sweepStarted, setSweepStarted] = useState(false);
+  const [sweepStarted, setSweepStarted] = useState(!!skipAnimation && showSweep);
   const scanning = showScan && !showSweep && modelScanIdx >= 0;
 
   useEffect(() => {
-    if (step !== 1) return;
+    if (skipAnimation || step !== 1) return;
     let cycle = 0;
     const timer = setInterval(() => {
       cycle++;
@@ -194,9 +194,10 @@ export function ProfitGrowthSlide({ step = 0, onAutoAdvance }: { step: number; o
       });
     }, HIGHLIGHT_CYCLE_MS);
     return () => clearInterval(timer);
-  }, [step, onAutoAdvance]);
+  }, [step, onAutoAdvance, skipAnimation]);
 
   useEffect(() => {
+    if (skipAnimation) { setModelScanIdx(-1); return; }
     if (!showScan || showSweep) {
       const t = setTimeout(() => setModelScanIdx(-1));
       return () => clearTimeout(t);
@@ -216,26 +217,28 @@ export function ProfitGrowthSlide({ step = 0, onAutoAdvance }: { step: number; o
       setModelScanIdx(cycle);
     }, MODEL_SCAN_CYCLE_MS);
     return () => clearInterval(timer);
-  }, [showScan, showSweep, onAutoAdvance]);
+  }, [showScan, showSweep, onAutoAdvance, skipAnimation]);
 
   useEffect(() => {
-    if (!announcing) return;
+    if (skipAnimation || !announcing) return;
     const timer = setTimeout(() => onAutoAdvance?.(), 2500);
     return () => clearTimeout(timer);
-  }, [announcing, onAutoAdvance]);
+  }, [announcing, onAutoAdvance, skipAnimation]);
 
   useEffect(() => {
+    if (skipAnimation) { setSweepStarted(showSweep); return; }
     if (!showSweep) {
       const t = setTimeout(() => setSweepStarted(false));
       return () => clearTimeout(t);
     }
     const t = setTimeout(() => setSweepStarted(true));
     return () => clearTimeout(t);
-  }, [showSweep]);
+  }, [showSweep, skipAnimation]);
 
-  const [headingPhase, setHeadingPhase] = useState(step === 0 ? 0 : 2);
+  const [headingPhase, setHeadingPhase] = useState(skipAnimation ? 2 : step === 0 ? 0 : 2);
 
   useEffect(() => {
+    if (skipAnimation) { setHeadingPhase(2); return; }
     if (step !== 0) {
       const t0 = setTimeout(() => setHeadingPhase(2));
       return () => clearTimeout(t0);
@@ -244,7 +247,7 @@ export function ProfitGrowthSlide({ step = 0, onAutoAdvance }: { step: number; o
     const t1 = setTimeout(() => setHeadingPhase(1), 600);
     const t2 = setTimeout(() => setHeadingPhase(2), 1200);
     return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); };
-  }, [step]);
+  }, [step, skipAnimation]);
 
   return (
     <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-6xl flex-col items-center justify-center px-6 pt-8">

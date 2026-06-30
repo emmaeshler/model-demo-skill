@@ -174,7 +174,7 @@ const STEP_CONTEXT: Record<number, { title: string; body: string }> = {
   },
 };
 
-export function RefineSlide({ step, onAutoAdvance }: { step: number; onAutoAdvance?: () => void }) {
+export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: number; onAutoAdvance?: () => void; skipAnimation?: boolean }) {
   const curve = useMemo(() => {
     const raw = makeCurve(CURVE_SLOT, 5);
     const flipY = (y: number) => 2 * CURVE_SLOT.y + CURVE_SLOT.h - y;
@@ -193,17 +193,17 @@ export function RefineSlide({ step, onAutoAdvance }: { step: number; onAutoAdvan
   }, []);
 
   const chartStep = step - 1;
-  const [chipReady, setChipReady] = useState(chartStep > 0);
+  const [chipReady, setChipReady] = useState(skipAnimation || chartStep > 0);
   useEffect(() => {
-    if (chartStep === 0 && !chipReady) {
-      const t = setTimeout(() => setChipReady(true), 600);
-      return () => clearTimeout(t);
-    }
-  }, [chartStep, chipReady]);
+    if (skipAnimation || chartStep !== 0 || chipReady) return;
+    const t = setTimeout(() => setChipReady(true), 600);
+    return () => clearTimeout(t);
+  }, [chartStep, chipReady, skipAnimation]);
 
   /* ── Intro phase for chartStep 0 animated title build ── */
-  const [introPhase, setIntroPhase] = useState(chartStep === 0 ? 0 : 4);
+  const [introPhase, setIntroPhase] = useState(skipAnimation ? 4 : chartStep === 0 ? 0 : 4);
   useEffect(() => {
+    if (skipAnimation) { setIntroPhase(4); return; }
     if (chartStep !== 0) {
       setIntroPhase(4);
       return;
@@ -214,56 +214,32 @@ export function RefineSlide({ step, onAutoAdvance }: { step: number; onAutoAdvan
     const t3 = setTimeout(() => setIntroPhase(3), 3600);
     const t4 = setTimeout(() => setIntroPhase(4), 4600);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
-  }, [chartStep]);
+  }, [chartStep, skipAnimation]);
 
-  /* ── Step 0: Full-screen transition moment ─────────── */
+  /* ── Step 0: Brief section label ────────────────────── */
+  useEffect(() => {
+    if (skipAnimation || step !== 0 || !onAutoAdvance) return;
+    const t = setTimeout(onAutoAdvance, 2800);
+    return () => clearTimeout(t);
+  }, [step, onAutoAdvance, skipAnimation]);
+
   if (step === 0) {
     return (
       <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-5xl flex-col items-center justify-center px-6">
         <motion.span
-          className="relative mb-4 inline-block rounded-full px-4 py-1 text-xs font-bold tracking-[0.2em] uppercase"
-          style={{ backgroundColor: `${STRAT_BLUE}15`, color: STRAT_BLUE }}
-          initial={{ opacity: 0, scale: 0.85 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="inline-block rounded-full px-5 py-1.5 text-sm font-bold tracking-[0.2em] uppercase"
+          style={{ backgroundColor: `${STRAT_BLUE}12`, color: STRAT_BLUE }}
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: [0, 1, 1, 0], scale: [0.9, 1, 1, 0.95] }}
+          transition={{ duration: 2.0, times: [0, 0.15, 0.6, 1], ease: "easeOut" }}
         >
-          <motion.span
-            className="pointer-events-none absolute inset-0 rounded-full"
-            style={{ border: `1.5px solid ${STRAT_BLUE}` }}
-            initial={{ opacity: 0.6, scale: 1 }}
-            animate={{ opacity: 0, scale: 2 }}
-            transition={{ duration: 1, delay: 0.3, ease: "easeOut" }}
-          />
           Strategic Guidance
         </motion.span>
-
-        <motion.h2
-          className="text-center text-3xl font-bold tracking-tight sm:text-4xl"
-          style={{ color: STRAT_BLUE }}
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 1.0, ease: "easeOut" }}
-        >
-          The prediction set the price.
-          <br />
-          Now strategy shapes the outcome.
-        </motion.h2>
-
-        <motion.p
-          className="mt-4 max-w-md text-center text-base leading-relaxed"
-          style={{ color: `${NAVY}99` }}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 1.4, ease: "easeOut" }}
-        >
-          The strategic guidance layer takes over — aligning prices with your
-          business rules, goals, and market position.
-        </motion.p>
       </div>
     );
   }
 
-  /* ── Steps 1-9: Chart animation ────────────────────── */
+  /* ── Chart animation ────────────────────────────────── */
 
   const showSegments = chartStep === 1 || chartStep === 2;
   const segmentOpacity = chartStep === 1 ? 0.15 : 0.04;

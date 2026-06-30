@@ -526,18 +526,21 @@ export function ModelOutputsOverview({ step }: { step: number }) {
 
 export function ExecuteSlide({
   step,
+  skipAnimation,
 }: {
   step: number;
   onAnimationDone?: () => void;
+  skipAnimation?: boolean;
 }) {
   const [selected, setSelected] = useState(0);
-  const [settled, setSettled] = useState(false);
+  const [settled, setSettled] = useState(!!skipAnimation);
   const cust = CUSTOMERS[selected];
 
   useEffect(() => {
+    if (skipAnimation) { setSettled(true); return; }
     const t = setTimeout(() => setSettled(true), 3500);
     return () => clearTimeout(t);
-  }, []);
+  }, [skipAnimation]);
 
   const inCurvePath = () => {
     const sy = MODEL_CY;

@@ -1,9 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { AnimatePresence, motion, MotionConfig } from "framer-motion";
 import { type NavGroup, SlideNav } from "@/components/slide-nav";
 import { useMode } from "@/lib/mode-context";
+import { getPresenterNotes } from "@/lib/presenter-notes";
+import { cn } from "@/lib/utils";
 import { OverviewSlide, OVERVIEW_TOTAL_STEPS } from "@/components/slides/overview-slide";
 import { OneModelSlide, ONE_MODEL_TOTAL_STEPS } from "@/components/slides/one-model";
 import { PowerSlide, POWER_TOTAL_STEPS } from "@/components/slides/power-slide";
@@ -74,10 +77,10 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "1 | Design",
     slides: [
-      { index: ONE_MODEL_INDEX, label: "ML Prediction", subStep: 0 },
-      { index: ONE_MODEL_INDEX, label: "Strategy", subStep: 1 },
-      { index: ONE_MODEL_INDEX, label: "Combined", subStep: 2 },
-      { index: ONE_MODEL_INDEX, label: "Inputs", subStep: 3 },
+      { index: ONE_MODEL_INDEX, label: "Inputs", subStep: 0 },
+      { index: ONE_MODEL_INDEX, label: "Inside", subStep: 1 },
+      { index: ONE_MODEL_INDEX, label: "Two Engines", subStep: 2 },
+      { index: ONE_MODEL_INDEX, label: "Full Picture", subStep: 3 },
     ],
   },
   {
@@ -89,7 +92,8 @@ const NAV_GROUPS: NavGroup[] = [
       { index: POWER_INDEX, label: "Market", subStep: 3 },
       { index: POWER_INDEX, label: "Customers", subStep: 4 },
       { index: POWER_INDEX, label: "Outcomes", subStep: 5 },
-      { index: POWER_INDEX, label: "Drivers", subStep: 6 },
+      { index: POWER_INDEX, label: "Factors", subStep: 6 },
+      { index: POWER_INDEX, label: "Customize", subStep: 7 },
     ],
   },
   {
@@ -138,14 +142,82 @@ export default function Home() {
   const [slide, setSlide] = useState(0);
   const [subStep, setSubStep] = useState(0);
   const [animationDone, setAnimationDone] = useState(false);
+  const [isAudience, setIsAudience] = useState(false);
+  const [presenting, setPresenting] = useState(false);
+  const [skipAnimation, setSkipAnimation] = useState(false);
+  const [replayKey, setReplayKey] = useState(0);
   const { mode } = useMode();
+  const channelRef = useRef<BroadcastChannel | null>(null);
+  const audienceWindowRef = useRef<Window | null>(null);
+  const iframeSrcRef = useRef("");
   const total = SLIDES.length;
 
   const maxSteps = SUB_STEP_CONFIG[slide] ?? 0;
   const hasSubSteps = maxSteps > 0;
+  const config = SLIDES[slide];
+  const notes = getPresenterNotes(config?.kind ?? "", subStep);
+
+  const currentGroup =
+    NAV_GROUPS.find((g) =>
+      g.slides.some(
+        (s) =>
+          s.index === slide &&
+          (s.subStep === undefined || s.subStep === subStep),
+      ),
+    ) ?? NAV_GROUPS.find((g) => g.slides.some((s) => s.index === slide));
+
+  // Detect audience window mode
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("audience") === "true") {
+      setIsAudience(true);
+      const s = parseInt(params.get("slide") || "0", 10);
+      const ss = parseInt(params.get("subStep") || "0", 10);
+      setSlide(s);
+      setSubStep(ss);
+    }
+  }, []);
+
+  // BroadcastChannel: presenter broadcasts, audience listens
+  useEffect(() => {
+    if (isAudience) {
+      const ch = new BroadcastChannel("ml-explainer-sync");
+      ch.onmessage = (e: MessageEvent) => {
+        if (e.data?.type === "navigate") {
+          setSlide(e.data.slide);
+          setSubStep(e.data.subStep);
+        }
+      };
+      return () => ch.close();
+    }
+    if (mode === "presenter") {
+      const ch = new BroadcastChannel("ml-explainer-sync");
+      channelRef.current = ch;
+      return () => { ch.close(); channelRef.current = null; };
+    }
+  }, [isAudience, mode]);
+
+  // Broadcast navigation state to audience window
+  useEffect(() => {
+    channelRef.current?.postMessage({ type: "navigate", slide, subStep });
+  }, [slide, subStep]);
+
+  const startPresenting = useCallback(() => {
+    const base = window.location.origin + window.location.pathname;
+    const qs = `?audience=true&mode=self&slide=${slide}&subStep=${subStep}`;
+    audienceWindowRef.current = window.open(base + qs, "audience-view") ?? null;
+    iframeSrcRef.current = base + qs;
+    setPresenting(true);
+  }, [slide, subStep]);
+
+  const endPresenting = useCallback(() => {
+    audienceWindowRef.current?.close();
+    audienceWindowRef.current = null;
+    setPresenting(false);
+  }, []);
 
   useEffect(() => {
-    if (mode === "presenter") {
+    if (skipAnimation || isAudience || mode === "presenter") {
       const t = setTimeout(() => setAnimationDone(true));
       return () => clearTimeout(t);
     }
@@ -156,14 +228,22 @@ export default function Home() {
       return () => { clearTimeout(t0); clearTimeout(t); };
     }
     return () => clearTimeout(t0);
-  }, [slide, subStep, mode]);
+  }, [slide, subStep, mode, isAudience, skipAnimation]);
 
   const markAnimationDone = useCallback(() => setAnimationDone(true), []);
+
+  const handleReplay = useCallback(() => {
+    setSkipAnimation(false);
+    setReplayKey((k) => k + 1);
+  }, []);
 
   const navigate = useCallback(
     (index: number, targetSubStep?: number) => {
       if (targetSubStep !== undefined) {
         if (index >= 0 && index < total) {
+          const isBackward =
+            index < slide || (index === slide && targetSubStep < subStep);
+          setSkipAnimation(isBackward);
           setSlide(index);
           setSubStep(targetSubStep);
         }
@@ -174,16 +254,21 @@ export default function Home() {
 
       // Forward within sub-steps
       if (index === slide + 1 && currentMax > 0 && subStep < currentMax - 1) {
+        setSkipAnimation(false);
         setSubStep((s) => s + 1);
         return;
       }
       // Back within sub-steps
       if (index === slide - 1 && currentMax > 0 && subStep > 0) {
+        setSkipAnimation(true);
         setSubStep((s) => s - 1);
         return;
       }
 
       if (index >= 0 && index < total) {
+        const goingBack = index < slide;
+        setSkipAnimation(goingBack);
+
         // Going back into a sub-step slide from the next slide → land on last step
         const targetMax = SUB_STEP_CONFIG[index] ?? 0;
         if (index < slide && targetMax > 0 && slide === index + 1) {
@@ -200,6 +285,7 @@ export default function Home() {
   );
 
   useEffect(() => {
+    if (isAudience) return;
     function onKey(e: KeyboardEvent) {
       if (e.key === "ArrowRight" || e.key === "ArrowDown") {
         e.preventDefault();
@@ -207,67 +293,195 @@ export default function Home() {
       } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
         e.preventDefault();
         navigate(slide - 1);
+      } else if (e.key === "Escape" && presenting) {
+        endPresenting();
       }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [slide, navigate]);
-
-  const config = SLIDES[slide];
+  }, [slide, navigate, isAudience, presenting, endPresenting]);
 
   return (
     <>
-      <main className="flex min-h-[var(--slide-h,100vh)] flex-col items-center justify-start pt-14 pb-16 overflow-x-hidden">
+      <main
+        className={cn(
+          "flex min-h-[var(--slide-h,100vh)] flex-col items-center justify-start overflow-x-hidden",
+          isAudience ? "" : "pt-14",
+          isAudience ? "" : "pb-16",
+        )}
+      >
+        <MotionConfig reducedMotion={skipAnimation ? "always" : "never"}>
         <AnimatePresence mode="wait">
         <motion.div
-          key={slide}
-          initial={{ opacity: 0, y: 10 }}
+          key={`${slide}-${replayKey}`}
+          initial={skipAnimation ? false : { opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -6 }}
-          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: skipAnimation ? 0 : 0.45, ease: [0.22, 1, 0.36, 1] }}
           className="w-full"
         >
           {config.kind === "intro" && <IntroSlide />}
-          {config.kind === "overview" && <OverviewSlide step={subStep} />}
+          {config.kind === "overview" && <OverviewSlide step={subStep} skipAnimation={skipAnimation} />}
           {config.kind === "one-model" && (
             <OneModelSlide
               step={subStep}
-              onAutoAdvance={() => navigate(slide + 1)}
+              skipAnimation={skipAnimation}
+              onAutoAdvance={skipAnimation ? undefined : () => navigate(slide + 1)}
             />
           )}
           {config.kind === "power" && (
             <PowerSlide
               step={subStep}
-              onAutoAdvance={() => navigate(slide + 1)}
+              onAutoAdvance={skipAnimation ? undefined : () => navigate(slide + 1)}
+              skipAnimation={skipAnimation}
             />
           )}
           {config.kind === "refine" && (
             <RefineSlide
               step={subStep}
-              onAutoAdvance={() => navigate(slide + 1)}
+              onAutoAdvance={skipAnimation ? undefined : () => navigate(slide + 1)}
+              skipAnimation={skipAnimation}
             />
           )}
-          {config.kind === "execute" && <ExecuteSlide step={subStep} />}
+          {config.kind === "execute" && <ExecuteSlide step={subStep} skipAnimation={skipAnimation} />}
           {config.kind === "profit-growth" && (
             <ProfitGrowthSlide
               step={subStep}
-              onAutoAdvance={() => navigate(slide + 1)}
+              onAutoAdvance={skipAnimation ? undefined : () => navigate(slide + 1)}
+              skipAnimation={skipAnimation}
             />
           )}
           {config.kind === "closing-summary" && <ClosingSummarySlide />}
           {config.kind === "end" && <EndSlide onRestart={() => navigate(0)} />}
         </motion.div>
         </AnimatePresence>
+        </MotionConfig>
       </main>
-      <ModelIndicator slideKind={config.kind} />
-      <SlideNav
-        current={slide}
-        currentSubStep={hasSubSteps ? subStep : undefined}
-        total={total}
-        groups={NAV_GROUPS}
-        onNavigate={navigate}
-        animationDone={animationDone}
-      />
+
+      {!isAudience && <ModelIndicator slideKind={config.kind} subStep={subStep} />}
+
+      {!isAudience && (
+        <SlideNav
+          current={slide}
+          currentSubStep={hasSubSteps ? subStep : undefined}
+          total={total}
+          groups={NAV_GROUPS}
+          onNavigate={navigate}
+          animationDone={animationDone}
+          onStartPresenting={startPresenting}
+          showReplay={skipAnimation}
+          onReplay={handleReplay}
+        />
+      )}
+
+      {/* Presenter console overlay */}
+      {presenting && !isAudience && (
+        <div className="fixed inset-0 z-[100] flex flex-col bg-[#0a0a0a]">
+          <div className="flex shrink-0 items-center justify-between border-b border-white/10 bg-[#111]/90 px-5 py-2.5">
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-white/40">
+                Presenter Console
+              </span>
+              <span className="text-white/15">|</span>
+              <span className="text-sm font-medium text-white/70">
+                {currentGroup?.label}
+              </span>
+            </div>
+            <button
+              onClick={endPresenting}
+              className="flex items-center gap-1.5 rounded-md border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/70 transition-colors hover:border-red-500/30 hover:bg-red-500/20 hover:text-red-300"
+            >
+              <X className="size-3.5" />
+              End Presenting
+            </button>
+          </div>
+
+          <div className="flex min-h-0 flex-1">
+            <div className="flex flex-1 flex-col p-4">
+              <div className="relative flex-1 overflow-hidden rounded-xl border border-white/10 bg-[#06283D]">
+                <iframe
+                  src={iframeSrcRef.current}
+                  className="pointer-events-none absolute inset-0 h-full w-full border-0"
+                  title="Slide Preview"
+                  onLoad={() => {
+                    channelRef.current?.postMessage({
+                      type: "navigate",
+                      slide,
+                      subStep,
+                    });
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="flex w-[360px] shrink-0 flex-col border-l border-white/10 bg-[#111]">
+              <div className="flex-1 overflow-y-auto p-5">
+                <h3 className="mb-4 text-[10px] font-bold uppercase tracking-[0.15em] text-white/40">
+                  Speaker Notes
+                </h3>
+                {notes.length > 0 ? (
+                  <div className="space-y-3">
+                    {notes.map((note, i) => (
+                      <p
+                        key={i}
+                        className="text-[13px] leading-relaxed text-white/70"
+                      >
+                        {note}
+                      </p>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[13px] italic text-white/30">
+                    No notes for this step.
+                  </p>
+                )}
+              </div>
+
+              <div className="border-t border-white/10 px-4 py-3">
+                {currentGroup && currentGroup.slides.length > 1 && (
+                  <div className="mb-3 flex items-center justify-center gap-1.5">
+                    {currentGroup.slides.map((s) => {
+                      const isActive =
+                        s.index === slide &&
+                        (s.subStep === undefined || s.subStep === subStep);
+                      return (
+                        <button
+                          key={`${s.index}-${s.subStep ?? ""}`}
+                          onClick={() => navigate(s.index, s.subStep)}
+                          className={cn(
+                            "size-2 rounded-full transition-all",
+                            isActive
+                              ? "scale-125 bg-white"
+                              : "bg-white/30 hover:bg-white/50",
+                          )}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
+                <div className="flex items-center justify-between">
+                  <button
+                    onClick={() => navigate(slide - 1)}
+                    disabled={slide === 0 && subStep === 0}
+                    className="flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium text-white/60 transition-colors hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+                  >
+                    <ChevronLeft className="size-4" />
+                    Back
+                  </button>
+                  <button
+                    onClick={() => navigate(slide + 1)}
+                    disabled={slide === total - 1}
+                    className="flex items-center gap-1 rounded-md bg-white/10 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-30"
+                  >
+                    Next
+                    <ChevronRight className="size-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

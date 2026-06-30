@@ -44,17 +44,21 @@ const MINI_START = CX - (MODULES.length - 1) * MINI_SPACING / 2;
 
 export const OVERVIEW_TOTAL_STEPS = 1;
 
-export function OverviewSlide({ step }: { step: number }) {
-  const [collapsed, setCollapsed] = useState(false);
+export function OverviewSlide({ step, skipAnimation }: { step: number; skipAnimation?: boolean }) {
+  const [collapsed, setCollapsed] = useState(!!skipAnimation);
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
+    if (skipAnimation) {
+      setCollapsed(true);
+      return;
+    }
     timerRef.current = setTimeout(
       () => setCollapsed(true),
       COLLAPSE_DELAY * 1000,
     );
     return () => clearTimeout(timerRef.current);
-  }, []);
+  }, [skipAnimation]);
 
   return (
     <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-5xl flex-col items-center justify-center px-6 pt-8">

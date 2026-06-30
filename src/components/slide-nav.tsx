@@ -1,11 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, ChevronDown, Check, Download, Monitor, BookOpen } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, Check, Download, MonitorPlay, RotateCcw, Maximize, Minimize } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useMode } from "@/lib/mode-context";
-
 export interface NavGroup {
   label: string;
   slides: { index: number; label: string; subStep?: number }[];
@@ -19,6 +17,46 @@ interface SlideNavProps {
   onNavigate: (index: number, subStep?: number) => void;
   presentationTitle?: string;
   animationDone?: boolean;
+  onStartPresenting?: () => void;
+  showReplay?: boolean;
+  onReplay?: () => void;
+}
+
+function FullPageButton() {
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    function onFsChange() {
+      setIsFullscreen(!!document.fullscreenElement);
+    }
+    document.addEventListener("fullscreenchange", onFsChange);
+    return () => document.removeEventListener("fullscreenchange", onFsChange);
+  }, []);
+
+  return (
+    <button
+      onClick={() => {
+        if (document.fullscreenElement) {
+          document.exitFullscreen();
+        } else {
+          document.documentElement.requestFullscreen();
+        }
+      }}
+      className="flex items-center gap-1.5 rounded-md border border-white/15 px-2.5 py-1 text-xs font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white"
+    >
+      {isFullscreen ? (
+        <>
+          <Minimize className="size-3.5" />
+          Exit Full Page
+        </>
+      ) : (
+        <>
+          <Maximize className="size-3.5" />
+          Full Page
+        </>
+      )}
+    </button>
+  );
 }
 
 function DownloadLink() {
@@ -40,50 +78,13 @@ function DownloadLink() {
   );
 }
 
-function ModeToggle() {
-  const { mode } = useMode();
-  const isPresenter = mode === "presenter";
-
-  return (
-    <button
-      disabled
-      className="group flex cursor-not-allowed items-center gap-2 rounded-full border border-white/15 px-1 py-0.5 opacity-50"
-      aria-label="Self-guided mode coming soon"
-      role="switch"
-      aria-checked={isPresenter}
-    >
-      <span
-        className={cn(
-          "flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium transition-all",
-          !isPresenter
-            ? "bg-white/15 text-white"
-            : "text-white/40",
-        )}
-      >
-        <BookOpen className="size-3" />
-        Self-Guided
-      </span>
-      <span
-        className={cn(
-          "flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium transition-all",
-          isPresenter
-            ? "bg-white/15 text-white"
-            : "text-white/40",
-        )}
-      >
-        <Monitor className="size-3" />
-        Presenter
-      </span>
-    </button>
-  );
-}
-
 export function TopBar({
   groups,
   current,
   currentSubStep,
   onNavigate,
   presentationTitle = "Inside Your Dynamic Model",
+  onStartPresenting,
 }: SlideNavProps) {
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -164,34 +165,17 @@ export function TopBar({
           </button>
 
           <div className="ml-auto flex items-center gap-3">
-            <ModeToggle />
+            {onStartPresenting && (
+              <button
+                onClick={onStartPresenting}
+                className="flex items-center gap-1.5 rounded-md border border-white/15 px-2.5 py-1 text-xs font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white"
+              >
+                <MonitorPlay className="size-3.5" />
+                Present
+              </button>
+            )}
             <DownloadLink />
-            <div className="flex items-center gap-1">
-            {groups.map((g, gi) => {
-              const groupDone = g.slides.every(
-                (s) =>
-                  s.index < current ||
-                  (s.index === current &&
-                    s.subStep !== undefined &&
-                    currentSubStep !== undefined &&
-                    s.subStep < currentSubStep),
-              );
-              const groupActive = gi === currentGroupIndex;
-              return (
-                <span
-                  key={gi}
-                  className={cn(
-                    "h-1.5 rounded-full transition-all",
-                    groupActive
-                      ? "w-5 bg-white"
-                      : groupDone
-                        ? "w-1.5 bg-white/40"
-                        : "w-1.5 bg-white/20",
-                  )}
-                />
-              );
-            })}
-            </div>
+            <FullPageButton />
           </div>
         </div>
       </header>
@@ -262,6 +246,8 @@ export function BottomBar({
   groups,
   onNavigate,
   animationDone,
+  showReplay,
+  onReplay,
 }: SlideNavProps) {
   const currentGroup =
     groups.find((g) =>
@@ -275,16 +261,29 @@ export function BottomBar({
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-[#06283D]/90 backdrop-blur-md">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-2.5">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onNavigate(current - 1)}
-          disabled={current === 0}
-          className="shrink-0 text-white/60 hover:bg-white/10 hover:text-white/90"
-        >
-          <ChevronLeft className="size-4" />
-          Back
-        </Button>
+        <div className="flex shrink-0 items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onNavigate(current - 1)}
+            disabled={current === 0}
+            className="text-white/60 hover:bg-white/10 hover:text-white/90"
+          >
+            <ChevronLeft className="size-4" />
+            Back
+          </Button>
+
+          {showReplay && onReplay && (
+            <button
+              onClick={onReplay}
+              className="flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-white/50 transition-colors hover:bg-white/10 hover:text-white/80"
+              aria-label="Replay animations"
+            >
+              <RotateCcw className="size-3.5" />
+              Replay
+            </button>
+          )}
+        </div>
 
         {currentGroup && currentGroup.slides.length > 1 && (
           <div className="flex items-center gap-2">
