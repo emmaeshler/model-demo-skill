@@ -12,7 +12,7 @@ const STRAT_BLUE = "#2A7BA5";
 const GREEN = "#4A8A5C";
 const RED = "#A65A52";
 
-export const REFINE_TOTAL_STEPS = 8;
+export const REFINE_TOTAL_STEPS = 11;
 
 const CURVE_SLOT = { x: 50, y: 20, w: 460, h: 140 };
 const BASE_Y = CURVE_SLOT.y + CURVE_SLOT.h;
@@ -56,6 +56,8 @@ interface ScatterDot {
   driftDy: number;
   driftDuration: number;
   driftDelay: number;
+  chaosX: number;
+  chaosY: number;
 }
 
 const rng = mulberry32(73);
@@ -81,6 +83,8 @@ const SCATTER_DOTS: ScatterDot[] = Array.from({ length: DOT_COUNT }, () => ({
   driftDy: (rng() - 0.5) * 3,
   driftDuration: 4 + rng() * 4,
   driftDelay: rng() * 5,
+  chaosX: CURVE_SLOT.x + 10 + rng() * (CURVE_SLOT.w - 20),
+  chaosY: CURVE_SLOT.y + 5 + rng() * (CURVE_SLOT.h - 10),
 }));
 
 const SEGMENT_ZONES = [
@@ -156,21 +160,21 @@ const STEP_CONTEXT: Record<number, { title: string; body: string }> = {
     title: "QuickParts",
     body: "Let’s examine how the model adjusts pricing for specific deals relative to the curve.",
   },
-  4: {
+  5: {
     title: "Acme",
     body: "Let’s examine how the model adjusts pricing for specific deals relative to the curve.",
   },
-  5: {
+  7: {
     title: "MedSupply",
     body: "Let’s examine how the model adjusts pricing for specific deals relative to the curve.",
   },
-  6: {
+  9: {
     title: "Every price, optimized",
     body: "Every transaction is now aligned to the demand curve — lifting underpriced deals while protecting wins.",
   },
 };
 
-export function RefineSlide({ step }: { step: number }) {
+export function RefineSlide({ step, onAutoAdvance }: { step: number; onAutoAdvance?: () => void }) {
   const curve = useMemo(() => {
     const raw = makeCurve(CURVE_SLOT, 5);
     const flipY = (y: number) => 2 * CURVE_SLOT.y + CURVE_SLOT.h - y;
@@ -197,35 +201,19 @@ export function RefineSlide({ step }: { step: number }) {
     }
   }, [chartStep, chipReady]);
 
-  const [liftedDots, setLiftedDots] = useState<Set<number>>(new Set());
-  useEffect(() => {
-    if (chartStep >= 3 && chartStep <= 5) {
-      const idx = chartStep - 3;
-      const t = setTimeout(() => setLiftedDots((prev) => {
-        const next = new Set(prev);
-        for (let i = 0; i < idx; i++) next.add(i);
-        return next;
-      }));
-      return () => clearTimeout(t);
-    } else {
-      const t = setTimeout(() => setLiftedDots(new Set()));
-      return () => clearTimeout(t);
-    }
-  }, [chartStep]);
-
   /* ── Intro phase for chartStep 0 animated title build ── */
   const [introPhase, setIntroPhase] = useState(chartStep === 0 ? 0 : 4);
   useEffect(() => {
     if (chartStep !== 0) {
-      const t0 = setTimeout(() => setIntroPhase(4));
-      return () => clearTimeout(t0);
+      setIntroPhase(4);
+      return;
     }
-    const t0 = setTimeout(() => setIntroPhase(0));
-    const t1 = setTimeout(() => setIntroPhase(1), 800);
-    const t2 = setTimeout(() => setIntroPhase(2), 1800);
-    const t3 = setTimeout(() => setIntroPhase(3), 3200);
-    const t4 = setTimeout(() => setIntroPhase(4), 4200);
-    return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
+    setIntroPhase(0);
+    const t1 = setTimeout(() => setIntroPhase(1), 400);
+    const t2 = setTimeout(() => setIntroPhase(2), 2200);
+    const t3 = setTimeout(() => setIntroPhase(3), 3600);
+    const t4 = setTimeout(() => setIntroPhase(4), 4600);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
   }, [chartStep]);
 
   /* ── Step 0: Full-screen transition moment ─────────── */
@@ -275,15 +263,16 @@ export function RefineSlide({ step }: { step: number }) {
     );
   }
 
-  /* ── Steps 1-6: Chart animation ────────────────────── */
+  /* ── Steps 1-9: Chart animation ────────────────────── */
 
   const showSegments = chartStep === 1 || chartStep === 2;
   const segmentOpacity = chartStep === 1 ? 0.15 : 0.04;
   const showCurve = chartStep >= 2;
-  const isSpotlight = chartStep >= 3 && chartStep <= 5;
+  const isSpotlight = chartStep >= 3 && chartStep <= 8;
+  const spotlightIdx = isSpotlight ? Math.floor((chartStep - 3) / 2) : -1;
+  const spotlightLifted = isSpotlight && (chartStep - 3) % 2 === 1;
   const dotOpacityBase = chartStep === 1 ? 0.2 : chartStep === 2 ? 0.15 : isSpotlight ? 0 : 1;
-  const spotlightIdx = isSpotlight ? chartStep - 3 : -1;
-  const isAllToCurve = chartStep >= 6;
+  const isAllToCurve = chartStep >= 9;
 
   const heading = isAllToCurve
     ? "Every price, aligned to the curve"
@@ -298,7 +287,7 @@ export function RefineSlide({ step }: { step: number }) {
             : "Detect patterns, refine pricing guidance";
 
   const activeHighlight = isSpotlight ? SEGMENT_HIGHLIGHTS[spotlightIdx] : null;
-  const isLifted = isSpotlight && liftedDots.has(spotlightIdx);
+  const isLifted = spotlightLifted;
 
   return (
     <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-7xl flex-col items-center justify-start px-6 pt-4">
@@ -348,28 +337,14 @@ export function RefineSlide({ step }: { step: number }) {
                   style={{ color: NAVY }}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{
-                    opacity: introPhase >= 3 ? 0 : 1,
-                    y: introPhase >= 3 ? -12 : 0,
-                    height: introPhase >= 3 ? 0 : "auto",
-                    marginBottom: introPhase >= 3 ? 0 : 4,
+                    opacity: introPhase >= 1 && introPhase < 2 ? 1 : 0,
+                    y: introPhase >= 1 && introPhase < 2 ? 0 : introPhase >= 2 ? -12 : 8,
+                    height: introPhase >= 2 ? 0 : "auto",
+                    marginBottom: introPhase >= 2 ? 0 : 4,
                   }}
                   transition={{ duration: 0.5 }}
                 >
-                  Execute priced one deal at a time
-                </motion.h2>
-                <motion.h2
-                  className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
-                  style={{ color: NAVY }}
-                  initial={{ opacity: 0 }}
-                  animate={{
-                    opacity: introPhase >= 1 && introPhase < 3 ? 1 : 0,
-                    y: introPhase >= 1 && introPhase < 3 ? 0 : introPhase >= 3 ? -12 : 8,
-                    height: introPhase >= 3 ? 0 : "auto",
-                    marginBottom: introPhase >= 3 ? 0 : 4,
-                  }}
-                  transition={{ duration: 0.5 }}
-                >
-                  Now step back and look at all of them
+                  Every price, set on its own
                 </motion.h2>
                 <AnimatePresence>
                   {introPhase >= 2 && (
@@ -399,7 +374,7 @@ export function RefineSlide({ step }: { step: number }) {
           )}
           {chartStep > 0 && (
             <motion.div
-              key={`step-title-${chartStep}`}
+              key={`step-title-${isSpotlight ? `spot-${spotlightIdx}` : chartStep}`}
               className="absolute inset-0 flex flex-col items-center justify-start"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
@@ -412,7 +387,7 @@ export function RefineSlide({ step }: { step: number }) {
               >
                 {heading}
               </motion.h2>
-              {STEP_CONTEXT[chartStep] && (
+              {(STEP_CONTEXT[chartStep] || (isSpotlight && STEP_CONTEXT[chartStep - 1])) && (
                 <motion.p
                   className="mx-auto mt-1 max-w-2xl text-center text-[1.05rem] leading-relaxed"
                   style={{ color: MUTED }}
@@ -420,7 +395,7 @@ export function RefineSlide({ step }: { step: number }) {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: chartStep === 1 ? 0.7 : 0.15 }}
                 >
-                  {STEP_CONTEXT[chartStep].body}
+                  {(STEP_CONTEXT[chartStep] || STEP_CONTEXT[chartStep - 1])?.body}
                 </motion.p>
               )}
             </motion.div>
@@ -434,8 +409,8 @@ export function RefineSlide({ step }: { step: number }) {
         style={{ maxHeight: "calc(100% - 160px)" }}
         initial={{ opacity: 0, y: 20 }}
         animate={{
-          opacity: chartStep === 0 && introPhase < 3 ? 0 : 1,
-          y: chartStep === 0 && introPhase < 3 ? 20 : 0,
+          opacity: chartStep === 0 && introPhase < 1 ? 0 : 1,
+          y: chartStep === 0 && introPhase < 1 ? 20 : 0,
         }}
         transition={{ duration: 1.0, ease: [0.22, 1, 0.36, 1] }}
       >
@@ -484,7 +459,7 @@ export function RefineSlide({ step }: { step: number }) {
                   </motion.div>
                 ) : (
                   <motion.button
-                    onClick={() => setLiftedDots((prev) => new Set([...prev, spotlightIdx]))}
+                    onClick={() => onAutoAdvance?.()}
                     className="mt-2 w-full rounded-lg px-2.5 py-1.5 text-xs font-semibold text-white transition-colors hover:opacity-90"
                     style={{ backgroundColor: activeHighlight.dotColor }}
                     initial={{ opacity: 0 }}
@@ -638,38 +613,59 @@ export function RefineSlide({ step }: { step: number }) {
                 const dotColor = STATUS_COLORS[dot.status];
                 const dotOpacity = dotOpacityBase;
 
-                const driftCx = isAllToCurve
-                  ? baseCx
-                  : [baseCx, baseCx + dot.driftDx, baseCx - dot.driftDx * 0.6, baseCx];
-                const driftCy = isAllToCurve
-                  ? targetY
-                  : [targetY, targetY + dot.driftDy, targetY - dot.driftDy * 0.6, targetY];
+                const inChaos = chartStep === 0 && introPhase < 2;
+                const settling = chartStep === 0 && !inChaos;
+                const settleDelay = (dot.driftDelay / 5) * 0.6;
+
+                let animCx: number | number[] = dot.chaosX;
+                let animCy: number | number[] = dot.chaosY;
+
+                if (!inChaos) {
+                  if (isAllToCurve) {
+                    animCx = baseCx;
+                    animCy = targetY;
+                  } else if (settling) {
+                    animCx = baseCx;
+                    animCy = scatterY;
+                  } else {
+                    animCx = [baseCx, baseCx + dot.driftDx, baseCx - dot.driftDx * 0.6, baseCx];
+                    animCy = [targetY, targetY + dot.driftDy, targetY - dot.driftDy * 0.6, targetY];
+                  }
+                }
 
                 return (
                   <motion.circle
                     key={`dot-${i}`}
                     r={dot.r}
                     fill={dotColor}
-                    initial={{ cx: baseCx, cy: scatterY, opacity: 0, scale: 0 }}
+                    initial={{ cx: dot.chaosX, cy: dot.chaosY, opacity: 0, scale: 0 }}
                     animate={{
-                      cx: driftCx,
-                      cy: driftCy,
+                      cx: animCx,
+                      cy: animCy,
                       opacity: dotOpacity,
                       scale: 1,
                     }}
                     transition={{
-                      cx: isAllToCurve
-                        ? { duration: 0.7, delay: i * 0.01, ease: "easeInOut" }
-                        : { duration: dot.driftDuration, delay: dot.driftDelay, repeat: Infinity, ease: "easeInOut" },
-                      cy: isAllToCurve
-                        ? { duration: 0.6 + (Math.abs(dot.offsetY) / 36) * 0.3, delay: i * 0.01, ease: "easeInOut" }
-                        : { duration: dot.driftDuration, delay: dot.driftDelay, repeat: Infinity, ease: "easeInOut" },
+                      cx: inChaos
+                        ? { duration: 0 }
+                        : settling
+                          ? { duration: 1.2, delay: settleDelay, ease: [0.22, 1, 0.36, 1] }
+                          : isAllToCurve
+                            ? { duration: 0.7, delay: i * 0.01, ease: "easeInOut" }
+                            : { duration: dot.driftDuration, delay: dot.driftDelay, repeat: Infinity, ease: "easeInOut" },
+                      cy: inChaos
+                        ? { duration: 0 }
+                        : settling
+                          ? { duration: 1.2, delay: settleDelay, ease: [0.22, 1, 0.36, 1] }
+                          : isAllToCurve
+                            ? { duration: 0.6 + (Math.abs(dot.offsetY) / 36) * 0.3, delay: i * 0.01, ease: "easeInOut" }
+                            : { duration: dot.driftDuration, delay: dot.driftDelay, repeat: Infinity, ease: "easeInOut" },
                       opacity: {
-                        delay: chartStep === 0 ? 0.3 + i * 0.012 : 0.1,
+                        delay: chartStep === 0 ? 0.1 + i * 0.007 : 0.1,
                         duration: isSpotlight ? 0.5 : 0.3,
                       },
                       scale: {
-                        delay: chartStep === 0 ? 0.3 + i * 0.012 : 0.1,
+                        delay: chartStep === 0 ? 0.1 + i * 0.007 : 0.1,
                         type: "spring",
                         stiffness: 300,
                       },
@@ -688,7 +684,7 @@ export function RefineSlide({ step }: { step: number }) {
                 const belowY = pt.y + seg.offsetY;
                 const isActive = isSpotlight && si === spotlightIdx;
                 const isPast = isSpotlight && si < spotlightIdx;
-                const dotLifted = isAllToCurve || liftedDots.has(si);
+                const dotLifted = isAllToCurve || isPast || (isActive && spotlightLifted);
                 const targetCy = dotLifted ? pt.y : belowY;
 
                 return (
@@ -714,14 +710,14 @@ export function RefineSlide({ step }: { step: number }) {
                       <motion.circle
                         cx={pt.x}
                         cy={pt.y}
-                        r={10}
+                        r={isAllToCurve ? 4 : 10}
                         fill="none"
                         stroke={seg.dotColor}
-                        strokeWidth={1.5}
+                        strokeWidth={isAllToCurve ? 0.8 : 1.5}
                         strokeDasharray={dotLifted ? "0" : "4 3"}
                         initial={{ opacity: 0, scale: 0.5 }}
                         animate={{
-                          opacity: dotLifted ? 0.5 : 0.3,
+                          opacity: isAllToCurve ? 0.2 : dotLifted ? 0.5 : 0.3,
                           scale: 1,
                         }}
                         transition={{ duration: 0.5, delay: isActive ? 0.4 : 0.2 }}
@@ -748,15 +744,13 @@ export function RefineSlide({ step }: { step: number }) {
                     {/* Main dot — starts at belowY, lifts to curve */}
                     <motion.circle
                       cx={pt.x}
-                      r={6}
-                      fill="white"
+                      r={isAllToCurve ? 2.5 : 6}
+                      fill={isAllToCurve ? seg.dotColor : "white"}
                       stroke={seg.dotColor}
-                      strokeWidth={2.5}
+                      strokeWidth={isAllToCurve ? 0.8 : 2.5}
                       style={{ cursor: isActive && !dotLifted ? "pointer" : "default" }}
                       onClick={() => {
-                        if (isActive && !dotLifted) {
-                          setLiftedDots((prev) => new Set([...prev, si]));
-                        }
+                        if (isActive && !dotLifted) onAutoAdvance?.();
                       }}
                       initial={{ cy: belowY, opacity: 0 }}
                       animate={{ cy: targetCy, opacity: 1 }}
@@ -799,7 +793,7 @@ export function RefineSlide({ step }: { step: number }) {
                     )}
 
                     {/* Label above dot (after lift to curve) */}
-                    {dotLifted && (
+                    {dotLifted && !isAllToCurve && (
                       <motion.g
                         initial={{ opacity: 0 }}
                         animate={{ opacity: isActive ? 1 : isPast ? 0.5 : 0.7 }}

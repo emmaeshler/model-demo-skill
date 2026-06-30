@@ -106,9 +106,9 @@ const NAV_GROUPS: NavGroup[] = [
       { index: REFINE_INDEX, label: "Segmentation", subStep: 2 },
       { index: REFINE_INDEX, label: "Optimal Curve", subStep: 3 },
       { index: REFINE_INDEX, label: "QuickParts", subStep: 4 },
-      { index: REFINE_INDEX, label: "Acme", subStep: 5 },
-      { index: REFINE_INDEX, label: "MedSupply", subStep: 6 },
-      { index: REFINE_INDEX, label: "Optimized", subStep: 7 },
+      { index: REFINE_INDEX, label: "Acme", subStep: 6 },
+      { index: REFINE_INDEX, label: "MedSupply", subStep: 8 },
+      { index: REFINE_INDEX, label: "Optimized", subStep: 10 },
     ],
   },
   {
@@ -241,7 +241,12 @@ export default function Home() {
               onAutoAdvance={() => navigate(slide + 1)}
             />
           )}
-          {config.kind === "refine" && <RefineSlide step={subStep} />}
+          {config.kind === "refine" && (
+            <RefineSlide
+              step={subStep}
+              onAutoAdvance={() => navigate(slide + 1)}
+            />
+          )}
           {config.kind === "execute" && <ExecuteSlide step={subStep} />}
           {config.kind === "profit-growth" && (
             <ProfitGrowthSlide

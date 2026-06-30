@@ -646,38 +646,77 @@ export function ExecuteSlide({
                   {/* Intro: prominent $17.50 price circle */}
                   <motion.g
                     initial={{ opacity: 0 }}
-                    animate={{ opacity: settled ? 0 : 1 }}
-                    transition={{ duration: settled ? 0.4 : 0.5, delay: settled ? 0 : 1.5 }}
+                    animate={{ opacity: !settled ? 1 : undefined }}
+                    transition={{ duration: 0.3, delay: 1.5 }}
                   >
+                    {/* Impact burst ring — fires right as circle lands */}
+                    <motion.circle
+                      cx={MODEL_CX} cy={MODEL_CY} r={70}
+                      fill="none" stroke={TEAL} strokeWidth={3}
+                      initial={{ opacity: 0.7, scale: 0.85 }}
+                      animate={{ opacity: 0, scale: 1.45 }}
+                      transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
+                      style={{ transformOrigin: `${MODEL_CX}px ${MODEL_CY}px` }}
+                    />
+                    {/* Secondary burst ring */}
+                    <motion.circle
+                      cx={MODEL_CX} cy={MODEL_CY} r={70}
+                      fill="none" stroke={NAVY} strokeWidth={1.5}
+                      initial={{ opacity: 0.4, scale: 0.9 }}
+                      animate={{ opacity: 0, scale: 1.25 }}
+                      transition={{ duration: 0.5, delay: 0.25, ease: "easeOut" }}
+                      style={{ transformOrigin: `${MODEL_CX}px ${MODEL_CY}px` }}
+                    />
+                    {/* Main circle — shrinks into model box when settled */}
                     <motion.circle
                       cx={MODEL_CX} cy={MODEL_CY} r={70}
                       fill="white" stroke={TEAL} strokeWidth={2.5}
-                      initial={{ scale: 0.6 }}
-                      animate={{ scale: 1 }}
-                      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                      initial={{ scale: 0.3, opacity: 0 }}
+                      animate={settled
+                        ? { scale: 0.12, opacity: 0, y: 35 }
+                        : { scale: 1, opacity: 1, y: 0 }}
+                      transition={settled
+                        ? { duration: 0.5, ease: [0.55, 0, 1, 0.45] }
+                        : { duration: 0.45, delay: 0.05, type: "spring", stiffness: 300, damping: 15 }}
                       style={{ transformOrigin: `${MODEL_CX}px ${MODEL_CY}px` }}
                     />
+                    {/* Breathing ring after landing */}
                     <motion.circle
                       cx={MODEL_CX} cy={MODEL_CY} r={72}
                       fill="none" stroke={TEAL} strokeWidth={1.5}
-                      animate={{ opacity: [0, 0.3, 0], scale: [1, 1.15, 1] }}
-                      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+                      initial={{ opacity: 0 }}
+                      animate={settled
+                        ? { opacity: 0, scale: 1 }
+                        : { opacity: [0, 0.3, 0], scale: [1, 1.12, 1] }}
+                      transition={settled
+                        ? { duration: 0.3 }
+                        : { duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 1.0 }}
                       style={{ transformOrigin: `${MODEL_CX}px ${MODEL_CY}px` }}
                     />
-                    <text
+                    <motion.text
                       x={MODEL_CX} y={MODEL_CY - 22}
                       textAnchor="middle"
                       style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", fill: GREY }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: settled ? 0 : 1 }}
+                      transition={settled
+                        ? { duration: 0.2 }
+                        : { delay: 0.35, duration: 0.25 }}
                     >
                       OPTIMAL PRICE
-                    </text>
+                    </motion.text>
+                    {/* Price text — shrinks toward list-price chip position */}
                     <motion.text
                       x={MODEL_CX} y={MODEL_CY + 12}
                       textAnchor="middle"
-                      style={{ fontSize: 34, fontWeight: 800, fill: NAVY }}
-                      initial={{ opacity: 0, scale: 0.7 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.15, duration: 0.5, type: "spring", stiffness: 200 }}
+                      style={{ fontSize: 34, fontWeight: 800, fill: NAVY, transformOrigin: `${MODEL_CX}px ${MODEL_CY + 4}px` }}
+                      initial={{ opacity: 0, scale: 0.4 }}
+                      animate={settled
+                        ? { opacity: 0, scale: 0.28, y: 30 }
+                        : { opacity: 1, scale: 1, y: 0 }}
+                      transition={settled
+                        ? { duration: 0.45, ease: [0.55, 0, 1, 0.45] }
+                        : { delay: 0.15, duration: 0.35, type: "spring", stiffness: 400, damping: 12 }}
                     >
                       $17.50
                     </motion.text>
@@ -685,9 +724,11 @@ export function ExecuteSlide({
                       x={MODEL_CX} y={MODEL_CY + 32}
                       textAnchor="middle"
                       style={{ fontSize: 10.5, fontWeight: 500, fill: GREY }}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.3, duration: 0.4 }}
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: settled ? 0 : 1, y: 0 }}
+                      transition={settled
+                        ? { duration: 0.2 }
+                        : { delay: 0.5, duration: 0.3 }}
                     >
                       per unit · SKU #A-7200
                     </motion.text>
@@ -787,13 +828,18 @@ export function ExecuteSlide({
                         ML-powered optimization
                       </text>
 
-                      {/* List price reference — flashes on absorption */}
-                      <rect x={MODEL_CX - 50} y={MODEL_CY + 28} width={100} height={20} rx={10} fill="rgba(255,255,255,0.08)" />
+                      {/* List price reference — glows as price lands */}
+                      <motion.rect
+                        x={MODEL_CX - 50} y={MODEL_CY + 28} width={100} height={20} rx={10}
+                        initial={{ fill: "rgba(33,165,213,0.35)" }}
+                        animate={{ fill: "rgba(255,255,255,0.08)" }}
+                        transition={{ duration: 0.9, delay: 0.05, ease: "easeOut" }}
+                      />
                       <motion.text
                         x={MODEL_CX} y={MODEL_CY + 42} fontSize="10" fontWeight="600" textAnchor="middle"
-                        initial={{ fill: "rgba(255,255,255,1)", scale: 1.3 }}
+                        initial={{ fill: "rgba(255,255,255,1)", scale: 1.5 }}
                         animate={{ fill: "rgba(255,255,255,0.5)", scale: 1 }}
-                        transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
+                        transition={{ duration: 0.7, ease: "easeOut", delay: 0.05 }}
                         style={{ transformOrigin: `${MODEL_CX}px ${MODEL_CY + 38}px` }}
                       >
                         List: {LIST_PRICE} / unit

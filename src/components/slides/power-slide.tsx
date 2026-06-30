@@ -247,7 +247,7 @@ export function PowerSlide({ step = 0, onAutoAdvance }: { step: number; onAutoAd
     const pillCount = spotlight.pills.length;
     const lastPillDelay = 0.5 + (pillCount - 1) * (SWEEP_DURATION / 2 / pillCount);
     const lastPillDone = lastPillDelay + 0.6;
-    const cardEntranceDelay = chartStep === 1 ? 0.6 : 0;
+    const cardEntranceDelay = chartStep === 1 ? 1.2 : 0;
     const totalMs = (cardEntranceDelay + lastPillDone + 1.5) * 1000;
     const timer = setTimeout(onAutoAdvance, totalMs);
     return () => clearTimeout(timer);
@@ -415,7 +415,7 @@ export function PowerSlide({ step = 0, onAutoAdvance }: { step: number; onAutoAd
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.5, delay: chartStep === 1 ? 0.5 : 0 }}
+              transition={{ duration: 0.5, delay: chartStep === 1 ? 1.0 : 0 }}
             >
               <motion.h2
                 className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
@@ -428,7 +428,7 @@ export function PowerSlide({ step = 0, onAutoAdvance }: { step: number; onAutoAd
                 style={{ color: MUTED }}
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: chartStep === 1 ? 0.7 : 0.15 }}
+                transition={{ duration: 0.4, delay: chartStep === 1 ? 1.2 : 0.15 }}
               >
                 {SUBTITLES[chartStep]}
               </motion.p>
@@ -525,7 +525,7 @@ export function PowerSlide({ step = 0, onAutoAdvance }: { step: number; onAutoAd
             <motion.g
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.8, delay: chartStep === 1 ? 1.0 : 0.3 }}
+              transition={{ duration: 0.8, delay: chartStep === 1 ? 1.5 : 0.3 }}
             >
               <defs>
                 <linearGradient id="sweep-glow" x1="0" y1="0" x2="1" y2="0">
@@ -602,13 +602,18 @@ export function PowerSlide({ step = 0, onAutoAdvance }: { step: number; onAutoAd
               targetCy = chartStep > 0
                 ? dot.sy
                 : [dot.sy, dot.sy + dot.driftDy, dot.sy - dot.driftDy * 0.6, dot.sy];
-              cxTransition = chartStep > 0
-                ? { duration: 0.9, delay: dotEntranceDelay, ease: [0.22, 1, 0.36, 1] }
-                : { duration: dot.driftDuration, delay: dot.driftDelay, repeat: Infinity, ease: "easeInOut" };
-              cyTransition = chartStep > 0
-                ? { duration: 0.9, delay: dotEntranceDelay, ease: [0.22, 1, 0.36, 1] }
-                : { duration: dot.driftDuration, delay: dot.driftDelay, repeat: Infinity, ease: "easeInOut" };
-              opacityDelay = chartStep === 1 ? 0.8 + dot.delay * 0.4 : dotEntranceDelay + 0.2;
+              if (chartStep === 1) {
+                const settleDelay = 0.3 + dot.delay * 0.5;
+                cxTransition = { duration: 2.0, delay: settleDelay, ease: "easeInOut" };
+                cyTransition = { duration: 2.0, delay: settleDelay, ease: "easeInOut" };
+              } else if (chartStep > 1) {
+                cxTransition = { duration: 0.9, delay: dotEntranceDelay, ease: [0.22, 1, 0.36, 1] };
+                cyTransition = { duration: 0.9, delay: dotEntranceDelay, ease: [0.22, 1, 0.36, 1] };
+              } else {
+                cxTransition = { duration: dot.driftDuration, delay: dot.driftDelay, repeat: Infinity, ease: "easeInOut" };
+                cyTransition = { duration: dot.driftDuration, delay: dot.driftDelay, repeat: Infinity, ease: "easeInOut" };
+              }
+              opacityDelay = chartStep === 1 ? 1.3 + dot.delay * 0.4 : dotEntranceDelay + 0.2;
             } else {
               targetCx = dot.sx;
               targetCy = dot.sy;
@@ -633,7 +638,7 @@ export function PowerSlide({ step = 0, onAutoAdvance }: { step: number; onAutoAd
                   cy: cyTransition,
                   r: { duration: 0.5, delay: dotEntranceDelay, ease: "easeOut" },
                   fillOpacity: { duration: 0.8, delay: opacityDelay },
-                  fill: { duration: 1.0, delay: chartStep === 1 ? 0.8 + dot.delay * 0.4 : 0.1 },
+                  fill: { duration: 1.0, delay: chartStep === 1 ? 1.3 + dot.delay * 0.4 : 0.1 },
                 }}
               />
             );
@@ -672,7 +677,7 @@ export function PowerSlide({ step = 0, onAutoAdvance }: { step: number; onAutoAd
           {CALLOUTS.map((c, i) => {
             const showCallout = chartStep === 0 && introPhase >= 5;
             const enterDelay = 0.3 + i * 0.25;
-            const exitDelay = 0.05 + i * 0.08;
+            const exitDelay = 0.1 + i * 0.15;
             return (
               <motion.g key={`callout-${i}`}>
                 <motion.circle
@@ -680,13 +685,13 @@ export function PowerSlide({ step = 0, onAutoAdvance }: { step: number; onAutoAd
                   cx={c.x} cy={c.y} stroke={c.color}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: showCallout ? 0.5 : 0 }}
-                  transition={{ duration: 0.5, delay: showCallout ? enterDelay : exitDelay, ease: [0.22, 1, 0.36, 1] }}
+                  transition={{ duration: showCallout ? 0.5 : 0.7, delay: showCallout ? enterDelay : exitDelay, ease: [0.22, 1, 0.36, 1] }}
                 />
                 <motion.circle
                   r={4} cx={c.x} cy={c.y} fill={c.color}
                   initial={{ fillOpacity: 0 }}
                   animate={{ fillOpacity: showCallout ? 0.7 : 0 }}
-                  transition={{ duration: 0.4, delay: showCallout ? enterDelay : exitDelay }}
+                  transition={{ duration: showCallout ? 0.4 : 0.7, delay: showCallout ? enterDelay : exitDelay }}
                 />
                 {showCallout && (
                   <motion.circle
@@ -704,7 +709,7 @@ export function PowerSlide({ step = 0, onAutoAdvance }: { step: number; onAutoAd
                   style={{ fill: c.color, fontSize: 14, fontWeight: 600, fontFamily: "inherit" }}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: showCallout ? 1 : 0 }}
-                  transition={{ duration: 0.4, delay: showCallout ? enterDelay + 0.15 : exitDelay }}
+                  transition={{ duration: showCallout ? 0.4 : 0.6, delay: showCallout ? enterDelay + 0.15 : exitDelay }}
                 >
                   {c.label}
                 </motion.text>
@@ -714,7 +719,7 @@ export function PowerSlide({ step = 0, onAutoAdvance }: { step: number; onAutoAd
                   style={{ fill: c.color, fontSize: 15, fontWeight: 700, fontFamily: "inherit" }}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: showCallout ? 1 : 0 }}
-                  transition={{ duration: 0.4, delay: showCallout ? enterDelay + 0.3 : exitDelay }}
+                  transition={{ duration: showCallout ? 0.4 : 0.6, delay: showCallout ? enterDelay + 0.3 : exitDelay }}
                 >
                   {c.price}
                 </motion.text>
@@ -923,7 +928,7 @@ export function PowerSlide({ step = 0, onAutoAdvance }: { step: number; onAutoAd
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 12 }}
-            transition={{ duration: 0.6, delay: chartStep === 1 ? 0.6 : 0, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.6, delay: chartStep === 1 ? 1.2 : 0, ease: [0.22, 1, 0.36, 1] }}
           >
             {SPOTLIGHTS.map((s, i) => {
               const d = DRIVERS[s.cluster];
