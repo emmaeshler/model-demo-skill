@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, ChevronDown, Check, Download, MonitorPlay, RotateCcw, Maximize, Minimize, LayoutGrid } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, Check, Download, MonitorPlay, RotateCcw, Maximize, Minimize, LayoutGrid, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 export interface NavGroup {
@@ -21,6 +21,8 @@ interface SlideNavProps {
   showReplay?: boolean;
   onReplay?: () => void;
   onSlideSorter?: () => void;
+  darkMode?: boolean;
+  onToggleDark?: () => void;
 }
 
 function FullPageButton() {
@@ -87,6 +89,8 @@ export function TopBar({
   presentationTitle = "Inside Your Dynamic Model",
   onStartPresenting,
   onSlideSorter,
+  darkMode,
+  onToggleDark,
 }: SlideNavProps) {
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -167,6 +171,15 @@ export function TopBar({
           </button>
 
           <div className="ml-auto flex items-center gap-3">
+            {onToggleDark && (
+              <button
+                onClick={onToggleDark}
+                className="flex items-center gap-1.5 rounded-md border border-white/15 px-2.5 py-1 text-xs font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white"
+              >
+                {darkMode ? <Sun className="size-3.5" /> : <Moon className="size-3.5" />}
+                {darkMode ? "Light" : "Dark"}
+              </button>
+            )}
             {onSlideSorter && (
               <button
                 onClick={onSlideSorter}
@@ -209,7 +222,7 @@ export function TopBar({
               const groupActive = gi === currentGroupIndex;
 
               return (
-                <div key={gi} className="mb-1 last:mb-0">
+                <div key={gi} className="mb-1.5 last:mb-0">
                   <button
                     onClick={() =>
                       handleNavigate(
@@ -240,6 +253,29 @@ export function TopBar({
                     </span>
                     {group.label}
                   </button>
+                  {groupActive && group.slides.length > 1 && (
+                    <div className="ml-7 mt-0.5 space-y-0.5">
+                      {group.slides.map((s, si) => {
+                        const isSlideActive =
+                          s.index === current &&
+                          (s.subStep === undefined || s.subStep === currentSubStep);
+                        return (
+                          <button
+                            key={si}
+                            onClick={() => handleNavigate(s.index, s.subStep)}
+                            className={cn(
+                              "w-full rounded px-2.5 py-1 text-left text-xs transition-colors",
+                              isSlideActive
+                                ? "bg-white/10 font-medium text-white"
+                                : "text-white/45 hover:bg-white/5 hover:text-white/70",
+                            )}
+                          >
+                            {s.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               );
             })}

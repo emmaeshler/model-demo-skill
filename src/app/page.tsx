@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, X, LayoutGrid, ZoomIn, ZoomOut } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, X, LayoutGrid, ZoomIn, ZoomOut, Sun, Moon } from "lucide-react";
 import { AnimatePresence, motion, MotionConfig } from "framer-motion";
 import { type NavGroup, SlideNav, AudienceTopBar } from "@/components/slide-nav";
 import { useMode } from "@/lib/mode-context";
@@ -63,6 +63,8 @@ const SUB_STEP_CONFIG: Record<number, number> = {
   [REFINE_INDEX]: REFINE_TOTAL_STEPS,
   [PROFIT_GROWTH_INDEX]: PROFIT_GROWTH_TOTAL_STEPS,
 };
+
+const EXECUTE_PRESENTER_STEPS = 4;
 
 const DEFAULT_NAV_GROUPS: NavGroup[] = [
   {
@@ -142,13 +144,20 @@ export default function Home() {
   const [slideSorterOpen, setSlideSorterOpen] = useState(false);
   const [sorterCols, setSorterCols] = useState(4);
   const [navGroups, setNavGroups] = useState(DEFAULT_NAV_GROUPS);
+  const [darkMode, setDarkMode] = useState(false);
+  const [presenterNavOpen, setPresenterNavOpen] = useState(false);
   const { mode } = useMode();
   const channelRef = useRef<BroadcastChannel | null>(null);
   const audienceWindowRef = useRef<Window | null>(null);
   const iframeSrcRef = useRef("");
   const total = SLIDES.length;
 
-  const maxSteps = SUB_STEP_CONFIG[slide] ?? 0;
+  const subStepConfig = useMemo(() => {
+    if (mode !== "presenter") return SUB_STEP_CONFIG;
+    return { ...SUB_STEP_CONFIG, [EXECUTE_INDEX]: EXECUTE_PRESENTER_STEPS };
+  }, [mode]);
+
+  const maxSteps = subStepConfig[slide] ?? 0;
   const hasSubSteps = maxSteps > 0;
   const config = SLIDES[slide];
   const notes = getPresenterNotes(config?.kind ?? "", subStep);
@@ -166,7 +175,7 @@ export default function Home() {
     const steps: { slideIndex: number; stepIndex: number; kind: SlideKind; label: string; groupLabel: string; groupIndex: number; slideInGroupIndex: number }[] = [];
     for (let i = 0; i < SLIDES.length; i++) {
       const kind = SLIDES[i].kind;
-      const stepsCount = SUB_STEP_CONFIG[i] ?? 0;
+      const stepsCount = subStepConfig[i] ?? 0;
       const gi = navGroups.findIndex((g) => g.slides.some((s) => s.index === i));
       const group = gi >= 0 ? navGroups[gi] : undefined;
       const groupLabel = group?.label ?? "";
@@ -184,7 +193,7 @@ export default function Home() {
       }
     }
     return steps;
-  }, [navGroups]);
+  }, [navGroups, subStepConfig]);
 
   const updateSlideLabel = useCallback((groupIndex: number, slideInGroupIndex: number, newLabel: string) => {
     setNavGroups((prev) => {
@@ -198,6 +207,14 @@ export default function Home() {
       return next;
     });
   }, []);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", darkMode);
+  }, [darkMode]);
+
+  useEffect(() => {
+    channelRef.current?.postMessage({ type: "theme", darkMode });
+  }, [darkMode]);
 
   // Detect audience window mode
   useEffect(() => {
@@ -219,6 +236,9 @@ export default function Home() {
         if (e.data?.type === "navigate") {
           setSlide(e.data.slide);
           setSubStep(e.data.subStep);
+        }
+        if (e.data?.type === "theme") {
+          document.documentElement.classList.toggle("dark", e.data.darkMode);
         }
       };
       return () => ch.close();
@@ -283,7 +303,7 @@ export default function Home() {
         return;
       }
 
-      const currentMax = SUB_STEP_CONFIG[slide] ?? 0;
+      const currentMax = subStepConfig[slide] ?? 0;
 
       // Forward within sub-steps
       if (index === slide + 1 && currentMax > 0 && subStep < currentMax - 1) {
@@ -302,7 +322,7 @@ export default function Home() {
         const goingBack = index < slide;
 
         // Going back into a sub-step slide from the next slide → land on last step
-        const targetMax = SUB_STEP_CONFIG[index] ?? 0;
+        const targetMax = subStepConfig[index] ?? 0;
         if (goingBack && targetMax > 0 && slide === index + 1) {
           setSkipAnimation(true);
           setSlide(index);
@@ -315,7 +335,7 @@ export default function Home() {
         setSubStep(0);
       }
     },
-    [total, slide, subStep],
+    [total, slide, subStep, subStepConfig],
   );
 
   useEffect(() => {
@@ -327,6 +347,8 @@ export default function Home() {
       } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
         e.preventDefault();
         navigate(slide - 1);
+      } else if (e.key === "Escape" && presenterNavOpen) {
+        setPresenterNavOpen(false);
       } else if (e.key === "Escape" && slideSorterOpen) {
         setSlideSorterOpen(false);
       } else if (e.key === "Escape" && presenting) {
@@ -335,7 +357,7 @@ export default function Home() {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [slide, navigate, isAudience, presenting, endPresenting, slideSorterOpen]);
+  }, [slide, navigate, isAudience, presenting, endPresenting, slideSorterOpen, presenterNavOpen]);
 
   return (
     <>
@@ -411,6 +433,8 @@ export default function Home() {
           showReplay={skipAnimation}
           onReplay={handleReplay}
           onSlideSorter={() => setSlideSorterOpen(true)}
+          darkMode={darkMode}
+          onToggleDark={() => setDarkMode((d) => !d)}
         />
       )}
 
@@ -560,23 +584,77 @@ export default function Home() {
       {/* Presenter console overlay */}
       {presenting && !isAudience && (
         <div className="fixed inset-0 z-[100] flex flex-col bg-[#0a0a0a]">
-          <div className="flex shrink-0 items-center justify-between border-b border-white/10 bg-[#111]/90 px-5 py-2.5">
+          <div className="relative flex shrink-0 items-center justify-between border-b border-white/10 bg-[#111]/90 px-5 py-2.5">
             <div className="flex items-center gap-3">
               <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-white/40">
                 Presenter Console
               </span>
               <span className="text-white/15">|</span>
-              <span className="text-sm font-medium text-white/70">
+              <button
+                onClick={() => setPresenterNavOpen((o) => !o)}
+                className="flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium text-white/70 transition-colors hover:bg-white/10"
+              >
                 {currentGroup?.label}
-              </span>
+                <ChevronDown
+                  className={cn(
+                    "size-3 text-white/40 transition-transform",
+                    presenterNavOpen && "rotate-180",
+                  )}
+                />
+              </button>
             </div>
-            <button
-              onClick={endPresenting}
-              className="flex items-center gap-1.5 rounded-md border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/70 transition-colors hover:border-red-500/30 hover:bg-red-500/20 hover:text-red-300"
-            >
-              <X className="size-3.5" />
-              End Presenting
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setDarkMode((d) => !d)}
+                className="flex items-center gap-1.5 rounded-md border border-white/15 bg-white/5 px-2.5 py-1.5 text-xs font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white"
+              >
+                {darkMode ? <Sun className="size-3.5" /> : <Moon className="size-3.5" />}
+                {darkMode ? "Light" : "Dark"}
+              </button>
+              <button
+                onClick={endPresenting}
+                className="flex items-center gap-1.5 rounded-md border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/70 transition-colors hover:border-red-500/30 hover:bg-red-500/20 hover:text-red-300"
+              >
+                <X className="size-3.5" />
+                End Presenting
+              </button>
+            </div>
+
+            {presenterNavOpen && (
+              <div className="absolute left-0 right-0 top-full z-10 max-h-[50vh] overflow-y-auto border-b border-white/10 bg-[#111]/95 p-3 backdrop-blur-md">
+                {navGroups.map((group, gi) => {
+                  return (
+                    <div key={gi} className="mb-2 last:mb-0">
+                      <div className="mb-1 px-2 text-[10px] font-bold uppercase tracking-wider text-white/30">
+                        {group.label}
+                      </div>
+                      {group.slides.map((s, si) => {
+                        const isActive =
+                          s.index === slide &&
+                          (s.subStep === undefined || s.subStep === subStep);
+                        return (
+                          <button
+                            key={si}
+                            onClick={() => {
+                              navigate(s.index, s.subStep);
+                              setPresenterNavOpen(false);
+                            }}
+                            className={cn(
+                              "w-full rounded px-3 py-1.5 text-left text-xs transition-colors",
+                              isActive
+                                ? "bg-white/10 font-medium text-white"
+                                : "text-white/50 hover:bg-white/5 hover:text-white/70",
+                            )}
+                          >
+                            {s.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div className="flex min-h-0 flex-1">
