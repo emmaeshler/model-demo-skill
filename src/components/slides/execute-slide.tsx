@@ -9,7 +9,7 @@ const TEAL = "#21A5D5";
 const STEEL = "#4A7DAA";
 const GREY = "#B8BFC6";
 
-export const EXECUTE_TOTAL_STEPS = 2;
+export const EXECUTE_TOTAL_STEPS = 1;
 
 /* ── Layout ──────────────────────────────────────────── */
 
@@ -18,8 +18,8 @@ const SVG_H = 380;
 
 const BOX_H = 200;
 
-const MODEL_W = 230;
-const MODEL_X = 365;
+const MODEL_W = BOX_H;
+const MODEL_X = 380;
 const MODEL_Y = 25;
 const MODEL_CX = MODEL_X + MODEL_W / 2;
 const MODEL_CY = MODEL_Y + BOX_H / 2;
@@ -545,44 +545,48 @@ export function ExecuteSlide({
   const [feedExiting, setFeedExiting] = useState(false);
   const [feedGone, setFeedGone] = useState(false);
   const [settled, setSettled] = useState(false);
-  const [revealPhase, setRevealPhase] = useState(step >= 1 && skipAnimation ? 5 : 0);
+  const [revealPhase, setRevealPhase] = useState(step >= 1 && skipAnimation ? 4 : 0);
   const cust = CUSTOMERS[selected];
 
   useEffect(() => {
     if (skipAnimation) {
-      setCollapsed(step >= 1);
+      setCollapsed(true);
       setChipsVisible(false);
       setFeedPhase(false);
-      setFeedGone(step >= 1);
+      setFeedGone(true);
       setFeedExiting(false);
-      setSettled(step >= 1);
-      setRevealPhase(step >= 1 ? 5 : 0);
+      setSettled(true);
+      setRevealPhase(4);
       return;
     }
 
-    if (step === 0) {
-      setCollapsed(false);
-      setChipsVisible(false);
-      setFeedPhase(false);
-      setFeedExiting(false);
-      setFeedGone(false);
-      setSettled(false);
-      setRevealPhase(0);
-      return;
-    }
-
-    // step >= 1: collapse drivers, then wait for presenter clicks
-    setCollapsed(false);
+    setCollapsed(true);
     setChipsVisible(false);
     setFeedPhase(false);
     setFeedExiting(false);
-    setFeedGone(false);
+    setFeedGone(true);
     setSettled(false);
     setRevealPhase(0);
-    const t0 = setTimeout(() => setCollapsed(true), 800);
-    const t1 = setTimeout(() => { setSettled(true); setFeedGone(true); setRevealPhase(1); }, 2000);
-    return () => { clearTimeout(t0); clearTimeout(t1); };
+    const t0 = setTimeout(() => { setSettled(true); setRevealPhase(1); }, 400);
+    return () => { clearTimeout(t0); };
   }, [step, skipAnimation]);
+
+  useEffect(() => {
+    if (!settled || revealPhase >= 4) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        e.stopPropagation();
+        setRevealPhase(p => Math.min(p + 1, 4));
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        e.stopPropagation();
+        setRevealPhase(p => Math.max(p - 1, 1));
+      }
+    }
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [settled, revealPhase]);
 
   const inCurvePath = () => {
     const sy = MODEL_CY;
@@ -633,7 +637,7 @@ export function ExecuteSlide({
               </motion.h2>
             ) : (
               <motion.h2
-                key={`reveal-title-${revealPhase <= 1 ? 1 : revealPhase >= 5 ? 5 : revealPhase}`}
+                key={`reveal-title-${revealPhase <= 1 ? 1 : revealPhase >= 4 ? 4 : revealPhase}`}
                 className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
                 style={{ color: NAVY }}
                 initial={{ opacity: 0, y: 12 }}
@@ -644,12 +648,10 @@ export function ExecuteSlide({
                 {revealPhase <= 1
                   ? "The pricing model, ready for each customer"
                   : revealPhase === 2
-                    ? "Acme Industrial has unique pricing drivers"
+                    ? "Acme’s drivers feed the pricing model"
                     : revealPhase === 3
-                      ? "Acme’s drivers uniquely feed the pricing model"
-                      : revealPhase === 4
-                        ? "A price tailored to Acme emerges"
-                        : "The ideal price, adjusted for each customer"}
+                      ? "A price tailored to Acme emerges"
+                      : "The ideal price, adjusted for each customer"}
               </motion.h2>
             )}
           </AnimatePresence>
@@ -678,7 +680,7 @@ export function ExecuteSlide({
                 </motion.p>
               ) : (
                 <motion.p
-                  key={revealPhase >= 5 ? `cust-${selected}` : `reveal-sub-${revealPhase <= 1 ? 1 : revealPhase}`}
+                  key={revealPhase >= 4 ? `cust-${selected}` : `reveal-sub-${revealPhase <= 1 ? 1 : revealPhase}`}
                   className="max-w-2xl text-center text-[1.05rem] leading-relaxed"
                   style={{ color: NAVY }}
                   initial={{ opacity: 0, y: 6 }}
@@ -689,12 +691,10 @@ export function ExecuteSlide({
                   {revealPhase <= 1
                     ? "Built from your data — now it applies what it learned to individual accounts."
                     : revealPhase === 2
-                      ? "High volume, deep relationships, and low price sensitivity — the factors we just discovered."
+                      ? "The model weighs each factor to calculate Acme's optimal price."
                       : revealPhase === 3
-                        ? "The model weighs each factor to calculate Acme's optimal price."
-                        : revealPhase === 4
-                          ? <>$19.24 — volume commitment and relationship depth push the price <span style={{ fontWeight: 700, color: "#2e7d32" }}>$1.74 above list</span>.</>
-                          : cust.narrative}
+                        ? <>{cust.price} — volume commitment and relationship depth push the price <span style={{ fontWeight: 700, color: "#2e7d32" }}>{cust.delta}</span>.</>
+                        : cust.narrative}
                 </motion.p>
               )}
             </AnimatePresence>
@@ -784,11 +784,11 @@ export function ExecuteSlide({
                         strokeWidth: 2.5,
                       }}
                       animate={settled ? {
-                        x: MODEL_X,
+                        x: MODEL_CX - BOX_H / 2,
                         y: MODEL_Y,
-                        width: MODEL_W,
+                        width: BOX_H,
                         height: BOX_H,
-                        rx: 16,
+                        rx: BOX_H / 2,
                         fill: "white",
                         stroke: TEAL,
                         strokeWidth: 2.5,
@@ -852,104 +852,123 @@ export function ExecuteSlide({
                       animate={{ opacity: settled ? 1 : 0 }}
                       transition={{ duration: 0.4, delay: settled ? 0.4 : 0 }}
                     >
-                      {/* Title at top */}
-                      <text x={MODEL_CX} y={MODEL_Y + 24} fontSize="16" fontWeight="700" fill={NAVY} textAnchor="middle">
+                      {/* Title above circle */}
+                      <text x={MODEL_CX} y={MODEL_CY - 68} fontSize="14" fontWeight="700" fill={NAVY} textAnchor="middle">
                         Pricing model
                       </text>
 
-                      {/* Center $17.50 circle */}
-                      <circle cx={MODEL_CX} cy={MODEL_CY + 4} r={44} fill="white" stroke={TEAL} strokeWidth={2.5} />
-                      <text x={MODEL_CX} y={MODEL_CY - 10} fontSize="8" fontWeight="600" fill={GREY} textAnchor="middle">
+                      {/* Center SKU circle — filled blue */}
+                      <circle cx={MODEL_CX} cy={MODEL_CY} r={58} fill={NAVY} />
+                      <text x={MODEL_CX} y={MODEL_CY - 14} fontSize="9" fontWeight="600" fill="rgba(255,255,255,0.7)" textAnchor="middle">
                         SKU #A-7200
                       </text>
-                      <text x={MODEL_CX} y={MODEL_CY + 12} fontSize="22" fontWeight="800" fill={NAVY} textAnchor="middle">
+                      <text x={MODEL_CX} y={MODEL_CY + 12} fontSize="24" fontWeight="800" fill="white" textAnchor="middle">
                         {LIST_PRICE}
                       </text>
-                      <text x={MODEL_CX} y={MODEL_CY + 26} fontSize="9" fontWeight="500" fill={GREY} textAnchor="middle">
+                      <text x={MODEL_CX} y={MODEL_CY + 28} fontSize="10" fontWeight="500" fill="rgba(255,255,255,0.65)" textAnchor="middle">
                         list price
                       </text>
 
-                      {/* Orbit ring with dots */}
-                      <circle cx={MODEL_CX} cy={MODEL_CY + 4} r={56} fill="none" stroke="rgba(0,68,106,0.12)" strokeWidth={1} strokeDasharray="3 3" />
-                      {[0, 90, 180, 270].map((deg) => {
-                        const rad = (deg * Math.PI) / 180;
-                        const ox = MODEL_CX + Math.cos(rad) * 56;
-                        const oy = MODEL_CY + 4 + Math.sin(rad) * 56;
-                        return (
-                          <circle key={deg} cx={ox} cy={oy} r={3.5} fill={TEAL} opacity={0.7} />
-                        );
-                      })}
-
-                      {/* Subtitle at bottom */}
-                      <text x={MODEL_CX} y={MODEL_Y + BOX_H - 14} fontSize="10" fontWeight="500" fill={TEAL} textAnchor="middle">
-                        ML-powered optimization
-                      </text>
                     </motion.g>
+
+                    {/* Subtitle below outer circle */}
+                    <motion.text
+                      x={MODEL_CX} y={MODEL_CY + BOX_H / 2 + 18}
+                      fontSize="10" fontWeight="500" fill={TEAL} textAnchor="middle"
+                      initial={skipAnimation ? false : { opacity: 0 }}
+                      animate={{ opacity: settled ? 1 : 0 }}
+                      transition={{ duration: 0.4, delay: settled ? 0.6 : 0 }}
+                    >
+                      ML-powered optimization
+                    </motion.text>
+
                   </motion.g>
 
                   {/* Interactive elements — staged reveal after settled */}
                   {settled && (
                   <>
-                    {/* Profile card (left) — phase 2 */}
+                    {/* Phase 2: Profile card (left) + flow into model + spinning ring */}
                     {revealPhase >= 2 && (
-                      <AnimatePresence mode="wait">
-                        <ProfileCard key={selected} cust={cust} />
-                      </AnimatePresence>
-                    )}
-
-                    {/* In-flow curve + dots — phase 3 */}
-                    {revealPhase >= 3 && (
-                      <AnimatePresence mode="wait">
-                        <motion.g key={`flow-${selected}`}>
-                          <motion.path
-                            d={inCurvePath()}
-                            fill="none" stroke={cust.color} strokeWidth={1.5} strokeLinecap="round"
-                            initial={{ pathLength: 0, opacity: 0 }}
-                            animate={{ pathLength: 1, opacity: 0.35 }}
-                            transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
+                      <>
+                        <AnimatePresence mode="wait">
+                          <ProfileCard key={selected} cust={cust} />
+                        </AnimatePresence>
+                        <AnimatePresence mode="wait">
+                          <motion.g key={`flow-${selected}`}>
+                            <motion.path
+                              d={inCurvePath()}
+                              fill="none" stroke={cust.color} strokeWidth={1.5} strokeLinecap="round"
+                              initial={{ pathLength: 0, opacity: 0 }}
+                              animate={{ pathLength: 1, opacity: 0.35 }}
+                              transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
+                            />
+                            <FlowDot path={inPathObj} color={cust.color} delay={0.3} />
+                          </motion.g>
+                        </AnimatePresence>
+                        {/* Spinning outer ring while learning */}
+                        {revealPhase === 2 && (
+                          <motion.circle
+                            cx={MODEL_CX} cy={MODEL_CY}
+                            r={BOX_H / 2 + 4}
+                            fill="none" stroke={TEAL} strokeWidth={2}
+                            strokeDasharray="12 8"
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+                            style={{ transformOrigin: `${MODEL_CX}px ${MODEL_CY}px` }}
                           />
-                          <FlowDot path={inPathObj} color={cust.color} delay={0.3} />
-                          {/* Out-flow curve — phase 4 */}
-                          {revealPhase >= 4 && (
-                            <>
-                              <motion.path
-                                d={outCurvePath()}
-                                fill="none" stroke={STEEL} strokeWidth={1.5} strokeLinecap="round"
-                                initial={{ pathLength: 0, opacity: 0 }}
-                                animate={{ pathLength: 1, opacity: 0.35 }}
-                                transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
-                              />
-                              <FlowDot path={outPathObj} color={STEEL} delay={0.4} />
-                            </>
-                          )}
-                        </motion.g>
-                      </AnimatePresence>
+                        )}
+                      </>
                     )}
 
-                    {/* Result card (right) — phase 4 */}
-                    {revealPhase >= 4 && (
-                      <AnimatePresence mode="wait">
-                        <ResultCard key={selected} cust={cust} />
-                      </AnimatePresence>
-                    )}
-
-                    {/* Model processing pulse — phase 3 */}
+                    {/* Phase 3: Recommended price + result card + out-flow */}
                     {revealPhase >= 3 && (
-                      <AnimatePresence mode="wait">
-                        <motion.rect
-                          key={selected}
-                          x={MODEL_X - 4} y={MODEL_Y - 4}
-                          width={MODEL_W + 8} height={BOX_H + 8}
-                          rx={20} fill="none" stroke={cust.color} strokeWidth={2}
+                      <>
+                        <motion.g
                           initial={{ opacity: 0 }}
-                          animate={{ opacity: [0, 0.35, 0.1, 0] }}
-                          transition={{ duration: 1.5, delay: 0.3, ease: "easeInOut" }}
-                        />
-                      </AnimatePresence>
+                          animate={{ opacity: 1 }}
+                          transition={{ duration: 0.4, delay: 0.2 }}
+                        >
+                          <motion.text
+                            x={MODEL_CX} y={MODEL_CY - BOX_H / 2 - 16}
+                            textAnchor="middle"
+                            style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", fill: GREY, fontFamily: "inherit" }}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.3, delay: 0.3 }}
+                          >
+                            RECOMMENDED
+                          </motion.text>
+                          <motion.text
+                            x={MODEL_CX} y={MODEL_CY - BOX_H / 2 - 2}
+                            textAnchor="middle"
+                            style={{ fontSize: 22, fontWeight: 800, fill: NAVY, fontFamily: "inherit" }}
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4, delay: 0.5 }}
+                          >
+                            {cust.price}
+                          </motion.text>
+                        </motion.g>
+                        <AnimatePresence mode="wait">
+                          <motion.g key={`outflow-${selected}`}>
+                            <motion.path
+                              d={outCurvePath()}
+                              fill="none" stroke={STEEL} strokeWidth={1.5} strokeLinecap="round"
+                              initial={{ pathLength: 0, opacity: 0 }}
+                              animate={{ pathLength: 1, opacity: 0.35 }}
+                              transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
+                            />
+                            <FlowDot path={outPathObj} color={STEEL} delay={0.5} />
+                          </motion.g>
+                        </AnimatePresence>
+                        <AnimatePresence mode="wait">
+                          <ResultCard key={selected} cust={cust} />
+                        </AnimatePresence>
+                      </>
                     )}
 
-                    {/* Connector line + chips — phase 5 */}
-                    {revealPhase >= 5 && (
+                    {/* Connector line + chips — phase 4 */}
+                    {revealPhase >= 4 && (
                       <>
                         <motion.line
                           x1={MODEL_CX} y1={MODEL_Y + BOX_H}
@@ -1011,15 +1030,25 @@ export function ExecuteSlide({
           </div>
 
           {/* Presenter advance control */}
-          {settled && revealPhase >= 1 && revealPhase < 5 && (
+          {settled && revealPhase >= 1 && revealPhase < 4 && (
             <motion.div
               className="flex items-center gap-3 mt-2 mb-1"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.4, delay: 0.5 }}
             >
+              <button
+                onClick={() => setRevealPhase(p => Math.max(p - 1, 1))}
+                className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors hover:bg-black/5"
+                style={{ color: NAVY, opacity: revealPhase <= 1 ? 0.25 : 1 }}
+                disabled={revealPhase <= 1}
+              >
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                  <path d="M13 4l-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
               <div className="flex items-center gap-1.5">
-                {[1, 2, 3, 4, 5].map(p => (
+                {[1, 2, 3, 4].map(p => (
                   <div
                     key={p}
                     className="rounded-full transition-all duration-300"
@@ -1032,7 +1061,7 @@ export function ExecuteSlide({
                 ))}
               </div>
               <button
-                onClick={() => setRevealPhase(p => Math.min(p + 1, 5))}
+                onClick={() => setRevealPhase(p => Math.min(p + 1, 4))}
                 className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors hover:bg-black/5"
                 style={{ color: NAVY }}
               >

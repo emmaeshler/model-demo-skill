@@ -659,11 +659,11 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                 </>
               ) : chartStep === 9 ? (
                 <>
-                  <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: NAVY }}>
+                  <h2 className="text-center text-3xl font-bold tracking-tight sm:text-4xl" style={{ color: NAVY }}>
                     {TITLES[10]}
                   </h2>
                   <motion.p
-                    className="mx-auto mt-1 max-w-2xl text-center text-[1.05rem] leading-relaxed"
+                    className="mx-auto mt-1 max-w-2xl text-center text-[1.25rem] leading-relaxed"
                     style={{ color: MUTED }}
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -1103,7 +1103,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                     <motion.div
                       key="quadrant-layout"
                       exit={{ opacity: 0 }}
-                      transition={{ duration: 0.15 }}
+                      transition={{ duration: 0.5 }}
                       style={{
                         display: "grid",
                         gridTemplateColumns: "1fr 1fr",
@@ -1123,6 +1123,8 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                         return (
                           <div key={cat.key} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
                             <motion.div
+                              layoutId={`cat-label-${cat.key}`}
+                              layout
                               style={{
                                 fontSize: 15,
                                 fontWeight: 800,
@@ -1139,7 +1141,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                               animate={{
                                 opacity: factorsPhase >= 1 ? 1 : 0,
                               }}
-                              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], layout: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } }}
                             >
                               {vert.label}
                             </motion.div>
@@ -1214,7 +1216,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                               borderRadius: 12,
                               padding: "8px 12px",
                             }}
-                            initial={{ opacity: 0, y: 16 }}
+                            initial={false}
                             animate={feeding ? {
                               backgroundColor: "transparent",
                             } : {
@@ -1224,11 +1226,13 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                             transition={feeding ? {
                               backgroundColor: { duration: 0.3 },
                             } : {
-                              opacity: { delay: catIdx * 0.08, duration: 0.5 },
+                              opacity: { duration: 0.5 },
                               backgroundColor: { duration: 0.5 },
                             }}
                           >
                             <motion.div
+                              layoutId={`cat-label-${cat.key}`}
+                              layout
                               style={{
                                 fontSize: 13,
                                 fontWeight: 800,
@@ -1262,7 +1266,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                                 delay: catIdx * 0.04,
                                 ease: [0.4, 0, 0.1, 1],
                                 opacity: { duration: 0.3, delay: catIdx * 0.04 + 0.15 },
-                              } : { duration: 0.6, delay: 0.3 }}
+                              } : { duration: 0.6, delay: 0.3, layout: { duration: 0.6, delay: 0, ease: [0.22, 1, 0.36, 1] } }}
                             >
                               {vert.label}
                             </motion.div>

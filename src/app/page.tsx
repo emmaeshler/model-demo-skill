@@ -94,8 +94,7 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
   {
     label: "3 | Execute",
     slides: [
-      { index: EXECUTE_INDEX, label: "Convergence", subStep: 0 },
-      { index: EXECUTE_INDEX, label: "Customer Pricing", subStep: 1 },
+      { index: EXECUTE_INDEX, label: "Customer Pricing", subStep: 0 },
     ],
   },
   {
@@ -276,9 +275,7 @@ export default function Home() {
     (index: number, targetSubStep?: number) => {
       if (targetSubStep !== undefined) {
         if (index >= 0 && index < total) {
-          const isBackward =
-            index < slide || (index === slide && targetSubStep < subStep);
-          setSkipAnimation(isBackward);
+          setSkipAnimation(false);
           setSlide(index);
           setSubStep(targetSubStep);
         }
@@ -295,14 +292,13 @@ export default function Home() {
       }
       // Back within sub-steps
       if (index === slide - 1 && currentMax > 0 && subStep > 0) {
-        setSkipAnimation(true);
+        setSkipAnimation(false);
         setSubStep((s) => s - 1);
         return;
       }
 
       if (index >= 0 && index < total) {
-        const goingBack = index < slide;
-        setSkipAnimation(goingBack);
+        setSkipAnimation(false);
 
         // Going back into a sub-step slide from the next slide → land on last step
         const targetMax = SUB_STEP_CONFIG[index] ?? 0;
