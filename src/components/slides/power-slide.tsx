@@ -62,20 +62,20 @@ const DRIVERS = [
 /* ─── Cluster spread (step 5: dots cluster into 4 groups) ─── */
 
 const CLUSTER_SPREAD = [
-  { cx: 280, cy: 110 },
-  { cx: 730, cy: 110 },
-  { cx: 280, cy: 340 },
-  { cx: 730, cy: 340 },
+  { cx: 180, cy: 60 },
+  { cx: 830, cy: 60 },
+  { cx: 180, cy: 400 },
+  { cx: 830, cy: 400 },
 ];
 const CLUSTER_R = 95;
 
 /* ─── Square factor layout ─── */
 
 const SQUARE_VERTS = {
-  customer: { x: 280, y: 110, label: "CUSTOMER", color: NAVY },
-  product: { x: 730, y: 110, label: "PRODUCT", color: ORANGE },
-  market: { x: 280, y: 340, label: "MARKET", color: GREEN },
-  order: { x: 730, y: 340, label: "ORDER", color: PURPLE },
+  customer: { x: 180, y: 60, label: "CUSTOMER", color: NAVY },
+  product: { x: 830, y: 60, label: "PRODUCT", color: ORANGE },
+  market: { x: 180, y: 400, label: "MARKET", color: GREEN },
+  order: { x: 830, y: 400, label: "ORDER", color: PURPLE },
 };
 
 const SQUARE_FACTORS: { label: string; category: "product" | "market" | "customer" | "order"; emphasis?: "highlight" | "crossoff" | "deemphasize" }[] = [
@@ -170,7 +170,7 @@ const PRICE_SATELLITES = [
   { label: "Win / Loss Patterns", price: "−$0.90", color: PURPLE, cx: 250, cy: 410, r: 60 },
   { label: "Competitive Position", price: "+$2.40", color: ORANGE, cx: 855, cy: 370, r: 68 },
 ];
-const CONVERGE_MODEL_R = 110;
+const CONVERGE_MODEL_R = 130;
 
 /* ─── Spotlight data (steps 1-4) ─── */
 
@@ -1445,7 +1445,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
 
           {/* ── Feed the model (step 7) ── */}
           {feeding && (() => {
-            const MODEL_R = 60;
+            const MODEL_R = 80;
             const FEED_SOURCES = [
               { vert: SQUARE_VERTS.product, color: ORANGE, label: "Product" },
               { vert: SQUARE_VERTS.market, color: GREEN, label: "Market" },
@@ -1620,7 +1620,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                     <motion.text
                       x={PLOT_CX} y={PLOT_CY - 6}
                       textAnchor="middle"
-                      style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", fill: MUTED, fontFamily: "inherit" }}
+                      style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", fill: MUTED, fontFamily: "inherit" }}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ duration: 0.4, delay: 0.6 }}
@@ -1628,9 +1628,9 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                       YOUR
                     </motion.text>
                     <motion.text
-                      x={PLOT_CX} y={PLOT_CY + 14}
+                      x={PLOT_CX} y={PLOT_CY + 16}
                       textAnchor="middle"
-                      style={{ fontSize: 18, fontWeight: 800, fill: NAVY, fontFamily: "inherit" }}
+                      style={{ fontSize: 24, fontWeight: 800, fill: NAVY, fontFamily: "inherit" }}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ duration: 0.5, delay: 0.7 }}

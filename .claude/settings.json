@@ -21,7 +21,9 @@
       "Read(//proc/69722/**)",
       "Bash(curl -s http://localhost:3000 -L -o /dev/null -w \"%{url_effective} %{http_code}\")",
       "Bash(curl -s -o /dev/null -w \"%{http_code} %{redirect_url}\" http://localhost:3000)",
-      "Bash(git show *)"
+      "Bash(git show *)",
+      "Skill(update-config)",
+      "Skill(update-config:*)"
     ],
     "additionalDirectories": [
       "/tmp"
