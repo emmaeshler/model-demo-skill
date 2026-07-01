@@ -119,6 +119,7 @@ const CATEGORY_TO_SPOTLIGHT: Record<string, number> = {
   order: 0,
 };
 
+
 const CATEGORY_TITLES = [
   "Customer factors",
   "Product factors",
@@ -462,20 +463,19 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
     if (chartStep > 2 || skipAnimation) { setFactorsPhase(7); return; }
     setFactorsPhase(0);
     const t1 = setTimeout(() => setFactorsPhase(1), 1000);
-    const t2 = setTimeout(() => setFactorsPhase(6), 3500);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    return () => { clearTimeout(t1); };
   }, [chartStep, skipAnimation]);
 
   useEffect(() => {
     if (chartStep > 2 || skipAnimation) { setMorphPhase(4); return; }
-    if (factorsPhase < 6) { setMorphPhase(-1); return; }
-    if (factorsPhase > 6) return;
+    if (factorsPhase < 1) { setMorphPhase(-1); return; }
+    if (factorsPhase > 1 && factorsPhase < 7) return;
     setMorphPhase(-1);
     const t0 = setTimeout(() => setMorphPhase(0), 2000);
-    const t1 = setTimeout(() => setMorphPhase(1), 4000);
-    const t2 = setTimeout(() => setMorphPhase(2), 6000);
-    const t3 = setTimeout(() => setMorphPhase(3), 8000);
-    const t4 = setTimeout(() => setFactorsPhase(7), 9500);
+    const t1 = setTimeout(() => setMorphPhase(1), 5000);
+    const t2 = setTimeout(() => setMorphPhase(2), 8000);
+    const t3 = setTimeout(() => setMorphPhase(3), 11000);
+    const t4 = setTimeout(() => setFactorsPhase(7), 13000);
     return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
   }, [factorsPhase, chartStep, skipAnimation]);
 
@@ -715,7 +715,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -6 }}
-                        transition={{ duration: 0.4 }}
+                        transition={{ duration: 0.5 }}
                       >
                         <h2
                           className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
@@ -948,8 +948,8 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
               targetCx = sq.x;
               targetCy = sq.y;
               targetFill = TEAL;
-              targetOpacity = customized ? 0 : factorsPhase >= 6 ? 0.1 : 0.35;
-              targetR = customized ? 0 : factorsPhase >= 6 ? dot.r * 0.4 : dot.r * 0.7;
+              targetOpacity = customized ? 0 : morphPhase >= 0 ? 0.1 : 0.35;
+              targetR = customized ? 0 : morphPhase >= 0 ? dot.r * 0.4 : dot.r * 0.7;
               cxTransition = { duration: 0.7, delay: dot.delay * 0.15, ease: [0.22, 1, 0.36, 1] };
               cyTransition = { duration: 0.7, delay: dot.delay * 0.15, ease: [0.22, 1, 0.36, 1] };
               opacityDelay = dot.delay * 0.15;
@@ -1153,10 +1153,9 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                     >
                       {CATEGORY_LAYOUT.map((cat, catIdx) => {
                         const vert = SQUARE_VERTS[cat.key];
-                        const catPhase = catIdx + 2;
-                        const chipsVisible = factorsPhase >= catPhase;
-                        const isActive = factorsPhase === catPhase;
-                        const isPast = factorsPhase > catPhase;
+                        const chipsVisible = factorsPhase >= 7 || morphPhase >= catIdx;
+                        const isHighlighted = morphPhase >= 0 && morphPhase < 4 && morphPhase === catIdx;
+                        const dimmed = morphPhase >= 0 && morphPhase < 4 && morphPhase !== catIdx && morphPhase > catIdx;
                         return (
                           <div key={cat.key} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
                             <motion.div
@@ -1176,21 +1175,15 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                               }}
                               initial={{ opacity: 0 }}
                               animate={{
-                                opacity: factorsPhase >= 1 ? 1 : 0,
+                                opacity: factorsPhase >= 1 ? (dimmed ? 0.4 : 1) : 0,
+                                scale: isHighlighted ? 1.08 : 1,
                               }}
                               transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], layout: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } }}
                             >
                               {vert.label}
                             </motion.div>
                             <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center", ...(cat.key === "market" || cat.key === "order" ? { maxWidth: 330 } : {}) }}>
-                              {chipsVisible && SQUARE_FACTORS.filter(f => f.category === cat.key).map((f, fi) => {
-                                const spotlight = SPOTLIGHTS[CATEGORY_TO_SPOTLIGHT[cat.key]];
-                                const hasPill = fi < spotlight.pills.length;
-                                const pillText = hasPill ? spotlight.pills[fi] : f.label;
-                                const isMorphing = morphPhase >= 0 && morphPhase < 4;
-                                const isMorphedOrActive = morphPhase >= catIdx;
-                                const dimmed = isMorphing && !isMorphedOrActive;
-                                return (
+                              {chipsVisible && SQUARE_FACTORS.filter(f => f.category === cat.key).map((f, fi) => (
                                   <motion.span
                                     key={f.label}
                                     layoutId={`factor-${f.label}`}
@@ -1206,46 +1199,23 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                                       whiteSpace: "nowrap",
                                       color: cat.color,
                                       backgroundColor: SOLID_TINTS[cat.color] ?? "white",
-                                      overflow: "hidden",
                                     }}
-                                    initial={{ opacity: 0, scale: 0.3 }}
+                                    initial={{ opacity: 0, scale: 0, y: 12 }}
                                     animate={{
-                                      opacity: dimmed ? 0.35 : 1,
+                                      opacity: dimmed ? 0.4 : 1,
                                       scale: 1,
+                                      y: 0,
                                     }}
                                     transition={{
-                                      opacity: { duration: 0.4, delay: catIdx * 0.08 + fi * 0.05 },
-                                      scale: { duration: 0.6, delay: catIdx * 0.08 + fi * 0.05, ease: [0.22, 1, 0.36, 1] },
+                                      opacity: { duration: 0.4, delay: fi * 0.08 },
+                                      scale: { type: "spring", stiffness: 380, damping: 22, delay: fi * 0.08 },
+                                      y: { type: "spring", stiffness: 380, damping: 22, delay: fi * 0.08 },
                                       layout: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
                                     }}
                                   >
-                                    {hasPill ? (
-                                      <AnimatePresence mode="wait" initial={false}>
-                                        {morphPhase >= catIdx ? (
-                                          <motion.span
-                                            key="factor"
-                                            style={{ display: "inline-block" }}
-                                            initial={{ opacity: 0, scale: 1.08 }}
-                                            animate={{ opacity: 1, scale: 1 }}
-                                            transition={{ duration: 0.45, delay: fi * 0.06, ease: [0.22, 1, 0.36, 1] }}
-                                          >
-                                            {f.label}
-                                          </motion.span>
-                                        ) : (
-                                          <motion.span
-                                            key="pill"
-                                            style={{ display: "inline-block" }}
-                                            exit={{ opacity: 0, scale: 0.88 }}
-                                            transition={{ duration: 0.35, delay: fi * 0.04 }}
-                                          >
-                                            {pillText}
-                                          </motion.span>
-                                        )}
-                                      </AnimatePresence>
-                                    ) : f.label}
+                                    {f.label}
                                   </motion.span>
-                                );
-                              })}
+                                ))}
                             </div>
                           </div>
                         );
@@ -1793,58 +1763,44 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
 
       {/* ── Bottom cards (steps 1-4, hidden at cluster step) ── */}
       <AnimatePresence>
-        {((chartStep === 1 && !preScan && scanCardCount > 0) || (chartStep === 2 && factorsPhase < 1)) && (
+        {(chartStep === 1 && !preScan && scanCardCount > 0) && (
           <motion.div
             className="flex flex-wrap justify-center gap-2 w-full px-4 overflow-hidden"
             initial={{ opacity: 0, y: 16, height: 0 }}
             animate={{ opacity: 1, y: 0, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           >
             {SPOTLIGHTS.map((s, i) => {
               const d = DRIVERS[s.cluster];
               const isActive = chartStep === 1 && i === scanCardCount - 1;
               const isRevealed = i < scanCardCount;
               if (!isRevealed) return null;
-              const flying = chartStep === 2;
-              const flyTarget = CARD_FLY_TARGETS[i];
-              const catKey = s.label.toLowerCase() as "order" | "market" | "customer" | "product";
-              const catFactors = SQUARE_FACTORS.filter(f => f.category === catKey);
               return (
                 <motion.div
                   key={s.label}
                   className="relative overflow-hidden rounded-xl border shadow-sm backdrop-blur-sm"
                   style={{
-                    borderLeftWidth: flying ? 0 : 4,
+                    borderLeftWidth: 4,
                     borderLeftColor: d.color,
-                    borderColor: flying ? `${d.color}15` : `${d.color}20`,
-                    minWidth: flying ? 240 : 200,
-                    maxWidth: flying ? 360 : 260,
-                    backgroundColor: flying ? `${d.color}08` : "rgba(255,255,255,0.95)",
-                    transition: "border-color 0.4s, background-color 0.4s, min-width 0.5s, max-width 0.5s, border-left-width 0.3s",
+                    borderColor: `${d.color}20`,
+                    minWidth: 200,
+                    maxWidth: 260,
+                    backgroundColor: "rgba(255,255,255,0.95)",
                   }}
                   initial={{ opacity: 0, y: 12, scale: 0.95 }}
-                  animate={flying ? {
-                    opacity: 1,
-                    y: flyTarget.y,
-                    x: flyTarget.x,
-                    scale: 0.85,
-                  } : {
+                  animate={{
                     opacity: isActive ? 1 : 0.55,
                     y: 0,
                     x: 0,
                     scale: 1,
                   }}
-                  transition={flying ? {
-                    duration: 0.6,
-                    delay: i * 0.04,
-                    ease: [0.4, 0, 0.1, 1],
-                  } : {
+                  transition={{
                     duration: 0.5,
                     ease: [0.22, 1, 0.36, 1],
                   }}
                 >
-                  {isActive && !flying && (
+                  {isActive && (
                     <motion.div
                       className="absolute top-0 left-0 right-0 h-[2px]"
                       style={{
@@ -1857,11 +1813,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                   )}
                   <div className="px-2.5 py-1.5">
                     <div className="flex items-center gap-1.5 mb-0.5">
-                      <motion.div
-                        className="relative flex-shrink-0"
-                        animate={{ opacity: flying ? 0 : 1, width: flying ? 0 : "auto" }}
-                        transition={{ duration: 0.25 }}
-                      >
+                      <div className="relative flex-shrink-0">
                         {isActive && (
                           <motion.div
                             className="absolute inset-0 rounded-full"
@@ -1873,68 +1825,40 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                         <div className="relative">
                           <CategoryIcon type={s.icon} color={d.color} size={20} />
                         </div>
-                      </motion.div>
+                      </div>
                       <div className="min-w-0">
                         <div className="text-[0.68rem] font-bold tracking-[0.06em] uppercase truncate" style={{ color: d.color }}>
                           {s.label}
                         </div>
-                        <motion.div
+                        <div
                           className="text-[0.62rem]"
                           style={{ color: MUTED }}
-                          animate={{ opacity: flying ? 0 : 1, height: flying ? 0 : "auto" }}
-                          transition={{ duration: 0.2 }}
                         >
                           {s.count}
-                        </motion.div>
+                        </div>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-1">
-                      <AnimatePresence mode="wait">
-                        {flying ? (
-                          catFactors.map((f, fi) => (
-                            <motion.span
-                              key={f.label}
-                              className="rounded-full border px-2 py-px text-[0.62rem] font-medium whitespace-nowrap"
-                              style={{
-                                borderColor: `${d.color}25`,
-                                color: d.color,
-                                backgroundColor: `${d.color}08`,
-                              }}
-                              initial={{ opacity: 0, scale: 0.7, y: 4 }}
-                              animate={{ opacity: 1, scale: 1, y: 0 }}
-                              transition={{
-                                delay: 0.15 + fi * 0.055,
-                                duration: 0.3,
-                                ease: [0.22, 1, 0.36, 1],
-                              }}
-                            >
-                              {f.label}
-                            </motion.span>
-                          ))
-                        ) : (
-                          s.pills.map((pill, pi) => (
-                            <motion.span
-                              key={pill}
-                              className="rounded-full border px-2 py-px text-[0.62rem] font-medium whitespace-nowrap"
-                              style={{
-                                borderColor: `${d.color}25`,
-                                color: d.color,
-                                backgroundColor: `${d.color}06`,
-                              }}
-                              initial={{ opacity: 0, x: -20, scale: 0.8 }}
-                              animate={{ opacity: isActive ? 1 : 0.6, x: 0, scale: 1 }}
-                              exit={{ opacity: 0, scale: 0.8 }}
-                              transition={{
-                                duration: 0.6,
-                                delay: isActive ? 0.5 + pi * (PILL_STAGGER_SPAN / s.pills.length) : 0,
-                                ease: [0.22, 1, 0.36, 1],
-                              }}
-                            >
-                              {pill}
-                            </motion.span>
-                          ))
-                        )}
-                      </AnimatePresence>
+                      {s.pills.map((pill, pi) => (
+                        <motion.span
+                          key={pill}
+                          className="rounded-full border px-2 py-px text-[0.62rem] font-medium whitespace-nowrap"
+                          style={{
+                            borderColor: `${d.color}25`,
+                            color: d.color,
+                            backgroundColor: `${d.color}06`,
+                          }}
+                          initial={{ opacity: 0, x: -20, scale: 0.8 }}
+                          animate={{ opacity: isActive ? 1 : 0.6, x: 0, scale: 1 }}
+                          transition={{
+                            duration: 0.6,
+                            delay: isActive ? 0.5 + pi * (PILL_STAGGER_SPAN / s.pills.length) : 0,
+                            ease: [0.22, 1, 0.36, 1],
+                          }}
+                        >
+                          {pill}
+                        </motion.span>
+                      ))}
                     </div>
                   </div>
                 </motion.div>
