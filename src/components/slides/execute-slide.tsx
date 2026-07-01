@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useMode } from "@/lib/mode-context";
 
 const NAVY = "#00446A";
 const SLATE = "#1B4F72";
@@ -522,13 +523,19 @@ export function ExecuteSlide({
   onAnimationDone?: () => void;
   skipAnimation?: boolean;
 }) {
+  const { mode } = useMode();
+  const isPresenter = mode === "presenter";
   const [selected, setSelected] = useState(0);
   const [revealPhase, setRevealPhase] = useState(skipAnimation ? 4 : 1);
   const cust = CUSTOMERS[selected];
 
   useEffect(() => {
-    setRevealPhase(skipAnimation ? 4 : 1);
-  }, [step, skipAnimation]);
+    if (isPresenter) {
+      setRevealPhase(skipAnimation ? 4 : step + 1);
+    } else {
+      setRevealPhase(skipAnimation ? 4 : 1);
+    }
+  }, [step, skipAnimation, isPresenter]);
 
   useEffect(() => {
     if (revealPhase !== 4) return;
@@ -538,6 +545,7 @@ export function ExecuteSlide({
   }, [revealPhase, selected]);
 
   useEffect(() => {
+    if (isPresenter) return;
     if (revealPhase >= 4) return;
     function onKey(e: KeyboardEvent) {
       if (e.key === "ArrowRight" || e.key === "ArrowDown") {
@@ -553,7 +561,7 @@ export function ExecuteSlide({
     }
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [revealPhase]);
+  }, [revealPhase, isPresenter]);
 
   const inCurvePath = () => {
     const sy = MODEL_CY;
@@ -586,7 +594,7 @@ export function ExecuteSlide({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-6xl flex-col items-center justify-center px-6 pt-8 relative"
+          className={`mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-6xl flex-col items-center justify-center px-6 relative ${isPresenter ? "pt-2" : "pt-8"}`}
         >
           {/* Title */}
           <AnimatePresence mode="wait">
@@ -611,7 +619,7 @@ export function ExecuteSlide({
 
           {/* Narrative area */}
           <motion.div
-            className="flex min-h-[3rem] items-center justify-center px-4 mb-4"
+            className={`flex min-h-[3rem] items-center justify-center px-4 ${isPresenter ? "mb-1" : "mb-4"}`}
             initial={skipAnimation ? false : { opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.5 }}
@@ -840,8 +848,8 @@ export function ExecuteSlide({
             </svg>
           </div>
 
-          {/* Presenter advance control */}
-          {revealPhase >= 1 && revealPhase < 4 && (
+          {/* Dot navigation (self mode only) */}
+          {!isPresenter && revealPhase >= 1 && revealPhase < 4 && (
             <motion.div
               className="flex items-center gap-3 mt-2 mb-1"
               initial={{ opacity: 0 }}

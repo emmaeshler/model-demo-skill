@@ -432,7 +432,6 @@ export default function Home() {
           onStartPresenting={startPresenting}
           showReplay={skipAnimation}
           onReplay={handleReplay}
-          onSlideSorter={() => setSlideSorterOpen(true)}
           darkMode={darkMode}
           onToggleDark={() => setDarkMode((d) => !d)}
         />

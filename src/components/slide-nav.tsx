@@ -180,16 +180,7 @@ export function TopBar({
                 {darkMode ? "Light" : "Dark"}
               </button>
             )}
-            {onSlideSorter && (
-              <button
-                onClick={onSlideSorter}
-                className="flex items-center gap-1.5 rounded-md border border-white/15 px-2.5 py-1 text-xs font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white"
-              >
-                <LayoutGrid className="size-3.5" />
-                Slide Sorter
-              </button>
-            )}
-            {onStartPresenting && (
+{onStartPresenting && (
               <button
                 onClick={onStartPresenting}
                 className="flex items-center gap-1.5 rounded-md border border-white/15 px-2.5 py-1 text-xs font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white"
