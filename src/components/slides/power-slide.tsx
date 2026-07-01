@@ -112,6 +112,13 @@ const CATEGORY_LAYOUT = [
   { key: "order" as const, x: 520, y: 250, w: 490, h: 210, color: PURPLE, labelDelay: 0.35, baseDelay: 1.3 },
 ];
 
+const CATEGORY_TO_SPOTLIGHT: Record<string, number> = {
+  customer: 2,
+  product: 3,
+  market: 1,
+  order: 0,
+};
+
 const CATEGORY_TITLES = [
   "Customer factors",
   "Product factors",
@@ -431,7 +438,8 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
 
   const [introPhase, setIntroPhase] = useState(skipAnimation ? 5 : chartStep === 0 ? 0 : 4);
   const [customizePhase, setCustomizePhase] = useState(chartStep > 3 || (skipAnimation && chartStep >= 3) ? CUSTOMIZE_ACTIONS.length : -1);
-  const [factorsPhase, setFactorsPhase] = useState(chartStep > 2 || (skipAnimation && chartStep >= 2) ? 6 : 0);
+  const [factorsPhase, setFactorsPhase] = useState(chartStep > 2 || (skipAnimation && chartStep >= 2) ? 7 : 0);
+  const [morphPhase, setMorphPhase] = useState(chartStep > 2 || (skipAnimation && chartStep >= 2) ? 4 : -1);
   useEffect(() => {
     if (skipAnimation) { setIntroPhase(5); return; }
     if (chartStep !== 0) {
@@ -451,12 +459,25 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
 
   useEffect(() => {
     if (chartStep < 2) { setFactorsPhase(0); return; }
-    if (chartStep > 2 || skipAnimation) { setFactorsPhase(6); return; }
+    if (chartStep > 2 || skipAnimation) { setFactorsPhase(7); return; }
     setFactorsPhase(0);
-    const t1 = setTimeout(() => setFactorsPhase(1), 800);
-    const t2 = setTimeout(() => setFactorsPhase(6), 1000);
+    const t1 = setTimeout(() => setFactorsPhase(1), 1000);
+    const t2 = setTimeout(() => setFactorsPhase(6), 3500);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [chartStep, skipAnimation]);
+
+  useEffect(() => {
+    if (chartStep > 2 || skipAnimation) { setMorphPhase(4); return; }
+    if (factorsPhase < 6) { setMorphPhase(-1); return; }
+    if (factorsPhase > 6) return;
+    setMorphPhase(-1);
+    const t0 = setTimeout(() => setMorphPhase(0), 2000);
+    const t1 = setTimeout(() => setMorphPhase(1), 4000);
+    const t2 = setTimeout(() => setMorphPhase(2), 6000);
+    const t3 = setTimeout(() => setMorphPhase(3), 8000);
+    const t4 = setTimeout(() => setFactorsPhase(7), 9500);
+    return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
+  }, [factorsPhase, chartStep, skipAnimation]);
 
   useEffect(() => {
     if (chartStep < 3) { setCustomizePhase(-1); return; }
@@ -689,28 +710,32 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                   {chartStep === 2 ? (
                     <AnimatePresence mode="wait">
                       <motion.div
-                        key={factorsPhase >= 2 && factorsPhase <= 5 ? `factors-cat-${factorsPhase}` : 'factors-main'}
+                        key={factorsPhase >= 7 ? 'factors-final' : morphPhase >= 0 && morphPhase < 4 ? `factors-cat-${morphPhase}` : 'factors-transition'}
                         className="flex flex-col items-center"
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -6 }}
-                        transition={{ duration: 0.3 }}
+                        transition={{ duration: 0.4 }}
                       >
                         <h2
                           className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
-                          style={{ color: factorsPhase >= 2 && factorsPhase <= 5 ? CATEGORY_LAYOUT[factorsPhase - 2].color : NAVY }}
+                          style={{ color: factorsPhase >= 7 ? NAVY : morphPhase >= 0 && morphPhase < 4 ? CATEGORY_LAYOUT[morphPhase].color : TEAL }}
                         >
-                          {factorsPhase >= 2 && factorsPhase <= 5
-                            ? CATEGORY_TITLES[factorsPhase - 2]
-                            : TITLES[chartStep]}
+                          {factorsPhase >= 7
+                            ? "Pricing factors identified"
+                            : morphPhase >= 0 && morphPhase < 4
+                              ? CATEGORY_TITLES[morphPhase]
+                              : "Each pattern becomes a pricing factor"}
                         </h2>
                         <p
                           className="mx-auto mt-1 max-w-2xl text-center text-[1.05rem] leading-relaxed"
                           style={{ color: MUTED }}
                         >
-                          {factorsPhase >= 2 && factorsPhase <= 5
-                            ? CATEGORY_NARRATION[factorsPhase - 2]
-                            : SUBTITLES[chartStep]}
+                          {factorsPhase >= 7
+                            ? "The model identifies the variables that drive every price — grouped by customer, product, market, and order."
+                            : morphPhase >= 0 && morphPhase < 4
+                              ? CATEGORY_NARRATION[morphPhase]
+                              : "The model transforms raw signals into the drivers behind every price."}
                         </p>
                       </motion.div>
                     </AnimatePresence>
@@ -923,8 +948,8 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
               targetCx = sq.x;
               targetCy = sq.y;
               targetFill = TEAL;
-              targetOpacity = customized ? 0 : 0.35;
-              targetR = customized ? 0 : dot.r * 0.7;
+              targetOpacity = customized ? 0 : factorsPhase >= 6 ? 0.1 : 0.35;
+              targetR = customized ? 0 : factorsPhase >= 6 ? dot.r * 0.4 : dot.r * 0.7;
               cxTransition = { duration: 0.7, delay: dot.delay * 0.15, ease: [0.22, 1, 0.36, 1] };
               cyTransition = { duration: 0.7, delay: dot.delay * 0.15, ease: [0.22, 1, 0.36, 1] };
               opacityDelay = dot.delay * 0.15;
@@ -1158,39 +1183,69 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                               {vert.label}
                             </motion.div>
                             <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center", ...(cat.key === "market" || cat.key === "order" ? { maxWidth: 330 } : {}) }}>
-                              {chipsVisible && SQUARE_FACTORS.filter(f => f.category === cat.key).map((f, fi) => (
-                                <motion.span
-                                  key={f.label}
-                                  layoutId={`factor-${f.label}`}
-                                  layout
-                                  style={{
-                                    display: "inline-block",
-                                    borderRadius: 16,
-                                    border: `1.5px solid ${cat.color}${isActive ? "50" : "25"}`,
-                                    padding: "8px 14px",
-                                    fontSize: 14,
-                                    fontWeight: 500,
-                                    fontFamily: "inherit",
-                                    whiteSpace: "nowrap",
-                                    color: cat.color,
-                                    backgroundColor: SOLID_TINTS[cat.color] ?? "white",
-                                  }}
-                                  initial={{ opacity: 0, scale: 0.9, y: 60 }}
-                                  animate={{
-                                    opacity: 1,
-                                    scale: 1,
-                                    y: 0,
-                                  }}
-                                  transition={{
-                                    opacity: { duration: 0.5, delay: catIdx * 0.06 + fi * 0.04 },
-                                    scale: { duration: 0.5, delay: catIdx * 0.06 + fi * 0.04, ease: [0.22, 1, 0.36, 1] },
-                                    y: { duration: 0.6, delay: catIdx * 0.06 + fi * 0.04, ease: [0.22, 1, 0.36, 1] },
-                                    layout: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
-                                  }}
-                                >
-                                  {f.label}
-                                </motion.span>
-                              ))}
+                              {chipsVisible && SQUARE_FACTORS.filter(f => f.category === cat.key).map((f, fi) => {
+                                const spotlight = SPOTLIGHTS[CATEGORY_TO_SPOTLIGHT[cat.key]];
+                                const hasPill = fi < spotlight.pills.length;
+                                const pillText = hasPill ? spotlight.pills[fi] : f.label;
+                                const isMorphing = morphPhase >= 0 && morphPhase < 4;
+                                const isMorphedOrActive = morphPhase >= catIdx;
+                                const dimmed = isMorphing && !isMorphedOrActive;
+                                return (
+                                  <motion.span
+                                    key={f.label}
+                                    layoutId={`factor-${f.label}`}
+                                    layout
+                                    style={{
+                                      display: "inline-block",
+                                      borderRadius: 16,
+                                      border: `1.5px solid ${cat.color}25`,
+                                      padding: "8px 14px",
+                                      fontSize: 14,
+                                      fontWeight: 500,
+                                      fontFamily: "inherit",
+                                      whiteSpace: "nowrap",
+                                      color: cat.color,
+                                      backgroundColor: SOLID_TINTS[cat.color] ?? "white",
+                                      overflow: "hidden",
+                                    }}
+                                    initial={{ opacity: 0, scale: 0.3 }}
+                                    animate={{
+                                      opacity: dimmed ? 0.35 : 1,
+                                      scale: 1,
+                                    }}
+                                    transition={{
+                                      opacity: { duration: 0.4, delay: catIdx * 0.08 + fi * 0.05 },
+                                      scale: { duration: 0.6, delay: catIdx * 0.08 + fi * 0.05, ease: [0.22, 1, 0.36, 1] },
+                                      layout: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+                                    }}
+                                  >
+                                    {hasPill ? (
+                                      <AnimatePresence mode="wait" initial={false}>
+                                        {morphPhase >= catIdx ? (
+                                          <motion.span
+                                            key="factor"
+                                            style={{ display: "inline-block" }}
+                                            initial={{ opacity: 0, scale: 1.08 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            transition={{ duration: 0.45, delay: fi * 0.06, ease: [0.22, 1, 0.36, 1] }}
+                                          >
+                                            {f.label}
+                                          </motion.span>
+                                        ) : (
+                                          <motion.span
+                                            key="pill"
+                                            style={{ display: "inline-block" }}
+                                            exit={{ opacity: 0, scale: 0.88 }}
+                                            transition={{ duration: 0.35, delay: fi * 0.04 }}
+                                          >
+                                            {pillText}
+                                          </motion.span>
+                                        )}
+                                      </AnimatePresence>
+                                    ) : f.label}
+                                  </motion.span>
+                                );
+                              })}
                             </div>
                           </div>
                         );
