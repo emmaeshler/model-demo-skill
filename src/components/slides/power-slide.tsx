@@ -734,6 +734,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
       </div>
 
       {/* Chart area */}
+      <LayoutGroup>
       <motion.div
         className="relative w-full flex-1 min-h-0 mt-0 flex items-stretch gap-0"
         initial={{ opacity: 0, y: 20 }}
@@ -1074,14 +1075,13 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
           })}
 
           {/* ── Factor pills (step 6 quadrants → step 7+ grid) ── */}
-          {factorsVisible && (
+          {factorsVisible && !converging && (
             <motion.foreignObject
               x={10} y={-25} width={1000} height={560}
               initial={{ opacity: 0 }}
               animate={{ opacity: factorsPhase >= 1 ? 1 : 0 }}
               transition={{ duration: 0.4 }}
             >
-              <LayoutGroup>
               <div style={{
                 width: "100%",
                 height: "100%",
@@ -1133,7 +1133,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                               }}
                               initial={{ opacity: 0 }}
                               animate={{
-                                opacity: factorsPhase >= 1 ? 1 : 0,
+                                opacity: 1,
                               }}
                               transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], layout: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } }}
                             >
@@ -1437,7 +1437,6 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                   )}
                 </AnimatePresence>
               </div>
-              </LayoutGroup>
             </motion.foreignObject>
           )}
 
@@ -1583,9 +1582,9 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                 {converging ? (
                   <>
                     <motion.text
-                      x={PLOT_CX} y={PLOT_CY - 55}
+                      x={PLOT_CX} y={PLOT_CY - 70}
                       textAnchor="middle"
-                      style={{ fontSize: 28, fontWeight: 700, letterSpacing: "0.14em", fill: MUTED, fontFamily: "inherit" }}
+                      style={{ fontSize: 22, fontWeight: 700, letterSpacing: "0.18em", fill: MUTED, fontFamily: "inherit" }}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ duration: 0.4, delay: 0.5 }}
@@ -1593,9 +1592,9 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                       RECOMMENDED
                     </motion.text>
                     <motion.text
-                      x={PLOT_CX} y={PLOT_CY + 35}
+                      x={PLOT_CX} y={PLOT_CY + 40}
                       textAnchor="middle"
-                      style={{ fontSize: 110, fontWeight: 800, fill: NAVY, fontFamily: "inherit" }}
+                      style={{ fontSize: 150, fontWeight: 800, fill: NAVY, fontFamily: "inherit" }}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ duration: 0.5, delay: 0.7 }}
@@ -1603,9 +1602,9 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                       $17.50
                     </motion.text>
                     <motion.text
-                      x={PLOT_CX} y={PLOT_CY + 72}
+                      x={PLOT_CX} y={PLOT_CY + 90}
                       textAnchor="middle"
-                      style={{ fontSize: 28, fontWeight: 500, fill: MUTED, fontFamily: "inherit" }}
+                      style={{ fontSize: 34, fontWeight: 500, fill: MUTED, fontFamily: "inherit" }}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 0.85 }}
                       transition={{ duration: 0.4, delay: 0.9 }}
@@ -1724,7 +1723,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
             className="flex flex-wrap justify-center gap-2 w-full px-4 overflow-hidden"
             initial={{ opacity: 0, y: 16, height: 0 }}
             animate={{ opacity: 1, y: 0, height: "auto" }}
-            exit={{ opacity: 0, y: 12, height: 0 }}
+            exit={{ opacity: 0, y: -80, height: 0 }}
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           >
             {SPOTLIGHTS.map((s, i) => {
@@ -1779,9 +1778,20 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                         </div>
                       </div>
                       <div className="min-w-0">
-                        <div className="text-[0.68rem] font-bold tracking-[0.06em] uppercase truncate" style={{ color: d.color }}>
+                        <motion.div
+                          layoutId={`cat-label-${s.label.toLowerCase()}`}
+                          layout
+                          className="text-[0.68rem] font-bold tracking-[0.06em] uppercase truncate"
+                          style={{
+                            color: d.color,
+                            backgroundColor: SOLID_TINTS[d.color] ?? "white",
+                            borderRadius: 4,
+                            padding: "0px 6px",
+                          }}
+                          transition={{ layout: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } }}
+                        >
                           {s.label}
-                        </div>
+                        </motion.div>
                         <div className="text-[0.62rem]" style={{ color: MUTED }}>
                           {s.count}
                         </div>
@@ -1816,6 +1826,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
           </motion.div>
         )}
       </AnimatePresence>
+      </LayoutGroup>
     </div>
   );
 }
