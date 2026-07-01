@@ -8,11 +8,11 @@ const NAVY = "#00446A";
 const ORANGE = "#C27A3A";
 const TEAL = "#4A8FA8";
 const MUTED = "#8A9AAA";
-const STRAT_BLUE = "#2A7BA5";
+const STRAT_BLUE = "#21A5D5";
 const GREEN = "#4A8A5C";
 const RED = "#A65A52";
 
-export const REFINE_TOTAL_STEPS = 7;
+export const REFINE_TOTAL_STEPS = 8;
 
 const CURVE_SLOT = { x: 50, y: 20, w: 460, h: 140 };
 const BASE_Y = CURVE_SLOT.y + CURVE_SLOT.h;
@@ -58,6 +58,7 @@ interface ScatterDot {
   driftDelay: number;
   chaosX: number;
   chaosY: number;
+  residualY: number;
 }
 
 const rng = mulberry32(73);
@@ -112,21 +113,22 @@ const SCATTER_DOTS: ScatterDot[] = Array.from({ length: DOT_COUNT }, () => {
     offsetY,
     jitterX: (rng() - 0.5) * 14,
     status: pickStatus(),
-    r: (() => { const s = rng(); return s < 0.5 ? 0.4 + rng() * 0.4 : s < 0.85 ? 0.7 + rng() * 0.6 : 1.1 + rng() * 0.7; })(),
+    r: (() => { const s = rng(); return s < 0.4 ? 0.8 + rng() * 0.6 : s < 0.75 ? 1.2 + rng() * 0.8 : 1.8 + rng() * 1.0; })(),
     driftDx: (rng() - 0.5) * 4,
     driftDy: (rng() - 0.5) * 3,
     driftDuration: 4 + rng() * 4,
     driftDelay: rng() * 5,
     chaosX: CURVE_SLOT.x + 10 + rng() * (CURVE_SLOT.w - 20),
     chaosY: CURVE_SLOT.y + 5 + rng() * (CURVE_SLOT.h - 10),
+    residualY: (() => { const r = rng(); return r < 0.55 ? 0 : r < 0.8 ? 2 + rng() * 6 : 6 + rng() * 10; })(),
   };
 });
 
 const SEGMENT_ZONES = [
-  { tStart: 0.0, tEnd: 0.36, label: "High win rate", color: GREEN, why: "Low competition — customers are willing to pay more here." },
-  { tStart: 0.48, tEnd: 0.74, label: "Competitive pressure", color: RED, why: "Multiple bidders are driving prices down in this region." },
-  { tStart: 0.71, tEnd: 0.83, label: "Cost ↑", color: ORANGE, why: "Rising input costs are squeezing margins on these products." },
-  { tStart: 0.81, tEnd: 1.0, label: "Price sensitive", color: TEAL, why: "Customers will switch vendors over small price differences." },
+  { tStart: 0.0, tEnd: 0.36, label: "High win rate", color: GREEN, why: "Low competition — room to price higher", labelDy: 0 },
+  { tStart: 0.48, tEnd: 0.74, label: "Competitive pressure", color: RED, why: "Multiple bidders driving prices down", labelDy: 10 },
+  { tStart: 0.71, tEnd: 0.83, label: "Cost ↑", color: ORANGE, why: "Rising input costs squeezing margins", labelDy: -18 },
+  { tStart: 0.81, tEnd: 1.0, label: "Price sensitive", color: TEAL, why: "Customers switch over small differences", labelDy: -10 },
 ];
 
 const SEGMENT_HIGHLIGHTS = [
@@ -171,12 +173,23 @@ const SEGMENT_HIGHLIGHTS = [
   },
 ];
 
-const LEGEND_ITEMS = [
-  { label: "Won", color: GREEN },
-  { label: "Lost", color: RED },
-  { label: "Overridden", color: ORANGE },
-  { label: "Adjusted", color: TEAL },
-];
+const LEGEND_ITEMS = (() => {
+  const items = [
+    { label: "Won", color: GREEN },
+    { label: "Lost", color: RED },
+    { label: "Overridden", color: ORANGE },
+    { label: "Adjusted", color: TEAL },
+  ];
+  const CHAR_W = 2.6;
+  const DOT_PLUS_GAP = 5;
+  const AFTER_LABEL_GAP = 7;
+  let x = 0;
+  return items.map((item) => {
+    const out = { ...item, x };
+    x += DOT_PLUS_GAP + item.label.length * CHAR_W + AFTER_LABEL_GAP;
+    return out;
+  });
+})();
 
 const STEP_CONTEXT: Record<number, { title: string; body: string }> = {
   0: {
@@ -189,37 +202,59 @@ const STEP_CONTEXT: Record<number, { title: string; body: string }> = {
   },
   2: {
     title: "Your optimal demand curve",
-    body: "The model fits a demand curve across every product and customer — the price each deal should hit.",
+    body: "The model builds a price–volume relationship from your historical win/loss data.",
   },
   3: {
+    title: "Your optimal demand curve",
+    body: "Each customer gets its own curve.",
+  },
+  4: {
     title: "QuickParts",
     body: "The model detects a pricing gap and adjusts to the optimal curve.",
   },
-  4: {
+  5: {
     title: "Acme",
     body: "The model detects a pricing gap and adjusts to the optimal curve.",
   },
-  5: {
+  6: {
     title: "MedSupply",
     body: "The model detects a pricing gap and adjusts to the optimal curve.",
   },
-  6: {
+  7: {
     title: "Every price, optimized",
     body: "Every transaction is now aligned to the demand curve — lifting underpriced deals while protecting wins.",
   },
 };
 
 export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: number; onAutoAdvance?: () => void; skipAnimation?: boolean }) {
+  const [curveMode, setCurveMode] = useState<"one" | "three">("three");
+
   const curve = useMemo(() => {
-    const raw = makeCurve(CURVE_SLOT, 5);
     const flipY = (y: number) => 2 * CURVE_SLOT.y + CURVE_SLOT.h - y;
+    const raw = makeCurve(CURVE_SLOT, 5);
     const n = 64;
     const pts = Array.from({ length: n + 1 }, (_, i) => {
       const pt = raw.sampleAt(i / n);
       return `${pt.x},${flipY(pt.y)}`;
     });
+    const ghostCurves = [
+      { steepness: 2, customer: "MedSupply", color: TEAL },
+      { steepness: 14, customer: "QuickParts", color: ORANGE },
+    ].map(({ steepness, customer, color }) => {
+      const g = makeCurve(CURVE_SLOT, steepness);
+      const d = "M " + Array.from({ length: n + 1 }, (_, i) => {
+        const pt = g.sampleAt(i / n);
+        return `${pt.x},${flipY(pt.y)}`;
+      }).join(" L ");
+      const ghostSample = (t: number) => {
+        const pt = g.sampleAt(t);
+        return { x: pt.x, y: flipY(pt.y) };
+      };
+      return { d, sampleAt: ghostSample, customer, color };
+    });
     return {
       d: "M " + pts.join(" L "),
+      ghostCurves,
       sampleAt: (t: number) => {
         const pt = raw.sampleAt(t);
         return { x: pt.x, y: flipY(pt.y) };
@@ -247,30 +282,9 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
     return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
   }, [chartStep, skipAnimation]);
 
-  /* ── Sequential segment reveal for chartStep 1 ──── */
-  const [segPhase, setSegPhase] = useState(-1);
-  useEffect(() => {
-    if (chartStep !== 1) {
-      const t0 = setTimeout(() => setSegPhase(-1));
-      return () => clearTimeout(t0);
-    }
-    if (skipAnimation) {
-      const t0 = setTimeout(() => setSegPhase(3));
-      return () => clearTimeout(t0);
-    }
-    const timers = [
-      setTimeout(() => setSegPhase(-1)),
-      setTimeout(() => setSegPhase(0), 800),
-      setTimeout(() => setSegPhase(1), 3200),
-      setTimeout(() => setSegPhase(2), 5400),
-      setTimeout(() => setSegPhase(3), 7400),
-    ];
-    return () => timers.forEach(clearTimeout);
-  }, [chartStep, skipAnimation]);
-
-  /* ── Spotlight auto-animation (steps 3-5) ────────────── */
-  const isSpotlight = chartStep >= 3 && chartStep <= 5;
-  const spotlightIdx = isSpotlight ? chartStep - 3 : -1;
+  /* ── Spotlight auto-animation (steps 4-6) ────────────── */
+  const isSpotlight = chartStep >= 4 && chartStep <= 6;
+  const spotlightIdx = isSpotlight ? chartStep - 4 : -1;
 
   const [spotPhase, setSpotPhase] = useState(0);
   useEffect(() => {
@@ -286,24 +300,22 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
     const t1 = setTimeout(() => setSpotPhase(1), 2200);
     const t2 = setTimeout(() => setSpotPhase(2), 3400);
     const t3 = setTimeout(() => setSpotPhase(3), 5200);
-    const t4 = setTimeout(() => { onAutoAdvance?.(); }, 6800);
-    return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
+    return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, [chartStep, isSpotlight, skipAnimation, onAutoAdvance]);
 
   /* ── Chart animation ────────────────────────────────── */
 
   const showSegments = chartStep === 1 || chartStep === 2;
   const showCurve = chartStep >= 2;
-  const dotOpacityBase = chartStep === 1 ? 0.2 : chartStep === 2 ? 0.15 : isSpotlight ? 0 : 1;
-  const isAllToCurve = chartStep >= 6;
-
-  const activeSegZone = chartStep === 1 && segPhase >= 0 && segPhase < SEGMENT_ZONES.length ? SEGMENT_ZONES[segPhase] : null;
+  const showGhostCurves = chartStep === 3 && curveMode === "three";
+  const dotOpacityBase = chartStep === 1 ? 0.2 : (chartStep >= 2 && chartStep <= 3) ? 0.15 : isSpotlight ? 0 : 1;
+  const isAllToCurve = chartStep >= 7;
 
   const heading = isAllToCurve
     ? "Every price, aligned to the curve"
     : chartStep === 1
       ? "The model detects market segmentation"
-      : chartStep === 2
+      : (chartStep >= 2 && chartStep <= 3)
         ? "Your optimal demand curve"
         : chartStep === 0
           ? "Prices are scattered across the board"
@@ -311,9 +323,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
             ? SEGMENT_HIGHLIGHTS[spotlightIdx].label
             : "Detect patterns, refine pricing guidance";
 
-  const subtitle = chartStep === 1 && activeSegZone
-    ? activeSegZone.why
-    : isSpotlight
+  const subtitle = isSpotlight
       ? (spotPhase >= 2 ? SEGMENT_HIGHLIGHTS[spotlightIdx].afterBody : SEGMENT_HIGHLIGHTS[spotlightIdx].beforeBody)
       : STEP_CONTEXT[chartStep]?.body || null;
 
@@ -321,10 +331,10 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
   const isLifted = spotPhase >= 1;
 
   return (
-    <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-7xl flex-col items-center justify-start px-6 pt-4">
+    <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-7xl flex-col items-center justify-start px-6 pt-2">
 
       {/* Title — fixed-height container so chart never resizes */}
-      <div className="relative w-full" style={{ height: 100, flexShrink: 0 }}>
+      <div className="relative w-full" style={{ height: 90, flexShrink: 0 }}>
         <AnimatePresence>
           {chartStep === 0 && (
             <motion.div
@@ -376,7 +386,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
           )}
           {chartStep > 0 && (
             <motion.div
-              key={`step-title-${chartStep}`}
+              key={`step-title-${chartStep >= 2 && chartStep <= 3 ? 'curve-intro' : `step-${chartStep}`}`}
               className="absolute inset-0 flex flex-col items-center justify-start"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
@@ -392,15 +402,31 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
               {subtitle && (
                 <AnimatePresence mode="wait">
                   <motion.p
-                    key={chartStep === 1 ? `seg-why-${segPhase}` : isSpotlight ? `spot-${chartStep}-${spotPhase >= 2 ? 'after' : 'before'}` : `step-${chartStep}`}
+                    key={chartStep === 1 ? 'seg-static' : isSpotlight ? `spot-${chartStep}-${spotPhase >= 2 ? 'after' : 'before'}` : `step-${chartStep}`}
                     className="mx-auto mt-1 max-w-2xl text-center text-[1.05rem] leading-relaxed"
-                    style={{ color: activeSegZone ? activeSegZone.color : MUTED }}
+                    style={{ color: MUTED }}
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -4 }}
                     transition={{ duration: 0.4, delay: chartStep === 1 ? 0.1 : 0.15 }}
                   >
-                    {subtitle}
+                    {chartStep === 3 && curveMode === "three" ? (
+                      <>Each{" "}
+                        <span className="relative inline" style={{ whiteSpace: "nowrap" }}>
+                          <span style={{ fontWeight: 700, color: NAVY }}>customer</span>
+                          <motion.span
+                            className="absolute bottom-0 left-0 h-[2px] rounded-full"
+                            style={{ backgroundColor: STRAT_BLUE }}
+                            initial={{ width: "0%" }}
+                            animate={{ width: "100%" }}
+                            transition={{ duration: 0.6, delay: 0.4, ease: "easeOut" }}
+                          />
+                        </span>{" "}
+                        gets its own curve.
+                      </>
+                    ) : (
+                      subtitle
+                    )}
                   </motion.p>
                 </AnimatePresence>
               )}
@@ -411,8 +437,8 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
 
       {/* Chart area */}
       <motion.div
-        className="w-full flex-1 min-h-0 mt-1 flex flex-col"
-        style={{ maxHeight: "calc(100% - 160px)" }}
+        className="w-full flex-1 min-h-0 mt-0 flex flex-col"
+        style={{ maxHeight: "calc(100% - 120px)" }}
         initial={{ opacity: 0, y: 20 }}
         animate={{
           opacity: chartStep === 0 && introPhase < 1 ? 0 : 1,
@@ -422,7 +448,69 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
       >
         {/* Chart */}
         <div className="relative min-w-0 flex-1 flex items-center justify-center">
-          {/* Spotlight card — auto-animating beside the highlighted dot */}
+          {/* Curve mode toggle — internal review tool */}
+          <div className="absolute left-3 top-3 z-20 flex items-center gap-1 rounded-lg bg-white/90 px-2.5 py-1.5 shadow-sm backdrop-blur-sm border border-gray-200/60">
+            <button
+              onClick={() => setCurveMode("one")}
+              className="rounded-md px-2 py-0.5 text-[11px] font-medium transition-colors"
+              style={{
+                backgroundColor: curveMode === "one" ? NAVY : "transparent",
+                color: curveMode === "one" ? "white" : MUTED,
+              }}
+            >
+              1 Curve
+            </button>
+            <button
+              onClick={() => setCurveMode("three")}
+              className="rounded-md px-2 py-0.5 text-[11px] font-medium transition-colors"
+              style={{
+                backgroundColor: curveMode === "three" ? NAVY : "transparent",
+                color: curveMode === "three" ? "white" : MUTED,
+              }}
+            >
+              3 Curves
+            </button>
+          </div>
+
+          {/* Product–customer legend card (step 3) */}
+          <AnimatePresence>
+            {showGhostCurves && (
+              <motion.div
+                key="curve-legend"
+                className="absolute z-10 rounded-xl bg-white/95 px-4 py-3 shadow-md backdrop-blur-sm"
+                style={{ right: "3%", top: "5%" }}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.4, delay: 0.5 }}
+              >
+                <div className="space-y-2.5">
+                  <div>
+                    <div className="flex items-center gap-2.5">
+                      <svg width="20" height="4" className="shrink-0"><line x1="0" y1="2" x2="20" y2="2" stroke={NAVY} strokeWidth={2} strokeLinecap="round" /></svg>
+                      <span className="text-[13px] font-semibold" style={{ color: NAVY }}>Acme</span>
+                    </div>
+                    <p className="ml-[28px] mt-0.5 text-[11px] leading-snug" style={{ color: MUTED }}>Loyal, high-volume buyer</p>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2.5">
+                      <svg width="20" height="4" className="shrink-0"><line x1="0" y1="2" x2="20" y2="2" stroke={ORANGE} strokeWidth={2} strokeDasharray="3 2" strokeLinecap="round" /></svg>
+                      <span className="text-[13px] font-semibold" style={{ color: ORANGE }}>QuickParts</span>
+                    </div>
+                    <p className="ml-[28px] mt-0.5 text-[11px] leading-snug" style={{ color: MUTED }}>Niche buyer, low competition</p>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2.5">
+                      <svg width="20" height="4" className="shrink-0"><line x1="0" y1="2" x2="20" y2="2" stroke={TEAL} strokeWidth={2} strokeDasharray="3 2" strokeLinecap="round" /></svg>
+                      <span className="text-[13px] font-semibold" style={{ color: TEAL }}>MedSupply</span>
+                    </div>
+                    <p className="ml-[28px] mt-0.5 text-[11px] leading-snug" style={{ color: MUTED }}>Price-sensitive, competitive market</p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <AnimatePresence mode="wait">
             {isSpotlight && activeHighlight && (
               <motion.div
@@ -495,10 +583,10 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
               className="w-full h-full"
               preserveAspectRatio="xMidYMid meet"
             >
-              {/* Legend — top-right inside chart */}
+              {/* Legend — bottom-left below chart */}
               <g>
-                {LEGEND_ITEMS.map((item, li) => (
-                  <g key={item.label} transform={`translate(${CURVE_SLOT.x + CURVE_SLOT.w - 132 + li * 42}, 0)`}>
+                {LEGEND_ITEMS.map((item) => (
+                  <g key={item.label} transform={`translate(${CURVE_SLOT.x + item.x}, ${BASE_Y + 14})`}>
                     <circle cx={0} cy={0} r={1.2} fill={item.color} opacity={0.7} />
                     <text x={3.5} y={1.5} fontSize="4.5" fontWeight="500" fill={MUTED} style={{ fontFamily: "inherit" }}>{item.label}</text>
                   </g>
@@ -580,9 +668,6 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
                       const cy = ptMid.y + GLOW_OFFSETS[zi];
                       const rx = Math.abs(ptEnd.x - ptStart.x) / 2 + 12;
                       const ry = GLOW_RY[zi];
-                      const visible = isStep1 ? segPhase >= zi : true;
-                      const isActive = isStep1 && segPhase === zi;
-                      const isPast = isStep1 && segPhase > zi;
                       return (
                         <motion.g key={`seg-region-${zi}`}>
                           <motion.ellipse
@@ -592,11 +677,8 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
                             ry={ry}
                             fill={`url(#seg-glow-${zi})`}
                             initial={{ opacity: 0, scale: 0.5 }}
-                            animate={{
-                              opacity: visible ? (isActive ? 1 : isPast ? 0.5 : 0.25) : 0,
-                              scale: visible ? 1 : 0.5,
-                            }}
-                            transition={{ duration: 0.8 }}
+                            animate={{ opacity: 0.7, scale: 1 }}
+                            transition={{ duration: 0.8, delay: zi * 0.12 }}
                             style={{ transformOrigin: `${cx}px ${cy}px` }}
                           />
                           <motion.ellipse
@@ -606,28 +688,26 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
                             ry={ry * 0.85}
                             fill="none"
                             stroke={zone.color}
-                            strokeWidth={isActive ? 0.8 : 0.6}
+                            strokeWidth={0.6}
                             strokeDasharray="4 3"
                             initial={{ opacity: 0, scale: 0.5 }}
-                            animate={{
-                              opacity: visible ? (isActive ? 0.35 : isPast ? 0.12 : 0.06) : 0,
-                              scale: visible ? 1 : 0.5,
-                            }}
-                            transition={{ duration: 0.8 }}
+                            animate={{ opacity: 0.2, scale: 1 }}
+                            transition={{ duration: 0.8, delay: zi * 0.12 }}
                             style={{ transformOrigin: `${cx}px ${cy}px` }}
                           />
                           <motion.text
                             x={cx}
-                            y={cy + 4}
+                            y={cy + zone.labelDy}
                             fontSize="9"
                             fontWeight="700"
                             fill={zone.color}
                             textAnchor="middle"
-                            style={{ stroke: "white", strokeWidth: 3, paintOrder: "stroke" as const, fontFamily: "inherit" }}
+                            style={{ fontFamily: "inherit" }}
                             initial={{ opacity: 0 }}
-                            animate={{ opacity: visible ? (isActive ? 0.95 : isPast ? 0.5 : 0.1) : 0 }}
-                            transition={{ duration: 0.5 }}
+                            animate={{ opacity: chartStep === 1 ? 0.9 : 0 }}
+                            transition={{ duration: 0.5, delay: chartStep === 1 ? zi * 0.12 + 0.2 : 0 }}
                           >
+                            <title>{zone.why}</title>
                             {zone.label}
                           </motion.text>
                         </motion.g>
@@ -637,38 +717,65 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
                 );
               })()}
 
-              {/* Demand curve */}
+              {/* Demand curve (Acme's curve = base) */}
               {showCurve && (
                 <motion.path
                   d={curve.d}
                   fill="none"
                   stroke={NAVY}
-                  strokeWidth={2}
                   strokeLinecap="round"
                   initial={{ pathLength: 0, opacity: 0 }}
-                  animate={{ pathLength: 1, opacity: 1 }}
+                  animate={{
+                    pathLength: 1,
+                    opacity: showGhostCurves ? 0.6 : isSpotlight ? (spotlightIdx === 1 ? 1 : 0.3) : 1,
+                    strokeWidth: isSpotlight && spotlightIdx === 1 ? 3 : 2,
+                  }}
                   transition={{ duration: 1, ease: "easeOut" }}
                 />
               )}
+
+              {/* Ghost curves — all shown at step 3, then progressively during spotlights */}
+              {curve.ghostCurves.map((ghost, gi) => {
+                if (curveMode === "one") return null;
+                const revealStep = ghost.customer === "QuickParts" ? 3 : ghost.customer === "MedSupply" ? 3 : -1;
+                if (revealStep < 0 || chartStep < revealStep) return null;
+                const isActiveGhost = isSpotlight && SEGMENT_HIGHLIGHTS[spotlightIdx]?.label === ghost.customer;
+                return (
+                  <motion.path
+                    key={`ghost-curve-${gi}`}
+                    d={ghost.d}
+                    fill="none"
+                    stroke={ghost.color}
+                    strokeWidth={isActiveGhost ? 2.5 : 1.5}
+                    strokeDasharray="4 3"
+                    strokeLinecap="round"
+                    initial={{ opacity: 0, pathLength: 0 }}
+                    animate={{
+                      opacity: isAllToCurve ? 0 : showGhostCurves ? 0.45 : isActiveGhost ? 0.55 : 0.2,
+                      pathLength: 1,
+                    }}
+                    transition={{
+                      pathLength: { duration: 1, delay: showGhostCurves ? 0.3 + gi * 0.2 : 0, ease: "easeOut" },
+                      opacity: { duration: 0.6, delay: showGhostCurves ? 0.3 + gi * 0.2 : 0 },
+                    }}
+                  />
+                );
+              })}
+
 
               {/* Optimal demand curve label */}
               {showCurve && (
                 <motion.text
                   x={curve.sampleAt(0.5).x}
                   y={curve.sampleAt(0.5).y - 10}
-                  fontSize="9"
+                  fontSize={isSpotlight && spotlightIdx === 1 ? 10 : 9}
                   fontWeight="700"
                   fill={NAVY}
                   textAnchor="middle"
-                  style={{
-                    stroke: "white",
-                    strokeWidth: 3,
-                    paintOrder: "stroke" as const,
-                    fontFamily: "inherit",
-                  }}
+                  style={{ fontFamily: "inherit" }}
                   initial={{ opacity: 0 }}
                   animate={{
-                    opacity: isSpotlight ? 0.2 : isAllToCurve ? 0.3 : 0.5,
+                    opacity: chartStep >= 3 ? 0 : 0.5,
                   }}
                   transition={{ delay: 0.8, duration: 0.5 }}
                 >
@@ -682,7 +789,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
                 const baseCx = Math.max(CURVE_SLOT.x + 4, Math.min(CURVE_SLOT.x + CURVE_SLOT.w - 4, pt.x + dot.jitterX));
                 const scatterY = Math.max(CURVE_SLOT.y + 4, Math.min(BASE_Y - 4, pt.y + dot.offsetY));
                 const isBelowCurve = scatterY > pt.y;
-                const targetY = isAllToCurve ? (isBelowCurve ? pt.y : scatterY) : scatterY;
+                const targetY = isAllToCurve ? (isBelowCurve ? pt.y + dot.residualY : scatterY) : scatterY;
                 const dotColor = STATUS_COLORS[dot.status];
                 const dotOpacity = dotOpacityBase;
 
@@ -753,7 +860,9 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
                   isAllToCurve || (isSpotlight && si <= spotlightIdx);
                 if (!visible) return null;
 
-                const pt = curve.sampleAt(seg.t);
+                const ghost = curveMode === "three" ? curve.ghostCurves.find(g => g.customer === seg.label) : null;
+                const customerSample = ghost ? ghost.sampleAt : curve.sampleAt;
+                const pt = isAllToCurve ? curve.sampleAt(seg.t) : customerSample(seg.t);
                 const belowY = pt.y + seg.offsetY;
                 const isActive = isSpotlight && si === spotlightIdx;
                 const isPast = isSpotlight && si < spotlightIdx;
@@ -827,7 +936,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
                           fontWeight="600"
                           fill={seg.dotColor}
                           textAnchor="middle"
-                          style={{ stroke: "white", strokeWidth: 3, paintOrder: "stroke" as const, fontFamily: "inherit" }}
+                          style={{ fontFamily: "inherit" }}
                         >
                           {seg.label}
                         </text>
@@ -838,7 +947,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
                           fontWeight="700"
                           fill={MUTED}
                           textAnchor="middle"
-                          style={{ stroke: "white", strokeWidth: 3, paintOrder: "stroke" as const, fontFamily: "inherit" }}
+                          style={{ fontFamily: "inherit" }}
                         >
                           {seg.oldPrice}
                         </text>
@@ -859,7 +968,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
                           fontWeight="600"
                           fill={seg.dotColor}
                           textAnchor="middle"
-                          style={{ stroke: "white", strokeWidth: 3, paintOrder: "stroke" as const, fontFamily: "inherit" }}
+                          style={{ fontFamily: "inherit" }}
                         >
                           {seg.label}
                         </text>
@@ -870,7 +979,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
                           fontWeight="800"
                           fill={seg.dotColor}
                           textAnchor="middle"
-                          style={{ stroke: "white", strokeWidth: 3, paintOrder: "stroke" as const, fontFamily: "inherit" }}
+                          style={{ fontFamily: "inherit" }}
                         >
                           {seg.newPrice}
                         </text>

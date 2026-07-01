@@ -23,7 +23,7 @@ const STEP_NARRATIVES: Record<number, NarrativeSegment[]> = {
     { text: "." },
   ],
   1: [
-    { text: "Two engines: " },
+    { text: "AI enables both: " },
     { text: "machine learning", bold: true, underline: true, color: ML_GREEN },
     { text: " finds patterns in data, " },
     { text: "strategic guidance", bold: true, underline: true, color: STRAT_BLUE },

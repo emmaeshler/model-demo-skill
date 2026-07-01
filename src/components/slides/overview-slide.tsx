@@ -193,12 +193,12 @@ export function OverviewSlide({ step, skipAnimation }: { step: number; skipAnima
                 </motion.text>
 
                 <motion.text
-                  fontSize="11"
+                  fontSize="14"
                   fontWeight="400"
                   fill="#666"
                   textAnchor="middle"
                   x={pos.x}
-                  y={pos.y + R + 36}
+                  y={pos.y + R + 38}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: collapsed ? 0 : 0.75 }}
                   transition={collapsed
@@ -209,12 +209,12 @@ export function OverviewSlide({ step, skipAnimation }: { step: number; skipAnima
                   {m.subtitle}
                 </motion.text>
                 <motion.text
-                  fontSize="11"
+                  fontSize="14"
                   fontWeight="400"
                   fill="#666"
                   textAnchor="middle"
                   x={pos.x}
-                  y={pos.y + R + 50}
+                  y={pos.y + R + 54}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: collapsed ? 0 : 0.75 }}
                   transition={collapsed

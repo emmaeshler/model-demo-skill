@@ -184,7 +184,6 @@ export function ProfitGrowthSlide({ step = 0, onAutoAdvance, skipAnimation }: { 
       cycle++;
       if (cycle >= 3) {
         clearInterval(timer);
-        onAutoAdvance?.();
         return;
       }
       setHighlightIdx((prev) => {
@@ -211,7 +210,6 @@ export function ProfitGrowthSlide({ step = 0, onAutoAdvance, skipAnimation }: { 
       }
       if (cycle === 7) {
         clearInterval(timer);
-        onAutoAdvance?.();
         return;
       }
       setModelScanIdx(cycle);
@@ -221,8 +219,6 @@ export function ProfitGrowthSlide({ step = 0, onAutoAdvance, skipAnimation }: { 
 
   useEffect(() => {
     if (skipAnimation || !announcing) return;
-    const timer = setTimeout(() => onAutoAdvance?.(), 2500);
-    return () => clearTimeout(timer);
   }, [announcing, onAutoAdvance, skipAnimation]);
 
   useEffect(() => {

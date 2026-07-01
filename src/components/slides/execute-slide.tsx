@@ -224,8 +224,8 @@ function ResultCard({ cust }: { cust: CustomerScenario }) {
         x={RESULT_CARD_X} y={y} width={RESULT_CARD_W} height={BOX_H}
         rx={14} fill="white" stroke={STEEL} strokeWidth={1.5}
       />
-      <text x={cx} y={y + 24} fontSize="8.5" fontWeight="700" fill="#4A5568" textAnchor="middle" letterSpacing="0.1em">
-        RECOMMENDED PRICE
+      <text x={cx} y={y + 24} fontSize="10" fontWeight="600" fill="#4A5568" textAnchor="middle">
+        Recommended price
       </text>
       <motion.text
         x={cx} y={y + 68} fontSize="34" fontWeight="800" fill={cust.color} textAnchor="middle"
@@ -511,6 +511,23 @@ export function ModelOutputsOverview({ step }: { step: number }) {
   );
 }
 
+/* ── Collapse constants ─────────────────────────────── */
+
+const COLLAPSE_CX = MODEL_CX;
+const COLLAPSE_CY = MODEL_CY;
+const COLLAPSE_CR = 70;
+const COLLAPSE_DR = 50;
+const COLLAPSE_ORANGE = "#E56910";
+const COLLAPSE_GREEN = "#2e7d32";
+const COLLAPSE_PURPLE = "#7B5EA7";
+
+const COLLAPSE_DRIVERS = [
+  { label: "Cost Trends", adj: "$14.20", color: NAVY, x: 250, y: 110 },
+  { label: "Volume & Elasticity", adj: "+$1.80", color: COLLAPSE_GREEN, x: 700, y: 80 },
+  { label: "Win / Loss Patterns", adj: "−$0.90", color: COLLAPSE_PURPLE, x: 320, y: 295 },
+  { label: "Competitive Position", adj: "+$2.40", color: COLLAPSE_ORANGE, x: 700, y: 280 },
+];
+
 /* ── Main slide ──────────────────────────────────────── */
 
 export function ExecuteSlide({
@@ -522,19 +539,50 @@ export function ExecuteSlide({
   skipAnimation?: boolean;
 }) {
   const [selected, setSelected] = useState(0);
-  const [settled, setSettled] = useState(!!skipAnimation);
-  const [feedPhase, setFeedPhase] = useState(!!skipAnimation);
+  const [collapsed, setCollapsed] = useState(false);
+  const [chipsVisible, setChipsVisible] = useState(false);
+  const [feedPhase, setFeedPhase] = useState(false);
   const [feedExiting, setFeedExiting] = useState(false);
-  const [feedGone, setFeedGone] = useState(!!skipAnimation);
+  const [feedGone, setFeedGone] = useState(false);
+  const [settled, setSettled] = useState(false);
+  const [revealPhase, setRevealPhase] = useState(step >= 1 && skipAnimation ? 5 : 0);
   const cust = CUSTOMERS[selected];
 
   useEffect(() => {
-    if (skipAnimation) { setFeedPhase(true); setFeedGone(true); setSettled(true); return; }
-    const t1 = setTimeout(() => setFeedPhase(true), 600);
-    const t2 = setTimeout(() => { setFeedExiting(true); setSettled(true); }, 2800);
-    const t3 = setTimeout(() => setFeedGone(true), 3400);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
-  }, [skipAnimation]);
+    if (skipAnimation) {
+      setCollapsed(step >= 1);
+      setChipsVisible(false);
+      setFeedPhase(false);
+      setFeedGone(step >= 1);
+      setFeedExiting(false);
+      setSettled(step >= 1);
+      setRevealPhase(step >= 1 ? 5 : 0);
+      return;
+    }
+
+    if (step === 0) {
+      setCollapsed(false);
+      setChipsVisible(false);
+      setFeedPhase(false);
+      setFeedExiting(false);
+      setFeedGone(false);
+      setSettled(false);
+      setRevealPhase(0);
+      return;
+    }
+
+    // step >= 1: collapse drivers, then wait for presenter clicks
+    setCollapsed(false);
+    setChipsVisible(false);
+    setFeedPhase(false);
+    setFeedExiting(false);
+    setFeedGone(false);
+    setSettled(false);
+    setRevealPhase(0);
+    const t0 = setTimeout(() => setCollapsed(true), 800);
+    const t1 = setTimeout(() => { setSettled(true); setFeedGone(true); setRevealPhase(1); }, 2000);
+    return () => { clearTimeout(t0); clearTimeout(t1); };
+  }, [step, skipAnimation]);
 
   const inCurvePath = () => {
     const sy = MODEL_CY;
@@ -563,33 +611,60 @@ export function ExecuteSlide({
   return (
         <motion.div
           key="action"
-          initial={{ opacity: 0, y: 16 }}
+          initial={skipAnimation ? false : { opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-6xl flex-col items-center justify-center px-6 pt-8 relative"
         >
-          <motion.h2
-            className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
-            style={{ color: NAVY }}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.3 }}
-          >
-            The ideal price, adjusted for each customer
-          </motion.h2>
+          {/* Title */}
+          <AnimatePresence mode="wait">
+            {!settled ? (
+              <motion.h2
+                key="convergence-title"
+                className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
+                style={{ color: NAVY }}
+                initial={skipAnimation ? false : { opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.4, delay: 0.2 }}
+              >
+                All four prices converge into a single price
+              </motion.h2>
+            ) : (
+              <motion.h2
+                key={`reveal-title-${revealPhase <= 1 ? 1 : revealPhase >= 5 ? 5 : revealPhase}`}
+                className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
+                style={{ color: NAVY }}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.4 }}
+              >
+                {revealPhase <= 1
+                  ? "The pricing model, ready for each customer"
+                  : revealPhase === 2
+                    ? "Acme Industrial has unique pricing drivers"
+                    : revealPhase === 3
+                      ? "Acme’s drivers uniquely feed the pricing model"
+                      : revealPhase === 4
+                        ? "A price tailored to Acme emerges"
+                        : "The ideal price, adjusted for each customer"}
+              </motion.h2>
+            )}
+          </AnimatePresence>
 
           {/* Narrative area */}
           <motion.div
             className="flex min-h-[3rem] items-center justify-center px-4 mb-4"
-            initial={{ opacity: 0, y: 6 }}
+            initial={skipAnimation ? false : { opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.5 }}
           >
             <AnimatePresence mode="wait">
-              {!feedPhase ? (
+              {!settled ? (
                 <motion.p
-                  key="intro-narrative"
+                  key="convergence-narrative"
                   className="max-w-2xl text-center text-[1.05rem] leading-relaxed"
                   style={{ color: NAVY }}
                   initial={{ opacity: 0, y: 6 }}
@@ -597,26 +672,13 @@ export function ExecuteSlide({
                   exit={{ opacity: 0, y: -6 }}
                   transition={{ duration: 0.3 }}
                 >
-                  The model produced{" "}
-                  <span style={{ fontWeight: 700, color: TEAL }}>one optimal list price</span> for
-                  every product.
-                </motion.p>
-              ) : !settled ? (
-                <motion.p
-                  key="feed-narrative"
-                  className="max-w-2xl text-center text-[1.05rem] leading-relaxed"
-                  style={{ color: NAVY }}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -6 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  Now let&#39;s examine how that price changes when{" "}
-                  <span style={{ fontWeight: 700, color: TEAL }}>adjusted for each customer</span>.
+                  Cost, competition, volume, and demand combine into{" "}
+                  <span style={{ fontWeight: 700, color: TEAL }}>one recommended price</span>{" "}
+                  for every SKU.
                 </motion.p>
               ) : (
                 <motion.p
-                  key={`cust-${selected}`}
+                  key={revealPhase >= 5 ? `cust-${selected}` : `reveal-sub-${revealPhase <= 1 ? 1 : revealPhase}`}
                   className="max-w-2xl text-center text-[1.05rem] leading-relaxed"
                   style={{ color: NAVY }}
                   initial={{ opacity: 0, y: 6 }}
@@ -624,7 +686,15 @@ export function ExecuteSlide({
                   exit={{ opacity: 0, y: -6 }}
                   transition={{ duration: 0.3 }}
                 >
-                  {cust.narrative}
+                  {revealPhase <= 1
+                    ? "Built from your data — now it applies what it learned to individual accounts."
+                    : revealPhase === 2
+                      ? "High volume, deep relationships, and low price sensitivity — the factors we just discovered."
+                      : revealPhase === 3
+                        ? "The model weighs each factor to calculate Acme's optimal price."
+                        : revealPhase === 4
+                          ? <>$19.24 — volume commitment and relationship depth push the price <span style={{ fontWeight: 700, color: "#2e7d32" }}>$1.74 above list</span>.</>
+                          : cust.narrative}
                 </motion.p>
               )}
             </AnimatePresence>
@@ -634,388 +704,344 @@ export function ExecuteSlide({
           <div className="relative w-full max-w-5xl flex-1 min-h-0 overflow-hidden">
             <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} className="w-full h-full">
 
-                  {/* Intro: prominent $17.50 price circle */}
-                  <motion.g
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: !settled ? 1 : undefined }}
-                    transition={{ duration: 0.3, delay: 0.2 }}
-                  >
-                    {/* Impact burst ring — fires right as circle lands */}
-                    <motion.circle
-                      cx={MODEL_CX} cy={MODEL_CY} r={70}
-                      fill="none" stroke={TEAL} strokeWidth={3}
-                      initial={{ opacity: 0.7, scale: 0.85 }}
-                      animate={{ opacity: 0, scale: 1.45 }}
-                      transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
-                      style={{ transformOrigin: `${MODEL_CX}px ${MODEL_CY}px` }}
+                  {/* ── Collapse phase: driver nodes absorb into center ── */}
+                  {!settled && COLLAPSE_DRIVERS.map((drv, i) => {
+                    const dx = COLLAPSE_CX - drv.x;
+                    const dy = COLLAPSE_CY - drv.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const edgeX = COLLAPSE_CX - (dx / dist) * COLLAPSE_CR;
+                    const edgeY = COLLAPSE_CY - (dy / dist) * COLLAPSE_CR;
+                    const cpX = drv.x + dx * 0.5;
+                    const cpY = drv.y + dy * 0.5;
+                    const pathD = `M ${drv.x} ${drv.y} Q ${cpX} ${cpY} ${edgeX} ${edgeY}`;
+
+                    return (
+                      <g key={`collapse-drv-${i}`}>
+                        <motion.path
+                          d={pathD} fill="none" stroke={GREY} strokeWidth={1.5}
+                          initial={skipAnimation ? false : { opacity: 0, pathLength: 0 }}
+                          animate={{ opacity: collapsed ? 0 : 0.4, pathLength: collapsed ? 0 : 1 }}
+                          transition={{ duration: 0.8, delay: collapsed ? i * 0.05 : 0.3 + i * 0.15, ease: "easeOut" }}
+                        />
+                        <motion.g
+                          initial={skipAnimation ? false : { opacity: 1, x: 0, y: 0, scale: 1 }}
+                          animate={collapsed
+                            ? { x: dx * 0.85, y: dy * 0.85, opacity: 0, scale: 0.2 }
+                            : { x: 0, y: 0, opacity: 1, scale: 1 }}
+                          transition={collapsed
+                            ? { duration: 0.7, delay: i * 0.08, ease: [0.55, 0, 1, 0.45] }
+                            : { duration: 0.3 }}
+                          style={{ transformOrigin: `${drv.x}px ${drv.y}px` }}
+                        >
+                          <circle cx={drv.x} cy={drv.y} r={COLLAPSE_DR} fill="white" stroke={drv.color} strokeWidth={1.5} />
+                          <text x={drv.x} y={drv.y - COLLAPSE_DR - 10} textAnchor="middle"
+                            style={{ fontSize: 12, fontWeight: 700, fill: drv.color }}>
+                            {drv.label}
+                          </text>
+                          <text x={drv.x} y={drv.y + 5} textAnchor="middle"
+                            style={{ fontSize: 20, fontWeight: 800, fill: drv.color }}>
+                            {drv.adj}
+                          </text>
+                        </motion.g>
+                      </g>
+                    );
+                  })}
+
+                  {/* Center element — morphs from $17.50 circle into pricing model box */}
+                  <motion.g>
+                    {/* Glow burst when drivers collapse */}
+                    {collapsed && !settled && (
+                      <motion.circle
+                        cx={COLLAPSE_CX} cy={COLLAPSE_CY} r={COLLAPSE_CR * 1.4}
+                        fill="none" stroke={TEAL} strokeWidth={2}
+                        initial={{ opacity: 0.5, scale: 0.95 }}
+                        animate={{ opacity: 0, scale: 1.3 }}
+                        transition={{ duration: 1, ease: "easeOut" }}
+                        style={{ transformOrigin: `${COLLAPSE_CX}px ${COLLAPSE_CY}px` }}
+                      />
+                    )}
+                    {/* Breathing ring (convergence only) */}
+                    {!collapsed && !settled && (
+                      <motion.circle
+                        cx={COLLAPSE_CX} cy={COLLAPSE_CY} r={COLLAPSE_CR + 2}
+                        fill="none" stroke={TEAL} strokeWidth={1.5}
+                        animate={{ opacity: [0, 0.2, 0], scale: [1, 1.12, 1] }}
+                        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+                        style={{ transformOrigin: `${COLLAPSE_CX}px ${COLLAPSE_CY}px` }}
+                      />
+                    )}
+
+                    {/* Morphing shape: circle → rounded rect */}
+                    <motion.rect
+                      initial={skipAnimation ? false : {
+                        x: COLLAPSE_CX - COLLAPSE_CR,
+                        y: COLLAPSE_CY - COLLAPSE_CR,
+                        width: COLLAPSE_CR * 2,
+                        height: COLLAPSE_CR * 2,
+                        rx: COLLAPSE_CR,
+                        fill: "white",
+                        stroke: TEAL,
+                        strokeWidth: 2.5,
+                      }}
+                      animate={settled ? {
+                        x: MODEL_X,
+                        y: MODEL_Y,
+                        width: MODEL_W,
+                        height: BOX_H,
+                        rx: 16,
+                        fill: NAVY,
+                        stroke: NAVY,
+                        strokeWidth: 0,
+                      } : collapsed ? {
+                        x: COLLAPSE_CX - COLLAPSE_CR * 1.15,
+                        y: COLLAPSE_CY - COLLAPSE_CR * 1.15,
+                        width: COLLAPSE_CR * 2.3,
+                        height: COLLAPSE_CR * 2.3,
+                        rx: COLLAPSE_CR * 1.15,
+                        fill: "white",
+                        stroke: TEAL,
+                        strokeWidth: 2.5,
+                      } : {
+                        x: COLLAPSE_CX - COLLAPSE_CR,
+                        y: COLLAPSE_CY - COLLAPSE_CR,
+                        width: COLLAPSE_CR * 2,
+                        height: COLLAPSE_CR * 2,
+                        rx: COLLAPSE_CR,
+                        fill: "white",
+                        stroke: TEAL,
+                        strokeWidth: 2.5,
+                      }}
+                      transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
                     />
-                    {/* Secondary burst ring */}
-                    <motion.circle
-                      cx={MODEL_CX} cy={MODEL_CY} r={70}
-                      fill="none" stroke={NAVY} strokeWidth={1.5}
-                      initial={{ opacity: 0.4, scale: 0.9 }}
-                      animate={{ opacity: 0, scale: 1.25 }}
-                      transition={{ duration: 0.5, delay: 0.25, ease: "easeOut" }}
-                      style={{ transformOrigin: `${MODEL_CX}px ${MODEL_CY}px` }}
-                    />
-                    {/* Main circle — shrinks up into SKU badge when settled */}
-                    <motion.circle
-                      cx={MODEL_CX} cy={MODEL_CY} r={70}
-                      fill="white" stroke={TEAL} strokeWidth={2.5}
-                      initial={{ scale: 0.3, opacity: 0 }}
-                      animate={settled
-                        ? { scale: 0.15, opacity: 0, y: -84 }
-                        : { scale: 1, opacity: 1, y: 0 }}
-                      transition={settled
-                        ? { duration: 0.5, ease: [0.55, 0, 1, 0.45] }
-                        : { duration: 0.45, delay: 0.05, type: "spring", stiffness: 300, damping: 15 }}
-                      style={{ transformOrigin: `${MODEL_CX}px ${MODEL_CY}px` }}
-                    />
-                    {/* Breathing ring after landing */}
-                    <motion.circle
-                      cx={MODEL_CX} cy={MODEL_CY} r={72}
-                      fill="none" stroke={TEAL} strokeWidth={1.5}
-                      initial={{ opacity: 0 }}
-                      animate={settled
-                        ? { opacity: 0, scale: 1 }
-                        : { opacity: [0, 0.3, 0], scale: [1, 1.12, 1] }}
-                      transition={settled
-                        ? { duration: 0.3 }
-                        : { duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 1.0 }}
-                      style={{ transformOrigin: `${MODEL_CX}px ${MODEL_CY}px` }}
-                    />
+
+                    {/* Convergence text — fades out as shape morphs */}
                     <motion.text
-                      x={MODEL_CX} y={MODEL_CY - 22}
+                      x={COLLAPSE_CX} y={COLLAPSE_CY - 24}
                       textAnchor="middle"
-                      style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", fill: GREY }}
-                      initial={{ opacity: 0 }}
+                      style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", fill: GREY }}
+                      initial={skipAnimation ? false : { opacity: 1 }}
                       animate={{ opacity: settled ? 0 : 1 }}
-                      transition={settled
-                        ? { duration: 0.2 }
-                        : { delay: 0.35, duration: 0.25 }}
+                      transition={{ duration: 0.25 }}
                     >
-                      OPTIMAL PRICE
+                      RECOMMENDED
                     </motion.text>
-                    {/* Price text — shrinks up toward SKU badge */}
                     <motion.text
-                      x={MODEL_CX} y={MODEL_CY + 12}
+                      x={COLLAPSE_CX} y={COLLAPSE_CY + 12}
                       textAnchor="middle"
-                      style={{ fontSize: 34, fontWeight: 800, fill: NAVY, transformOrigin: `${MODEL_CX}px ${MODEL_CY + 4}px` }}
-                      initial={{ opacity: 0, scale: 0.4 }}
-                      animate={settled
-                        ? { opacity: 0, scale: 0.28, y: -84 }
-                        : { opacity: 1, scale: 1, y: 0 }}
-                      transition={settled
-                        ? { duration: 0.45, ease: [0.55, 0, 1, 0.45] }
-                        : { delay: 0.15, duration: 0.35, type: "spring", stiffness: 400, damping: 12 }}
+                      style={{ fontSize: 36, fontWeight: 800, fill: NAVY }}
+                      initial={skipAnimation ? false : { opacity: 1 }}
+                      animate={{ opacity: settled ? 0 : 1 }}
+                      transition={{ duration: 0.25 }}
                     >
                       $17.50
                     </motion.text>
                     <motion.text
-                      x={MODEL_CX} y={MODEL_CY + 32}
+                      x={COLLAPSE_CX} y={COLLAPSE_CY + 34}
                       textAnchor="middle"
-                      style={{ fontSize: 10.5, fontWeight: 500, fill: GREY }}
-                      initial={{ opacity: 0, y: 4 }}
-                      animate={{ opacity: settled ? 0 : 1, y: 0 }}
-                      transition={settled
-                        ? { duration: 0.2 }
-                        : { delay: 0.5, duration: 0.3 }}
+                      style={{ fontSize: 13, fontWeight: 600, fill: GREY }}
+                      initial={skipAnimation ? false : { opacity: 1 }}
+                      animate={{ opacity: settled ? 0 : 1 }}
+                      transition={{ duration: 0.2 }}
                     >
-                      per unit · SKU #A-7200
+                      SKU #A-7200
                     </motion.text>
-                  </motion.g>
 
-                  {/* Feed phase: product flowing into each customer */}
-                  {feedPhase && !feedGone && (() => {
-                    const feedY = 258;
-                    const feedCardW = 155;
-                    const feedCardH = 58;
-                    const feedXs = [180, MODEL_CX, 780];
-                    const srcX = MODEL_CX;
-                    const srcY = MODEL_CY + 70;
-                    const pillTargets = [
-                      { x: MODEL_CX - 132, y: MODEL_Y + BOX_H + 39 },
-                      { x: MODEL_CX, y: MODEL_Y + BOX_H + 39 },
-                      { x: MODEL_CX + 132, y: MODEL_Y + BOX_H + 39 },
-                    ];
-
-                    return (
-                      <motion.g
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.4 }}
-                      >
-                        {CUSTOMERS.map((c, i) => {
-                          const destX = feedXs[i];
-                          const cardLeft = destX - feedCardW / 2;
-                          const dx = destX - srcX;
-                          const cp1x = srcX + dx * 0.3;
-                          const cp1y = srcY + (feedY - srcY) * 0.35;
-                          const cp2x = srcX + dx * 0.7;
-                          const cp2y = srcY + (feedY - srcY) * 0.75;
-                          const pathD = `M ${srcX} ${srcY} C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${destX} ${feedY}`;
-                          const { cxArr, cyArr } = sampleCubicBezier(srcX, srcY, cp1x, cp1y, cp2x, cp2y, destX, feedY, 50);
-                          const lineDelay = 0.2 + i * 0.25;
-                          const cardDelay = lineDelay + 0.4;
-                          const pillDx = pillTargets[i].x - destX;
-                          const pillDy = pillTargets[i].y - (feedY + feedCardH / 2);
-
-                          return (
-                            <g key={c.label}>
-                              {/* Flow line */}
-                              <motion.path
-                                d={pathD} fill="none" stroke={c.color}
-                                strokeWidth={1.5} strokeLinecap="round"
-                                initial={{ pathLength: 0, opacity: 0 }}
-                                animate={feedExiting
-                                  ? { opacity: 0 }
-                                  : { pathLength: 1, opacity: 0.35 }}
-                                transition={feedExiting
-                                  ? { duration: 0.3 }
-                                  : { duration: 0.6, delay: lineDelay, ease: "easeOut" }}
-                              />
-                              {/* Animated product dots */}
-                              {!feedExiting && [0, 0.9, 1.8].map((extra, di) => (
-                                <motion.circle
-                                  key={di} r={3.5} fill={c.color}
-                                  initial={{ opacity: 0 }}
-                                  animate={{ cx: cxArr, cy: cyArr, opacity: [0, 0.7, 0.7, 0.5, 0] }}
-                                  transition={{ duration: 2.0, delay: lineDelay + 0.3 + extra, repeat: Infinity, ease: "linear" }}
-                                />
-                              ))}
-                              {/* Customer card — exits toward pill position */}
-                              <motion.g
-                                initial={{ opacity: 0, y: 12 }}
-                                animate={feedExiting
-                                  ? { opacity: 0, x: pillDx, y: pillDy, scale: 0.5 }
-                                  : { opacity: 1, y: 0, x: 0, scale: 1 }}
-                                transition={feedExiting
-                                  ? { duration: 0.6, ease: [0.22, 1, 0.36, 1] }
-                                  : { duration: 0.5, delay: cardDelay, ease: [0.22, 1, 0.36, 1] }}
-                                style={{ transformOrigin: `${destX}px ${feedY + feedCardH / 2}px` }}
-                              >
-                                {/* Card body */}
-                                <rect
-                                  x={cardLeft} y={feedY}
-                                  width={feedCardW} height={feedCardH}
-                                  rx={12} fill="white" stroke={c.color} strokeWidth={2}
-                                />
-                                {/* Colored header band */}
-                                <rect x={cardLeft} y={feedY} width={feedCardW} height={30} rx={12} fill={c.color} />
-                                <rect x={cardLeft} y={feedY + 18} width={feedCardW} height={12} fill={c.color} />
-                                {/* Customer name */}
-                                <text x={destX} y={feedY + 14} fontSize="12" fontWeight="700" fill="white" textAnchor="middle">
-                                  {c.label}
-                                </text>
-                                {/* Segment */}
-                                <text x={destX} y={feedY + 26} fontSize="7.5" fontWeight="500" fill="rgba(255,255,255,0.7)" textAnchor="middle">
-                                  {c.segment}
-                                </text>
-                                {/* Processing indicator */}
-                                <text x={destX} y={feedY + 45} fontSize="8" fontWeight="600" fill={GREY} textAnchor="middle" letterSpacing="0.06em">
-                                  Adjusting price…
-                                </text>
-                                <motion.rect
-                                  x={destX - 25} y={feedY + 50} height={2.5} rx={1.25}
-                                  fill={c.color} opacity={0.3}
-                                  animate={{ width: [30, 45, 25, 40, 30] }}
-                                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: cardDelay }}
-                                />
-                              </motion.g>
-                            </g>
-                          );
-                        })}
-                      </motion.g>
-                    );
-                  })()}
-
-                  {/* Full interactive diagram — mounts when settled */}
-                  {settled && (
-                  <motion.g
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    {/* Flow curves */}
-                    <AnimatePresence mode="wait">
-                      <motion.g key={selected}>
-                        <motion.path
-                          d={inCurvePath()}
-                          fill="none" stroke={cust.color} strokeWidth={1.5} strokeLinecap="round"
-                          initial={{ pathLength: 0, opacity: 0 }}
-                          animate={{ pathLength: 1, opacity: 0.35 }}
-                          transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
-                        />
-                        <motion.path
-                          d={outCurvePath()}
-                          fill="none" stroke={STEEL} strokeWidth={1.5} strokeLinecap="round"
-                          initial={{ pathLength: 0, opacity: 0 }}
-                          animate={{ pathLength: 1, opacity: 0.35 }}
-                          transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
-                        />
-                        <FlowDot path={inPathObj} color={cust.color} delay={0.3} />
-                        <FlowDot path={outPathObj} color={STEEL} delay={0.6} />
-                      </motion.g>
-                    </AnimatePresence>
-
-                    {/* Profile card (left) */}
-                    <AnimatePresence mode="wait">
-                      <ProfileCard key={selected} cust={cust} />
-                    </AnimatePresence>
-
-                    {/* Result card (right) */}
-                    <AnimatePresence mode="wait">
-                      <ResultCard key={selected} cust={cust} />
-                    </AnimatePresence>
-
-                    {/* Model processing pulse */}
-                    <AnimatePresence mode="wait">
-                      <motion.rect
-                        key={selected}
-                        x={MODEL_X - 4} y={MODEL_Y - 4}
-                        width={MODEL_W + 8} height={BOX_H + 8}
-                        rx={20} fill="none" stroke={cust.color} strokeWidth={2}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: [0, 0.35, 0.1, 0] }}
-                        transition={{ duration: 1.5, delay: 0.3, ease: "easeInOut" }}
-                      />
-                    </AnimatePresence>
-
-                    {/* Absorption glow — price landing pulse */}
-                    <motion.rect
-                      x={MODEL_X - 10} y={MODEL_Y - 10}
-                      width={MODEL_W + 20} height={BOX_H + 20}
-                      rx={22} fill="none" stroke={NAVY} strokeWidth={2.5}
-                      initial={{ opacity: 0.6, scale: 0.92 }}
-                      animate={{ opacity: 0, scale: 1.1 }}
-                      transition={{ duration: 0.8, ease: "easeOut", delay: 0.05 }}
-                      style={{ transformOrigin: `${MODEL_CX}px ${MODEL_CY}px` }}
-                    />
-                    <motion.rect
-                      x={MODEL_X - 4} y={MODEL_Y - 4}
-                      width={MODEL_W + 8} height={BOX_H + 8}
-                      rx={18} fill="none" stroke={NAVY} strokeWidth={1.5}
-                      initial={{ opacity: 0.4, scale: 0.96 }}
-                      animate={{ opacity: 0, scale: 1.06 }}
-                      transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
-                      style={{ transformOrigin: `${MODEL_CX}px ${MODEL_CY}px` }}
-                    />
-
-                    {/* Center model box */}
+                    {/* Model box content — fades in after morph */}
                     <motion.g
-                      initial={{ opacity: 0, scale: 0.88 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.45, ease: "easeOut" }}
-                      style={{ transformOrigin: `${MODEL_CX}px ${MODEL_CY}px` }}
+                      initial={skipAnimation ? false : { opacity: 0 }}
+                      animate={{ opacity: settled ? 1 : 0 }}
+                      transition={{ duration: 0.4, delay: settled ? 0.4 : 0 }}
                     >
-                      <rect x={MODEL_X} y={MODEL_Y} width={MODEL_W} height={BOX_H} rx={16} fill={NAVY} />
-
-                      {/* Product tag */}
-                      <rect x={MODEL_CX - 70} y={MODEL_Y + 16} width={140} height={20} rx={10} fill="rgba(255,255,255,0.08)" />
-                      <text x={MODEL_CX} y={MODEL_Y + 30} fontSize="8" fontWeight="600" fill="rgba(255,255,255,0.45)" textAnchor="middle" letterSpacing="0.06em">
-                        {PRODUCT_NAME}
+                      {/* Title at top */}
+                      <text x={MODEL_CX} y={MODEL_Y + 24} fontSize="16" fontWeight="700" fill="white" textAnchor="middle">
+                        Pricing model
                       </text>
 
-                      <text x={MODEL_CX} y={MODEL_CY - 8} fontSize="18" fontWeight="700" fill="white" textAnchor="middle">
-                        Pricing Model
+                      {/* Center $17.50 circle */}
+                      <circle cx={MODEL_CX} cy={MODEL_CY + 4} r={44} fill="white" stroke={TEAL} strokeWidth={2.5} />
+                      <text x={MODEL_CX} y={MODEL_CY - 10} fontSize="8" fontWeight="600" fill={GREY} textAnchor="middle">
+                        SKU #A-7200
                       </text>
-                      <text x={MODEL_CX} y={MODEL_CY + 12} fontSize="11" fill="rgba(255,255,255,0.6)" textAnchor="middle">
+                      <text x={MODEL_CX} y={MODEL_CY + 12} fontSize="22" fontWeight="800" fill={NAVY} textAnchor="middle">
+                        {LIST_PRICE}
+                      </text>
+                      <text x={MODEL_CX} y={MODEL_CY + 26} fontSize="9" fontWeight="500" fill={GREY} textAnchor="middle">
+                        list price
+                      </text>
+
+                      {/* Orbit ring with dots */}
+                      <circle cx={MODEL_CX} cy={MODEL_CY + 4} r={56} fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth={1} strokeDasharray="3 3" />
+                      {[0, 90, 180, 270].map((deg) => {
+                        const rad = (deg * Math.PI) / 180;
+                        const ox = MODEL_CX + Math.cos(rad) * 56;
+                        const oy = MODEL_CY + 4 + Math.sin(rad) * 56;
+                        return (
+                          <circle key={deg} cx={ox} cy={oy} r={3.5} fill={TEAL} opacity={0.7} />
+                        );
+                      })}
+
+                      {/* Subtitle at bottom */}
+                      <text x={MODEL_CX} y={MODEL_Y + BOX_H - 14} fontSize="10" fontWeight="500" fill={TEAL} textAnchor="middle">
                         ML-powered optimization
                       </text>
-
-                      {/* List price reference — glows as price lands */}
-                      <motion.rect
-                        x={MODEL_CX - 50} y={MODEL_CY + 28} width={100} height={20} rx={10}
-                        initial={{ fill: "rgba(33,165,213,0.35)" }}
-                        animate={{ fill: "rgba(255,255,255,0.08)" }}
-                        transition={{ duration: 0.9, delay: 0.05, ease: "easeOut" }}
-                      />
-                      <motion.text
-                        x={MODEL_CX} y={MODEL_CY + 42} fontSize="10" fontWeight="600" textAnchor="middle"
-                        initial={{ fill: "rgba(255,255,255,1)", scale: 1.5 }}
-                        animate={{ fill: "rgba(255,255,255,0.5)", scale: 1 }}
-                        transition={{ duration: 0.7, ease: "easeOut", delay: 0.05 }}
-                        style={{ transformOrigin: `${MODEL_CX}px ${MODEL_CY + 38}px` }}
-                      >
-                        List: {LIST_PRICE} / unit
-                      </motion.text>
-
-                      {/* Processing bar */}
-                      <motion.rect
-                        x={MODEL_CX - 30} y={MODEL_CY + 58} height={3} rx={1.5} fill="rgba(255,255,255,0.2)"
-                        animate={{ width: [40, 55, 30, 50, 40] }}
-                        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                      />
-
-                      {/* Feature indicators at bottom */}
-                      {[0, 1, 2, 3, 4].map((i) => (
-                        <motion.rect
-                          key={i}
-                          x={MODEL_CX - 50 + i * 22} y={MODEL_CY + 72}
-                          width={16} height={4} rx={2}
-                          fill="rgba(255,255,255,0.1)"
-                          animate={{ opacity: [0.3, 0.7, 0.3] }}
-                          transition={{ duration: 2, delay: i * 0.3, repeat: Infinity, ease: "easeInOut" }}
-                        />
-                      ))}
                     </motion.g>
-
-                    {/* Connector line */}
-                    <line
-                      x1={MODEL_CX} y1={MODEL_Y + BOX_H}
-                      x2={MODEL_CX} y2={MODEL_Y + BOX_H + 24}
-                      stroke={GREY} strokeWidth={1} strokeDasharray="3 3" opacity={0.4}
-                    />
-
-                    {/* Customer chips */}
-                    {CUSTOMERS.map((c, ci) => {
-                      const isSelected = ci === selected;
-                      const chipW = 120;
-                      const chipH = 30;
-                      const chipGap = 12;
-                      const totalW = CUSTOMERS.length * chipW + (CUSTOMERS.length - 1) * chipGap;
-                      const chipX = MODEL_CX - totalW / 2 + ci * (chipW + chipGap);
-                      const chipY = MODEL_Y + BOX_H + 24;
-                      return (
-                        <motion.g
-                          key={c.label}
-                          style={{ cursor: "pointer" }}
-                          onClick={() => setSelected(ci)}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.4, delay: 0.3 + ci * 0.08 }}
-                        >
-                          <motion.rect
-                            x={chipX} y={chipY}
-                            width={chipW} height={chipH}
-                            rx={chipH / 2}
-                            animate={{
-                              fill: isSelected ? c.color : "white",
-                              stroke: c.color,
-                            }}
-                            strokeWidth={isSelected ? 2 : 1.2}
-                            transition={{ duration: 0.25 }}
-                          />
-                          <text
-                            x={chipX + chipW / 2}
-                            y={chipY + chipH / 2 + 1}
-                            fontSize="10.5"
-                            fontWeight="600"
-                            fill={isSelected ? "white" : c.color}
-                            textAnchor="middle"
-                            dominantBaseline="central"
-                            style={{ pointerEvents: "none" }}
-                          >
-                            {c.label}
-                          </text>
-                        </motion.g>
-                      );
-                    })}
                   </motion.g>
+
+                  {/* Interactive elements — staged reveal after settled */}
+                  {settled && (
+                  <>
+                    {/* Profile card (left) — phase 2 */}
+                    {revealPhase >= 2 && (
+                      <AnimatePresence mode="wait">
+                        <ProfileCard key={selected} cust={cust} />
+                      </AnimatePresence>
+                    )}
+
+                    {/* In-flow curve + dots — phase 3 */}
+                    {revealPhase >= 3 && (
+                      <AnimatePresence mode="wait">
+                        <motion.g key={`flow-${selected}`}>
+                          <motion.path
+                            d={inCurvePath()}
+                            fill="none" stroke={cust.color} strokeWidth={1.5} strokeLinecap="round"
+                            initial={{ pathLength: 0, opacity: 0 }}
+                            animate={{ pathLength: 1, opacity: 0.35 }}
+                            transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
+                          />
+                          <FlowDot path={inPathObj} color={cust.color} delay={0.3} />
+                          {/* Out-flow curve — phase 4 */}
+                          {revealPhase >= 4 && (
+                            <>
+                              <motion.path
+                                d={outCurvePath()}
+                                fill="none" stroke={STEEL} strokeWidth={1.5} strokeLinecap="round"
+                                initial={{ pathLength: 0, opacity: 0 }}
+                                animate={{ pathLength: 1, opacity: 0.35 }}
+                                transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
+                              />
+                              <FlowDot path={outPathObj} color={STEEL} delay={0.4} />
+                            </>
+                          )}
+                        </motion.g>
+                      </AnimatePresence>
+                    )}
+
+                    {/* Result card (right) — phase 4 */}
+                    {revealPhase >= 4 && (
+                      <AnimatePresence mode="wait">
+                        <ResultCard key={selected} cust={cust} />
+                      </AnimatePresence>
+                    )}
+
+                    {/* Model processing pulse — phase 3 */}
+                    {revealPhase >= 3 && (
+                      <AnimatePresence mode="wait">
+                        <motion.rect
+                          key={selected}
+                          x={MODEL_X - 4} y={MODEL_Y - 4}
+                          width={MODEL_W + 8} height={BOX_H + 8}
+                          rx={20} fill="none" stroke={cust.color} strokeWidth={2}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: [0, 0.35, 0.1, 0] }}
+                          transition={{ duration: 1.5, delay: 0.3, ease: "easeInOut" }}
+                        />
+                      </AnimatePresence>
+                    )}
+
+                    {/* Connector line + chips — phase 5 */}
+                    {revealPhase >= 5 && (
+                      <>
+                        <motion.line
+                          x1={MODEL_CX} y1={MODEL_Y + BOX_H}
+                          x2={MODEL_CX} y2={MODEL_Y + BOX_H + 24}
+                          stroke={GREY} strokeWidth={1} strokeDasharray="3 3"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 0.4 }}
+                          transition={{ duration: 0.4 }}
+                        />
+                        {CUSTOMERS.map((c, ci) => {
+                          const isSelected = ci === selected;
+                          const chipW = 120;
+                          const chipH = 30;
+                          const chipGap = 12;
+                          const totalW = CUSTOMERS.length * chipW + (CUSTOMERS.length - 1) * chipGap;
+                          const chipX = MODEL_CX - totalW / 2 + ci * (chipW + chipGap);
+                          const chipY = MODEL_Y + BOX_H + 24;
+                          return (
+                            <motion.g
+                              key={c.label}
+                              style={{ cursor: "pointer" }}
+                              onClick={() => setSelected(ci)}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.4, delay: 0.3 + ci * 0.08 }}
+                            >
+                              <motion.rect
+                                x={chipX} y={chipY}
+                                width={chipW} height={chipH}
+                                rx={chipH / 2}
+                                animate={{
+                                  fill: isSelected ? c.color : "white",
+                                  stroke: c.color,
+                                }}
+                                strokeWidth={isSelected ? 2 : 1.2}
+                                transition={{ duration: 0.25 }}
+                              />
+                              <text
+                                x={chipX + chipW / 2}
+                                y={chipY + chipH / 2 + 1}
+                                fontSize="10.5"
+                                fontWeight="600"
+                                fill={isSelected ? "white" : c.color}
+                                textAnchor="middle"
+                                dominantBaseline="central"
+                                style={{ pointerEvents: "none" }}
+                              >
+                                {c.label}
+                              </text>
+                            </motion.g>
+                          );
+                        })}
+                      </>
+                    )}
+                  </>
                   )}
 
             </svg>
           </div>
+
+          {/* Presenter advance control */}
+          {settled && revealPhase >= 1 && revealPhase < 5 && (
+            <motion.div
+              className="flex items-center gap-3 mt-2 mb-1"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4, delay: 0.5 }}
+            >
+              <div className="flex items-center gap-1.5">
+                {[1, 2, 3, 4, 5].map(p => (
+                  <div
+                    key={p}
+                    className="rounded-full transition-all duration-300"
+                    style={{
+                      width: p === revealPhase ? 8 : 6,
+                      height: p === revealPhase ? 8 : 6,
+                      backgroundColor: p <= revealPhase ? NAVY : `${NAVY}25`,
+                    }}
+                  />
+                ))}
+              </div>
+              <button
+                onClick={() => setRevealPhase(p => Math.min(p + 1, 5))}
+                className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors hover:bg-black/5"
+                style={{ color: NAVY }}
+              >
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                  <path d="M7 4l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </motion.div>
+          )}
         </motion.div>
   );
 }
