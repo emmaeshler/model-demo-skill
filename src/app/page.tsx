@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, X, LayoutGrid, ZoomIn, ZoomOut } from "lucide-react";
 import { AnimatePresence, motion, MotionConfig } from "framer-motion";
 import { type NavGroup, SlideNav } from "@/components/slide-nav";
 import { useMode } from "@/lib/mode-context";
@@ -14,7 +14,6 @@ import { ExecuteSlide, EXECUTE_TOTAL_STEPS } from "@/components/slides/execute-s
 import { RefineSlide, REFINE_TOTAL_STEPS } from "@/components/slides/refine-slide";
 import { ProfitGrowthSlide, PROFIT_GROWTH_TOTAL_STEPS } from "@/components/slides/profit-growth-slide";
 import { ClosingSummarySlide } from "@/components/slides/closing-summary";
-import { ModelIndicator } from "@/components/model-indicator";
 
 type SlideKind =
   | "intro"
@@ -65,7 +64,7 @@ const SUB_STEP_CONFIG: Record<number, number> = {
   [PROFIT_GROWTH_INDEX]: PROFIT_GROWTH_TOTAL_STEPS,
 };
 
-const NAV_GROUPS: NavGroup[] = [
+const DEFAULT_NAV_GROUPS: NavGroup[] = [
   {
     label: "Introduction",
     slides: [
@@ -78,9 +77,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "1 | Design",
     slides: [
       { index: ONE_MODEL_INDEX, label: "Inputs", subStep: 0 },
-      { index: ONE_MODEL_INDEX, label: "Inside", subStep: 1 },
-      { index: ONE_MODEL_INDEX, label: "Two Engines", subStep: 2 },
-      { index: ONE_MODEL_INDEX, label: "Full Picture", subStep: 3 },
+      { index: ONE_MODEL_INDEX, label: "Two Engines", subStep: 1 },
     ],
   },
   {
@@ -146,6 +143,9 @@ export default function Home() {
   const [presenting, setPresenting] = useState(false);
   const [skipAnimation, setSkipAnimation] = useState(false);
   const [replayKey, setReplayKey] = useState(0);
+  const [slideSorterOpen, setSlideSorterOpen] = useState(false);
+  const [sorterCols, setSorterCols] = useState(4);
+  const [navGroups, setNavGroups] = useState(DEFAULT_NAV_GROUPS);
   const { mode } = useMode();
   const channelRef = useRef<BroadcastChannel | null>(null);
   const audienceWindowRef = useRef<Window | null>(null);
@@ -158,13 +158,50 @@ export default function Home() {
   const notes = getPresenterNotes(config?.kind ?? "", subStep);
 
   const currentGroup =
-    NAV_GROUPS.find((g) =>
+    navGroups.find((g) =>
       g.slides.some(
         (s) =>
           s.index === slide &&
           (s.subStep === undefined || s.subStep === subStep),
       ),
-    ) ?? NAV_GROUPS.find((g) => g.slides.some((s) => s.index === slide));
+    ) ?? navGroups.find((g) => g.slides.some((s) => s.index === slide));
+
+  const allClickSteps = useMemo(() => {
+    const steps: { slideIndex: number; stepIndex: number; kind: SlideKind; label: string; groupLabel: string; groupIndex: number; slideInGroupIndex: number }[] = [];
+    for (let i = 0; i < SLIDES.length; i++) {
+      const kind = SLIDES[i].kind;
+      const stepsCount = SUB_STEP_CONFIG[i] ?? 0;
+      const gi = navGroups.findIndex((g) => g.slides.some((s) => s.index === i));
+      const group = gi >= 0 ? navGroups[gi] : undefined;
+      const groupLabel = group?.label ?? "";
+      if (stepsCount === 0) {
+        const si = group?.slides.findIndex((s) => s.index === i) ?? -1;
+        const navSlide = si >= 0 ? group!.slides[si] : undefined;
+        steps.push({ slideIndex: i, stepIndex: 0, kind, label: navSlide?.label ?? kind, groupLabel, groupIndex: gi, slideInGroupIndex: si });
+      } else {
+        for (let s = 0; s < stepsCount; s++) {
+          const si = group?.slides.findIndex((ns) => ns.index === i && ns.subStep === s) ?? -1;
+          const navSlide = si >= 0 ? group!.slides[si] : undefined;
+          const label = navSlide?.label ?? `Step ${s + 1}`;
+          steps.push({ slideIndex: i, stepIndex: s, kind, label, groupLabel, groupIndex: gi, slideInGroupIndex: si });
+        }
+      }
+    }
+    return steps;
+  }, [navGroups]);
+
+  const updateSlideLabel = useCallback((groupIndex: number, slideInGroupIndex: number, newLabel: string) => {
+    setNavGroups((prev) => {
+      const next = prev.map((g, gi) => {
+        if (gi !== groupIndex) return g;
+        return {
+          ...g,
+          slides: g.slides.map((s, si) => (si === slideInGroupIndex ? { ...s, label: newLabel } : s)),
+        };
+      });
+      return next;
+    });
+  }, []);
 
   // Detect audience window mode
   useEffect(() => {
@@ -293,13 +330,15 @@ export default function Home() {
       } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
         e.preventDefault();
         navigate(slide - 1);
+      } else if (e.key === "Escape" && slideSorterOpen) {
+        setSlideSorterOpen(false);
       } else if (e.key === "Escape" && presenting) {
         endPresenting();
       }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [slide, navigate, isAudience, presenting, endPresenting]);
+  }, [slide, navigate, isAudience, presenting, endPresenting, slideSorterOpen]);
 
   return (
     <>
@@ -358,20 +397,162 @@ export default function Home() {
         </MotionConfig>
       </main>
 
-      {!isAudience && <ModelIndicator slideKind={config.kind} subStep={subStep} />}
-
       {!isAudience && (
         <SlideNav
           current={slide}
           currentSubStep={hasSubSteps ? subStep : undefined}
           total={total}
-          groups={NAV_GROUPS}
+          groups={navGroups}
           onNavigate={navigate}
           animationDone={animationDone}
           onStartPresenting={startPresenting}
           showReplay={skipAnimation}
           onReplay={handleReplay}
+          onSlideSorter={() => setSlideSorterOpen(true)}
         />
+      )}
+
+      {/* Slide sorter overlay */}
+      {slideSorterOpen && (
+        <div className="fixed inset-0 z-[90] flex flex-col bg-[#f3f4f6]">
+          <div className="flex shrink-0 items-center justify-between border-b border-black/10 bg-white px-5 py-2.5 shadow-sm">
+            <div className="flex items-center gap-3">
+              <LayoutGrid className="size-4 text-gray-400" />
+              <span className="text-sm font-semibold text-gray-800">
+                Slide Sorter
+              </span>
+              <span className="text-xs text-gray-400">
+                {allClickSteps.length} steps
+              </span>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setSorterCols((c) => Math.max(2, c - 1))}
+                  disabled={sorterCols <= 2}
+                  className="rounded-md p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 disabled:opacity-30"
+                  aria-label="Zoom in"
+                >
+                  <ZoomIn className="size-4" />
+                </button>
+                <input
+                  type="range"
+                  min={2}
+                  max={8}
+                  value={sorterCols}
+                  onChange={(e) => setSorterCols(Number(e.target.value))}
+                  className="h-1 w-24 cursor-pointer accent-[#00446A]"
+                />
+                <button
+                  onClick={() => setSorterCols((c) => Math.min(8, c + 1))}
+                  disabled={sorterCols >= 8}
+                  className="rounded-md p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 disabled:opacity-30"
+                  aria-label="Zoom out"
+                >
+                  <ZoomOut className="size-4" />
+                </button>
+                <span className="min-w-[2.5rem] text-center text-[11px] text-gray-400">
+                  {sorterCols} col
+                </span>
+              </div>
+              <button
+                onClick={() => setSlideSorterOpen(false)}
+                className="flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
+              >
+                <X className="size-3.5" />
+                Close
+              </button>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className="mx-auto space-y-6" style={{ maxWidth: sorterCols <= 3 ? "56rem" : "90rem" }}>
+              {(() => {
+                const grouped: { groupLabel: string; steps: (typeof allClickSteps[number] & { globalIndex: number })[] }[] = [];
+                let currentGroupLabel = "";
+                let globalIdx = 0;
+                for (const cs of allClickSteps) {
+                  if (cs.groupLabel !== currentGroupLabel) {
+                    currentGroupLabel = cs.groupLabel;
+                    grouped.push({ groupLabel: cs.groupLabel, steps: [] });
+                  }
+                  grouped[grouped.length - 1].steps.push({ ...cs, globalIndex: globalIdx++ });
+                }
+                return grouped.map((g, gi) => (
+                  <div key={gi}>
+                    <h3 className={cn(
+                      "mb-2 font-bold uppercase tracking-[0.12em] text-gray-400",
+                      sorterCols >= 6 ? "text-[9px]" : "text-[11px]",
+                    )}>
+                      {g.groupLabel}
+                    </h3>
+                    <div
+                      className="grid"
+                      style={{
+                        gridTemplateColumns: `repeat(${sorterCols}, 1fr)`,
+                        gap: sorterCols >= 6 ? "8px" : "12px",
+                      }}
+                    >
+                      {g.steps.map((cs) => {
+                        const isActive = cs.slideIndex === slide && cs.stepIndex === subStep;
+                        return (
+                          <div
+                            key={cs.globalIndex}
+                            className={cn(
+                              "group relative flex w-full flex-col rounded-lg border text-left transition-all hover:shadow-md",
+                              isActive
+                                ? "border-[#E56910] shadow-[0_0_12px_rgba(229,105,16,0.2)] ring-2 ring-[#E56910]/30"
+                                : "border-gray-200 bg-white hover:border-gray-300",
+                            )}
+                          >
+                            <div
+                              className="relative aspect-[16/10] w-full cursor-pointer overflow-hidden rounded-t-lg bg-gray-100"
+                              onClick={() => {
+                                navigate(cs.slideIndex, cs.stepIndex);
+                                setSlideSorterOpen(false);
+                              }}
+                            >
+                              <img
+                                src={`/slide-thumbnails/slide-${cs.slideIndex}-${cs.stepIndex}.jpg`}
+                                alt={cs.label}
+                                className="absolute inset-0 h-full w-full object-cover"
+                                loading="lazy"
+                              />
+                            </div>
+                            <div className={cn(
+                              "flex items-center gap-1.5 rounded-b-lg px-2 py-1.5",
+                              isActive ? "bg-[#E56910]/10" : "bg-white",
+                            )}>
+                              <span className={cn(
+                                "flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold",
+                                isActive
+                                  ? "bg-[#E56910] text-white"
+                                  : "bg-gray-100 text-gray-400",
+                              )}>
+                                {cs.globalIndex + 1}
+                              </span>
+                              <input
+                                type="text"
+                                value={cs.label}
+                                onChange={(e) => updateSlideLabel(cs.groupIndex, cs.slideInGroupIndex, e.target.value)}
+                                onClick={(e) => e.stopPropagation()}
+                                className={cn(
+                                  "min-w-0 flex-1 truncate border-0 bg-transparent font-medium outline-none focus:ring-1 focus:ring-[#00446A]/30 rounded px-1 -mx-1",
+                                  sorterCols >= 6 ? "text-[10px]" : "text-xs",
+                                  isActive ? "text-gray-900" : "text-gray-600",
+                                )}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ));
+              })()}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Presenter console overlay */}

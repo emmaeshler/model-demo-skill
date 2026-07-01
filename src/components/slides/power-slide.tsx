@@ -10,7 +10,7 @@ const GREEN = "#2e7d32";
 const PURPLE = "#7B5EA7";
 const MUTED = "#5A6A78";
 
-export const POWER_TOTAL_STEPS = 9;
+export const POWER_TOTAL_STEPS = 10;
 
 const ML_GREEN = "#3A7D44";
 
@@ -18,6 +18,7 @@ const SOLID_TINTS: Record<string, string> = {
   [ORANGE]: "#FEF4EC",
   [NAVY]: "#E8F1F6",
   [PURPLE]: "#F0ECF6",
+  [GREEN]: "#E8F5E9",
 };
 
 /* ─── Seeded PRNG ─── */
@@ -58,50 +59,72 @@ const DRIVERS = [
   { label: "Win / Loss Patterns", color: PURPLE, cx: 610, cy: 315 },
 ];
 
-/* ─── Triangle factor layout ─── */
+/* ─── Cluster spread (step 5: dots cluster into 4 groups) ─── */
 
-const TRIANGLE_VERTS = {
-  product: { x: 504, y: 20, label: "PRODUCT", color: ORANGE },
-  customer: { x: 195, y: 355, label: "CUSTOMER", color: NAVY },
-  order: { x: 813, y: 355, label: "ORDER", color: PURPLE },
+const CLUSTER_SPREAD = [
+  { cx: 280, cy: 110 },
+  { cx: 730, cy: 110 },
+  { cx: 280, cy: 340 },
+  { cx: 730, cy: 340 },
+];
+const CLUSTER_R = 95;
+
+/* ─── Square factor layout ─── */
+
+const SQUARE_VERTS = {
+  customer: { x: 280, y: 110, label: "CUSTOMER", color: NAVY },
+  product: { x: 730, y: 110, label: "PRODUCT", color: ORANGE },
+  market: { x: 280, y: 340, label: "MARKET", color: GREEN },
+  order: { x: 730, y: 340, label: "ORDER", color: PURPLE },
 };
 
-const TRIANGLE_FACTORS: { label: string; category: "product" | "customer" | "order"; emphasis?: "highlight" | "crossoff" | "order-highlight" }[] = [
+const SQUARE_FACTORS: { label: string; category: "product" | "market" | "customer" | "order"; emphasis?: "highlight" | "crossoff" | "order-highlight" }[] = [
   { label: "Product mix", category: "product" },
   { label: "Product family", category: "product" },
-  { label: "Price sensitivity", category: "product" },
   { label: "Product specialization", category: "product" },
-  { label: "Competitive price point", category: "product" },
-  { label: "Willingness to pay", category: "product" },
   { label: "Cost to serve", category: "product" },
+  { label: "Willingness to pay", category: "product" },
+  { label: "Price sensitivity", category: "product" },
+  { label: "Competitive price point", category: "market" },
+  { label: "Market share", category: "market" },
+  { label: "Commodity index", category: "market" },
+  { label: "Regional pricing", category: "market" },
+  { label: "Industry trends", category: "market" },
+  { label: "Competitor activity", category: "market" },
   { label: "Customer channel", category: "customer" },
   { label: "End market", category: "customer", emphasis: "crossoff" },
   { label: "Sales rep", category: "customer", emphasis: "highlight" },
   { label: "Region", category: "customer" },
   { label: "Size of customer", category: "customer" },
   { label: "Customer tenure", category: "customer" },
-  { label: "Product mix", category: "customer" },
   { label: "Order frequency", category: "order" },
   { label: "Order size", category: "order" },
   { label: "Lead time", category: "order" },
   { label: "Payment terms", category: "order" },
   { label: "Contract type", category: "order", emphasis: "order-highlight" },
   { label: "Seasonality", category: "order" },
-  { label: "Delivery method", category: "order" },
 ];
 
 const CATEGORY_LAYOUT = [
-  { key: "product" as const, x: 310, y: 20, w: 388, h: 180, color: ORANGE, labelDelay: 0.2, baseDelay: 3.8 },
-  { key: "customer" as const, x: 0, y: 290, w: 340, h: 165, color: NAVY, labelDelay: 0.3, baseDelay: 5.6 },
-  { key: "order" as const, x: 680, y: 290, w: 340, h: 165, color: PURPLE, labelDelay: 0.4, baseDelay: 7.4 },
+  { key: "customer" as const, x: 20, y: 0, w: 470, h: 190, color: NAVY, labelDelay: 0.2, baseDelay: 2.8 },
+  { key: "product" as const, x: 530, y: 0, w: 470, h: 190, color: ORANGE, labelDelay: 0.25, baseDelay: 4.2 },
+  { key: "market" as const, x: 20, y: 260, w: 470, h: 190, color: GREEN, labelDelay: 0.3, baseDelay: 5.6 },
+  { key: "order" as const, x: 530, y: 260, w: 470, h: 190, color: PURPLE, labelDelay: 0.35, baseDelay: 7.0 },
 ];
 
 const CUSTOMIZE_ACTIONS = [
-  { text: "For this market, competitive intelligence is a key factor" },
-  { text: "For this client, end market isn’t a relevant factor" },
-  { text: "Sales rep is a key pricing driver for this business" },
-  { text: "Contract terms define pricing flexibility for this customer" },
+  { headline: "Add a factor", detail: "Competitive intelligence is critical in this market — add it to the model." },
+  { headline: "Remove a factor", detail: "End market isn’t a meaningful driver for this client — take it out." },
+  { headline: "Elevate a driver", detail: "Sales rep relationships drive pricing power here — weight it higher." },
+  { headline: "Elevate a driver", detail: "Contract type defines flexibility for this customer — weight it higher." },
 ];
+
+const CUSTOMIZE_PILL_LAYOUT: Record<string, { x: number; y: number }> = {
+  customer: { x: 10, y: 15 },
+  product: { x: 10, y: 125 },
+  market: { x: 10, y: 235 },
+  order: { x: 10, y: 345 },
+};
 
 /* ─── Spotlight data (steps 1-4) ─── */
 
@@ -142,10 +165,12 @@ const TITLES = [
   "Reading competitive signals…",
   "Mapping volume & elasticity…",
   "Learning win/loss patterns…",
-  "21 pricing factors identified",
+  "Four pricing drivers emerge",
+  "24 pricing factors identified",
   "Customized for your business",
   "Your factors feed the model",
   "One optimal price",
+  "Tailored for every customer",
 ];
 
 const SUBTITLES = [
@@ -154,10 +179,12 @@ const SUBTITLES = [
   "36 real-time market features reveal where you stand against competitors.",
   "2,400 accounts with distinct buying profiles show how demand responds to price.",
   "18 months of win/loss data uncover what drives customer decisions.",
-  "The model identifies the variables that drive every price — grouped by product, customer, and order.",
+  "Cost, competition, elasticity, and demand — isolated from the noise.",
+  "The model identifies the variables that drive every price — grouped by customer, product, market, and order.",
   "Based on your data, certain factors matter more — and others fall away.",
-  "Product, customer, and order dimensions each contribute unique signal to your price.",
-  "All three dimensions converge into a single recommended price — for every account and SKU.",
+  "Customer, product, market, and order dimensions each contribute unique signal to your price.",
+  "All four dimensions converge into a single recommended price — for every account and SKU.",
+  "The same list price becomes three different recommendations — each optimized for the customer.",
 ];
 
 /* ─── Pre-compute dot positions ─── */
@@ -240,42 +267,42 @@ const DOTS = Array.from({ length: DOT_COUNT }, (_, i) => {
   };
 });
 
-/* ─── Triangle-edge targets for dots ─── */
+/* ─── Square-edge targets for dots ─── */
 
-const triRand = mulberry32(99);
-const TRI_EDGES = [
-  { fx: TRIANGLE_VERTS.product.x, fy: TRIANGLE_VERTS.product.y, tx: TRIANGLE_VERTS.customer.x, ty: TRIANGLE_VERTS.customer.y },
-  { fx: TRIANGLE_VERTS.product.x, fy: TRIANGLE_VERTS.product.y, tx: TRIANGLE_VERTS.order.x, ty: TRIANGLE_VERTS.order.y },
-  { fx: TRIANGLE_VERTS.customer.x, fy: TRIANGLE_VERTS.customer.y, tx: TRIANGLE_VERTS.order.x, ty: TRIANGLE_VERTS.order.y },
+const sqRand = mulberry32(99);
+const SQUARE_EDGES = [
+  { fx: SQUARE_VERTS.product.x, fy: SQUARE_VERTS.product.y, tx: SQUARE_VERTS.market.x, ty: SQUARE_VERTS.market.y },
+  { fx: SQUARE_VERTS.market.x, fy: SQUARE_VERTS.market.y, tx: SQUARE_VERTS.order.x, ty: SQUARE_VERTS.order.y },
+  { fx: SQUARE_VERTS.order.x, fy: SQUARE_VERTS.order.y, tx: SQUARE_VERTS.customer.x, ty: SQUARE_VERTS.customer.y },
+  { fx: SQUARE_VERTS.customer.x, fy: SQUARE_VERTS.customer.y, tx: SQUARE_VERTS.product.x, ty: SQUARE_VERTS.product.y },
 ];
-const TRI_TARGETS = Array.from({ length: DOT_COUNT }, (_, i) => {
-  const edgeIdx = i % 3;
-  const edge = TRI_EDGES[edgeIdx];
-  const t = Math.max(0.03, Math.min(0.97, (Math.floor(i / 3) + triRand() * 0.3) / Math.ceil(DOT_COUNT / 3)));
+const SQUARE_TARGETS = Array.from({ length: DOT_COUNT }, (_, i) => {
+  const edgeIdx = i % 4;
+  const edge = SQUARE_EDGES[edgeIdx];
+  const t = Math.max(0.03, Math.min(0.97, (Math.floor(i / 4) + sqRand() * 0.3) / Math.ceil(DOT_COUNT / 4)));
   const dx = edge.tx - edge.fx;
   const dy = edge.ty - edge.fy;
   const len = Math.sqrt(dx * dx + dy * dy);
   const perpX = -dy / len;
   const perpY = dx / len;
-  const offset = (triRand() - 0.5) * 12;
+  const offset = (sqRand() - 0.5) * 12;
   return {
     x: edge.fx + dx * t + perpX * offset,
     y: edge.fy + dy * t + perpY * offset,
   };
 });
 
-/* ─── Cluster targets (intermediate step before triangle) ─── */
+/* ─── Cluster targets (intermediate step before square) ─── */
 
-const CLUSTER_VERTS = [TRIANGLE_VERTS.product, TRIANGLE_VERTS.customer, TRIANGLE_VERTS.order];
-const CLUSTER_COLORS = [ORANGE, NAVY, PURPLE];
+const CLUSTER_VERTS = [SQUARE_VERTS.customer, SQUARE_VERTS.product, SQUARE_VERTS.market, SQUARE_VERTS.order];
+const CLUSTER_COLORS = [NAVY, ORANGE, GREEN, PURPLE];
 
 const clusterRand = mulberry32(77);
 const CLUSTER_TARGETS = Array.from({ length: DOT_COUNT }, (_, i) => {
-  const target = TRI_TARGETS[i];
-  const dProd = Math.hypot(target.x - TRIANGLE_VERTS.product.x, target.y - TRIANGLE_VERTS.product.y);
-  const dCust = Math.hypot(target.x - TRIANGLE_VERTS.customer.x, target.y - TRIANGLE_VERTS.customer.y);
-  const dOrd = Math.hypot(target.x - TRIANGLE_VERTS.order.x, target.y - TRIANGLE_VERTS.order.y);
-  const ci = dProd <= dCust && dProd <= dOrd ? 0 : dCust <= dOrd ? 1 : 2;
+  const target = SQUARE_TARGETS[i];
+  const dists = CLUSTER_VERTS.map(v => Math.hypot(target.x - v.x, target.y - v.y));
+  const minDist = Math.min(...dists);
+  const ci = dists.indexOf(minDist);
   const vert = CLUSTER_VERTS[ci];
   const angle = clusterRand() * Math.PI * 2;
   const dist = clusterRand() * 30 + 5;
@@ -364,8 +391,8 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
   }, [chartStep, onAutoAdvance, skipAnimation]);
 
   const [introPhase, setIntroPhase] = useState(skipAnimation ? 5 : chartStep === 0 ? 0 : 4);
-  const [customizePhase, setCustomizePhase] = useState(chartStep > 6 || (skipAnimation && chartStep >= 6) ? CUSTOMIZE_ACTIONS.length : -1);
-  const [trianglePhase, setTrianglePhase] = useState(chartStep > 5 || (skipAnimation && chartStep >= 5) ? 1 : 0);
+  const [customizePhase, setCustomizePhase] = useState(chartStep > 7 || (skipAnimation && chartStep >= 7) ? CUSTOMIZE_ACTIONS.length : -1);
+  const [factorsPhase, setFactorsPhase] = useState(chartStep > 6 || (skipAnimation && chartStep >= 6) ? 1 : 0);
   useEffect(() => {
     if (skipAnimation) { setIntroPhase(5); return; }
     if (chartStep !== 0) {
@@ -390,40 +417,45 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
   }, [step, onAutoAdvance, skipAnimation]);
 
   useEffect(() => {
-    if (chartStep < 5) { setTrianglePhase(0); return; }
-    if (chartStep > 5 || skipAnimation) { setTrianglePhase(1); return; }
-    setTrianglePhase(0);
-    const t = setTimeout(() => setTrianglePhase(1), 2000);
+    if (chartStep < 6) { setFactorsPhase(0); return; }
+    if (chartStep > 6 || skipAnimation) { setFactorsPhase(1); return; }
+    setFactorsPhase(0);
+    const t = setTimeout(() => setFactorsPhase(1), 600);
     return () => clearTimeout(t);
   }, [chartStep, skipAnimation]);
 
   useEffect(() => {
-    if (chartStep < 6) { setCustomizePhase(-1); return; }
-    if (chartStep > 6 || skipAnimation) { setCustomizePhase(CUSTOMIZE_ACTIONS.length); return; }
+    if (chartStep < 7) { setCustomizePhase(-1); return; }
+    if (chartStep > 7 || skipAnimation) { setCustomizePhase(CUSTOMIZE_ACTIONS.length); return; }
     setCustomizePhase(-1);
-    const t0 = setTimeout(() => setCustomizePhase(0), 2500);
-    const t1 = setTimeout(() => setCustomizePhase(1), 4700);
-    const t2 = setTimeout(() => setCustomizePhase(2), 6900);
-    const t3 = setTimeout(() => setCustomizePhase(3), 9100);
-    const t4 = setTimeout(() => setCustomizePhase(4), 11300);
+    const t0 = setTimeout(() => setCustomizePhase(0), 1800);
+    const t1 = setTimeout(() => setCustomizePhase(1), 4000);
+    const t2 = setTimeout(() => setCustomizePhase(2), 6200);
+    const t3 = setTimeout(() => setCustomizePhase(3), 8400);
+    const t4 = setTimeout(() => setCustomizePhase(4), 10600);
     return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
   }, [chartStep, skipAnimation]);
 
   /* ── Chart flow ─────────────────────────────────────── */
-  const triangleVisible = chartStep >= 5;
-  const customized = chartStep >= 6;
-  const feeding = chartStep >= 7;
-  const converged = chartStep >= 8;
+  const clustered = chartStep >= 5;
+  const factorsVisible = chartStep >= 6;
+  const customized = chartStep >= 7;
+  const feeding = chartStep >= 8;
+  const converged = chartStep >= 9;
+  const showCustomers = chartStep >= 10;
   const sweepActive = chartStep >= 1 && chartStep <= 4;
 
   function dotFill(dot: (typeof DOTS)[0]) {
-    if (triangleVisible) return TEAL;
+    if (factorsVisible) return TEAL;
+    if (clustered) return DRIVERS[dot.cluster].color;
     if (dot.cluster < chartStep) return DRIVERS[dot.cluster].color;
     return MUTED;
   }
 
   function dotOpacity(dot: (typeof DOTS)[0]) {
-    if (triangleVisible) return 0.35;
+    if (customized) return 0;
+    if (factorsVisible) return 0.35;
+    if (clustered) return 0.65;
     if (dot.cluster === chartStep - 1) return 0.7;
     if (dot.cluster < chartStep - 1) return 0.45;
     return dot.scatterOpacity;
@@ -543,8 +575,8 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
         >
           {/* ── Chart chrome (fades out on cluster step) ── */}
           <motion.g
-            animate={{ opacity: triangleVisible ? 0 : 1 }}
-            transition={{ duration: 0.5, delay: triangleVisible ? 0 : 0.3 }}
+            animate={{ opacity: clustered ? 0 : 1 }}
+            transition={{ duration: 0.5, delay: clustered ? 0 : 0.3 }}
           >
             {Y_TICKS.map((_, i) => (
               <line
@@ -595,16 +627,39 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
             </text>
           </motion.g>
 
-          {/* ── Triangle outline (step 5+) ── */}
+          {/* ── Cluster circles + labels (step 5) ── */}
+          {CLUSTER_SPREAD.map((sp, i) => (
+            <g key={`cluster-ring-${i}`}>
+              <motion.circle
+                cx={sp.cx} cy={sp.cy} r={CLUSTER_R}
+                fill="none" stroke={DRIVERS[i].color} strokeWidth={1.2} strokeDasharray="4 3"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: clustered && !factorsVisible ? 0.25 : 0 }}
+                transition={{ delay: clustered && !factorsVisible ? 1.0 + i * 0.12 : 0, duration: 0.5 }}
+              />
+              <motion.text
+                x={sp.cx} y={sp.cy + CLUSTER_R + 20}
+                textAnchor="middle"
+                style={{ fontSize: 13, fontWeight: 700, fill: DRIVERS[i].color, fontFamily: "inherit" }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: clustered && !factorsVisible ? 0.8 : 0 }}
+                transition={{ delay: clustered && !factorsVisible ? 1.2 + i * 0.12 : 0, duration: 0.4 }}
+              >
+                {DRIVERS[i].label}
+              </motion.text>
+            </g>
+          ))}
+
+          {/* ── Square outline (step 6+) ── */}
           <motion.polygon
-            points={`${TRIANGLE_VERTS.product.x},${TRIANGLE_VERTS.product.y} ${TRIANGLE_VERTS.customer.x},${TRIANGLE_VERTS.customer.y} ${TRIANGLE_VERTS.order.x},${TRIANGLE_VERTS.order.y}`}
+            points={`${SQUARE_VERTS.customer.x},${SQUARE_VERTS.customer.y} ${SQUARE_VERTS.product.x},${SQUARE_VERTS.product.y} ${SQUARE_VERTS.order.x},${SQUARE_VERTS.order.y} ${SQUARE_VERTS.market.x},${SQUARE_VERTS.market.y}`}
             fill="none"
             stroke={TEAL}
             strokeWidth={customizePhase >= CUSTOMIZE_ACTIONS.length && !feeding ? 2.5 : 1.5}
             strokeDasharray={customizePhase >= CUSTOMIZE_ACTIONS.length && !feeding ? "none" : "5 4"}
             initial={{ opacity: 0 }}
-            animate={{ opacity: trianglePhase >= 1 && !converged && !feeding ? (customizePhase >= CUSTOMIZE_ACTIONS.length ? 0.5 : 0.25) : 0 }}
-            transition={{ delay: trianglePhase >= 1 && !converged ? 0.5 : 0, duration: 0.6 }}
+            animate={{ opacity: factorsPhase >= 1 && !customized && !converged && !feeding ? 0.25 : 0 }}
+            transition={{ delay: factorsPhase >= 1 && !customized && !converged ? 0.2 : 0, duration: 0.4 }}
           />
 
           {/* ── Scanning sweep line (steps 1-4 only) ── */}
@@ -676,23 +731,35 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
               cxTransition = { duration: 1.2, delay: dot.delay * 0.4, ease: [0.22, 1, 0.36, 1] };
               cyTransition = { duration: 1.2, delay: dot.delay * 0.4, ease: [0.22, 1, 0.36, 1] };
               opacityDelay = dot.delay * 0.4 + 0.3;
-            } else if (triangleVisible && trianglePhase >= 1) {
-              const tri = TRI_TARGETS[i];
-              targetCx = tri.x;
-              targetCy = tri.y;
+            } else if (factorsVisible && factorsPhase >= 1) {
+              const sq = SQUARE_TARGETS[i];
+              targetCx = sq.x;
+              targetCy = sq.y;
               targetFill = TEAL;
-              targetOpacity = 0.35;
-              targetR = dot.r * 0.7;
-              cxTransition = { duration: 1.4, delay: dot.delay * 0.3, ease: [0.22, 1, 0.36, 1] };
-              cyTransition = { duration: 1.4, delay: dot.delay * 0.3, ease: [0.22, 1, 0.36, 1] };
-              opacityDelay = dot.delay * 0.3;
-            } else if (triangleVisible) {
+              targetOpacity = customized ? 0 : 0.35;
+              targetR = customized ? 0 : dot.r * 0.7;
+              cxTransition = { duration: 0.7, delay: dot.delay * 0.15, ease: [0.22, 1, 0.36, 1] };
+              cyTransition = { duration: 0.7, delay: dot.delay * 0.15, ease: [0.22, 1, 0.36, 1] };
+              opacityDelay = dot.delay * 0.15;
+            } else if (factorsVisible) {
               const cl = CLUSTER_TARGETS[i];
               targetCx = cl.x;
               targetCy = cl.y;
               targetFill = CLUSTER_COLORS[cl.ci];
               targetOpacity = 0.55;
               targetR = dot.r * 0.8;
+              cxTransition = { duration: 0.6, delay: dot.delay * 0.1, ease: [0.22, 1, 0.36, 1] };
+              cyTransition = { duration: 0.6, delay: dot.delay * 0.1, ease: [0.22, 1, 0.36, 1] };
+              opacityDelay = dot.delay * 0.1;
+            } else if (clustered) {
+              const sp = CLUSTER_SPREAD[dot.cluster];
+              const origD = DRIVERS[dot.cluster];
+              const spreadCx = sp.cx + (dot.cx - origD.cx) * (CLUSTER_R / 48);
+              const spreadCy = sp.cy + (dot.cy - origD.cy) * (CLUSTER_R / 48);
+              targetCx = Math.max(sp.cx - CLUSTER_R + 4, Math.min(sp.cx + CLUSTER_R - 4, spreadCx));
+              targetCy = Math.max(sp.cy - CLUSTER_R + 4, Math.min(sp.cy + CLUSTER_R - 4, spreadCy));
+              targetFill = DRIVERS[dot.cluster].color;
+              targetOpacity = 0.65;
               cxTransition = { duration: 1.2, delay: dot.delay * 0.3, ease: [0.22, 1, 0.36, 1] };
               cyTransition = { duration: 1.2, delay: dot.delay * 0.3, ease: [0.22, 1, 0.36, 1] };
               opacityDelay = dot.delay * 0.3;
@@ -836,22 +903,35 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
           })}
 
           {/* ── Triangle labels + factor pills (step 5+, sequential) ── */}
-          {triangleVisible && !converged && !feeding && CATEGORY_LAYOUT.map((cat) => {
-            const vert = TRIANGLE_VERTS[cat.key];
+          {/* ── Factor pills (step 6+, slide left on customize) ── */}
+          {factorsVisible && !converged && !feeding && CATEGORY_LAYOUT.map((cat, catIdx) => {
+            const vert = SQUARE_VERTS[cat.key];
+            const custPos = CUSTOMIZE_PILL_LAYOUT[cat.key];
+            const tx = customized ? custPos.x : cat.x;
+            const ty = customized ? custPos.y : cat.y;
+            const tw = customized ? 460 : cat.w;
+            const th = customized ? 100 : cat.h;
             return (
-              <foreignObject key={`cat-group-${cat.key}`} x={cat.x} y={cat.y} width={cat.w} height={cat.h}>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+              <motion.foreignObject
+                key={`cat-group-${cat.key}`}
+                initial={{ x: cat.x, y: cat.y, width: cat.w, height: cat.h }}
+                animate={{ x: tx, y: ty, width: tw, height: th }}
+                transition={{ duration: 0.8, delay: customized ? catIdx * 0.08 : 0, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <div style={{ display: "flex", flexDirection: "column", alignItems: customized ? "flex-start" : "center", gap: customized ? 4 : 6 }}>
                   <motion.div
                     style={{
-                      fontSize: 14,
+                      fontSize: customized ? 11 : 14,
                       fontWeight: 800,
                       color: cat.color,
                       letterSpacing: "0.12em",
                       fontFamily: "inherit",
-                      textAlign: "center",
+                      textAlign: customized ? "left" : "center",
                       backgroundColor: SOLID_TINTS[cat.color] ?? "white",
                       borderRadius: 4,
                       padding: "2px 12px",
+                      flexShrink: 0,
+                      transition: "font-size 0.5s ease",
                     }}
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -859,40 +939,49 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                   >
                     {vert.label}
                   </motion.div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 5, justifyContent: "center" }}>
-                {TRIANGLE_FACTORS.filter(f => f.category === cat.key).map((f, fi) => {
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: customized ? 4 : 5, justifyContent: customized ? "flex-start" : "center" }}>
+                {SQUARE_FACTORS.filter(f => f.category === cat.key).map((f, fi) => {
                   const isCrossed = customizePhase >= 1 && f.emphasis === "crossoff";
                   const isHighlighted = (customizePhase >= 2 && f.emphasis === "highlight") || (customizePhase >= 3 && f.emphasis === "order-highlight");
+                  const isActivePill = customized && (
+                    (customizePhase === 1 && f.emphasis === "crossoff") ||
+                    (customizePhase === 2 && f.emphasis === "highlight") ||
+                    (customizePhase === 3 && f.emphasis === "order-highlight")
+                  );
+                  const isGreyed = customized && !isActivePill;
+                  const pillColor = isGreyed ? MUTED : isHighlighted ? TEAL : isCrossed ? MUTED : cat.color;
+                  const pillBorder = isGreyed ? `${MUTED}30` : isHighlighted ? TEAL : isCrossed ? `${MUTED}40` : `${cat.color}30`;
+                  const pillBg = isGreyed ? "#F3F4F6" : isHighlighted ? "#E5F5FA" : isCrossed ? "#F3F4F5" : (SOLID_TINTS[cat.color] ?? "white");
                   return (
                     <motion.span
                       key={`${cat.key}-${f.label}`}
                       style={{
                         display: "inline-block",
-                        borderRadius: 12,
-                        border: `1.5px solid ${isHighlighted ? TEAL : isCrossed ? `${MUTED}40` : `${cat.color}30`}`,
-                        padding: "3px 10px",
-                        fontSize: 11,
-                        fontWeight: isHighlighted ? 700 : 500,
+                        borderRadius: 14,
+                        border: `1.5px solid ${pillBorder}`,
+                        padding: "5px 14px",
+                        fontSize: 13,
+                        fontWeight: isActivePill ? 700 : 500,
                         fontFamily: "inherit",
                         whiteSpace: "nowrap",
-                        color: isCrossed ? MUTED : isHighlighted ? TEAL : cat.color,
-                        backgroundColor: isHighlighted ? "#E5F5FA" : isCrossed ? "#F3F4F5" : (SOLID_TINTS[cat.color] ?? "white"),
+                        color: pillColor,
+                        backgroundColor: pillBg,
                         textDecoration: isCrossed ? "line-through" : "none",
                         transition: "color 0.5s ease, border-color 0.5s ease, background-color 0.5s ease",
                       }}
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{
-                        opacity: isCrossed ? [1, 1, 0.35] : 1,
-                        scale: isHighlighted ? [1, 1.25, 1.12] : isCrossed ? [1, 1.2, 0.95] : 1,
-                        boxShadow: isHighlighted
+                        opacity: isCrossed && !isActivePill ? 0.35 : 1,
+                        scale: isActivePill && isHighlighted ? [1, 1.25, 1.12] : isActivePill && isCrossed ? [1, 1.2, 0.95] : 1,
+                        boxShadow: isActivePill && isHighlighted
                           ? ["0 0 0px transparent", `0 0 16px ${TEAL}60`, `0 0 8px ${TEAL}30`]
-                          : isCrossed
+                          : isActivePill && isCrossed
                             ? ["0 0 0px transparent", `0 0 14px ${cat.color}60`, "0 0 0px transparent"]
                             : "0 0 0px transparent",
                       }}
                       transition={{
-                        duration: (isCrossed || isHighlighted) ? 1.0 : 0.5,
-                        times: (isCrossed || isHighlighted) ? [0, 0.3, 1] : undefined,
+                        duration: isActivePill ? 1.0 : 0.5,
+                        times: isActivePill ? [0, 0.3, 1] : undefined,
                         delay: !customized ? cat.baseDelay + fi * 0.12 : 0,
                         ease: [0.22, 1, 0.36, 1],
                       }}
@@ -901,69 +990,54 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                     </motion.span>
                   );
                 })}
-                {cat.key === "product" && customizePhase >= 0 && (
-                  <motion.span
-                    style={{
-                      display: "inline-block",
-                      borderRadius: 12,
-                      border: `1.5px solid ${ML_GREEN}`,
-                      padding: "3px 10px",
-                      fontSize: 11,
-                      fontWeight: 700,
-                      fontFamily: "inherit",
-                      whiteSpace: "nowrap",
-                      color: ML_GREEN,
-                      backgroundColor: "#ECF4ED",
-                    }}
-                    initial={{ opacity: 0, scale: 0 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.15, duration: 0.5, type: "spring", stiffness: 200 }}
-                  >
-                    + Competitive intelligence
-                  </motion.span>
-                )}
+                {cat.key === "market" && customizePhase >= 0 && (() => {
+                  const ciActive = customized && customizePhase === 0;
+                  const ciGreyed = customized && customizePhase !== 0;
+                  return (
+                    <motion.span
+                      style={{
+                        display: "inline-block",
+                        borderRadius: 14,
+                        border: `1.5px solid ${ciGreyed ? `${MUTED}30` : ML_GREEN}`,
+                        padding: "5px 14px",
+                        fontSize: 13,
+                        fontWeight: ciActive ? 700 : ciGreyed ? 500 : 700,
+                        fontFamily: "inherit",
+                        whiteSpace: "nowrap",
+                        color: ciGreyed ? MUTED : ML_GREEN,
+                        backgroundColor: ciGreyed ? "#F3F4F6" : "#ECF4ED",
+                        transition: "color 0.5s ease, border-color 0.5s ease, background-color 0.5s ease",
+                      }}
+                      initial={{ opacity: 0, scale: 0 }}
+                      animate={{
+                        opacity: 1,
+                        scale: ciActive ? [1, 1.25, 1.12] : 1,
+                        boxShadow: ciActive
+                          ? ["0 0 0px transparent", `0 0 16px ${ML_GREEN}60`, `0 0 8px ${ML_GREEN}30`]
+                          : "0 0 0px transparent",
+                      }}
+                      transition={{ delay: 0.15, duration: 0.5, type: "spring", stiffness: 200 }}
+                    >
+                      + Competitive intelligence
+                    </motion.span>
+                  );
+                })()}
                   </div>
                 </div>
-              </foreignObject>
+              </motion.foreignObject>
             );
           })}
 
-          {/* ── Customize action text (step 6) ── */}
-          {customized && !converged && !feeding && (
-            <foreignObject x={210} y={225} width={600} height={50}>
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={customizePhase}
-                  style={{
-                    textAlign: "center",
-                    fontSize: customizePhase >= CUSTOMIZE_ACTIONS.length ? 15 : 14,
-                    color: NAVY,
-                    fontStyle: customizePhase >= CUSTOMIZE_ACTIONS.length ? "normal" : "italic",
-                    fontFamily: "inherit",
-                    fontWeight: customizePhase >= CUSTOMIZE_ACTIONS.length ? 600 : 500,
-                  }}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: customizePhase >= CUSTOMIZE_ACTIONS.length ? 0.85 : 0.7, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.35 }}
-                >
-                  {customizePhase < 0
-                    ? "We analyze your business to determine which drivers matter most"
-                    : customizePhase < CUSTOMIZE_ACTIONS.length
-                      ? CUSTOMIZE_ACTIONS[customizePhase].text
-                      : "Together, these factors uniquely configure your model"}
-                </motion.div>
-              </AnimatePresence>
-            </foreignObject>
-          )}
+          {/* action panel rendered outside SVG below */}
 
           {/* ── Feed the model (step 7) ── */}
           {feeding && !converged && (() => {
             const MODEL_R = 60;
             const FEED_SOURCES = [
-              { vert: TRIANGLE_VERTS.product, color: ORANGE, label: "Product" },
-              { vert: TRIANGLE_VERTS.customer, color: NAVY, label: "Customer" },
-              { vert: TRIANGLE_VERTS.order, color: PURPLE, label: "Order" },
+              { vert: SQUARE_VERTS.product, color: ORANGE, label: "Product" },
+              { vert: SQUARE_VERTS.market, color: GREEN, label: "Market" },
+              { vert: SQUARE_VERTS.customer, color: NAVY, label: "Customer" },
+              { vert: SQUARE_VERTS.order, color: PURPLE, label: "Order" },
             ];
             return (
               <>
@@ -984,7 +1058,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                     <g key={`feed-src-${si}`}>
                       <motion.text
                         x={src.vert.x}
-                        y={src.vert.y + (si === 0 ? -14 : 28)}
+                        y={src.vert.y + (si === 0 || si === 2 ? -14 : 28)}
                         textAnchor="middle"
                         style={{ fontSize: 13, fontWeight: 700, fill: src.color, fontFamily: "inherit", letterSpacing: "0.08em" }}
                         initial={{ opacity: 0 }}
@@ -1066,96 +1140,98 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
 
           {/* ── Price reveal (step 8 — converged) ── */}
           {converged && (() => {
-            const CR = 70;
-            const CONV_NODES = [
-              { label: "Product", color: ORANGE, angle: Math.PI * 0.3, contribution: "+$3.80", detail: "Product factors" },
-              { label: "Customer", color: NAVY, angle: Math.PI * 1.2, contribution: "$11.30", detail: "Customer base" },
-              { label: "Order", color: PURPLE, angle: Math.PI * 0.7, contribution: "+$2.40", detail: "Order patterns" },
+            const CR = 75;
+            const DR = 55;
+            const PRICE_DRIVERS = [
+              { label: "Cost Trends", adj: "$14.20", subtitle: "Cost base", color: NAVY, x: 310, y: 130 },
+              { label: "Volume & Elasticity", adj: "+$1.80", subtitle: "Volume lift", color: GREEN, x: 700, y: 100 },
+              { label: "Win / Loss Patterns", adj: "−$0.90", subtitle: "Win-rate adj.", color: PURPLE, x: 370, y: 340 },
+              { label: "Competitive Position", adj: "+$2.40", subtitle: "Market premium", color: ORANGE, x: 700, y: 330 },
             ];
-            const NODE_DIST = 210;
-            const NODE_R = 46;
+
             return (
               <>
-                {CONV_NODES.map((dn, i) => {
-                  const nx = PLOT_CX + Math.cos(dn.angle) * NODE_DIST;
-                  const ny = PLOT_CY + Math.sin(dn.angle) * NODE_DIST;
-                  const edgeX = PLOT_CX + Math.cos(dn.angle) * (CR + 6);
-                  const edgeY = PLOT_CY + Math.sin(dn.angle) * (CR + 6);
-                  const cpDist = NODE_DIST * 0.45;
-                  const cpX = PLOT_CX + Math.cos(dn.angle) * cpDist;
-                  const cpY = PLOT_CY + Math.sin(dn.angle) * cpDist;
-                  const pathD = `M ${nx} ${ny} Q ${cpX} ${cpY}, ${edgeX} ${edgeY}`;
+                {/* ── Driver nodes with flow lines ── */}
+                {!showCustomers && PRICE_DRIVERS.map((drv, si) => {
                   const flowSteps = 30;
                   const flowCx: number[] = [];
                   const flowCy: number[] = [];
+                  const cpX = drv.x + (PLOT_CX - drv.x) * 0.5;
+                  const cpY = drv.y + (PLOT_CY - drv.y) * 0.5;
                   for (let s = 0; s <= flowSteps; s++) {
                     const t = s / flowSteps;
                     const u = 1 - t;
-                    flowCx.push(u * u * nx + 2 * u * t * cpX + t * t * edgeX);
-                    flowCy.push(u * u * ny + 2 * u * t * cpY + t * t * edgeY);
+                    flowCx.push(u * u * drv.x + 2 * u * t * cpX + t * t * PLOT_CX);
+                    flowCy.push(u * u * drv.y + 2 * u * t * cpY + t * t * PLOT_CY);
                   }
-                  const nodeDelay = 0.3 + i * 0.2;
-                  const lineDelay = nodeDelay + 0.4;
-                  const dotDelay = lineDelay + 0.3;
-
+                  const pathD = `M ${drv.x} ${drv.y} Q ${cpX} ${cpY}, ${PLOT_CX} ${PLOT_CY}`;
+                  const baseDelay = 0.8 + si * 0.3;
                   return (
-                    <g key={`conv-node-${i}`}>
-                      <motion.g
-                        initial={{ opacity: 0, scale: 0.6 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.5, delay: nodeDelay, ease: [0.22, 1, 0.36, 1] }}
-                        style={{ transformOrigin: `${nx}px ${ny}px` }}
-                      >
-                        <circle cx={nx} cy={ny} r={NODE_R} fill={`${dn.color}08`} stroke={dn.color} strokeWidth={1.5} opacity={0.3} />
-                        <text x={nx} y={ny - NODE_R - 8} textAnchor="middle"
-                          style={{ fontSize: 11, fontWeight: 700, fill: dn.color, fontFamily: "inherit" }}>
-                          {dn.label}
-                        </text>
-                        <text x={nx} y={ny + 4} textAnchor="middle"
-                          style={{ fontSize: 20, fontWeight: 800, fill: dn.color, fontFamily: "inherit" }}>
-                          {dn.contribution}
-                        </text>
-                        <text x={nx} y={ny + 20} textAnchor="middle"
-                          style={{ fontSize: 10, fontWeight: 500, fill: MUTED, fontFamily: "inherit" }}>
-                          {dn.detail}
-                        </text>
-                      </motion.g>
-
+                    <g key={`drv-${si}`}>
                       <motion.path
-                        d={pathD} fill="none" stroke={dn.color} strokeWidth={1.5} strokeLinecap="round"
+                        d={pathD} fill="none" stroke={drv.color} strokeWidth={1.5} strokeLinecap="round"
                         initial={{ pathLength: 0, opacity: 0 }}
                         animate={{ pathLength: 1, opacity: 0.3 }}
-                        transition={{ duration: 0.7, delay: lineDelay, ease: "easeOut" }}
+                        transition={{ duration: 0.8, delay: baseDelay + 0.3, ease: "easeOut" }}
                       />
-
-                      {[0, 1.5, 3].map((extraDelay, di) => (
+                      {[0, 1.4, 2.8].map((extra, di) => (
                         <motion.circle
-                          key={`flow-${i}-${di}`}
-                          r={2.5} fill={dn.color}
+                          key={`dflow-${si}-${di}`}
+                          r={2.5} fill={drv.color}
                           initial={{ opacity: 0 }}
-                          animate={{
-                            cx: flowCx,
-                            cy: flowCy,
-                            opacity: [0, 0.6, 0.6, 0.6, 0],
-                          }}
-                          transition={{
-                            duration: 2.5,
-                            delay: dotDelay + extraDelay,
-                            repeat: Infinity,
-                            ease: "linear",
-                          }}
+                          animate={{ cx: flowCx, cy: flowCy, opacity: [0, 0.6, 0.6, 0.5, 0] }}
+                          transition={{ duration: 2.4, delay: baseDelay + 0.8 + extra, repeat: Infinity, ease: "linear" }}
                         />
                       ))}
+                      <motion.circle
+                        cx={drv.x} cy={drv.y} r={DR}
+                        fill="white" stroke={drv.color} strokeWidth={1.5}
+                        initial={{ opacity: 0, scale: 0.6 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.5, delay: baseDelay, ease: [0.22, 1, 0.36, 1] }}
+                        style={{ transformOrigin: `${drv.x}px ${drv.y}px` }}
+                      />
+                      <motion.text
+                        x={drv.x} y={drv.y - DR - 10}
+                        textAnchor="middle"
+                        style={{ fontSize: 12, fontWeight: 700, fill: drv.color, fontFamily: "inherit" }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 0.85 }}
+                        transition={{ duration: 0.4, delay: baseDelay + 0.15 }}
+                      >
+                        {drv.label}
+                      </motion.text>
+                      <motion.text
+                        x={drv.x} y={drv.y + 2}
+                        textAnchor="middle"
+                        style={{ fontSize: 22, fontWeight: 800, fill: drv.color, fontFamily: "inherit" }}
+                        initial={{ opacity: 0, scale: 0.7 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.4, delay: baseDelay + 0.2, type: "spring", stiffness: 200 }}
+                      >
+                        {drv.adj}
+                      </motion.text>
+                      <motion.text
+                        x={drv.x} y={drv.y + 20}
+                        textAnchor="middle"
+                        style={{ fontSize: 10, fontWeight: 500, fill: MUTED, fontFamily: "inherit" }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 0.7 }}
+                        transition={{ duration: 0.4, delay: baseDelay + 0.3 }}
+                      >
+                        {drv.subtitle}
+                      </motion.text>
                     </g>
                   );
                 })}
 
+                {/* ── Center circle — recommended price ── */}
                 <motion.circle
                   cx={PLOT_CX} cy={PLOT_CY} r={CR}
                   fill="white" stroke={TEAL} strokeWidth={2.5}
                   initial={{ opacity: 0, scale: 0.6 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.6, delay: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                  transition={{ duration: 0.6, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
                   style={{ transformOrigin: `${PLOT_CX}px ${PLOT_CY}px` }}
                 />
                 <motion.circle
@@ -1163,58 +1239,177 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                   fill="none" stroke={TEAL} strokeWidth={2}
                   initial={{ opacity: 0.5, scale: 1 }}
                   animate={{ opacity: 0, scale: 1.4 }}
-                  transition={{ duration: 1.2, delay: 0.8, ease: "easeOut" }}
+                  transition={{ duration: 1.2, delay: 0.6, ease: "easeOut" }}
                   style={{ transformOrigin: `${PLOT_CX}px ${PLOT_CY}px` }}
                 />
-                <motion.circle
-                  cx={PLOT_CX} cy={PLOT_CY} r={CR + 2}
-                  fill="none" stroke={TEAL} strokeWidth={1.5}
-                  animate={{ opacity: [0, 0.2, 0], scale: [1, 1.15, 1] }}
-                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-                  style={{ transformOrigin: `${PLOT_CX}px ${PLOT_CY}px` }}
-                />
+                {!showCustomers && (
+                  <motion.circle
+                    cx={PLOT_CX} cy={PLOT_CY} r={CR + 2}
+                    fill="none" stroke={TEAL} strokeWidth={1.5}
+                    animate={{ opacity: [0, 0.2, 0], scale: [1, 1.15, 1] }}
+                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+                    style={{ transformOrigin: `${PLOT_CX}px ${PLOT_CY}px` }}
+                  />
+                )}
                 <motion.text
-                  x={PLOT_CX} y={PLOT_CY - 20}
+                  x={PLOT_CX} y={PLOT_CY - 24}
                   textAnchor="middle"
-                  style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", fill: MUTED, fontFamily: "inherit" }}
+                  style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", fill: MUTED, fontFamily: "inherit" }}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ duration: 0.4, delay: 0.9 }}
+                  transition={{ duration: 0.4, delay: 0.7 }}
                 >
                   RECOMMENDED
                 </motion.text>
                 <motion.text
-                  x={PLOT_CX} y={PLOT_CY + 14}
+                  x={PLOT_CX} y={PLOT_CY + 12}
                   textAnchor="middle"
                   initial={{ opacity: 0, scale: 0.7 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.5, delay: 1.0, type: "spring", stiffness: 200 }}
-                  style={{ fontSize: 36, fontWeight: 800, fill: NAVY, fontFamily: "inherit", transformOrigin: `${PLOT_CX}px ${PLOT_CY + 6}px` }}
+                  transition={{ duration: 0.5, delay: 0.8, type: "spring", stiffness: 200 }}
+                  style={{ fontSize: 36, fontWeight: 800, fill: NAVY, fontFamily: "inherit", transformOrigin: `${PLOT_CX}px ${PLOT_CY + 4}px` }}
                 >
                   $17.50
                 </motion.text>
                 <motion.text
                   x={PLOT_CX} y={PLOT_CY + 32}
                   textAnchor="middle"
-                  style={{ fontSize: 10.5, fontWeight: 500, fill: MUTED, fontFamily: "inherit" }}
+                  style={{ fontSize: 9.5, fontWeight: 500, fill: MUTED, fontFamily: "inherit" }}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ duration: 0.4, delay: 1.2 }}
+                  transition={{ duration: 0.4, delay: 1.0 }}
                 >
-                  per unit · SKU #A-7200
+                  {"per unit · SKU #A-7200"}
                 </motion.text>
+
+                {/* ── Step 10: Customer nodes ── */}
+                {showCustomers && [
+                  { name: "Acme Industrial", price: "$19.24", delta: "+$1.74", color: NAVY, x: 230, y: 105 },
+                  { name: "MedSupply Co", price: "$14.89", delta: "−$2.61", color: TEAL, x: 778, y: 105 },
+                  { name: "QuickParts LLC", price: "$22.10", delta: "+$4.60", color: "#1B4F72" as string, x: 504, y: 420 },
+                ].map((cust, i) => {
+                  const dx = cust.x - PLOT_CX;
+                  const dy = cust.y - PLOT_CY;
+                  const ctrlX = PLOT_CX + dx * 0.5 + (i === 2 ? 0 : (i === 0 ? -40 : 40));
+                  const ctrlY = PLOT_CY + dy * 0.5 + (i === 2 ? 30 : -30);
+                  const pathD = `M ${PLOT_CX} ${PLOT_CY} Q ${ctrlX} ${ctrlY} ${cust.x} ${cust.y}`;
+                  const lineDelay = 0.3 + i * 0.25;
+                  const dotDelay = lineDelay + 0.3;
+                  const cardDelay = lineDelay + 0.6;
+                  const steps = 40;
+                  const flowCx: number[] = [];
+                  const flowCy: number[] = [];
+                  for (let s = 0; s <= steps; s++) {
+                    const t = s / steps;
+                    flowCx.push((1 - t) * (1 - t) * PLOT_CX + 2 * (1 - t) * t * ctrlX + t * t * cust.x);
+                    flowCy.push((1 - t) * (1 - t) * PLOT_CY + 2 * (1 - t) * t * ctrlY + t * t * cust.y);
+                  }
+                  const CARD_W = 130;
+                  const CARD_H = 64;
+                  const cardX = cust.x - CARD_W / 2;
+                  const cardY = cust.y - CARD_H / 2;
+                  return (
+                    <g key={cust.name}>
+                      <motion.path
+                        d={pathD} fill="none" stroke={cust.color} strokeWidth={1.5} strokeLinecap="round"
+                        initial={{ pathLength: 0, opacity: 0 }}
+                        animate={{ pathLength: 1, opacity: 0.35 }}
+                        transition={{ duration: 0.7, delay: lineDelay, ease: "easeOut" }}
+                      />
+                      {[0, 1.5, 3].map((extraDelay, di) => (
+                        <motion.circle
+                          key={`cflow-${i}-${di}`}
+                          r={2.5} fill={cust.color}
+                          initial={{ opacity: 0 }}
+                          animate={{ cx: flowCx, cy: flowCy, opacity: [0, 0.7, 0.7, 0.7, 0] }}
+                          transition={{ duration: 2.5, delay: dotDelay + extraDelay, repeat: Infinity, ease: "linear" }}
+                        />
+                      ))}
+                      <motion.rect
+                        x={cardX} y={cardY} rx={10} ry={10}
+                        width={CARD_W} height={CARD_H}
+                        fill="white" stroke={cust.color} strokeWidth={1.5}
+                        initial={{ opacity: 0, scale: 0.7 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.5, delay: cardDelay, ease: [0.22, 1, 0.36, 1] }}
+                        style={{ transformOrigin: `${cust.x}px ${cust.y}px` }}
+                      />
+                      <motion.text
+                        x={cust.x} y={cardY + 16} textAnchor="middle"
+                        style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: "0.06em", fill: cust.color, fontFamily: "inherit" }}
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                        transition={{ duration: 0.4, delay: cardDelay + 0.15 }}
+                      >{cust.name}</motion.text>
+                      <motion.text
+                        x={cust.x} y={cardY + 38} textAnchor="middle"
+                        initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.4, delay: cardDelay + 0.3, type: "spring", stiffness: 200 }}
+                        style={{ fontSize: 22, fontWeight: 800, fill: NAVY, fontFamily: "inherit", transformOrigin: `${cust.x}px ${cardY + 34}px` }}
+                      >{cust.price}</motion.text>
+                      <motion.text
+                        x={cust.x} y={cardY + 54} textAnchor="middle"
+                        style={{ fontSize: 9, fontWeight: 600, fill: MUTED, fontFamily: "inherit" }}
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                        transition={{ duration: 0.4, delay: cardDelay + 0.45 }}
+                      >{cust.delta} vs list</motion.text>
+                    </g>
+                  );
+                })}
               </>
             );
           })()}
 
+
         </svg>
         </div>
+
+        {/* ── Customize action panel (right side, step 7) ── */}
+        {customized && !converged && !feeding && (
+          <motion.div
+            className="flex flex-col justify-center px-8"
+            style={{ width: 420, flexShrink: 0 }}
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+          >
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={customizePhase}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.4 }}
+              >
+                {customizePhase < 0 && (
+                  <p className="text-xl font-semibold leading-relaxed" style={{ color: MUTED }}>
+                    Now let&apos;s tailor these factors for your specific business…
+                  </p>
+                )}
+                {customizePhase >= 0 && customizePhase < CUSTOMIZE_ACTIONS.length && (
+                  <>
+                    <p className="text-sm font-bold uppercase tracking-widest mb-3" style={{ color: TEAL }}>
+                      {CUSTOMIZE_ACTIONS[customizePhase].headline}
+                    </p>
+                    <p className="text-2xl font-semibold leading-snug" style={{ color: NAVY }}>
+                      {CUSTOMIZE_ACTIONS[customizePhase].detail}
+                    </p>
+                  </>
+                )}
+                {customizePhase >= CUSTOMIZE_ACTIONS.length && (
+                  <p className="text-xl font-semibold leading-relaxed" style={{ color: NAVY }}>
+                    Together, these factors uniquely configure your model.
+                  </p>
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </motion.div>
+        )}
 
       </motion.div>
 
       {/* ── Bottom cards (steps 1-4, hidden at cluster step) ── */}
       <AnimatePresence>
-        {chartStep >= 1 && !triangleVisible && (
+        {chartStep >= 1 && !clustered && (
           <motion.div
             className="flex flex-wrap justify-center gap-2 w-full px-4"
             initial={{ opacity: 0, y: 16 }}
@@ -1224,8 +1419,8 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
           >
             {SPOTLIGHTS.map((s, i) => {
               const d = DRIVERS[s.cluster];
-              const isActive = triangleVisible ? false : i === chartStep - 1;
-              const isRevealed = triangleVisible || i < chartStep;
+              const isActive = factorsVisible ? false : i === chartStep - 1;
+              const isRevealed = factorsVisible || i < chartStep;
               if (!isRevealed) return null;
               return (
                 <motion.div
@@ -1240,7 +1435,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                   }}
                   initial={{ opacity: 0, y: 12, scale: 0.95 }}
                   animate={{
-                    opacity: isActive ? 1 : triangleVisible ? 0.9 : 0.55,
+                    opacity: isActive ? 1 : factorsVisible ? 0.9 : 0.55,
                     y: 0,
                     scale: 1,
                   }}
@@ -1293,7 +1488,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                             backgroundColor: `${d.color}06`,
                           }}
                           initial={{ opacity: 0, x: -20, scale: 0.8 }}
-                          animate={{ opacity: isActive ? 1 : triangleVisible ? 0.8 : 0.6, x: 0, scale: 1 }}
+                          animate={{ opacity: isActive ? 1 : factorsVisible ? 0.8 : 0.6, x: 0, scale: 1 }}
                           transition={{
                             duration: 0.6,
                             delay: isActive ? 0.5 + pi * (PILL_STAGGER_SPAN / s.pills.length) : 0,

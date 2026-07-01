@@ -11,26 +11,16 @@ const NOTES: Record<string, string[]> = {
     "At the center is the pricing model itself — a unified engine that combines machine learning with strategic business guidance.",
   ],
   "one-model:0": [
-    "Four key inputs feed into the pricing model.",
-    "On the left: internal data — your transaction history and in-house business knowledge.",
-    "On the right: environmental signals — market data and industry expertise.",
-    "Right now they're all flowing into one unified model. Let's look at what's inside.",
+    "Four key inputs feed into the pricing model — all on the left.",
+    "Data inputs: your transaction history and external market signals.",
+    "Expertise inputs: in-house business knowledge and industry benchmarks.",
+    "Right now they're all flowing into one unified model. Click to see what's inside.",
   ],
   "one-model:1": [
-    "Let's zoom inside the pricing model.",
-    "From the outside it looks like a single engine, but inside there's a deliberate architecture.",
-  ],
-  "one-model:2": [
-    "Two complementary engines inside.",
-    "Machine learning handles pattern recognition — it learns from historical data to find pricing signals.",
-    "Strategic guidance encodes your business expertise as rules and constraints.",
-    "Together they produce pricing that's both data-driven AND strategically sound.",
-  ],
-  "one-model:3": [
-    "Now notice the color coordination.",
-    "Data-oriented inputs (historical data, environmental data) feed the ML engine in green.",
-    "Knowledge-based inputs (in-house knowledge, industry expertise) feed the strategic engine in blue.",
-    "This separation ensures each engine gets the right type of information.",
+    "The model splits into two complementary engines.",
+    "Machine learning handles pattern recognition — data inputs (green) feed it historical and market signals.",
+    "Strategic guidance encodes your business expertise — knowledge inputs (blue) feed it rules and constraints.",
+    "Notice how each input re-routes to the right engine. Together they produce pricing that's both data-driven AND strategically sound.",
   ],
   "power:0": [
     "Now let's talk about what powers the ML engine.",
@@ -74,26 +64,22 @@ const NOTES: Record<string, string[]> = {
     "The model needs structure to make sense of diverse customer behaviors.",
   ],
   "refine:2": [
-    "Segmentation brings order.",
-    "By grouping similar customers, the model can optimize pricing for each segment independently.",
-  ],
-  "refine:3": [
     "The optimal pricing curve shows where the most profit opportunity lives.",
     "Most companies leave significant margin on the table with flat pricing.",
   ],
-  "refine:4": [
-    "Let's look at how this works for a specific customer.",
+  "refine:3": [
+    "Watch how the model detects QuickParts is underpriced and adjusts automatically.",
     "Each customer gets a tailored recommendation based on their segment and behavior.",
   ],
-  "refine:6": [
-    "Here's another customer example with different characteristics.",
+  "refine:4": [
+    "Acme shows a different pattern — the model catches a subtler margin opportunity.",
     "The model adjusts its recommendations based on each customer's unique profile.",
   ],
-  "refine:8": [
-    "A third example showing the model's flexibility.",
+  "refine:5": [
+    "MedSupply is at risk from a competitor — the model lowers price to defend the deal.",
     "Different segments, different optimal prices — that's the power of dynamic pricing.",
   ],
-  "refine:10": [
+  "refine:6": [
     "When all customers are optimized together, the portfolio effect is powerful.",
     "Some prices go up, some go down — but total margin improves significantly.",
   ],

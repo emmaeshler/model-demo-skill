@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, ChevronDown, Check, Download, MonitorPlay, RotateCcw, Maximize, Minimize } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, Check, Download, MonitorPlay, RotateCcw, Maximize, Minimize, LayoutGrid } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 export interface NavGroup {
@@ -20,6 +20,7 @@ interface SlideNavProps {
   onStartPresenting?: () => void;
   showReplay?: boolean;
   onReplay?: () => void;
+  onSlideSorter?: () => void;
 }
 
 function FullPageButton() {
@@ -85,6 +86,7 @@ export function TopBar({
   onNavigate,
   presentationTitle = "Inside Your Dynamic Model",
   onStartPresenting,
+  onSlideSorter,
 }: SlideNavProps) {
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -165,6 +167,15 @@ export function TopBar({
           </button>
 
           <div className="ml-auto flex items-center gap-3">
+            {onSlideSorter && (
+              <button
+                onClick={onSlideSorter}
+                className="flex items-center gap-1.5 rounded-md border border-white/15 px-2.5 py-1 text-xs font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white"
+              >
+                <LayoutGrid className="size-3.5" />
+                Slide Sorter
+              </button>
+            )}
             {onStartPresenting && (
               <button
                 onClick={onStartPresenting}
