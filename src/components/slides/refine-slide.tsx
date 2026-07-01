@@ -141,6 +141,7 @@ const SEGMENT_HIGHLIGHTS = [
     change: "+$2.10",
     dotColor: ORANGE,
     beforeTitle: "Priced too low",
+    shortReason: "Costs rising, no competition",
     beforeBody: "No competition in this niche, but cost increases aren’t reflected in the price.",
     afterTitle: "Adjusted +$2.10",
     afterBody: "Cost pressure passes through — price moves to the optimal curve.",
@@ -154,6 +155,7 @@ const SEGMENT_HIGHLIGHTS = [
     change: "+$0.56",
     dotColor: NAVY,
     beforeTitle: "Underpriced",
+    shortReason: "Win rate climbing — room to raise",
     beforeBody: "Win rate is climbing — a pattern, not noise. There’s room to price higher.",
     afterTitle: "Adjusted +$0.56",
     afterBody: "Price rises to capture margin the data says is available.",
@@ -167,6 +169,7 @@ const SEGMENT_HIGHLIGHTS = [
     change: "−$0.39",
     dotColor: TEAL,
     beforeTitle: "At risk",
+    shortReason: "New entrant undercutting",
     beforeBody: "A new entrant is undercutting — willingness to pay is dropping in this region.",
     afterTitle: "Adjusted −$0.39",
     afterBody: "Price drops to defend the deal against the competitive threat.",
@@ -303,6 +306,21 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
     return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, [chartStep, isSpotlight, skipAnimation, onAutoAdvance]);
 
+  /* ── Segment highlight cycle (step 1) ────────────────── */
+  const [highlightedSeg, setHighlightedSeg] = useState(-1);
+  useEffect(() => {
+    if (chartStep !== 1) { setHighlightedSeg(-1); return; }
+    if (skipAnimation) { setHighlightedSeg(-1); return; }
+    const DELAY = 1200;
+    const HOLD = 2400;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    SEGMENT_ZONES.forEach((_, i) => {
+      timers.push(setTimeout(() => setHighlightedSeg(i), DELAY + i * HOLD));
+    });
+    timers.push(setTimeout(() => setHighlightedSeg(-1), DELAY + SEGMENT_ZONES.length * HOLD));
+    return () => timers.forEach(clearTimeout);
+  }, [chartStep, skipAnimation]);
+
   /* ── Chart animation ────────────────────────────────── */
 
   const showSegments = chartStep === 1 || chartStep === 2;
@@ -312,20 +330,22 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
   const isAllToCurve = chartStep >= 7;
 
   const heading = isAllToCurve
-    ? "Every price, aligned to the curve"
+    ? (curveMode === "three" ? "One curve. Every price, optimized." : "Every price, aligned to the curve")
     : chartStep === 1
-      ? "The model detects market segmentation"
+      ? (highlightedSeg >= 0 ? SEGMENT_ZONES[highlightedSeg].label : "The model detects market segmentation")
       : (chartStep >= 2 && chartStep <= 3)
         ? "Your optimal demand curve"
         : chartStep === 0
           ? "Prices are scattered across the board"
           : isSpotlight
-            ? SEGMENT_HIGHLIGHTS[spotlightIdx].label
+            ? "Your optimal demand curve"
             : "Detect patterns, refine pricing guidance";
 
   const subtitle = isSpotlight
       ? (spotPhase >= 2 ? SEGMENT_HIGHLIGHTS[spotlightIdx].afterBody : SEGMENT_HIGHLIGHTS[spotlightIdx].beforeBody)
-      : STEP_CONTEXT[chartStep]?.body || null;
+      : chartStep === 1 && highlightedSeg >= 0
+        ? SEGMENT_ZONES[highlightedSeg].why
+        : STEP_CONTEXT[chartStep]?.body || null;
 
   const activeHighlight = isSpotlight ? SEGMENT_HIGHLIGHTS[spotlightIdx] : null;
   const isLifted = spotPhase >= 1;
@@ -402,9 +422,9 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
               {subtitle && (
                 <AnimatePresence mode="wait">
                   <motion.p
-                    key={chartStep === 1 ? 'seg-static' : isSpotlight ? `spot-${chartStep}-${spotPhase >= 2 ? 'after' : 'before'}` : `step-${chartStep}`}
+                    key={chartStep === 1 ? `seg-${highlightedSeg}` : (chartStep >= 2 && chartStep <= 6) ? 'curve-subtitle' : `step-${chartStep}`}
                     className="mx-auto mt-1 max-w-2xl text-center text-[1.05rem] leading-relaxed"
-                    style={{ color: MUTED }}
+                    style={{ color: chartStep === 1 && highlightedSeg >= 0 ? SEGMENT_ZONES[highlightedSeg].color : MUTED }}
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -4 }}
@@ -487,17 +507,17 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
                 <div className="space-y-2.5">
                   <div>
                     <div className="flex items-center gap-2.5">
-                      <svg width="20" height="4" className="shrink-0"><line x1="0" y1="2" x2="20" y2="2" stroke={NAVY} strokeWidth={2} strokeLinecap="round" /></svg>
-                      <span className="text-[13px] font-semibold" style={{ color: NAVY }}>Acme</span>
-                    </div>
-                    <p className="ml-[28px] mt-0.5 text-[11px] leading-snug" style={{ color: MUTED }}>Loyal, high-volume buyer</p>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2.5">
                       <svg width="20" height="4" className="shrink-0"><line x1="0" y1="2" x2="20" y2="2" stroke={ORANGE} strokeWidth={2} strokeDasharray="3 2" strokeLinecap="round" /></svg>
                       <span className="text-[13px] font-semibold" style={{ color: ORANGE }}>QuickParts</span>
                     </div>
                     <p className="ml-[28px] mt-0.5 text-[11px] leading-snug" style={{ color: MUTED }}>Niche buyer, low competition</p>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2.5">
+                      <svg width="20" height="4" className="shrink-0"><line x1="0" y1="2" x2="20" y2="2" stroke={NAVY} strokeWidth={2} strokeLinecap="round" /></svg>
+                      <span className="text-[13px] font-semibold" style={{ color: NAVY }}>Acme</span>
+                    </div>
+                    <p className="ml-[28px] mt-0.5 text-[11px] leading-snug" style={{ color: MUTED }}>Loyal, high-volume buyer</p>
                   </div>
                   <div>
                     <div className="flex items-center gap-2.5">
@@ -515,14 +535,14 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
             {isSpotlight && activeHighlight && (
               <motion.div
                 key={`overlay-${spotlightIdx}`}
-                className="absolute z-10 w-52 rounded-xl border-l-4 bg-white/95 px-3 py-2.5 shadow-lg backdrop-blur-sm"
+                className="absolute z-10 w-48 rounded-xl border-l-4 bg-white/95 px-3 py-2.5 shadow-lg backdrop-blur-sm"
                 style={{
                   borderLeftColor: activeHighlight.dotColor,
                   ...(spotlightIdx === 2
-                    ? { right: "4%", top: "18%" }
+                    ? { right: "4%", top: "10%" }
                     : spotlightIdx === 1
-                      ? { left: "48%", top: "14%" }
-                      : { left: "22%", top: "14%" }),
+                      ? { left: "48%", top: "8%" }
+                      : { left: "36%", top: "8%" }),
                 }}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -538,11 +558,11 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
                 <AnimatePresence mode="wait">
                   {spotPhase < 2 ? (
                     <motion.div key="before" exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.25 }}>
-                      <p className="text-sm font-bold leading-snug" style={{ color: activeHighlight.dotColor }}>
+                      <p className="text-[13px] font-bold leading-snug" style={{ color: activeHighlight.dotColor }}>
                         {activeHighlight.beforeTitle}
                       </p>
-                      <p className="mt-0.5 text-xs leading-relaxed" style={{ color: MUTED }}>
-                        {activeHighlight.beforeBody}
+                      <p className="mt-0.5 text-[11px] leading-snug" style={{ color: MUTED }}>
+                        {activeHighlight.shortReason}
                       </p>
                       <motion.div
                         className="mt-1.5 flex items-center gap-1.5 text-xs"
@@ -557,19 +577,15 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
                     </motion.div>
                   ) : (
                     <motion.div key="after" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
-                      <p className="text-sm font-bold leading-snug" style={{ color: GREEN }}>
+                      <p className="text-[13px] font-bold leading-snug" style={{ color: GREEN }}>
                         {activeHighlight.afterTitle}
                       </p>
-                      <p className="mt-0.5 text-xs leading-relaxed" style={{ color: MUTED }}>
-                        {activeHighlight.afterBody}
-                      </p>
                       <motion.div
-                        className="mt-1.5 flex items-baseline gap-2"
+                        className="mt-1 flex items-baseline gap-2"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.15, duration: 0.3 }}
                       >
-                        <span className="text-base font-extrabold" style={{ color: GREEN }}>{activeHighlight.change}</span>
                         <span className="text-[11px]" style={{ color: MUTED }}>{activeHighlight.oldPrice} → {activeHighlight.newPrice}</span>
                       </motion.div>
                     </motion.div>
@@ -647,7 +663,6 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
               {showSegments && (() => {
                 const GLOW_OFFSETS = [18, 28, 22, 18];
                 const GLOW_RY = [52, 42, 36, 36];
-                const isStep1 = chartStep === 1;
                 return (
                   <>
                     <defs>
@@ -668,6 +683,8 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
                       const cy = ptMid.y + GLOW_OFFSETS[zi];
                       const rx = Math.abs(ptEnd.x - ptStart.x) / 2 + 12;
                       const ry = GLOW_RY[zi];
+                      const isActive = highlightedSeg === zi;
+                      const isDimmed = highlightedSeg >= 0 && !isActive;
                       return (
                         <motion.g key={`seg-region-${zi}`}>
                           <motion.ellipse
@@ -677,8 +694,8 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
                             ry={ry}
                             fill={`url(#seg-glow-${zi})`}
                             initial={{ opacity: 0, scale: 0.5 }}
-                            animate={{ opacity: 0.7, scale: 1 }}
-                            transition={{ duration: 0.8, delay: zi * 0.12 }}
+                            animate={{ opacity: isDimmed ? 0.25 : 0.7, scale: isActive ? 1.04 : 1 }}
+                            transition={{ duration: 0.5, delay: isDimmed || isActive ? 0 : zi * 0.12 }}
                             style={{ transformOrigin: `${cx}px ${cy}px` }}
                           />
                           <motion.ellipse
@@ -688,11 +705,11 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
                             ry={ry * 0.85}
                             fill="none"
                             stroke={zone.color}
-                            strokeWidth={0.6}
+                            strokeWidth={isActive ? 1 : 0.6}
                             strokeDasharray="4 3"
                             initial={{ opacity: 0, scale: 0.5 }}
-                            animate={{ opacity: 0.2, scale: 1 }}
-                            transition={{ duration: 0.8, delay: zi * 0.12 }}
+                            animate={{ opacity: isDimmed ? 0.08 : isActive ? 0.4 : 0.2, scale: isActive ? 1.04 : 1 }}
+                            transition={{ duration: 0.5, delay: isDimmed || isActive ? 0 : zi * 0.12 }}
                             style={{ transformOrigin: `${cx}px ${cy}px` }}
                           />
                           <motion.text
@@ -702,12 +719,12 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
                             fontWeight="700"
                             fill={zone.color}
                             textAnchor="middle"
+                            dominantBaseline="central"
                             style={{ fontFamily: "inherit" }}
                             initial={{ opacity: 0 }}
-                            animate={{ opacity: chartStep === 1 ? 0.9 : 0 }}
-                            transition={{ duration: 0.5, delay: chartStep === 1 ? zi * 0.12 + 0.2 : 0 }}
+                            animate={{ opacity: chartStep === 1 ? (isDimmed ? 0.3 : 0.9) : 0 }}
+                            transition={{ duration: 0.4, delay: chartStep === 1 && !isDimmed && !isActive ? zi * 0.12 + 0.2 : 0 }}
                           >
-                            <title>{zone.why}</title>
                             {zone.label}
                           </motion.text>
                         </motion.g>
@@ -727,7 +744,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
                   initial={{ pathLength: 0, opacity: 0 }}
                   animate={{
                     pathLength: 1,
-                    opacity: showGhostCurves ? 0.6 : isSpotlight ? (spotlightIdx === 1 ? 1 : 0.3) : 1,
+                    opacity: showGhostCurves ? 0.6 : isSpotlight ? (spotlightIdx === 1 ? 1 : 0.15) : 1,
                     strokeWidth: isSpotlight && spotlightIdx === 1 ? 3 : 2,
                   }}
                   transition={{ duration: 1, ease: "easeOut" }}
@@ -751,7 +768,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
                     strokeLinecap="round"
                     initial={{ opacity: 0, pathLength: 0 }}
                     animate={{
-                      opacity: isAllToCurve ? 0 : showGhostCurves ? 0.45 : isActiveGhost ? 0.55 : 0.2,
+                      opacity: isAllToCurve ? 0 : showGhostCurves ? 0.45 : isActiveGhost ? 0.55 : 0.08,
                       pathLength: 1,
                     }}
                     transition={{

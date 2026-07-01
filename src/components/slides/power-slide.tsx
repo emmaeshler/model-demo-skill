@@ -147,34 +147,59 @@ const CUSTOMIZE_PILL_LAYOUT: Record<string, { x: number; y: number }> = {
   order: { x: 10, y: 345 },
 };
 
+const FEED_NUDGE_Y = [130, 35, -75, -170];
+
+const dissolveSeed = mulberry32(456);
+const DISSOLVE_COLORS = [NAVY, ORANGE, GREEN, PURPLE];
+const DISSOLVE_ROW_Y = [60, 170, 280, 390];
+const DISSOLVE_DOTS = Array.from({ length: 48 }, (_, i) => {
+  const catIdx = i % 4;
+  const x = 120 + dissolveSeed() * 760;
+  const y = DISSOLVE_ROW_Y[catIdx] + (dissolveSeed() - 0.5) * 70;
+  return {
+    x, y,
+    color: DISSOLVE_COLORS[catIdx],
+    delay: dissolveSeed() * 0.3 + catIdx * 0.04,
+    r: 2 + dissolveSeed() * 2.5,
+  };
+});
+
+const PRICE_SATELLITES = [
+  { label: "Cost Trends", price: "$14.20", color: NAVY, cx: 185, cy: 240, r: 65 },
+  { label: "Volume & Elasticity", price: "+$1.80", color: GREEN, cx: 810, cy: 90, r: 65 },
+  { label: "Win / Loss Patterns", price: "−$0.90", color: PURPLE, cx: 250, cy: 410, r: 60 },
+  { label: "Competitive Position", price: "+$2.40", color: ORANGE, cx: 855, cy: 370, r: 68 },
+];
+const CONVERGE_MODEL_R = 110;
+
 /* ─── Spotlight data (steps 1-4) ─── */
 
 const SPOTLIGHTS = [
   {
     cluster: 0,
     icon: "grid",
-    label: "TRANSACTION HISTORY",
+    label: "ORDER",
     count: "14,200 records",
     pills: ["Acme Corp · $58.20", "Beta Mfg · $42.10", "Coastal · $64.50", "Delta · $31.75"],
   },
   {
     cluster: 1,
     icon: "trend",
-    label: "MARKET SIGNALS",
+    label: "MARKET",
     count: "36 features",
     pills: ["Resin ↑ 4.2%", "Comp avg $59.10", "Q3 peak", "+2.8% growth"],
   },
   {
     cluster: 2,
     icon: "people",
-    label: "CUSTOMER ATTRIBUTES",
+    label: "CUSTOMER",
     count: "2,400 accounts",
     pills: ["Strategic / Core / Opp", "Volume & contracts", "Tenure 3.2 yrs"],
   },
   {
     cluster: 3,
     icon: "chart",
-    label: "WIN / LOSS PATTERNS",
+    label: "PRODUCT",
     count: "18 months",
     pills: ["Win rate 87%", "Elasticity −0.34", "Discount 6.2%", "Lost gap $4.20"],
   },
@@ -191,6 +216,7 @@ const TITLES = [
   "Customized for your business",
   "Customized for your business",
   "Your customized factors now feed the model",
+  "All four prices converge into a single price",
 ];
 
 const SUBTITLES = [
@@ -204,6 +230,7 @@ const SUBTITLES = [
   "Every business is different. We weigh each factor based on your data — adding what matters, removing what doesn't, and tuning the balance.",
   "Together, these factors uniquely configure your model.",
   "Every factor you've tailored — weighted, added, or removed — uniquely configures your pricing engine.",
+  "Cost, competition, volume, and demand combine into one recommended price for every SKU.",
 ];
 
 /* ─── Pre-compute dot positions ─── */
@@ -419,7 +446,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
   }, [chartStep, onAutoAdvance, skipAnimation, preScan]);
 
   const [introPhase, setIntroPhase] = useState(skipAnimation ? 5 : chartStep === 0 ? 0 : 4);
-  const [customizePhase, setCustomizePhase] = useState(chartStep > 8 || (skipAnimation && chartStep >= 8) ? CUSTOMIZE_ACTIONS.length : -1);
+  const [customizePhase, setCustomizePhase] = useState(chartStep > 7 || (skipAnimation && chartStep >= 7) ? CUSTOMIZE_ACTIONS.length : -1);
   const [factorsPhase, setFactorsPhase] = useState(chartStep > 6 || (skipAnimation && chartStep >= 6) ? 6 : 0);
   useEffect(() => {
     if (skipAnimation) { setIntroPhase(5); return; }
@@ -452,8 +479,8 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
   }, [chartStep, skipAnimation]);
 
   useEffect(() => {
-    if (chartStep < 8) { setCustomizePhase(-1); return; }
-    if (chartStep > 8 || skipAnimation) { setCustomizePhase(CUSTOMIZE_ACTIONS.length); return; }
+    if (chartStep < 7) { setCustomizePhase(-1); return; }
+    if (chartStep > 7 || skipAnimation) { setCustomizePhase(CUSTOMIZE_ACTIONS.length); return; }
     setCustomizePhase(-1);
     const t0 = setTimeout(() => setCustomizePhase(0), 2000);
     const t1 = setTimeout(() => setCustomizePhase(1), 5800);
@@ -471,11 +498,20 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
     return () => clearTimeout(t);
   }, [chartStep, skipAnimation]);
 
+  const [collapseStarted, setCollapseStarted] = useState(skipAnimation && chartStep >= 9);
+  useEffect(() => {
+    if (chartStep < 9) { setCollapseStarted(false); return; }
+    if (skipAnimation) { setCollapseStarted(true); return; }
+    const t = setTimeout(() => setCollapseStarted(true), 2200);
+    return () => clearTimeout(t);
+  }, [chartStep, skipAnimation]);
+
   /* ── Chart flow ─────────────────────────────────────── */
   const clustered = chartStep >= 5;
   const factorsVisible = chartStep >= 6;
   const customized = chartStep >= 7;
-  const feeding = chartStep >= 9;
+  const feeding = chartStep >= 8;
+  const converging = chartStep >= 9;
   const sweepActive = chartStep >= 1 && chartStep <= 4 && !preScan;
 
   function dotFill(dot: (typeof DOTS)[0]) {
@@ -572,21 +608,6 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
               {chartStep === 7 ? (
                 <>
                   <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: NAVY }}>
-                    {TITLES[7]}
-                  </h2>
-                  <motion.p
-                    className="mx-auto mt-1 max-w-2xl text-center text-[1.05rem] leading-relaxed"
-                    style={{ color: MUTED }}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: 0.3 }}
-                  >
-                    {SUBTITLES[7]}
-                  </motion.p>
-                </>
-              ) : chartStep === 8 ? (
-                <>
-                  <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: NAVY }}>
                     {TITLES[9]}
                   </h2>
                   <div className="mx-auto mt-2 max-w-3xl text-center" style={{ minHeight: 28 }}>
@@ -635,6 +656,23 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                       )}
                     </AnimatePresence>
                   </div>
+                </>
+              ) : chartStep === 9 ? (
+                <>
+                  <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: NAVY }}>
+                    {TITLES[10]}
+                  </h2>
+                  <motion.p
+                    className="mx-auto mt-1 max-w-2xl text-center text-[1.05rem] leading-relaxed"
+                    style={{ color: MUTED }}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.15 }}
+                  >
+                    Cost, competition, volume, and demand combine into{" "}
+                    <span style={{ color: TEAL, fontWeight: 600 }}>one recommended price</span>{" "}
+                    for every SKU.
+                  </motion.p>
                 </>
               ) : (
                 <>
@@ -865,8 +903,8 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
               targetCx = PLOT_CX + Math.cos(feedAngle) * feedDist;
               targetCy = PLOT_CY + Math.sin(feedAngle) * feedDist;
               targetFill = CLUSTER_COLORS[cl.ci];
-              targetOpacity = 0.2;
-              targetR = dot.r * 0.5;
+              targetOpacity = converging ? 0 : 0.2;
+              targetR = converging ? 0 : dot.r * 0.5;
               cxTransition = { duration: 1.2, delay: dot.delay * 0.4, ease: [0.22, 1, 0.36, 1] };
               cyTransition = { duration: 1.2, delay: dot.delay * 0.4, ease: [0.22, 1, 0.36, 1] };
               opacityDelay = dot.delay * 0.4 + 0.3;
@@ -1042,7 +1080,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
           })}
 
           {/* ── Factor pills (step 6 quadrants → step 7+ grid) ── */}
-          {factorsVisible && (!feeding || feedIntro) && (
+          {factorsVisible && (
             <motion.foreignObject
               x={10} y={-25} width={1000} height={560}
               initial={{ opacity: 0 }}
@@ -1155,8 +1193,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                         maxWidth: 960,
                         transformOrigin: "center center",
                       }}
-                      animate={feedIntro ? { scale: 0.1, opacity: 0 } : { scale: 1, opacity: 1 }}
-                      transition={feedIntro ? { duration: 1.8, ease: [0.55, 0, 1, 0.45] } : { duration: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
                     >
                       {CATEGORY_LAYOUT.map((cat, catIdx) => {
                         const vert = SQUARE_VERTS[cat.key];
@@ -1178,14 +1215,16 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                               padding: "8px 12px",
                             }}
                             initial={{ opacity: 0, y: 16 }}
-                            animate={{
+                            animate={feeding ? {
+                              backgroundColor: "transparent",
+                            } : {
                               opacity: 1,
-                              y: 0,
                               backgroundColor: isActiveRow ? `${cat.color}08` : "transparent",
                             }}
-                            transition={{
+                            transition={feeding ? {
+                              backgroundColor: { duration: 0.3 },
+                            } : {
                               opacity: { delay: catIdx * 0.08, duration: 0.5 },
-                              y: { delay: catIdx * 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] },
                               backgroundColor: { duration: 0.5 },
                             }}
                           >
@@ -1204,13 +1243,26 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                                 flexShrink: 0,
                                 marginTop: 1,
                               }}
-                              animate={{
+                              animate={feeding ? {
+                                scale: 0,
+                                opacity: 0,
+                                x: 200,
+                                y: FEED_NUDGE_Y[catIdx],
+                              } : {
                                 scale: isActiveRow ? [1, 1.06, 1] : 1,
+                                opacity: 1,
+                                x: 0,
+                                y: 0,
                                 boxShadow: isActiveRow
                                   ? [`0 0 0px transparent`, `0 0 14px ${cat.color}30`, `0 0 5px ${cat.color}15`]
                                   : "0 0 0px transparent",
                               }}
-                              transition={{ duration: 0.6, delay: 0.3 }}
+                              transition={feeding ? {
+                                duration: 0.6,
+                                delay: catIdx * 0.04,
+                                ease: [0.4, 0, 0.1, 1],
+                                opacity: { duration: 0.3, delay: catIdx * 0.04 + 0.15 },
+                              } : { duration: 0.6, delay: 0.3 }}
                             >
                               {vert.label}
                             </motion.div>
@@ -1218,7 +1270,9 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                               <AnimatePresence mode="popLayout">
                                 {catFactors
                                   .filter(f => !(f.emphasis === "crossoff" && customizePhase >= 2))
-                                  .map((f) => {
+                                  .map((f, fi, arr) => {
+                                    const convergeX = ((arr.length - 1) / 2 - fi) * 40;
+                                    const convergeY = FEED_NUDGE_Y[catIdx];
                                     const isRemoving = f.emphasis === "crossoff" && customizePhase === 1;
                                     const isActivelyElevating =
                                       customizePhase === 2 && f.emphasis === "highlight";
@@ -1258,8 +1312,14 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                                           textDecoration: isRemoving ? "line-through" : "none",
                                           transition: "color 0.5s, background-color 0.5s, border 0.5s, padding 0.5s, font-size 0.5s",
                                         }}
-                                        animate={{
+                                        animate={feeding ? {
+                                          x: convergeX,
+                                          y: convergeY,
+                                          scale: 0,
+                                          opacity: 0,
+                                        } : {
                                           x: isRemoving ? [0, -4, 5, -3, 3, -1, 0] : 0,
+                                          y: 0,
                                           scale: isActivelyElevating ? [1, 1.18, 1.05]
                                             : isActivelyDeemphasizing ? [1, 1.12, 0.93]
                                             : isRemoving ? [1, 1.02, 0.95] : 1,
@@ -1274,7 +1334,12 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                                                   ? `0 0 8px ${TEAL}25`
                                                   : "0 0 0px transparent",
                                         }}
-                                        transition={{
+                                        transition={feeding ? {
+                                          duration: 0.7,
+                                          delay: catIdx * 0.04 + fi * 0.02,
+                                          ease: [0.4, 0, 0.1, 1],
+                                          opacity: { duration: 0.35, delay: catIdx * 0.04 + fi * 0.02 + 0.15 },
+                                        } : {
                                           x: isRemoving ? { duration: 0.5, delay: 0.5 } : { duration: 0 },
                                           opacity: { duration: 0.5, delay: isActivelyDeemphasizing ? 1.2 : 0.1 },
                                           scale: {
@@ -1323,7 +1388,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                                       alignItems: "center",
                                       justifyContent: "center",
                                       borderRadius: 8,
-                                      border: `2px solid ${ML_GREEN}`,
+                                      border: `2px solid ${customizePhase > 0 && customizePhase < CUSTOMIZE_ACTIONS.length ? `${ML_GREEN}25` : ML_GREEN}`,
                                       padding: "10px 18px",
                                       fontSize: 16,
                                       fontWeight: 700,
@@ -1331,17 +1396,29 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                                       whiteSpace: "nowrap",
                                       color: ML_GREEN,
                                       backgroundColor: "#ECF4ED",
+                                      transition: "border 0.5s",
                                     }}
                                     initial={{ opacity: 0, scale: 0.5, x: 30 }}
-                                    animate={{
-                                      opacity: 1,
+                                    animate={feeding ? {
+                                      opacity: 0,
+                                      scale: 0,
+                                      x: 0,
+                                      y: FEED_NUDGE_Y[2],
+                                    } : {
+                                      opacity: customizePhase > 0 && customizePhase < CUSTOMIZE_ACTIONS.length ? 0.35 : 1,
                                       scale: customizePhase === 0 ? [0.5, 1.15, 1] : 1,
                                       x: 0,
+                                      y: 0,
                                       boxShadow: customizePhase === 0
                                         ? ["0 0 0px transparent", `0 0 24px ${ML_GREEN}50`, `0 0 8px ${ML_GREEN}25`]
                                         : "0 0 0px transparent",
                                     }}
-                                    transition={{
+                                    transition={feeding ? {
+                                      duration: 0.7,
+                                      delay: 0.1,
+                                      ease: [0.4, 0, 0.1, 1],
+                                      opacity: { duration: 0.35, delay: 0.25 },
+                                    } : {
                                       delay: customizePhase === 0 ? 1.0 : 0,
                                       duration: 0.8,
                                       x: { type: "spring", stiffness: 200, damping: 18, delay: customizePhase === 0 ? 0.8 : 0 },
@@ -1377,7 +1454,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
             ];
             return (
               <>
-                {!feedIntro && FEED_SOURCES.map((src, si) => {
+                {!feedIntro && !converging && FEED_SOURCES.map((src, si) => {
                   const steps = 25;
                   const flowCx: number[] = [];
                   const flowCy: number[] = [];
@@ -1435,41 +1512,201 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                     </g>
                   );
                 })}
+                {!converging && DISSOLVE_DOTS.map((dot, di) => (
+                  <motion.circle
+                    key={`dissolve-${di}`}
+                    fill={dot.color}
+                    initial={{ cx: dot.x, cy: dot.y, r: dot.r, opacity: 0 }}
+                    animate={{ cx: PLOT_CX, cy: PLOT_CY, r: 1, opacity: [0, 0.7, 0.5, 0] }}
+                    transition={{
+                      duration: 0.9,
+                      delay: dot.delay,
+                      ease: [0.4, 0, 0.1, 1],
+                      opacity: { duration: 0.9, delay: dot.delay, times: [0, 0.15, 0.6, 1] },
+                    }}
+                  />
+                ))}
+                {!converging && (
+                  <motion.circle
+                    cx={PLOT_CX} cy={PLOT_CY} r={MODEL_R + 15}
+                    fill="none" stroke={TEAL} strokeWidth={2}
+                    initial={{ opacity: 0, scale: 1.3 }}
+                    animate={{ opacity: [0, 0.4, 0], scale: [1.3, 1, 0.95] }}
+                    transition={{ duration: 0.8, delay: 0.5, ease: "easeIn" }}
+                    style={{ transformOrigin: `${PLOT_CX}px ${PLOT_CY}px` }}
+                  />
+                )}
                 <motion.circle
-                  cx={PLOT_CX} cy={PLOT_CY} r={MODEL_R}
+                  cx={PLOT_CX} cy={PLOT_CY}
                   fill="white" stroke={TEAL} strokeWidth={2.5}
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                  initial={{ r: MODEL_R, opacity: 0, scale: 0.5 }}
+                  animate={{ r: converging ? CONVERGE_MODEL_R : MODEL_R, opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.6, delay: converging ? 0 : 0.3, ease: [0.22, 1, 0.36, 1] }}
                   style={{ transformOrigin: `${PLOT_CX}px ${PLOT_CY}px` }}
                 />
-                <motion.circle
-                  cx={PLOT_CX} cy={PLOT_CY} r={MODEL_R + 3}
-                  fill="none" stroke={TEAL} strokeWidth={1.5}
-                  animate={{ opacity: [0, 0.2, 0], scale: [1, 1.12, 1] }}
-                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
-                  style={{ transformOrigin: `${PLOT_CX}px ${PLOT_CY}px` }}
-                />
-                <motion.text
-                  x={PLOT_CX} y={PLOT_CY - 10}
-                  textAnchor="middle"
-                  style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", fill: MUTED, fontFamily: "inherit" }}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.4, delay: 0.6 }}
-                >
-                  YOUR
-                </motion.text>
-                <motion.text
-                  x={PLOT_CX} y={PLOT_CY + 12}
-                  textAnchor="middle"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.5, delay: 0.7, type: "spring", stiffness: 200 }}
-                  style={{ fontSize: 22, fontWeight: 800, fill: NAVY, fontFamily: "inherit", transformOrigin: `${PLOT_CX}px ${PLOT_CY + 6}px` }}
-                >
-                  MODEL
-                </motion.text>
+                {!converging && (
+                  <motion.circle
+                    cx={PLOT_CX} cy={PLOT_CY} r={MODEL_R + 3}
+                    fill="none" stroke={TEAL} strokeWidth={1.5}
+                    animate={{ opacity: [0, 0.2, 0], scale: [1, 1.12, 1] }}
+                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+                    style={{ transformOrigin: `${PLOT_CX}px ${PLOT_CY}px` }}
+                  />
+                )}
+                {converging && (
+                  <motion.circle
+                    cx={PLOT_CX} cy={PLOT_CY} r={CONVERGE_MODEL_R + 8}
+                    fill="none" stroke={TEAL} strokeWidth={2}
+                    initial={{ opacity: 0.6, scale: 1 }}
+                    animate={{ opacity: 0, scale: 1.4 }}
+                    transition={{ duration: 1.0, delay: 0.1, ease: "easeOut" }}
+                    style={{ transformOrigin: `${PLOT_CX}px ${PLOT_CY}px` }}
+                  />
+                )}
+                {converging && (
+                  <motion.circle
+                    cx={PLOT_CX} cy={PLOT_CY} r={CONVERGE_MODEL_R + 4}
+                    fill="none" stroke={`${TEAL}20`} strokeWidth={8}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.6, delay: 0.5 }}
+                  />
+                )}
+                {collapseStarted && (
+                  <motion.circle
+                    cx={PLOT_CX} cy={PLOT_CY} r={CONVERGE_MODEL_R}
+                    fill="none" stroke={TEAL} strokeWidth={3}
+                    initial={{ opacity: 0.7, scale: 1 }}
+                    animate={{ opacity: 0, scale: 1.8 }}
+                    transition={{ duration: 1.2, delay: 0.6, ease: "easeOut" }}
+                    style={{ transformOrigin: `${PLOT_CX}px ${PLOT_CY}px` }}
+                  />
+                )}
+                {converging ? (
+                  <>
+                    <motion.text
+                      x={PLOT_CX} y={PLOT_CY - 30}
+                      textAnchor="middle"
+                      style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", fill: MUTED, fontFamily: "inherit" }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.4, delay: 0.5 }}
+                    >
+                      RECOMMENDED
+                    </motion.text>
+                    <motion.text
+                      x={PLOT_CX} y={PLOT_CY + 16}
+                      textAnchor="middle"
+                      style={{ fontSize: 46, fontWeight: 800, fill: NAVY, fontFamily: "inherit" }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.5, delay: 0.7 }}
+                    >
+                      $17.50
+                    </motion.text>
+                    <motion.text
+                      x={PLOT_CX} y={PLOT_CY + 42}
+                      textAnchor="middle"
+                      style={{ fontSize: 14, fontWeight: 500, fill: MUTED, fontFamily: "inherit" }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 0.85 }}
+                      transition={{ duration: 0.4, delay: 0.9 }}
+                    >
+                      SKU #A-7200
+                    </motion.text>
+                  </>
+                ) : (
+                  <>
+                    <motion.text
+                      x={PLOT_CX} y={PLOT_CY - 6}
+                      textAnchor="middle"
+                      style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", fill: MUTED, fontFamily: "inherit" }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.4, delay: 0.6 }}
+                    >
+                      YOUR
+                    </motion.text>
+                    <motion.text
+                      x={PLOT_CX} y={PLOT_CY + 14}
+                      textAnchor="middle"
+                      style={{ fontSize: 18, fontWeight: 800, fill: NAVY, fontFamily: "inherit" }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.5, delay: 0.7 }}
+                    >
+                      MODEL
+                    </motion.text>
+                  </>
+                )}
+                {converging && PRICE_SATELLITES.map((sat, si) => (
+                  <g key={`sat-${si}`}>
+                    <motion.line
+                      x1={PLOT_CX} y1={PLOT_CY}
+                      stroke="#C0C8D0"
+                      strokeWidth={1.2}
+                      initial={{ x2: sat.cx, y2: sat.cy, opacity: 0 }}
+                      animate={collapseStarted ? {
+                        x2: PLOT_CX, y2: PLOT_CY, opacity: 0,
+                      } : {
+                        x2: sat.cx, y2: sat.cy, opacity: 0.35,
+                      }}
+                      transition={collapseStarted ? {
+                        duration: 0.8, delay: si * 0.08, ease: [0.4, 0, 0.1, 1],
+                      } : {
+                        duration: 0.5, delay: 0.3 + si * 0.12,
+                      }}
+                    />
+                    <motion.circle
+                      fill="white" stroke={sat.color} strokeWidth={2.5}
+                      initial={{ cx: sat.cx, cy: sat.cy, r: 0, opacity: 0 }}
+                      animate={collapseStarted ? {
+                        cx: PLOT_CX, cy: PLOT_CY, r: 0, opacity: 0,
+                      } : {
+                        cx: sat.cx, cy: sat.cy, r: sat.r, opacity: 1,
+                      }}
+                      transition={collapseStarted ? {
+                        duration: 1.0, delay: si * 0.1, ease: [0.4, 0, 0.1, 1],
+                      } : {
+                        duration: 0.5, delay: 0.5 + si * 0.15, ease: [0.22, 1, 0.36, 1],
+                      }}
+                    />
+                    <motion.text
+                      textAnchor="middle"
+                      style={{ fontSize: 16, fontWeight: 700, fill: sat.color, fontFamily: "inherit" }}
+                      initial={{ x: sat.cx, y: sat.cy - sat.r - 10, opacity: 0 }}
+                      animate={collapseStarted ? {
+                        x: PLOT_CX, y: PLOT_CY - 20, opacity: 0,
+                      } : {
+                        x: sat.cx, y: sat.cy - sat.r - 10, opacity: 1,
+                      }}
+                      transition={collapseStarted ? {
+                        duration: 0.8, delay: si * 0.08, ease: [0.4, 0, 0.1, 1],
+                      } : {
+                        duration: 0.4, delay: 0.7 + si * 0.15,
+                      }}
+                    >
+                      {sat.label}
+                    </motion.text>
+                    <motion.text
+                      textAnchor="middle"
+                      style={{ fontSize: 30, fontWeight: 800, fill: sat.color, fontFamily: "inherit" }}
+                      initial={{ x: sat.cx, y: sat.cy + 10, opacity: 0 }}
+                      animate={collapseStarted ? {
+                        x: PLOT_CX, y: PLOT_CY, opacity: 0,
+                      } : {
+                        x: sat.cx, y: sat.cy + 10, opacity: 1,
+                      }}
+                      transition={collapseStarted ? {
+                        duration: 0.8, delay: si * 0.08, ease: [0.4, 0, 0.1, 1],
+                      } : {
+                        duration: 0.4, delay: 0.8 + si * 0.15,
+                      }}
+                    >
+                      {sat.price}
+                    </motion.text>
+                  </g>
+                ))}
               </>
             );
           })()}

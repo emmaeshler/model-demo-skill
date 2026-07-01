@@ -1,17 +1,4 @@
 {
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -q '\"file_path\".*\"/Users/emmaeshler/ml-explainer/src/'; then cd /Users/emmaeshler/ml-explainer && npm run build:html 2>&1 | tail -3; fi"
-          }
-        ]
-      }
-    ]
-  },
   "permissions": {
     "allow": [
       "Bash(agent-browser find *)",
@@ -33,7 +20,24 @@
       "Bash(ls -la /proc/69722/cwd 2>/dev/null || lsof -p 69722 2>/dev/null | grep cwd)",
       "Read(//proc/69722/**)",
       "Bash(curl -s http://localhost:3000 -L -o /dev/null -w \"%{url_effective} %{http_code}\")",
-      "Bash(curl -s -o /dev/null -w \"%{http_code} %{redirect_url}\" http://localhost:3000)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code} %{redirect_url}\" http://localhost:3000)",
+      "Bash(git show *)"
+    ],
+    "additionalDirectories": [
+      "/tmp"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -q '\"file_path\".*\"/Users/emmaeshler/ml-explainer/src/'; then cd /Users/emmaeshler/ml-explainer && npm run build:html 2>&1 | tail -3; fi"
+          }
+        ]
+      }
     ]
   }
 }

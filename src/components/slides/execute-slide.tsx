@@ -789,9 +789,9 @@ export function ExecuteSlide({
                         width: MODEL_W,
                         height: BOX_H,
                         rx: 16,
-                        fill: NAVY,
-                        stroke: NAVY,
-                        strokeWidth: 0,
+                        fill: "white",
+                        stroke: TEAL,
+                        strokeWidth: 2.5,
                       } : collapsed ? {
                         x: COLLAPSE_CX - COLLAPSE_CR * 1.15,
                         y: COLLAPSE_CY - COLLAPSE_CR * 1.15,
@@ -853,7 +853,7 @@ export function ExecuteSlide({
                       transition={{ duration: 0.4, delay: settled ? 0.4 : 0 }}
                     >
                       {/* Title at top */}
-                      <text x={MODEL_CX} y={MODEL_Y + 24} fontSize="16" fontWeight="700" fill="white" textAnchor="middle">
+                      <text x={MODEL_CX} y={MODEL_Y + 24} fontSize="16" fontWeight="700" fill={NAVY} textAnchor="middle">
                         Pricing model
                       </text>
 
@@ -870,7 +870,7 @@ export function ExecuteSlide({
                       </text>
 
                       {/* Orbit ring with dots */}
-                      <circle cx={MODEL_CX} cy={MODEL_CY + 4} r={56} fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth={1} strokeDasharray="3 3" />
+                      <circle cx={MODEL_CX} cy={MODEL_CY + 4} r={56} fill="none" stroke="rgba(0,68,106,0.12)" strokeWidth={1} strokeDasharray="3 3" />
                       {[0, 90, 180, 270].map((deg) => {
                         const rad = (deg * Math.PI) / 180;
                         const ox = MODEL_CX + Math.cos(rad) * 56;
