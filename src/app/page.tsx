@@ -273,8 +273,10 @@ export default function Home() {
   const navigate = useCallback(
     (index: number, targetSubStep?: number) => {
       if (targetSubStep !== undefined) {
+        const goingBack =
+          index < slide || (index === slide && targetSubStep < subStep);
         if (index >= 0 && index < total) {
-          setSkipAnimation(false);
+          setSkipAnimation(goingBack);
           setSlide(index);
           setSubStep(targetSubStep);
         }
@@ -291,22 +293,24 @@ export default function Home() {
       }
       // Back within sub-steps
       if (index === slide - 1 && currentMax > 0 && subStep > 0) {
-        setSkipAnimation(false);
+        setSkipAnimation(true);
         setSubStep((s) => s - 1);
         return;
       }
 
       if (index >= 0 && index < total) {
-        setSkipAnimation(false);
+        const goingBack = index < slide;
 
         // Going back into a sub-step slide from the next slide → land on last step
         const targetMax = SUB_STEP_CONFIG[index] ?? 0;
-        if (index < slide && targetMax > 0 && slide === index + 1) {
+        if (goingBack && targetMax > 0 && slide === index + 1) {
+          setSkipAnimation(true);
           setSlide(index);
           setSubStep(targetMax - 1);
           return;
         }
 
+        setSkipAnimation(goingBack);
         setSlide(index);
         setSubStep(0);
       }

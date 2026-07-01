@@ -8,6 +8,7 @@ const SLATE = "#1B4F72";
 const TEAL = "#21A5D5";
 const STEEL = "#4A7DAA";
 const GREY = "#B8BFC6";
+const ORANGE = "#E56910";
 
 export const EXECUTE_TOTAL_STEPS = 1;
 
@@ -190,13 +191,13 @@ function ProfileCard({ cust }: { cust: CustomerScenario }) {
             </text>
             <rect x={SLIDER_X} y={sy + 6} width={SLIDER_W} height={6} rx={3} fill="#E8ECF0" />
             <motion.rect
-              x={SLIDER_X} y={sy + 6} height={6} rx={3} fill={cust.color}
+              x={SLIDER_X} y={sy + 6} height={6} rx={3} fill={ORANGE}
               initial={{ width: 0 }}
               animate={{ width: SLIDER_W * s.value }}
               transition={{ duration: 0.6, delay: 0.15 + si * 0.08, ease: "easeOut" }}
             />
             <motion.circle
-              cy={sy + 9} r={5} fill="white" stroke={cust.color} strokeWidth={2}
+              cy={sy + 9} r={5} fill="white" stroke={ORANGE} strokeWidth={2}
               initial={{ cx: SLIDER_X }}
               animate={{ cx: SLIDER_X + SLIDER_W * s.value }}
               transition={{ duration: 0.6, delay: 0.15 + si * 0.08, ease: "easeOut" }}
@@ -228,7 +229,7 @@ function ResultCard({ cust }: { cust: CustomerScenario }) {
         Recommended price
       </text>
       <motion.text
-        x={cx} y={y + 68} fontSize="34" fontWeight="800" fill={cust.color} textAnchor="middle"
+        x={cx} y={y + 68} fontSize="34" fontWeight="800" fill={ORANGE} textAnchor="middle"
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.4, delay: 0.35, type: "spring", stiffness: 200 }}
@@ -530,6 +531,13 @@ export function ExecuteSlide({
   }, [step, skipAnimation]);
 
   useEffect(() => {
+    if (revealPhase !== 4) return;
+    if (selected !== 0) return;
+    const t = setTimeout(() => setSelected(1), 800);
+    return () => clearTimeout(t);
+  }, [revealPhase, selected]);
+
+  useEffect(() => {
     if (revealPhase >= 4) return;
     function onKey(e: KeyboardEvent) {
       if (e.key === "ArrowRight" || e.key === "ArrowDown") {
@@ -537,9 +545,10 @@ export function ExecuteSlide({
         e.stopPropagation();
         setRevealPhase(p => Math.min(p + 1, 4));
       } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        if (revealPhase <= 1) return;
         e.preventDefault();
         e.stopPropagation();
-        setRevealPhase(p => Math.max(p - 1, 1));
+        setRevealPhase(p => p - 1);
       }
     }
     window.addEventListener("keydown", onKey, true);
@@ -634,15 +643,52 @@ export function ExecuteSlide({
 
                   {/* Pricing model circle */}
                   <g>
-                    <circle
+                    {/* Shrink-in pulse ring (converge echo) */}
+                    {!skipAnimation && (
+                      <motion.circle
+                        cx={MODEL_CX} cy={MODEL_CY} r={155}
+                        fill="none" stroke={TEAL} strokeWidth={2}
+                        initial={{ opacity: 0.4 }}
+                        animate={{ opacity: 0, scale: 0.65 }}
+                        transition={{ duration: 0.9, ease: "easeIn" }}
+                        style={{ transformOrigin: `${MODEL_CX}px ${MODEL_CY}px` }}
+                      />
+                    )}
+
+                    <motion.circle
                       cx={MODEL_CX} cy={MODEL_CY}
-                      r={BOX_H / 2}
                       fill="white" stroke={TEAL} strokeWidth={2.5}
+                      initial={skipAnimation ? { r: BOX_H / 2 } : { r: 150 }}
+                      animate={{ r: BOX_H / 2 }}
+                      transition={{ duration: 0.8, delay: 0.05, ease: [0.22, 1, 0.36, 1] }}
                     />
+
+                    {/* Converge echo — shows the previous slide's content briefly */}
+                    {!skipAnimation && (
+                      <motion.g
+                        initial={{ opacity: 0.9 }}
+                        animate={{ opacity: 0 }}
+                        transition={{ duration: 0.45, delay: 0.25 }}
+                      >
+                        <text x={MODEL_CX} y={MODEL_CY - 38} textAnchor="middle"
+                          style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.18em", fill: "#5A6A78" }}>
+                          RECOMMENDED
+                        </text>
+                        <text x={MODEL_CX} y={MODEL_CY + 22} textAnchor="middle"
+                          style={{ fontSize: 76, fontWeight: 800, fill: NAVY }}>
+                          $17.50
+                        </text>
+                        <text x={MODEL_CX} y={MODEL_CY + 52} textAnchor="middle"
+                          style={{ fontSize: 16, fontWeight: 500, fill: "#5A6A78" }}>
+                          SKU #A-7200
+                        </text>
+                      </motion.g>
+                    )}
+
                     <motion.g
                       initial={skipAnimation ? false : { opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      transition={{ duration: 0.4, delay: 0.15 }}
+                      transition={{ duration: 0.4, delay: skipAnimation ? 0.15 : 0.65 }}
                     >
                       {/* Title above circle */}
                       <text x={MODEL_CX} y={MODEL_CY - 68} fontSize="14" fontWeight="700" fill={NAVY} textAnchor="middle">
@@ -669,7 +715,7 @@ export function ExecuteSlide({
                       fontSize="10" fontWeight="500" fill={TEAL} textAnchor="middle"
                       initial={skipAnimation ? false : { opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      transition={{ duration: 0.4, delay: 0.3 }}
+                      transition={{ duration: 0.4, delay: skipAnimation ? 0.3 : 0.8 }}
                     >
                       ML-powered optimization
                     </motion.text>
@@ -695,16 +741,16 @@ export function ExecuteSlide({
                             />
                             {/* Stream of dots flowing from profile into model */}
                             {[0, 0.8, 1.6, 2.4, 3.2].map((d, i) => (
-                              <FlowDot key={`in-dot-${i}`} path={inPathObj} color={cust.color} delay={0.3 + d} />
+                              <FlowDot key={`in-dot-${i}`} path={inPathObj} color={ORANGE} delay={0.3 + d} />
                             ))}
                           </motion.g>
                         </AnimatePresence>
                         {/* Absorption pulse on the model circle */}
-                        {revealPhase === 2 && (
+                        {(revealPhase === 2 || revealPhase === 3) && (
                           <motion.circle
                             cx={MODEL_CX} cy={MODEL_CY}
                             r={BOX_H / 2}
-                            fill="none" stroke={TEAL} strokeWidth={3}
+                            fill="none" stroke={ORANGE} strokeWidth={3}
                             animate={{ r: [BOX_H / 2, BOX_H / 2 - 4, BOX_H / 2], opacity: [0.15, 0.4, 0.15] }}
                             transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
                           />
@@ -724,7 +770,7 @@ export function ExecuteSlide({
                               animate={{ pathLength: 1, opacity: 0.35 }}
                               transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
                             />
-                            <FlowDot path={outPathObj} color={STEEL} delay={0.5} />
+                            <FlowDot path={outPathObj} color={ORANGE} delay={0.5} />
                           </motion.g>
                         </AnimatePresence>
                         <AnimatePresence mode="wait">

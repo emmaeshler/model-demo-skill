@@ -454,12 +454,8 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
     if (chartStep > 2 || skipAnimation) { setFactorsPhase(6); return; }
     setFactorsPhase(0);
     const t1 = setTimeout(() => setFactorsPhase(1), 800);
-    const t2 = setTimeout(() => setFactorsPhase(2), 2400);
-    const t3 = setTimeout(() => setFactorsPhase(3), 4800);
-    const t4 = setTimeout(() => setFactorsPhase(4), 7200);
-    const t5 = setTimeout(() => setFactorsPhase(5), 9600);
-    const t6 = setTimeout(() => setFactorsPhase(6), 12000);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); clearTimeout(t5); clearTimeout(t6); };
+    const t2 = setTimeout(() => setFactorsPhase(6), 1000);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [chartStep, skipAnimation]);
 
   useEffect(() => {
@@ -474,6 +470,14 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
     return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
   }, [chartStep, skipAnimation]);
 
+  useEffect(() => {
+    if (chartStep !== 3 || skipAnimation || !onAutoAdvance) return;
+    if (customizePhase >= CUSTOMIZE_ACTIONS.length) {
+      const t = setTimeout(() => onAutoAdvance(), 2500);
+      return () => clearTimeout(t);
+    }
+  }, [chartStep, customizePhase, skipAnimation, onAutoAdvance]);
+
   const [feedIntro, setFeedIntro] = useState(false);
   useEffect(() => {
     if (chartStep !== 5 || skipAnimation) { setFeedIntro(false); return; }
@@ -482,11 +486,11 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
     return () => clearTimeout(t);
   }, [chartStep, skipAnimation]);
 
-  const [convergeReady, setConvergeReady] = useState(skipAnimation && chartStep >= 4);
+  const [convergeReady, setConvergeReady] = useState(skipAnimation && chartStep >= 5);
   useEffect(() => {
-    if (chartStep < 4) { setConvergeReady(false); return; }
-    if (chartStep > 4 || skipAnimation) { setConvergeReady(true); return; }
-    const t = setTimeout(() => setConvergeReady(true), 2000);
+    if (chartStep < 5) { setConvergeReady(false); return; }
+    if (skipAnimation) { setConvergeReady(true); return; }
+    const t = setTimeout(() => setConvergeReady(true), 300);
     return () => clearTimeout(t);
   }, [chartStep, skipAnimation]);
 
@@ -494,7 +498,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
   useEffect(() => {
     if (chartStep < 5) { setCollapseStarted(false); return; }
     if (skipAnimation) { setCollapseStarted(true); return; }
-    const t = setTimeout(() => setCollapseStarted(true), 300);
+    const t = setTimeout(() => setCollapseStarted(true), 2500);
     return () => clearTimeout(t);
   }, [chartStep, skipAnimation]);
 
@@ -685,7 +689,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                   {chartStep === 2 ? (
                     <AnimatePresence mode="wait">
                       <motion.div
-                        key={`factors-title-${factorsPhase}`}
+                        key={factorsPhase >= 2 && factorsPhase <= 5 ? `factors-cat-${factorsPhase}` : 'factors-main'}
                         className="flex flex-col items-center"
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -1171,16 +1175,16 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                                     color: cat.color,
                                     backgroundColor: SOLID_TINTS[cat.color] ?? "white",
                                   }}
-                                  initial={{ opacity: 0, scale: 0.85, y: 12 }}
+                                  initial={{ opacity: 0, scale: 0.9, y: 60 }}
                                   animate={{
-                                    opacity: factorsPhase >= 6 ? 1 : isActive ? 1 : isPast ? 0.4 : 1,
+                                    opacity: 1,
                                     scale: 1,
                                     y: 0,
                                   }}
                                   transition={{
-                                    opacity: { duration: 0.4 },
-                                    scale: { duration: 0.35, delay: fi * 0.06, ease: [0.22, 1, 0.36, 1] },
-                                    y: { duration: 0.35, delay: fi * 0.06, ease: [0.22, 1, 0.36, 1] },
+                                    opacity: { duration: 0.5, delay: catIdx * 0.06 + fi * 0.04 },
+                                    scale: { duration: 0.5, delay: catIdx * 0.06 + fi * 0.04, ease: [0.22, 1, 0.36, 1] },
+                                    y: { duration: 0.6, delay: catIdx * 0.06 + fi * 0.04, ease: [0.22, 1, 0.36, 1] },
                                     layout: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
                                   }}
                                 >
@@ -1466,7 +1470,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
             ];
             return (
               <>
-                {!feedIntro && !converging && FEED_SOURCES.map((src, si) => {
+                {!feedIntro && !convergeReady && FEED_SOURCES.map((src, si) => {
                   const steps = 25;
                   const flowCx: number[] = [];
                   const flowCy: number[] = [];
@@ -1524,7 +1528,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                     </g>
                   );
                 })}
-                {!converging && DISSOLVE_DOTS.map((dot, di) => (
+                {!convergeReady && DISSOLVE_DOTS.map((dot, di) => (
                   <motion.circle
                     key={`dissolve-${di}`}
                     fill={dot.color}
@@ -1538,7 +1542,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                     }}
                   />
                 ))}
-                {!converging && (
+                {!convergeReady && (
                   <motion.circle
                     cx={PLOT_CX} cy={PLOT_CY} r={MODEL_R + 15}
                     fill="none" stroke={TEAL} strokeWidth={2}
@@ -1552,11 +1556,11 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                   cx={PLOT_CX} cy={PLOT_CY}
                   fill="white" stroke={TEAL} strokeWidth={2.5}
                   initial={{ r: MODEL_R, opacity: 0, scale: 0.5 }}
-                  animate={{ r: converging ? CONVERGE_MODEL_R : MODEL_R, opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.6, delay: converging ? 0 : 0.3, ease: [0.22, 1, 0.36, 1] }}
+                  animate={{ r: convergeReady ? CONVERGE_MODEL_R : MODEL_R, opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.6, delay: convergeReady ? 0 : 0.3, ease: [0.22, 1, 0.36, 1] }}
                   style={{ transformOrigin: `${PLOT_CX}px ${PLOT_CY}px` }}
                 />
-                {!converging && (
+                {!convergeReady && (
                   <motion.circle
                     cx={PLOT_CX} cy={PLOT_CY} r={MODEL_R + 3}
                     fill="none" stroke={TEAL} strokeWidth={1.5}
@@ -1565,7 +1569,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                     style={{ transformOrigin: `${PLOT_CX}px ${PLOT_CY}px` }}
                   />
                 )}
-                {converging && (
+                {convergeReady && (
                   <motion.circle
                     cx={PLOT_CX} cy={PLOT_CY} r={CONVERGE_MODEL_R + 8}
                     fill="none" stroke={TEAL} strokeWidth={2}
@@ -1575,7 +1579,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                     style={{ transformOrigin: `${PLOT_CX}px ${PLOT_CY}px` }}
                   />
                 )}
-                {converging && (
+                {convergeReady && (
                   <motion.circle
                     cx={PLOT_CX} cy={PLOT_CY} r={CONVERGE_MODEL_R + 4}
                     fill="none" stroke={`${TEAL}20`} strokeWidth={8}
@@ -1594,48 +1598,49 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                     style={{ transformOrigin: `${PLOT_CX}px ${PLOT_CY}px` }}
                   />
                 )}
-                {converging ? (
-                  <>
+                {convergeReady && (
+                  <g key="converge-text">
                     <motion.text
-                      x={PLOT_CX} y={PLOT_CY - 70}
+                      x={PLOT_CX} y={PLOT_CY - 50}
                       textAnchor="middle"
-                      style={{ fontSize: 22, fontWeight: 700, letterSpacing: "0.18em", fill: MUTED, fontFamily: "inherit" }}
+                      style={{ fontSize: 18, fontWeight: 700, letterSpacing: "0.18em", fill: MUTED, fontFamily: "inherit" }}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      transition={{ duration: 0.4, delay: 0.5 }}
+                      transition={{ duration: 0.4, delay: skipAnimation ? 0 : 0.5 }}
                     >
                       RECOMMENDED
                     </motion.text>
                     <motion.text
-                      x={PLOT_CX} y={PLOT_CY + 40}
+                      x={PLOT_CX} y={PLOT_CY + 30}
                       textAnchor="middle"
-                      style={{ fontSize: 150, fontWeight: 800, fill: NAVY, fontFamily: "inherit" }}
+                      style={{ fontSize: 80, fontWeight: 800, fill: NAVY, fontFamily: "inherit" }}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      transition={{ duration: 0.5, delay: 0.7 }}
+                      transition={{ duration: 0.5, delay: skipAnimation ? 0 : 0.7 }}
                     >
                       $17.50
                     </motion.text>
                     <motion.text
-                      x={PLOT_CX} y={PLOT_CY + 90}
+                      x={PLOT_CX} y={PLOT_CY + 65}
                       textAnchor="middle"
-                      style={{ fontSize: 34, fontWeight: 500, fill: MUTED, fontFamily: "inherit" }}
+                      style={{ fontSize: 22, fontWeight: 500, fill: MUTED, fontFamily: "inherit" }}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 0.85 }}
-                      transition={{ duration: 0.4, delay: 0.9 }}
+                      transition={{ duration: 0.4, delay: skipAnimation ? 0 : 0.9 }}
                     >
                       SKU #A-7200
                     </motion.text>
-                  </>
-                ) : (
-                  <>
+                  </g>
+                )}
+                {!convergeReady && (
+                  <g key="model-text">
                     <motion.text
                       x={PLOT_CX} y={PLOT_CY - 6}
                       textAnchor="middle"
                       style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", fill: MUTED, fontFamily: "inherit" }}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      transition={{ duration: 0.4, delay: 0.6 }}
+                      transition={{ duration: 0.4, delay: skipAnimation ? 0 : 0.6 }}
                     >
                       YOUR
                     </motion.text>
@@ -1645,13 +1650,13 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                       style={{ fontSize: 24, fontWeight: 800, fill: NAVY, fontFamily: "inherit" }}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      transition={{ duration: 0.5, delay: 0.7 }}
+                      transition={{ duration: 0.5, delay: skipAnimation ? 0 : 0.7 }}
                     >
                       MODEL
                     </motion.text>
-                  </>
+                  </g>
                 )}
-                {converging && PRICE_SATELLITES.map((sat, si) => (
+                {convergeReady && PRICE_SATELLITES.map((sat, si) => (
                   <g key={`sat-${si}`}>
                     <motion.line
                       x1={PLOT_CX} y1={PLOT_CY}
@@ -1748,23 +1753,27 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
               if (!isRevealed) return null;
               const flying = chartStep === 2;
               const flyTarget = CARD_FLY_TARGETS[i];
+              const catKey = s.label.toLowerCase() as "order" | "market" | "customer" | "product";
+              const catFactors = SQUARE_FACTORS.filter(f => f.category === catKey);
               return (
                 <motion.div
                   key={s.label}
-                  className="relative overflow-hidden rounded-xl border bg-white/95 shadow-sm backdrop-blur-sm"
+                  className="relative overflow-hidden rounded-xl border shadow-sm backdrop-blur-sm"
                   style={{
-                    borderLeftWidth: 4,
+                    borderLeftWidth: flying ? 0 : 4,
                     borderLeftColor: d.color,
-                    borderColor: `${d.color}20`,
-                    minWidth: 200,
-                    maxWidth: 260,
+                    borderColor: flying ? `${d.color}15` : `${d.color}20`,
+                    minWidth: flying ? 240 : 200,
+                    maxWidth: flying ? 360 : 260,
+                    backgroundColor: flying ? `${d.color}08` : "rgba(255,255,255,0.95)",
+                    transition: "border-color 0.4s, background-color 0.4s, min-width 0.5s, max-width 0.5s, border-left-width 0.3s",
                   }}
                   initial={{ opacity: 0, y: 12, scale: 0.95 }}
                   animate={flying ? {
-                    opacity: 0,
+                    opacity: 1,
                     y: flyTarget.y,
                     x: flyTarget.x,
-                    scale: 0.5,
+                    scale: 0.85,
                   } : {
                     opacity: isActive ? 1 : 0.55,
                     y: 0,
@@ -1772,7 +1781,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                     scale: 1,
                   }}
                   transition={flying ? {
-                    duration: 0.7,
+                    duration: 0.6,
                     delay: i * 0.04,
                     ease: [0.4, 0, 0.1, 1],
                   } : {
@@ -1780,7 +1789,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                     ease: [0.22, 1, 0.36, 1],
                   }}
                 >
-                  {isActive && (
+                  {isActive && !flying && (
                     <motion.div
                       className="absolute top-0 left-0 right-0 h-[2px]"
                       style={{
@@ -1793,7 +1802,11 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                   )}
                   <div className="px-2.5 py-1.5">
                     <div className="flex items-center gap-1.5 mb-0.5">
-                      <div className="relative flex-shrink-0">
+                      <motion.div
+                        className="relative flex-shrink-0"
+                        animate={{ opacity: flying ? 0 : 1, width: flying ? 0 : "auto" }}
+                        transition={{ duration: 0.25 }}
+                      >
                         {isActive && (
                           <motion.div
                             className="absolute inset-0 rounded-full"
@@ -1805,37 +1818,68 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                         <div className="relative">
                           <CategoryIcon type={s.icon} color={d.color} size={20} />
                         </div>
-                      </div>
+                      </motion.div>
                       <div className="min-w-0">
                         <div className="text-[0.68rem] font-bold tracking-[0.06em] uppercase truncate" style={{ color: d.color }}>
                           {s.label}
                         </div>
-                        <div className="text-[0.62rem]" style={{ color: MUTED }}>
+                        <motion.div
+                          className="text-[0.62rem]"
+                          style={{ color: MUTED }}
+                          animate={{ opacity: flying ? 0 : 1, height: flying ? 0 : "auto" }}
+                          transition={{ duration: 0.2 }}
+                        >
                           {s.count}
-                        </div>
+                        </motion.div>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-1">
-                      {s.pills.map((pill, pi) => (
-                        <motion.span
-                          key={pill}
-                          className="rounded-full border px-2 py-px text-[0.62rem] font-medium whitespace-nowrap"
-                          style={{
-                            borderColor: `${d.color}25`,
-                            color: d.color,
-                            backgroundColor: `${d.color}06`,
-                          }}
-                          initial={{ opacity: 0, x: -20, scale: 0.8 }}
-                          animate={{ opacity: isActive ? 1 : 0.6, x: 0, scale: 1 }}
-                          transition={{
-                            duration: 0.6,
-                            delay: isActive ? 0.5 + pi * (PILL_STAGGER_SPAN / s.pills.length) : 0,
-                            ease: [0.22, 1, 0.36, 1],
-                          }}
-                        >
-                          {pill}
-                        </motion.span>
-                      ))}
+                      <AnimatePresence mode="wait">
+                        {flying ? (
+                          catFactors.map((f, fi) => (
+                            <motion.span
+                              key={f.label}
+                              className="rounded-full border px-2 py-px text-[0.62rem] font-medium whitespace-nowrap"
+                              style={{
+                                borderColor: `${d.color}25`,
+                                color: d.color,
+                                backgroundColor: `${d.color}08`,
+                              }}
+                              initial={{ opacity: 0, scale: 0.7, y: 4 }}
+                              animate={{ opacity: 1, scale: 1, y: 0 }}
+                              transition={{
+                                delay: 0.15 + fi * 0.055,
+                                duration: 0.3,
+                                ease: [0.22, 1, 0.36, 1],
+                              }}
+                            >
+                              {f.label}
+                            </motion.span>
+                          ))
+                        ) : (
+                          s.pills.map((pill, pi) => (
+                            <motion.span
+                              key={pill}
+                              className="rounded-full border px-2 py-px text-[0.62rem] font-medium whitespace-nowrap"
+                              style={{
+                                borderColor: `${d.color}25`,
+                                color: d.color,
+                                backgroundColor: `${d.color}06`,
+                              }}
+                              initial={{ opacity: 0, x: -20, scale: 0.8 }}
+                              animate={{ opacity: isActive ? 1 : 0.6, x: 0, scale: 1 }}
+                              exit={{ opacity: 0, scale: 0.8 }}
+                              transition={{
+                                duration: 0.6,
+                                delay: isActive ? 0.5 + pi * (PILL_STAGGER_SPAN / s.pills.length) : 0,
+                                ease: [0.22, 1, 0.36, 1],
+                              }}
+                            >
+                              {pill}
+                            </motion.span>
+                          ))
+                        )}
+                      </AnimatePresence>
                     </div>
                   </div>
                 </motion.div>

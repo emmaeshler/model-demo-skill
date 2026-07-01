@@ -126,9 +126,9 @@ const SCATTER_DOTS: ScatterDot[] = Array.from({ length: DOT_COUNT }, () => {
 
 const SEGMENT_ZONES = [
   { tStart: 0.0, tEnd: 0.36, label: "High win rate", color: GREEN, why: "Low competition — room to price higher", labelDy: 0 },
-  { tStart: 0.48, tEnd: 0.74, label: "Competitive pressure", color: RED, why: "Multiple bidders driving prices down", labelDy: 10 },
-  { tStart: 0.71, tEnd: 0.83, label: "Cost ↑", color: ORANGE, why: "Rising input costs squeezing margins", labelDy: -18 },
-  { tStart: 0.81, tEnd: 1.0, label: "Price sensitive", color: TEAL, why: "Customers switch over small differences", labelDy: -10 },
+  { tStart: 0.48, tEnd: 0.74, label: "Competitive pressure", color: RED, why: "Multiple bidders driving prices down", labelDy: 0 },
+  { tStart: 0.71, tEnd: 0.83, label: "Cost ↑", color: ORANGE, why: "Rising input costs squeezing margins", labelDy: 0 },
+  { tStart: 0.81, tEnd: 1.0, label: "Price sensitive", color: TEAL, why: "Customers switch over small differences", labelDy: 0 },
 ];
 
 const SEGMENT_HIGHLIGHTS = [
@@ -332,7 +332,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
   const heading = isAllToCurve
     ? (curveMode === "three" ? "One curve. Every price, optimized." : "Every price, aligned to the curve")
     : chartStep === 1
-      ? (highlightedSeg >= 0 ? SEGMENT_ZONES[highlightedSeg].label : "The model detects market segmentation")
+      ? "The model detects market segmentation"
       : (chartStep >= 2 && chartStep <= 3)
         ? "Your optimal demand curve"
         : chartStep === 0
@@ -341,10 +341,11 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
             ? "Your optimal demand curve"
             : "Detect patterns, refine pricing guidance";
 
+  const segZone = chartStep === 1 && highlightedSeg >= 0 ? SEGMENT_ZONES[highlightedSeg] : null;
   const subtitle = isSpotlight
       ? (spotPhase >= 2 ? SEGMENT_HIGHLIGHTS[spotlightIdx].afterBody : SEGMENT_HIGHLIGHTS[spotlightIdx].beforeBody)
-      : chartStep === 1 && highlightedSeg >= 0
-        ? SEGMENT_ZONES[highlightedSeg].why
+      : segZone
+        ? segZone.why
         : STEP_CONTEXT[chartStep]?.body || null;
 
   const activeHighlight = isSpotlight ? SEGMENT_HIGHLIGHTS[spotlightIdx] : null;
@@ -424,7 +425,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
                   <motion.p
                     key={chartStep === 1 ? `seg-${highlightedSeg}` : (chartStep >= 2 && chartStep <= 6) ? 'curve-subtitle' : `step-${chartStep}`}
                     className="mx-auto mt-1 max-w-2xl text-center text-[1.05rem] leading-relaxed"
-                    style={{ color: chartStep === 1 && highlightedSeg >= 0 ? SEGMENT_ZONES[highlightedSeg].color : MUTED }}
+                    style={{ color: MUTED }}
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -4 }}
@@ -444,6 +445,8 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
                         </span>{" "}
                         gets its own curve.
                       </>
+                    ) : segZone ? (
+                      <><span style={{ fontWeight: 700, color: segZone.color }}>{segZone.label}</span>{" — "}{segZone.why}</>
                     ) : (
                       subtitle
                     )}
