@@ -10,7 +10,7 @@ const GREEN = "#2e7d32";
 const PURPLE = "#7B5EA7";
 const MUTED = "#5A6A78";
 
-export const POWER_TOTAL_STEPS = 10;
+export const POWER_TOTAL_STEPS = 6;
 
 const ML_GREEN = "#3A7D44";
 
@@ -170,7 +170,7 @@ const PRICE_SATELLITES = [
   { label: "Win / Loss Patterns", price: "−$0.90", color: PURPLE, cx: 250, cy: 410, r: 60 },
   { label: "Competitive Position", price: "+$2.40", color: ORANGE, cx: 855, cy: 370, r: 68 },
 ];
-const CONVERGE_MODEL_R = 130;
+const CONVERGE_MODEL_R = 170;
 
 /* ─── Spotlight data (steps 1-4) ─── */
 
@@ -207,29 +207,19 @@ const SPOTLIGHTS = [
 
 const TITLES = [
   "2,400 accounts × 15,000 SKUs",
-  "Finding cost patterns…",
-  "Reading competitive signals…",
-  "Mapping volume & elasticity…",
-  "Learning win/loss patterns…",
-  "Four pricing drivers emerge",
+  "The model scans for patterns",
   "Pricing factors identified",
-  "Customized for your business",
-  "Customized for your business",
   "Your customized factors now feed the model",
-  "All four prices converge into a single price",
+  "Customized for your business",
+  "All four factors converge into a single price",
 ];
 
 const SUBTITLES = [
   "That's 36 million unique price points — far too many for any team to set manually. The model finds the patterns hiding inside.",
-  "The model scans 14,200 transaction records to surface underlying cost trends.",
-  "36 real-time market features reveal where you stand against competitors.",
-  "2,400 accounts with distinct buying profiles show how demand responds to price.",
-  "18 months of win/loss data uncover what drives customer decisions.",
-  "Cost, competition, elasticity, and demand — isolated from the noise.",
+  "Examining 36 million price points across four dimensions.",
   "The model identifies the variables that drive every price — grouped by customer, product, market, and order.",
   "Every business is different. We weigh each factor based on your data — adding what matters, removing what doesn't, and tuning the balance.",
   "Together, these factors uniquely configure your model.",
-  "Every factor you've tailored — weighted, added, or removed — uniquely configures your pricing engine.",
   "Cost, competition, volume, and demand combine into one recommended price for every SKU.",
 ];
 
@@ -432,22 +422,9 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
     return () => clearTimeout(t);
   }, [step, skipAnimation]);
 
-  useEffect(() => {
-    if (skipAnimation || !onAutoAdvance || chartStep < 1 || chartStep > 3) return;
-    if (preScan) return;
-    const spotlight = SPOTLIGHTS[chartStep - 1];
-    const pillCount = spotlight.pills.length;
-    const lastPillDelay = 0.5 + (pillCount - 1) * (PILL_STAGGER_SPAN / pillCount);
-    const lastPillDone = lastPillDelay + 0.6;
-    const cardEntranceDelay = chartStep === 1 ? 0.8 : 0;
-    const totalMs = (cardEntranceDelay + lastPillDone + 0.4) * 1000;
-    const timer = setTimeout(onAutoAdvance, totalMs);
-    return () => clearTimeout(timer);
-  }, [chartStep, onAutoAdvance, skipAnimation, preScan]);
-
   const [introPhase, setIntroPhase] = useState(skipAnimation ? 5 : chartStep === 0 ? 0 : 4);
-  const [customizePhase, setCustomizePhase] = useState(chartStep > 7 || (skipAnimation && chartStep >= 7) ? CUSTOMIZE_ACTIONS.length : -1);
-  const [factorsPhase, setFactorsPhase] = useState(chartStep > 6 || (skipAnimation && chartStep >= 6) ? 6 : 0);
+  const [customizePhase, setCustomizePhase] = useState(chartStep > 3 || (skipAnimation && chartStep >= 3) ? CUSTOMIZE_ACTIONS.length : -1);
+  const [factorsPhase, setFactorsPhase] = useState(chartStep > 2 || (skipAnimation && chartStep >= 2) ? 6 : 0);
   useEffect(() => {
     if (skipAnimation) { setIntroPhase(5); return; }
     if (chartStep !== 0) {
@@ -466,8 +443,8 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
 
 
   useEffect(() => {
-    if (chartStep < 6) { setFactorsPhase(0); return; }
-    if (chartStep > 6 || skipAnimation) { setFactorsPhase(6); return; }
+    if (chartStep < 2) { setFactorsPhase(0); return; }
+    if (chartStep > 2 || skipAnimation) { setFactorsPhase(6); return; }
     setFactorsPhase(0);
     const t1 = setTimeout(() => setFactorsPhase(1), 800);
     const t2 = setTimeout(() => setFactorsPhase(2), 2400);
@@ -479,8 +456,8 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
   }, [chartStep, skipAnimation]);
 
   useEffect(() => {
-    if (chartStep < 7) { setCustomizePhase(-1); return; }
-    if (chartStep > 7 || skipAnimation) { setCustomizePhase(CUSTOMIZE_ACTIONS.length); return; }
+    if (chartStep < 3) { setCustomizePhase(-1); return; }
+    if (chartStep > 3 || skipAnimation) { setCustomizePhase(CUSTOMIZE_ACTIONS.length); return; }
     setCustomizePhase(-1);
     const t0 = setTimeout(() => setCustomizePhase(0), 2000);
     const t1 = setTimeout(() => setCustomizePhase(1), 5800);
@@ -492,41 +469,56 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
 
   const [feedIntro, setFeedIntro] = useState(false);
   useEffect(() => {
-    if (chartStep !== 9 || skipAnimation) { setFeedIntro(false); return; }
+    if (chartStep !== 5 || skipAnimation) { setFeedIntro(false); return; }
     setFeedIntro(true);
     const t = setTimeout(() => setFeedIntro(false), 2000);
     return () => clearTimeout(t);
   }, [chartStep, skipAnimation]);
 
-  const [collapseStarted, setCollapseStarted] = useState(skipAnimation && chartStep >= 9);
+  const [collapseStarted, setCollapseStarted] = useState(skipAnimation && chartStep >= 5);
   useEffect(() => {
-    if (chartStep < 9) { setCollapseStarted(false); return; }
+    if (chartStep < 5) { setCollapseStarted(false); return; }
     if (skipAnimation) { setCollapseStarted(true); return; }
     const t = setTimeout(() => setCollapseStarted(true), 2200);
     return () => clearTimeout(t);
   }, [chartStep, skipAnimation]);
 
+  const [scanCardCount, setScanCardCount] = useState(chartStep > 1 || skipAnimation ? 4 : 0);
+  useEffect(() => {
+    if (chartStep !== 1) { setScanCardCount(chartStep > 1 ? 4 : 0); return; }
+    if (skipAnimation) { setScanCardCount(4); return; }
+    setScanCardCount(0);
+    const baseDelay = 3500;
+    const s1 = setTimeout(() => setScanCardCount(1), baseDelay);
+    const s2 = setTimeout(() => setScanCardCount(2), baseDelay + 1500);
+    const s3 = setTimeout(() => setScanCardCount(3), baseDelay + 3000);
+    const s4 = setTimeout(() => setScanCardCount(4), baseDelay + 4500);
+    const advance = setTimeout(() => onAutoAdvance?.(), baseDelay + 6500);
+    return () => { clearTimeout(s1); clearTimeout(s2); clearTimeout(s3); clearTimeout(s4); clearTimeout(advance); };
+  }, [chartStep, skipAnimation, onAutoAdvance]);
+
   /* ── Chart flow ─────────────────────────────────────── */
-  const clustered = chartStep >= 5;
-  const factorsVisible = chartStep >= 6;
-  const customized = chartStep >= 7;
-  const feeding = chartStep >= 8;
-  const converging = chartStep >= 9;
-  const sweepActive = chartStep >= 1 && chartStep <= 4 && !preScan;
+  const clustered = chartStep >= 2;
+  const factorsVisible = chartStep >= 2;
+  const customized = chartStep >= 3;
+  const feeding = chartStep >= 4;
+  const converging = chartStep >= 5;
+  const sweepActive = chartStep === 1 && !preScan;
 
   function dotFill(dot: (typeof DOTS)[0]) {
     if (factorsVisible) return TEAL;
-    if (clustered) return DRIVERS[dot.cluster].color;
-    if (dot.cluster < chartStep) return DRIVERS[dot.cluster].color;
+    if (chartStep >= 1 && dot.cluster < scanCardCount) return DRIVERS[dot.cluster].color;
     return MUTED;
   }
 
   function dotOpacity(dot: (typeof DOTS)[0]) {
     if (customized) return 0;
     if (factorsVisible) return factorsPhase >= 2 ? 0 : 0.12;
-    if (clustered) return 0.65;
-    if (dot.cluster === chartStep - 1) return 0.7;
-    if (dot.cluster < chartStep - 1) return 0.45;
+    if (chartStep === 1) {
+      if (dot.cluster === scanCardCount - 1) return 0.7;
+      if (dot.cluster < scanCardCount - 1) return 0.45;
+      return dot.scatterOpacity;
+    }
     return dot.scatterOpacity;
   }
 
@@ -605,10 +597,10 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.35, delay: preScan ? 0.2 : chartStep === 1 ? 0.2 : 0 }}
             >
-              {chartStep === 7 ? (
+              {chartStep === 3 ? (
                 <>
                   <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: NAVY }}>
-                    {TITLES[9]}
+                    {TITLES[chartStep]}
                   </h2>
                   <div className="mx-auto mt-2 max-w-3xl text-center" style={{ minHeight: 28 }}>
                     <AnimatePresence mode="wait">
@@ -651,19 +643,19 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.4 }}
                         >
-                          {SUBTITLES[8]}
+                          {SUBTITLES[4]}
                         </motion.p>
                       )}
                     </AnimatePresence>
                   </div>
                 </>
-              ) : chartStep === 9 ? (
+              ) : chartStep >= 5 ? (
                 <>
-                  <h2 className="text-center text-3xl font-bold tracking-tight sm:text-4xl" style={{ color: NAVY }}>
-                    {TITLES[10]}
+                  <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: NAVY }}>
+                    {TITLES[chartStep]}
                   </h2>
                   <motion.p
-                    className="mx-auto mt-1 max-w-2xl text-center text-[1.25rem] leading-relaxed"
+                    className="mx-auto mt-1 max-w-2xl text-center text-[1.05rem] leading-relaxed"
                     style={{ color: MUTED }}
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -676,7 +668,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                 </>
               ) : (
                 <>
-                  {chartStep === 6 ? (
+                  {chartStep === 2 ? (
                     <AnimatePresence mode="wait">
                       <motion.div
                         key={`factors-title-${factorsPhase}`}
@@ -856,9 +848,9 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
             >
               <defs>
                 <linearGradient id="sweep-glow" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor={DRIVERS[chartStep - 1]?.color ?? TEAL} stopOpacity={0} />
-                  <stop offset="40%" stopColor={DRIVERS[chartStep - 1]?.color ?? TEAL} stopOpacity={0.08} />
-                  <stop offset="100%" stopColor={DRIVERS[chartStep - 1]?.color ?? TEAL} stopOpacity={0} />
+                  <stop offset="0%" stopColor={TEAL} stopOpacity={0} />
+                  <stop offset="40%" stopColor={TEAL} stopOpacity={0.08} />
+                  <stop offset="100%" stopColor={TEAL} stopOpacity={0} />
                 </linearGradient>
               </defs>
               {/* Faint glow trailing the line */}
@@ -872,7 +864,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
               <motion.line
                 x1={PLOT.left} y1={PLOT.top}
                 x2={PLOT.left} y2={PLOT.bottom}
-                stroke={DRIVERS[chartStep - 1]?.color ?? TEAL}
+                stroke={TEAL}
                 strokeWidth={1.2}
                 opacity={0.25}
                 animate={{ x1: [PLOT.left, PLOT.right, PLOT.left], x2: [PLOT.left, PLOT.right, PLOT.left] }}
@@ -965,7 +957,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                 cxTransition = { duration: dot.driftDuration, delay: dot.driftDelay, repeat: Infinity, ease: "easeInOut" };
                 cyTransition = { duration: dot.driftDuration, delay: dot.driftDelay, repeat: Infinity, ease: "easeInOut" };
               }
-              opacityDelay = chartStep === 1 ? 1.3 + dot.delay * 0.4 : dotEntranceDelay + 0.2;
+              opacityDelay = chartStep === 1 ? dot.delay * 0.3 : dotEntranceDelay + 0.2;
             } else {
               targetCx = dot.sx;
               targetCy = dot.sy;
@@ -990,20 +982,22 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                   cy: cyTransition,
                   r: { duration: 0.5, delay: dotEntranceDelay, ease: "easeOut" },
                   fillOpacity: { duration: 0.8, delay: opacityDelay },
-                  fill: { duration: 1.0, delay: chartStep === 1 ? 1.3 + dot.delay * 0.4 : 0.1 },
+                  fill: { duration: 0.8, delay: chartStep === 1 ? dot.delay * 0.3 : 0.1 },
                 }}
               />
             );
           })}
 
           {/* ── Highlight rings — dots "found" by the sweep ── */}
-          {sweepActive && highlightDotsForCluster(chartStep - 1).map((hi) => {
+          {sweepActive && Array.from({ length: Math.max(0, scanCardCount) }, (_, ci) => ci).flatMap(ci =>
+            highlightDotsForCluster(ci).map(hi => ({ ...hi, ci }))
+          ).map((hi) => {
             const dot = DOTS[hi.index];
-            const currentDriver = DRIVERS[chartStep - 1];
+            const currentDriver = DRIVERS[hi.ci];
             const sweepDelay = hi.normalizedX * (SWEEP_DURATION / 2);
             return (
               <motion.circle
-                key={`hl-${chartStep}-${hi.index}`}
+                key={`hl-${hi.ci}-${hi.index}`}
                 cx={dot.sx}
                 cy={dot.sy}
                 fill="none"
@@ -1589,9 +1583,9 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                 {converging ? (
                   <>
                     <motion.text
-                      x={PLOT_CX} y={PLOT_CY - 30}
+                      x={PLOT_CX} y={PLOT_CY - 55}
                       textAnchor="middle"
-                      style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", fill: MUTED, fontFamily: "inherit" }}
+                      style={{ fontSize: 28, fontWeight: 700, letterSpacing: "0.14em", fill: MUTED, fontFamily: "inherit" }}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ duration: 0.4, delay: 0.5 }}
@@ -1599,9 +1593,9 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                       RECOMMENDED
                     </motion.text>
                     <motion.text
-                      x={PLOT_CX} y={PLOT_CY + 16}
+                      x={PLOT_CX} y={PLOT_CY + 35}
                       textAnchor="middle"
-                      style={{ fontSize: 46, fontWeight: 800, fill: NAVY, fontFamily: "inherit" }}
+                      style={{ fontSize: 110, fontWeight: 800, fill: NAVY, fontFamily: "inherit" }}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ duration: 0.5, delay: 0.7 }}
@@ -1609,9 +1603,9 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                       $17.50
                     </motion.text>
                     <motion.text
-                      x={PLOT_CX} y={PLOT_CY + 42}
+                      x={PLOT_CX} y={PLOT_CY + 72}
                       textAnchor="middle"
-                      style={{ fontSize: 14, fontWeight: 500, fill: MUTED, fontFamily: "inherit" }}
+                      style={{ fontSize: 28, fontWeight: 500, fill: MUTED, fontFamily: "inherit" }}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 0.85 }}
                       transition={{ duration: 0.4, delay: 0.9 }}
@@ -1725,18 +1719,18 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
 
       {/* ── Bottom cards (steps 1-4, hidden at cluster step) ── */}
       <AnimatePresence>
-        {chartStep >= 1 && !clustered && !preScan && (
+        {chartStep === 1 && !preScan && scanCardCount > 0 && (
           <motion.div
             className="flex flex-wrap justify-center gap-2 w-full px-4 overflow-hidden"
             initial={{ opacity: 0, y: 16, height: 0 }}
             animate={{ opacity: 1, y: 0, height: "auto" }}
             exit={{ opacity: 0, y: 12, height: 0 }}
-            transition={{ duration: 0.6, delay: chartStep === 1 ? 1.2 : 0, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           >
             {SPOTLIGHTS.map((s, i) => {
               const d = DRIVERS[s.cluster];
-              const isActive = factorsVisible ? false : i === chartStep - 1;
-              const isRevealed = factorsVisible || i < chartStep;
+              const isActive = i === scanCardCount - 1;
+              const isRevealed = i < scanCardCount;
               if (!isRevealed) return null;
               return (
                 <motion.div
@@ -1751,7 +1745,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                   }}
                   initial={{ opacity: 0, y: 12, scale: 0.95 }}
                   animate={{
-                    opacity: isActive ? 1 : factorsVisible ? 0.9 : 0.55,
+                    opacity: isActive ? 1 : 0.55,
                     y: 0,
                     scale: 1,
                   }}
@@ -1804,7 +1798,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                             backgroundColor: `${d.color}06`,
                           }}
                           initial={{ opacity: 0, x: -20, scale: 0.8 }}
-                          animate={{ opacity: isActive ? 1 : factorsVisible ? 0.8 : 0.6, x: 0, scale: 1 }}
+                          animate={{ opacity: isActive ? 1 : 0.6, x: 0, scale: 1 }}
                           transition={{
                             duration: 0.6,
                             delay: isActive ? 0.5 + pi * (PILL_STAGGER_SPAN / s.pills.length) : 0,

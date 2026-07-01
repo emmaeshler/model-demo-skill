@@ -46,7 +46,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "LAST_FILE=/tmp/.claude-autopush-ml-explainer; now=$(date +%s); last=0; [ -f \"$LAST_FILE\" ] && last=$(cat \"$LAST_FILE\"); if [ $((now - last)) -lt 900 ]; then exit 0; fi; cd /Users/emmaeshler/ml-explainer && if git diff --quiet && git diff --cached --quiet && [ -z \"$(git ls-files --others --exclude-standard)\" ]; then exit 0; fi; git add -A && git commit -m 'Auto-save work in progress' && git push origin dev && echo \"$now\" > \"$LAST_FILE\"",
+            "command": "LAST_FILE=/tmp/.claude-autopush-ml-explainer; now=$(date +%s); last=0; [ -f \"$LAST_FILE\" ] && last=$(cat \"$LAST_FILE\"); if [ $((now - last)) -lt 2100 ]; then exit 0; fi; cd /Users/emmaeshler/ml-explainer && if git diff --quiet && git diff --cached --quiet && [ -z \"$(git ls-files --others --exclude-standard)\" ]; then exit 0; fi; git add -A && git commit -m 'Auto-save work in progress' && git push origin dev && echo \"$now\" > \"$LAST_FILE\"",
             "timeout": 30
           }
         ]

@@ -511,23 +511,6 @@ export function ModelOutputsOverview({ step }: { step: number }) {
   );
 }
 
-/* ── Collapse constants ─────────────────────────────── */
-
-const COLLAPSE_CX = MODEL_CX;
-const COLLAPSE_CY = MODEL_CY;
-const COLLAPSE_CR = 70;
-const COLLAPSE_DR = 50;
-const COLLAPSE_ORANGE = "#E56910";
-const COLLAPSE_GREEN = "#2e7d32";
-const COLLAPSE_PURPLE = "#7B5EA7";
-
-const COLLAPSE_DRIVERS = [
-  { label: "Cost Trends", adj: "$14.20", color: NAVY, x: 250, y: 110 },
-  { label: "Volume & Elasticity", adj: "+$1.80", color: COLLAPSE_GREEN, x: 700, y: 80 },
-  { label: "Win / Loss Patterns", adj: "−$0.90", color: COLLAPSE_PURPLE, x: 320, y: 295 },
-  { label: "Competitive Position", adj: "+$2.40", color: COLLAPSE_ORANGE, x: 700, y: 280 },
-];
-
 /* ── Main slide ──────────────────────────────────────── */
 
 export function ExecuteSlide({
@@ -539,40 +522,15 @@ export function ExecuteSlide({
   skipAnimation?: boolean;
 }) {
   const [selected, setSelected] = useState(0);
-  const [collapsed, setCollapsed] = useState(false);
-  const [chipsVisible, setChipsVisible] = useState(false);
-  const [feedPhase, setFeedPhase] = useState(false);
-  const [feedExiting, setFeedExiting] = useState(false);
-  const [feedGone, setFeedGone] = useState(false);
-  const [settled, setSettled] = useState(false);
-  const [revealPhase, setRevealPhase] = useState(step >= 1 && skipAnimation ? 4 : 0);
+  const [revealPhase, setRevealPhase] = useState(skipAnimation ? 4 : 1);
   const cust = CUSTOMERS[selected];
 
   useEffect(() => {
-    if (skipAnimation) {
-      setCollapsed(true);
-      setChipsVisible(false);
-      setFeedPhase(false);
-      setFeedGone(true);
-      setFeedExiting(false);
-      setSettled(true);
-      setRevealPhase(4);
-      return;
-    }
-
-    setCollapsed(true);
-    setChipsVisible(false);
-    setFeedPhase(false);
-    setFeedExiting(false);
-    setFeedGone(true);
-    setSettled(false);
-    setRevealPhase(0);
-    const t0 = setTimeout(() => { setSettled(true); setRevealPhase(1); }, 400);
-    return () => { clearTimeout(t0); };
+    setRevealPhase(skipAnimation ? 4 : 1);
   }, [step, skipAnimation]);
 
   useEffect(() => {
-    if (!settled || revealPhase >= 4) return;
+    if (revealPhase >= 4) return;
     function onKey(e: KeyboardEvent) {
       if (e.key === "ArrowRight" || e.key === "ArrowDown") {
         e.preventDefault();
@@ -586,7 +544,7 @@ export function ExecuteSlide({
     }
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [settled, revealPhase]);
+  }, [revealPhase]);
 
   const inCurvePath = () => {
     const sy = MODEL_CY;
@@ -623,37 +581,23 @@ export function ExecuteSlide({
         >
           {/* Title */}
           <AnimatePresence mode="wait">
-            {!settled ? (
-              <motion.h2
-                key="convergence-title"
-                className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
-                style={{ color: NAVY }}
-                initial={skipAnimation ? false : { opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.4, delay: 0.2 }}
-              >
-                All four prices converge into a single price
-              </motion.h2>
-            ) : (
-              <motion.h2
-                key={`reveal-title-${revealPhase <= 1 ? 1 : revealPhase >= 4 ? 4 : revealPhase}`}
-                className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
-                style={{ color: NAVY }}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.4 }}
-              >
-                {revealPhase <= 1
-                  ? "The pricing model, ready for each customer"
-                  : revealPhase === 2
-                    ? "Acme’s drivers feed the pricing model"
-                    : revealPhase === 3
-                      ? "A price tailored to Acme emerges"
-                      : "The ideal price, adjusted for each customer"}
-              </motion.h2>
-            )}
+            <motion.h2
+              key={`reveal-title-${revealPhase <= 1 ? 1 : revealPhase >= 4 ? 4 : revealPhase}`}
+              className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
+              style={{ color: NAVY }}
+              initial={skipAnimation ? false : { opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.4 }}
+            >
+              {revealPhase <= 1
+                ? "The pricing model, ready for each customer"
+                : revealPhase === 2
+                  ? "Acme’s drivers feed the pricing model"
+                  : revealPhase === 3
+                    ? "A price tailored to Acme emerges"
+                    : "The ideal price, adjusted for each customer"}
+            </motion.h2>
           </AnimatePresence>
 
           {/* Narrative area */}
@@ -664,39 +608,23 @@ export function ExecuteSlide({
             transition={{ duration: 0.4, delay: 0.5 }}
           >
             <AnimatePresence mode="wait">
-              {!settled ? (
-                <motion.p
-                  key="convergence-narrative"
-                  className="max-w-2xl text-center text-[1.05rem] leading-relaxed"
-                  style={{ color: NAVY }}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -6 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  Cost, competition, volume, and demand combine into{" "}
-                  <span style={{ fontWeight: 700, color: TEAL }}>one recommended price</span>{" "}
-                  for every SKU.
-                </motion.p>
-              ) : (
-                <motion.p
-                  key={revealPhase >= 4 ? `cust-${selected}` : `reveal-sub-${revealPhase <= 1 ? 1 : revealPhase}`}
-                  className="max-w-2xl text-center text-[1.05rem] leading-relaxed"
-                  style={{ color: NAVY }}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -6 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  {revealPhase <= 1
-                    ? "Built from your data — now it applies what it learned to individual accounts."
-                    : revealPhase === 2
-                      ? "The model weighs each factor to calculate Acme's optimal price."
-                      : revealPhase === 3
-                        ? <>{cust.price} — volume commitment and relationship depth push the price <span style={{ fontWeight: 700, color: "#2e7d32" }}>{cust.delta}</span>.</>
-                        : cust.narrative}
-                </motion.p>
-              )}
+              <motion.p
+                key={revealPhase >= 4 ? `cust-${selected}` : `reveal-sub-${revealPhase <= 1 ? 1 : revealPhase}`}
+                className="max-w-2xl text-center text-[1.05rem] leading-relaxed"
+                style={{ color: NAVY }}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.3 }}
+              >
+                {revealPhase <= 1
+                  ? "Built from your data — now it applies what it learned to individual accounts."
+                  : revealPhase === 2
+                    ? "The model weighs each factor to calculate Acme’s optimal price."
+                    : revealPhase === 3
+                      ? <>{cust.price} — volume commitment and relationship depth push the price <span style={{ fontWeight: 700, color: "#2e7d32" }}>{cust.delta}</span>.</>
+                      : cust.narrative}
+              </motion.p>
             </AnimatePresence>
           </motion.div>
 
@@ -704,153 +632,17 @@ export function ExecuteSlide({
           <div className="relative w-full max-w-5xl flex-1 min-h-0 overflow-hidden">
             <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} className="w-full h-full">
 
-                  {/* ── Collapse phase: driver nodes absorb into center ── */}
-                  {!settled && COLLAPSE_DRIVERS.map((drv, i) => {
-                    const dx = COLLAPSE_CX - drv.x;
-                    const dy = COLLAPSE_CY - drv.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    const edgeX = COLLAPSE_CX - (dx / dist) * COLLAPSE_CR;
-                    const edgeY = COLLAPSE_CY - (dy / dist) * COLLAPSE_CR;
-                    const cpX = drv.x + dx * 0.5;
-                    const cpY = drv.y + dy * 0.5;
-                    const pathD = `M ${drv.x} ${drv.y} Q ${cpX} ${cpY} ${edgeX} ${edgeY}`;
-
-                    return (
-                      <g key={`collapse-drv-${i}`}>
-                        <motion.path
-                          d={pathD} fill="none" stroke={GREY} strokeWidth={1.5}
-                          initial={skipAnimation ? false : { opacity: 0, pathLength: 0 }}
-                          animate={{ opacity: collapsed ? 0 : 0.4, pathLength: collapsed ? 0 : 1 }}
-                          transition={{ duration: 0.8, delay: collapsed ? i * 0.05 : 0.3 + i * 0.15, ease: "easeOut" }}
-                        />
-                        <motion.g
-                          initial={skipAnimation ? false : { opacity: 1, x: 0, y: 0, scale: 1 }}
-                          animate={collapsed
-                            ? { x: dx * 0.85, y: dy * 0.85, opacity: 0, scale: 0.2 }
-                            : { x: 0, y: 0, opacity: 1, scale: 1 }}
-                          transition={collapsed
-                            ? { duration: 0.7, delay: i * 0.08, ease: [0.55, 0, 1, 0.45] }
-                            : { duration: 0.3 }}
-                          style={{ transformOrigin: `${drv.x}px ${drv.y}px` }}
-                        >
-                          <circle cx={drv.x} cy={drv.y} r={COLLAPSE_DR} fill="white" stroke={drv.color} strokeWidth={1.5} />
-                          <text x={drv.x} y={drv.y - COLLAPSE_DR - 10} textAnchor="middle"
-                            style={{ fontSize: 12, fontWeight: 700, fill: drv.color }}>
-                            {drv.label}
-                          </text>
-                          <text x={drv.x} y={drv.y + 5} textAnchor="middle"
-                            style={{ fontSize: 20, fontWeight: 800, fill: drv.color }}>
-                            {drv.adj}
-                          </text>
-                        </motion.g>
-                      </g>
-                    );
-                  })}
-
-                  {/* Center element — morphs from $17.50 circle into pricing model box */}
-                  <motion.g>
-                    {/* Glow burst when drivers collapse */}
-                    {collapsed && !settled && (
-                      <motion.circle
-                        cx={COLLAPSE_CX} cy={COLLAPSE_CY} r={COLLAPSE_CR * 1.4}
-                        fill="none" stroke={TEAL} strokeWidth={2}
-                        initial={{ opacity: 0.5, scale: 0.95 }}
-                        animate={{ opacity: 0, scale: 1.3 }}
-                        transition={{ duration: 1, ease: "easeOut" }}
-                        style={{ transformOrigin: `${COLLAPSE_CX}px ${COLLAPSE_CY}px` }}
-                      />
-                    )}
-                    {/* Breathing ring (convergence only) */}
-                    {!collapsed && !settled && (
-                      <motion.circle
-                        cx={COLLAPSE_CX} cy={COLLAPSE_CY} r={COLLAPSE_CR + 2}
-                        fill="none" stroke={TEAL} strokeWidth={1.5}
-                        animate={{ opacity: [0, 0.2, 0], scale: [1, 1.12, 1] }}
-                        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-                        style={{ transformOrigin: `${COLLAPSE_CX}px ${COLLAPSE_CY}px` }}
-                      />
-                    )}
-
-                    {/* Morphing shape: circle → rounded rect */}
-                    <motion.rect
-                      initial={skipAnimation ? false : {
-                        x: COLLAPSE_CX - COLLAPSE_CR,
-                        y: COLLAPSE_CY - COLLAPSE_CR,
-                        width: COLLAPSE_CR * 2,
-                        height: COLLAPSE_CR * 2,
-                        rx: COLLAPSE_CR,
-                        fill: "white",
-                        stroke: TEAL,
-                        strokeWidth: 2.5,
-                      }}
-                      animate={settled ? {
-                        x: MODEL_CX - BOX_H / 2,
-                        y: MODEL_Y,
-                        width: BOX_H,
-                        height: BOX_H,
-                        rx: BOX_H / 2,
-                        fill: "white",
-                        stroke: TEAL,
-                        strokeWidth: 2.5,
-                      } : collapsed ? {
-                        x: COLLAPSE_CX - COLLAPSE_CR * 1.15,
-                        y: COLLAPSE_CY - COLLAPSE_CR * 1.15,
-                        width: COLLAPSE_CR * 2.3,
-                        height: COLLAPSE_CR * 2.3,
-                        rx: COLLAPSE_CR * 1.15,
-                        fill: "white",
-                        stroke: TEAL,
-                        strokeWidth: 2.5,
-                      } : {
-                        x: COLLAPSE_CX - COLLAPSE_CR,
-                        y: COLLAPSE_CY - COLLAPSE_CR,
-                        width: COLLAPSE_CR * 2,
-                        height: COLLAPSE_CR * 2,
-                        rx: COLLAPSE_CR,
-                        fill: "white",
-                        stroke: TEAL,
-                        strokeWidth: 2.5,
-                      }}
-                      transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                  {/* Pricing model circle */}
+                  <g>
+                    <circle
+                      cx={MODEL_CX} cy={MODEL_CY}
+                      r={BOX_H / 2}
+                      fill="white" stroke={TEAL} strokeWidth={2.5}
                     />
-
-                    {/* Convergence text — fades out as shape morphs */}
-                    <motion.text
-                      x={COLLAPSE_CX} y={COLLAPSE_CY - 24}
-                      textAnchor="middle"
-                      style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", fill: GREY }}
-                      initial={skipAnimation ? false : { opacity: 1 }}
-                      animate={{ opacity: settled ? 0 : 1 }}
-                      transition={{ duration: 0.25 }}
-                    >
-                      RECOMMENDED
-                    </motion.text>
-                    <motion.text
-                      x={COLLAPSE_CX} y={COLLAPSE_CY + 12}
-                      textAnchor="middle"
-                      style={{ fontSize: 36, fontWeight: 800, fill: NAVY }}
-                      initial={skipAnimation ? false : { opacity: 1 }}
-                      animate={{ opacity: settled ? 0 : 1 }}
-                      transition={{ duration: 0.25 }}
-                    >
-                      $17.50
-                    </motion.text>
-                    <motion.text
-                      x={COLLAPSE_CX} y={COLLAPSE_CY + 34}
-                      textAnchor="middle"
-                      style={{ fontSize: 13, fontWeight: 600, fill: GREY }}
-                      initial={skipAnimation ? false : { opacity: 1 }}
-                      animate={{ opacity: settled ? 0 : 1 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      SKU #A-7200
-                    </motion.text>
-
-                    {/* Model box content — fades in after morph */}
                     <motion.g
                       initial={skipAnimation ? false : { opacity: 0 }}
-                      animate={{ opacity: settled ? 1 : 0 }}
-                      transition={{ duration: 0.4, delay: settled ? 0.4 : 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.4, delay: 0.15 }}
                     >
                       {/* Title above circle */}
                       <text x={MODEL_CX} y={MODEL_CY - 68} fontSize="14" fontWeight="700" fill={NAVY} textAnchor="middle">
@@ -876,16 +668,15 @@ export function ExecuteSlide({
                       x={MODEL_CX} y={MODEL_CY + BOX_H / 2 + 18}
                       fontSize="10" fontWeight="500" fill={TEAL} textAnchor="middle"
                       initial={skipAnimation ? false : { opacity: 0 }}
-                      animate={{ opacity: settled ? 1 : 0 }}
-                      transition={{ duration: 0.4, delay: settled ? 0.6 : 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.4, delay: 0.3 }}
                     >
                       ML-powered optimization
                     </motion.text>
 
-                  </motion.g>
+                  </g>
 
-                  {/* Interactive elements — staged reveal after settled */}
-                  {settled && (
+                  {/* Interactive elements — staged reveal */}
                   <>
                     {/* Phase 2: Profile card (left) + flow into model + spinning ring */}
                     {revealPhase >= 2 && (
@@ -902,53 +693,28 @@ export function ExecuteSlide({
                               animate={{ pathLength: 1, opacity: 0.35 }}
                               transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
                             />
-                            <FlowDot path={inPathObj} color={cust.color} delay={0.3} />
+                            {/* Stream of dots flowing from profile into model */}
+                            {[0, 0.8, 1.6, 2.4, 3.2].map((d, i) => (
+                              <FlowDot key={`in-dot-${i}`} path={inPathObj} color={cust.color} delay={0.3 + d} />
+                            ))}
                           </motion.g>
                         </AnimatePresence>
-                        {/* Spinning outer ring while learning */}
+                        {/* Absorption pulse on the model circle */}
                         {revealPhase === 2 && (
                           <motion.circle
                             cx={MODEL_CX} cy={MODEL_CY}
-                            r={BOX_H / 2 + 4}
-                            fill="none" stroke={TEAL} strokeWidth={2}
-                            strokeDasharray="12 8"
-                            animate={{ rotate: 360 }}
-                            transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
-                            style={{ transformOrigin: `${MODEL_CX}px ${MODEL_CY}px` }}
+                            r={BOX_H / 2}
+                            fill="none" stroke={TEAL} strokeWidth={3}
+                            animate={{ r: [BOX_H / 2, BOX_H / 2 - 4, BOX_H / 2], opacity: [0.15, 0.4, 0.15] }}
+                            transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
                           />
                         )}
                       </>
                     )}
 
-                    {/* Phase 3: Recommended price + result card + out-flow */}
+                    {/* Phase 3: Result card + out-flow */}
                     {revealPhase >= 3 && (
                       <>
-                        <motion.g
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ duration: 0.4, delay: 0.2 }}
-                        >
-                          <motion.text
-                            x={MODEL_CX} y={MODEL_CY - BOX_H / 2 - 16}
-                            textAnchor="middle"
-                            style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", fill: GREY, fontFamily: "inherit" }}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ duration: 0.3, delay: 0.3 }}
-                          >
-                            RECOMMENDED
-                          </motion.text>
-                          <motion.text
-                            x={MODEL_CX} y={MODEL_CY - BOX_H / 2 - 2}
-                            textAnchor="middle"
-                            style={{ fontSize: 22, fontWeight: 800, fill: NAVY, fontFamily: "inherit" }}
-                            initial={{ opacity: 0, y: 6 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.4, delay: 0.5 }}
-                          >
-                            {cust.price}
-                          </motion.text>
-                        </motion.g>
                         <AnimatePresence mode="wait">
                           <motion.g key={`outflow-${selected}`}>
                             <motion.path
@@ -1024,13 +790,12 @@ export function ExecuteSlide({
                       </>
                     )}
                   </>
-                  )}
 
             </svg>
           </div>
 
           {/* Presenter advance control */}
-          {settled && revealPhase >= 1 && revealPhase < 4 && (
+          {revealPhase >= 1 && revealPhase < 4 && (
             <motion.div
               className="flex items-center gap-3 mt-2 mb-1"
               initial={{ opacity: 0 }}

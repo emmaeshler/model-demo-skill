@@ -85,10 +85,9 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
     slides: [
       { index: POWER_INDEX, label: "Price Points", subStep: 0 },
       { index: POWER_INDEX, label: "Data Scan", subStep: 1 },
-      { index: POWER_INDEX, label: "Drivers", subStep: 2 },
-      { index: POWER_INDEX, label: "Factors", subStep: 3 },
-      { index: POWER_INDEX, label: "Customize", subStep: 4 },
-      { index: POWER_INDEX, label: "Feed", subStep: 5 },
+      { index: POWER_INDEX, label: "Factors", subStep: 2 },
+      { index: POWER_INDEX, label: "Customize", subStep: 3 },
+      { index: POWER_INDEX, label: "Feed", subStep: 4 },
     ],
   },
   {

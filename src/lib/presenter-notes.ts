@@ -27,28 +27,24 @@ const NOTES: Record<string, string[]> = {
     "Machine learning is only as good as its training data.",
   ],
   "power:1": [
-    "Historical price points form the backbone of the model's learning.",
+    "The model scans all four data dimensions simultaneously — orders, market signals, customer profiles, and win/loss history.",
     "Every past pricing decision — win or loss — teaches the model about price sensitivity.",
   ],
   "power:2": [
-    "Transaction-level data adds depth.",
-    "Volume patterns, seasonal trends, and customer-specific behaviors all feed the model.",
-  ],
-  "power:3": [
-    "We also ingest market and environmental signals.",
-    "Competitor pricing, commodity indices, and macroeconomic indicators help the model adapt.",
-  ],
-  "power:4": [
-    "Customer segmentation helps the model personalize.",
-    "Different customers have different price sensitivities and value perceptions.",
-  ],
-  "power:5": [
-    "The model tracks outcomes rigorously.",
-    "Win rates, margin performance, and revenue impact create a continuous feedback loop.",
-  ],
-  "power:6": [
     "Key pricing drivers are identified and weighted.",
     "The model learns which factors matter most for each segment and situation.",
+  ],
+  "power:3": [
+    "Every business is different — we tune each factor based on your data.",
+    "Add what matters, remove what doesn't, and adjust the balance.",
+  ],
+  "power:4": [
+    "Your customized factors now feed directly into the pricing engine.",
+    "The model combines all inputs into a unified recommendation.",
+  ],
+  "power:5": [
+    "Cost, competition, volume, and demand converge into one recommended price.",
+    "This is the output for a single SKU — the model does this for every product.",
   ],
   "execute:0": [
     "All four pricing dimensions converge into a single recommended price — $17.50 for SKU #A-7200.",
