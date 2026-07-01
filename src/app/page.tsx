@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, X, LayoutGrid, ZoomIn, ZoomOut } from "lucide-react";
 import { AnimatePresence, motion, MotionConfig } from "framer-motion";
-import { type NavGroup, SlideNav } from "@/components/slide-nav";
+import { type NavGroup, SlideNav, AudienceTopBar } from "@/components/slide-nav";
 import { useMode } from "@/lib/mode-context";
 import { getPresenterNotes } from "@/lib/presenter-notes";
 import { cn } from "@/lib/utils";
@@ -337,8 +337,7 @@ export default function Home() {
     <>
       <main
         className={cn(
-          "flex min-h-[var(--slide-h,100vh)] flex-col items-center justify-start overflow-x-hidden",
-          isAudience ? "" : "pt-14",
+          "flex min-h-[var(--slide-h,100vh)] flex-col items-center justify-start overflow-x-hidden pt-14",
           isAudience ? "" : "pb-16",
         )}
       >
@@ -390,7 +389,13 @@ export default function Home() {
         </MotionConfig>
       </main>
 
-      {!isAudience && (
+      {isAudience ? (
+        <AudienceTopBar
+          groups={navGroups}
+          current={slide}
+          currentSubStep={hasSubSteps ? subStep : undefined}
+        />
+      ) : (
         <SlideNav
           current={slide}
           currentSubStep={hasSubSteps ? subStep : undefined}

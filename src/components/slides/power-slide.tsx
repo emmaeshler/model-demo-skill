@@ -165,10 +165,10 @@ const DISSOLVE_DOTS = Array.from({ length: 48 }, (_, i) => {
 });
 
 const PRICE_SATELLITES = [
-  { label: "Cost Trends", price: "$14.20", color: NAVY, cx: 185, cy: 240, r: 65 },
-  { label: "Volume & Elasticity", price: "+$1.80", color: GREEN, cx: 810, cy: 90, r: 65 },
-  { label: "Win / Loss Patterns", price: "−$0.90", color: PURPLE, cx: 250, cy: 410, r: 60 },
-  { label: "Competitive Position", price: "+$2.40", color: ORANGE, cx: 855, cy: 370, r: 68 },
+  { label: "Customer", price: "+$0.60", color: NAVY, cx: 185, cy: 240, r: 65 },
+  { label: "Product", price: "+$0.85", color: ORANGE, cx: 810, cy: 90, r: 65 },
+  { label: "Market", price: "−$0.30", color: GREEN, cx: 250, cy: 410, r: 60 },
+  { label: "Order", price: "+$0.45", color: PURPLE, cx: 855, cy: 370, r: 68 },
 ];
 const CONVERGE_MODEL_R = 170;
 
@@ -351,8 +351,15 @@ const CLUSTER_TARGETS = Array.from({ length: DOT_COUNT }, (_, i) => {
 
 /* ─── Sweep config ─── */
 
-const SWEEP_DURATION = 10;
+const SWEEP_DURATION = 14;
 const PILL_STAGGER_SPAN = 1.5;
+
+const CARD_FLY_TARGETS = [
+  { x: 400, y: -200 },
+  { x: -120, y: -200 },
+  { x: -350, y: -350 },
+  { x: 0, y: -350 },
+];
 
 function highlightDotsForCluster(cluster: number) {
   return DOTS
@@ -475,11 +482,19 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
     return () => clearTimeout(t);
   }, [chartStep, skipAnimation]);
 
+  const [convergeReady, setConvergeReady] = useState(skipAnimation && chartStep >= 4);
+  useEffect(() => {
+    if (chartStep < 4) { setConvergeReady(false); return; }
+    if (chartStep > 4 || skipAnimation) { setConvergeReady(true); return; }
+    const t = setTimeout(() => setConvergeReady(true), 2000);
+    return () => clearTimeout(t);
+  }, [chartStep, skipAnimation]);
+
   const [collapseStarted, setCollapseStarted] = useState(skipAnimation && chartStep >= 5);
   useEffect(() => {
     if (chartStep < 5) { setCollapseStarted(false); return; }
     if (skipAnimation) { setCollapseStarted(true); return; }
-    const t = setTimeout(() => setCollapseStarted(true), 2200);
+    const t = setTimeout(() => setCollapseStarted(true), 300);
     return () => clearTimeout(t);
   }, [chartStep, skipAnimation]);
 
@@ -493,8 +508,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
     const s2 = setTimeout(() => setScanCardCount(2), baseDelay + 1500);
     const s3 = setTimeout(() => setScanCardCount(3), baseDelay + 3000);
     const s4 = setTimeout(() => setScanCardCount(4), baseDelay + 4500);
-    const advance = setTimeout(() => onAutoAdvance?.(), baseDelay + 6500);
-    return () => { clearTimeout(s1); clearTimeout(s2); clearTimeout(s3); clearTimeout(s4); clearTimeout(advance); };
+    return () => { clearTimeout(s1); clearTimeout(s2); clearTimeout(s3); clearTimeout(s4); };
   }, [chartStep, skipAnimation, onAutoAdvance]);
 
   /* ── Chart flow ─────────────────────────────────────── */
@@ -734,7 +748,6 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
       </div>
 
       {/* Chart area */}
-      <LayoutGroup>
       <motion.div
         className="relative w-full flex-1 min-h-0 mt-0 flex items-stretch gap-0"
         initial={{ opacity: 0, y: 20 }}
@@ -896,8 +909,8 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
               targetCx = PLOT_CX + Math.cos(feedAngle) * feedDist;
               targetCy = PLOT_CY + Math.sin(feedAngle) * feedDist;
               targetFill = CLUSTER_COLORS[cl.ci];
-              targetOpacity = converging ? 0 : 0.2;
-              targetR = converging ? 0 : dot.r * 0.5;
+              targetOpacity = convergeReady ? 0 : 0.2;
+              targetR = convergeReady ? 0 : dot.r * 0.5;
               cxTransition = { duration: 1.2, delay: dot.delay * 0.4, ease: [0.22, 1, 0.36, 1] };
               cyTransition = { duration: 1.2, delay: dot.delay * 0.4, ease: [0.22, 1, 0.36, 1] };
               opacityDelay = dot.delay * 0.4 + 0.3;
@@ -1075,13 +1088,14 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
           })}
 
           {/* ── Factor pills (step 6 quadrants → step 7+ grid) ── */}
-          {factorsVisible && !converging && (
+          {factorsVisible && !convergeReady && (
             <motion.foreignObject
               x={10} y={-25} width={1000} height={560}
               initial={{ opacity: 0 }}
-              animate={{ opacity: factorsPhase >= 1 ? 1 : 0 }}
+              animate={{ opacity: 1 }}
               transition={{ duration: 0.4 }}
             >
+              <LayoutGroup>
               <div style={{
                 width: "100%",
                 height: "100%",
@@ -1133,7 +1147,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                               }}
                               initial={{ opacity: 0 }}
                               animate={{
-                                opacity: 1,
+                                opacity: factorsPhase >= 1 ? 1 : 0,
                               }}
                               transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], layout: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } }}
                             >
@@ -1437,6 +1451,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                   )}
                 </AnimatePresence>
               </div>
+              </LayoutGroup>
             </motion.foreignObject>
           )}
 
@@ -1718,19 +1733,21 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
 
       {/* ── Bottom cards (steps 1-4, hidden at cluster step) ── */}
       <AnimatePresence>
-        {chartStep === 1 && !preScan && scanCardCount > 0 && (
+        {((chartStep === 1 && !preScan && scanCardCount > 0) || (chartStep === 2 && factorsPhase < 1)) && (
           <motion.div
             className="flex flex-wrap justify-center gap-2 w-full px-4 overflow-hidden"
             initial={{ opacity: 0, y: 16, height: 0 }}
             animate={{ opacity: 1, y: 0, height: "auto" }}
-            exit={{ opacity: 0, y: -80, height: 0 }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           >
             {SPOTLIGHTS.map((s, i) => {
               const d = DRIVERS[s.cluster];
-              const isActive = i === scanCardCount - 1;
+              const isActive = chartStep === 1 && i === scanCardCount - 1;
               const isRevealed = i < scanCardCount;
               if (!isRevealed) return null;
+              const flying = chartStep === 2;
+              const flyTarget = CARD_FLY_TARGETS[i];
               return (
                 <motion.div
                   key={s.label}
@@ -1743,13 +1760,25 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                     maxWidth: 260,
                   }}
                   initial={{ opacity: 0, y: 12, scale: 0.95 }}
-                  animate={{
+                  animate={flying ? {
+                    opacity: 0,
+                    y: flyTarget.y,
+                    x: flyTarget.x,
+                    scale: 0.5,
+                  } : {
                     opacity: isActive ? 1 : 0.55,
                     y: 0,
+                    x: 0,
                     scale: 1,
                   }}
-                  transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                  layout
+                  transition={flying ? {
+                    duration: 0.7,
+                    delay: i * 0.04,
+                    ease: [0.4, 0, 0.1, 1],
+                  } : {
+                    duration: 0.5,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
                 >
                   {isActive && (
                     <motion.div
@@ -1778,20 +1807,9 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                         </div>
                       </div>
                       <div className="min-w-0">
-                        <motion.div
-                          layoutId={`cat-label-${s.label.toLowerCase()}`}
-                          layout
-                          className="text-[0.68rem] font-bold tracking-[0.06em] uppercase truncate"
-                          style={{
-                            color: d.color,
-                            backgroundColor: SOLID_TINTS[d.color] ?? "white",
-                            borderRadius: 4,
-                            padding: "0px 6px",
-                          }}
-                          transition={{ layout: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } }}
-                        >
+                        <div className="text-[0.68rem] font-bold tracking-[0.06em] uppercase truncate" style={{ color: d.color }}>
                           {s.label}
-                        </motion.div>
+                        </div>
                         <div className="text-[0.62rem]" style={{ color: MUTED }}>
                           {s.count}
                         </div>
@@ -1826,7 +1844,6 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
           </motion.div>
         )}
       </AnimatePresence>
-      </LayoutGroup>
     </div>
   );
 }

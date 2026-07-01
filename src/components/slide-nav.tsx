@@ -340,6 +340,42 @@ export function BottomBar({
   );
 }
 
+export function AudienceTopBar({
+  groups,
+  current,
+  currentSubStep,
+  presentationTitle = "Inside Your Dynamic Model",
+}: Pick<SlideNavProps, "groups" | "current" | "currentSubStep" | "presentationTitle">) {
+  const currentGroup =
+    groups.find((g) =>
+      g.slides.some(
+        (s) =>
+          s.index === current &&
+          (s.subStep === undefined || s.subStep === currentSubStep),
+      ),
+    ) ?? groups.find((g) => g.slides.some((s) => s.index === current));
+
+  return (
+    <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-[#06283D]/90 backdrop-blur-md">
+      <div className="mx-auto flex max-w-5xl items-center px-4 py-2.5">
+        <div className="flex items-center gap-2 px-2 py-1 text-sm font-bold tracking-tight text-white/90">
+          <svg viewBox="0 0 36 36" className="size-5 shrink-0" aria-hidden="true">
+            <rect x="0" y="0" width="15" height="15" rx="2" fill="#EF8B1D" />
+            <rect x="19" y="0" width="15" height="15" rx="2" fill="#E56910" />
+            <rect x="0" y="19" width="15" height="15" rx="2" fill="#00446A" />
+            <rect x="19" y="19" width="15" height="15" rx="2" fill="#E56910" />
+          </svg>
+          {presentationTitle}
+        </div>
+
+        <span className="px-3 py-1.5 text-sm font-medium text-white/70">
+          {currentGroup?.label ?? ""}
+        </span>
+      </div>
+    </header>
+  );
+}
+
 // Keep backward-compat export for easy migration
 export function SlideNav(props: SlideNavProps) {
   return (
