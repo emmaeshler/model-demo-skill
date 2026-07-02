@@ -392,15 +392,17 @@ export function ModelOutputsOverview({ step }: { step: number }) {
 
   return (
     <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-6xl flex-col items-center justify-center px-6 relative">
-      <motion.h2
-        className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
-        style={{ color: NAVY, transform: "translateX(calc(var(--rail-inset, 0px) * -0.5))" }}
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
-      >
-        What the model produces
-      </motion.h2>
+      <div style={{ transform: "translateX(calc(var(--rail-inset, 0px) * -0.5))" }}>
+        <motion.h2
+          className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
+          style={{ color: NAVY }}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
+        >
+          What the model produces
+        </motion.h2>
+      </div>
 
       <div className="flex min-h-[3.5rem] items-center justify-center px-4 mb-1" style={{ transform: "translateX(calc(var(--rail-inset, 0px) * -0.5))" }}>
         <AnimatePresence mode="wait">
@@ -668,34 +670,36 @@ export function ExecuteSlide({
           className={`mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-7xl flex-col items-center justify-start px-6 relative ${isPresenter ? "pt-2" : "pt-8"}`}
         >
           {/* Title */}
-          <AnimatePresence mode="wait">
-            <motion.h2
-              key={`reveal-title-${revealPhase <= 1 ? 1 : revealPhase >= 4 ? 4 : revealPhase}`}
-              className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
-              style={{ color: NAVY, transform: "translateX(calc(var(--rail-inset, 0px) * -0.5))" }}
-              initial={skipAnimation ? false : { opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.4 }}
-            >
-              {revealPhase <= 1
-                ? "The pricing model, ready for each customer"
-                : revealPhase === 2
-                  ? "Acme’s drivers feed the pricing model"
-                  : revealPhase === 3
-                    ? "A price tailored to Acme emerges"
-                    : "The ideal price, adjusted for each customer"}
-            </motion.h2>
-          </AnimatePresence>
+          <div style={{ transform: "translateX(calc(var(--rail-inset, 0px) * -0.5))" }}>
+            <AnimatePresence mode="wait">
+              <motion.h2
+                key={`reveal-title-${revealPhase <= 1 ? 1 : revealPhase >= 4 ? 4 : revealPhase}`}
+                className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
+                style={{ color: NAVY }}
+                initial={skipAnimation ? false : { opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.4 }}
+              >
+                {revealPhase <= 1
+                  ? "The pricing model, ready for each customer"
+                  : revealPhase === 2
+                    ? "Acme’s drivers feed the pricing model"
+                    : revealPhase === 3
+                      ? "A price tailored to Acme emerges"
+                      : "The ideal price, adjusted for each customer"}
+              </motion.h2>
+            </AnimatePresence>
+          </div>
 
           {/* Narrative area */}
-          <motion.div
-            className={`flex min-h-[3rem] items-center justify-center px-4 ${isPresenter ? "mb-1" : "mb-4"}`}
-            style={{ transform: "translateX(calc(var(--rail-inset, 0px) * -0.5))" }}
-            initial={skipAnimation ? false : { opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.5 }}
-          >
+          <div style={{ transform: "translateX(calc(var(--rail-inset, 0px) * -0.5))" }}>
+            <motion.div
+              className={`flex min-h-[3rem] items-center justify-center px-4 ${isPresenter ? "mb-1" : "mb-4"}`}
+              initial={skipAnimation ? false : { opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.5 }}
+            >
             <AnimatePresence mode="wait">
               <motion.p
                 key={revealPhase >= 4 ? `cust-${selected}` : `reveal-sub-${revealPhase <= 1 ? 1 : revealPhase}`}
@@ -715,7 +719,8 @@ export function ExecuteSlide({
                       : cust.narrative}
               </motion.p>
             </AnimatePresence>
-          </motion.div>
+            </motion.div>
+          </div>
 
           {/* Diagram */}
           <div className="relative w-full flex-1 min-h-0 overflow-hidden">

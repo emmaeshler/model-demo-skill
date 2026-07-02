@@ -84,7 +84,7 @@ const ENGINE_FOCUS_MAP: Record<string, EngineFocus> = {
 const ML_GREEN = "#3A7D44";
 const STRAT_BLUE = "#2A7BA5";
 
-const ENGINE_INDICATOR_SLIDES = new Set([POWER_INDEX, EXECUTE_INDEX, REFINE_INDEX]);
+const ENGINE_INDICATOR_SLIDES = new Set([POWER_INDEX]);
 
 type CategoryKey = "customer" | "product" | "market" | "order";
 
@@ -109,48 +109,75 @@ const ACTIVE_CATEGORIES_MAP: Record<string, CategoryKey[]> = {
   [`${REFINE_INDEX}-7`]: ["market"],
 };
 
+const ENGINE_ITEMS: { key: "ml" | "strat"; label: string; color: string; tint: string }[] = [
+  { key: "ml", label: "ML Prediction", color: ML_GREEN, tint: "rgba(58,125,68,0.08)" },
+  { key: "strat", label: "Strategic Guidance", color: STRAT_BLUE, tint: "rgba(42,123,165,0.08)" },
+];
+
 function EngineIndicator({ focus, visible }: { focus: EngineFocus; visible: boolean }) {
-  const mlActive = focus === "ml" || focus === "both";
-  const stratActive = focus === "strat" || focus === "both";
+  const mlActive = focus === "both" || focus === "ml";
+  const stratActive = focus === "both" || focus === "strat";
+  const activeLabel = focus === "both"
+    ? "ML Prediction &\nStrategic Guidance"
+    : focus === "ml"
+    ? "ML Prediction"
+    : focus === "strat"
+    ? "Strategic Guidance"
+    : "";
+
+  const R = 28;
+  const CX = R + 2;
+  const CY = R + 2;
+  const svgSize = (R + 2) * 2;
 
   return (
     <AnimatePresence>
       {visible && (
         <motion.div
-          className="fixed top-[80px] left-4 z-50 flex items-center gap-2.5 rounded-lg bg-white/95 px-3 py-2 shadow-md ring-1 ring-black/[0.06] backdrop-blur-sm"
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.3, ease: "easeOut" }}
+          className="fixed right-3 top-[80px] z-50 flex flex-col items-center gap-1"
+          initial={{ opacity: 0, scale: 0.7 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.7 }}
+          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
         >
-          <svg viewBox="0 0 28 28" className="size-7 shrink-0" aria-hidden="true">
+          <motion.span
+            className="text-[8px] font-semibold uppercase tracking-[0.12em] text-gray-400"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
+          >
+            Model Engine
+          </motion.span>
+
+          <svg width={svgSize} height={svgSize} viewBox={`0 0 ${svgSize} ${svgSize}`}>
+            {/* Left half — ML Prediction */}
             <motion.path
-              d="M 14 2 A 12 12 0 0 1 14 26 Z"
-              animate={{ fill: mlActive ? ML_GREEN : "#D1D5DB" }}
-              transition={{ duration: 0.35 }}
+              d={`M ${CX} ${CY - R} A ${R} ${R} 0 0 0 ${CX} ${CY + R} L ${CX} ${CY} Z`}
+              fill={ML_GREEN}
+              animate={{ opacity: mlActive ? 1 : 0.15 }}
+              transition={{ duration: 0.3 }}
             />
+            {/* Right half — Strategic Guidance */}
             <motion.path
-              d="M 14 26 A 12 12 0 0 1 14 2 Z"
-              animate={{ fill: stratActive ? STRAT_BLUE : "#D1D5DB" }}
-              transition={{ duration: 0.35 }}
+              d={`M ${CX} ${CY - R} A ${R} ${R} 0 0 1 ${CX} ${CY + R} L ${CX} ${CY} Z`}
+              fill={STRAT_BLUE}
+              animate={{ opacity: stratActive ? 1 : 0.15 }}
+              transition={{ duration: 0.3 }}
             />
+            {/* Divider line */}
+            <line x1={CX} y1={CY - R} x2={CX} y2={CY + R} stroke="white" strokeWidth={1.5} />
+            {/* Outer ring */}
+            <circle cx={CX} cy={CY} r={R} fill="none" stroke="white" strokeWidth={1.5} opacity={0.4} />
           </svg>
-          <div className="flex flex-col gap-0.5">
-            <motion.span
-              className="text-[11px] font-semibold leading-tight"
-              animate={{ color: mlActive ? ML_GREEN : "#9CA3AF", opacity: mlActive ? 1 : 0.6 }}
-              transition={{ duration: 0.35 }}
-            >
-              ML Prediction
-            </motion.span>
-            <motion.span
-              className="text-[11px] font-semibold leading-tight"
-              animate={{ color: stratActive ? STRAT_BLUE : "#9CA3AF", opacity: stratActive ? 1 : 0.6 }}
-              transition={{ duration: 0.35 }}
-            >
-              Strategic Guidance
-            </motion.span>
-          </div>
+
+          <motion.span
+            className="max-w-[90px] text-center text-[9px] font-semibold leading-tight text-gray-600 whitespace-pre-line"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3, delay: 0.3 }}
+          >
+            {activeLabel}
+          </motion.span>
         </motion.div>
       )}
     </AnimatePresence>
@@ -166,7 +193,7 @@ function FactorCategoryRail({
 
   return (
     <motion.div
-      className="fixed left-0 top-1/2 z-40 flex w-[120px] -translate-y-1/2 flex-col gap-1.5 rounded-r-xl bg-white/95 px-3 py-4 shadow-md ring-1 ring-black/[0.06] backdrop-blur-sm"
+      className="fixed left-0 top-[220px] z-40 flex w-[120px] flex-col gap-1.5 rounded-r-xl bg-white/95 px-3 py-4 shadow-md ring-1 ring-black/[0.06] backdrop-blur-sm"
       initial={{ x: -130 }}
       animate={{ x: 0 }}
       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}

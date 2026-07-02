@@ -623,33 +623,158 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
                   </motion.p>
                 </AnimatePresence>
               )}
-              {isIndexShift && (
-                <motion.div
-                  className="flex items-center justify-center gap-6 mt-2"
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
-                >
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Timeline strip (step 7) — KPIs + progress bar + factor card */}
+      <AnimatePresence>
+        {isIndexShift && (
+          <motion.div
+            key="timeline-strip"
+            className="w-full flex-shrink-0 px-2"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="flex gap-5">
+              {/* Left: KPIs + timeline */}
+              <div className="flex-1 min-w-0">
+                {/* KPIs */}
+                <div className="flex items-baseline gap-8 mb-2">
                   {[
                     { label: "Win Rate", value: `${Math.round(currentKpi.winRate)}%`, color: TEAL },
                     { label: "Price Adoption", value: `${Math.round(currentKpi.priceAdoption)}%`, color: NAVY },
                     { label: "Margin Impact", value: `+${currentKpi.marginImpact.toFixed(1)}%`, color: GREEN },
                   ].map(kpi => (
-                    <div key={kpi.label} className="flex items-center gap-2">
-                      <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: MUTED }}>
-                        {kpi.label}
-                      </span>
-                      <span className="text-xl font-bold tabular-nums leading-none" style={{ color: kpi.color }}>
-                        {kpi.value}
-                      </span>
+                    <div key={kpi.label}>
+                      <div className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: MUTED }}>{kpi.label}</div>
+                      <div className="text-lg font-bold tabular-nums leading-tight" style={{ color: kpi.color }}>{kpi.value}</div>
                     </div>
                   ))}
-                </motion.div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+                </div>
+                {/* Timeline bar */}
+                <div className="relative h-[3px] rounded-full" style={{ backgroundColor: `${NAVY}12` }}>
+                  <motion.div
+                    className="absolute left-0 top-0 h-full rounded-full"
+                    style={{ backgroundColor: STRAT_BLUE }}
+                    animate={{ width: `${(currentMonth / TOTAL_MONTHS) * 100}%` }}
+                    transition={{ duration: 0.6, ease: "easeOut" }}
+                  />
+                  {/* Small tick at every month */}
+                  {Array.from({ length: TOTAL_MONTHS + 1 }, (_, m) => {
+                    const pos = (m / TOTAL_MONTHS) * 100;
+                    const isEvent = TIMELINE_EVENTS.some(e => e.month === m);
+                    const isPast = currentMonth >= m;
+                    if (isEvent) return null;
+                    return (
+                      <div
+                        key={m}
+                        className="absolute rounded-full"
+                        style={{
+                          left: `${pos}%`, top: "50%",
+                          width: 3, height: 3,
+                          transform: "translateX(-50%) translateY(-50%)",
+                          backgroundColor: isPast ? `${NAVY}50` : `${NAVY}18`,
+                        }}
+                      />
+                    );
+                  })}
+                  {/* Larger dots at event months */}
+                  {TIMELINE_EVENTS.map((event, i) => {
+                    const pos = (event.month / TOTAL_MONTHS) * 100;
+                    const isActive = indexPhase === i + 1 && indexMorphProgress >= 1;
+                    const isPast = currentMonth >= event.month;
+                    return (
+                      <motion.div
+                        key={event.month}
+                        className="absolute rounded-full"
+                        style={{ left: `${pos}%`, top: "50%", transform: "translateX(-50%) translateY(-50%)" }}
+                        animate={{
+                          width: isActive ? 10 : 6,
+                          height: isActive ? 10 : 6,
+                          backgroundColor: isActive ? STRAT_BLUE : isPast ? NAVY : `${NAVY}30`,
+                        }}
+                        transition={{ duration: 0.3 }}
+                      />
+                    );
+                  })}
+                  {/* Start dot */}
+                  <div
+                    className="absolute rounded-full"
+                    style={{ left: 0, top: "50%", width: 6, height: 6, backgroundColor: NAVY, transform: "translateX(-50%) translateY(-50%)" }}
+                  />
+                </div>
+                {/* Month labels */}
+                <div className="relative mt-1.5" style={{ height: 14 }}>
+                  <span className="absolute text-[9px] font-medium" style={{ left: 0, transform: "translateX(-50%)", color: NAVY }}>0</span>
+                  {TIMELINE_EVENTS.map((event, i) => {
+                    const pos = (event.month / TOTAL_MONTHS) * 100;
+                    const isActive = indexPhase === i + 1 && indexMorphProgress >= 1;
+                    return (
+                      <span
+                        key={event.month}
+                        className="absolute text-[9px] font-medium transition-colors duration-300"
+                        style={{ left: `${pos}%`, transform: "translateX(-50%)", color: isActive ? STRAT_BLUE : MUTED }}
+                      >
+                        {event.month}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+              {/* Right: Factor card */}
+              <div className="w-44 flex-shrink-0">
+                <AnimatePresence mode="wait">
+                  {currentEvent && indexMorphProgress >= 0.8 ? (
+                    <motion.div
+                      key={`factor-${indexPhase}`}
+                      className="rounded-lg px-3 py-2"
+                      style={{ backgroundColor: `${STRAT_BLUE}08`, border: `1px solid ${STRAT_BLUE}20` }}
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      transition={{ duration: 0.25 }}
+                    >
+                      <div className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: STRAT_BLUE }}>
+                        Month {currentEvent.month}
+                      </div>
+                      <div className="mt-0.5 text-[13px] font-bold leading-snug" style={{ color: NAVY }}>
+                        {currentEvent.label}
+                      </div>
+                      <div className="mt-0.5 text-[11px] leading-snug" style={{ color: MUTED }}>
+                        {currentEvent.factor}
+                      </div>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="factor-empty"
+                      className="rounded-lg px-3 py-2"
+                      style={{ backgroundColor: `${NAVY}04`, border: `1px solid ${NAVY}08` }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <div className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: `${MUTED}80` }}>
+                        Month {Math.round(currentMonth)}
+                      </div>
+                      <div className="mt-0.5 text-[13px] font-bold leading-snug" style={{ color: `${NAVY}60` }}>
+                        Model active
+                      </div>
+                      <div className="mt-0.5 text-[11px] leading-snug" style={{ color: `${MUTED}60` }}>
+                        Continuous optimization
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Chart area */}
       <div className="relative w-full flex-1 min-h-0 mt-0" style={{ maxHeight: "calc(100% - 120px)" }}>
@@ -757,97 +882,6 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
                     </div>
                     <p className="ml-[28px] mt-0.5 text-[11px] leading-snug" style={{ color: MUTED }}>Price-sensitive, competitive market</p>
                   </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Market factor badge (step 7 timeline) */}
-          <AnimatePresence>
-            {isIndexShift && currentEvent && indexMorphProgress >= 0.8 && (
-              <motion.div
-                key={`factor-${indexPhase}`}
-                className="absolute z-10 max-w-[180px] rounded-lg bg-white/95 px-3.5 py-2.5 shadow-md backdrop-blur-sm"
-                style={{ right: "3%", top: "5%" }}
-                initial={{ opacity: 0, x: 8 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 8 }}
-                transition={{ duration: 0.3 }}
-              >
-                <div className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: STRAT_BLUE }}>
-                  Month {currentEvent.month}
-                </div>
-                <div className="mt-0.5 text-[14px] font-bold" style={{ color: NAVY }}>
-                  {currentEvent.label}
-                </div>
-                <div className="mt-0.5 text-[11px] leading-snug" style={{ color: MUTED }}>
-                  {currentEvent.factor}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Timeline bar (step 7) */}
-          <AnimatePresence>
-            {isIndexShift && (
-              <motion.div
-                key="timeline-bar"
-                className="absolute bottom-8 left-[10%] right-[10%] z-10"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-              >
-                <div className="relative h-[3px] rounded-full" style={{ backgroundColor: `${NAVY}15` }}>
-                  <motion.div
-                    className="absolute left-0 top-0 h-full rounded-full"
-                    style={{ backgroundColor: STRAT_BLUE }}
-                    animate={{ width: `${(currentMonth / TOTAL_MONTHS) * 100}%` }}
-                    transition={{ duration: 0.6, ease: "easeOut" }}
-                  />
-                  {TIMELINE_EVENTS.map((event, i) => {
-                    const pos = (event.month / TOTAL_MONTHS) * 100;
-                    const isActive = indexPhase === i + 1 && indexMorphProgress >= 1;
-                    const isPast = currentMonth >= event.month;
-                    return (
-                      <motion.div
-                        key={event.month}
-                        className="absolute rounded-full"
-                        style={{ left: `${pos}%`, top: "50%", transform: "translateX(-50%) translateY(-50%)" }}
-                        animate={{
-                          width: isActive ? 10 : 6,
-                          height: isActive ? 10 : 6,
-                          backgroundColor: isActive ? STRAT_BLUE : isPast ? NAVY : `${NAVY}30`,
-                        }}
-                        transition={{ duration: 0.3 }}
-                      />
-                    );
-                  })}
-                  <div
-                    className="absolute left-0 top-1/2"
-                    style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: NAVY, transform: "translateX(-50%) translateY(-50%)" }}
-                  />
-                </div>
-                <div className="relative mt-2 flex" style={{ height: 28 }}>
-                  <span
-                    className="absolute text-[9px] font-medium whitespace-nowrap"
-                    style={{ left: 0, transform: "translateX(-50%)", color: currentMonth >= 0 ? NAVY : MUTED }}
-                  >
-                    Mo 0
-                  </span>
-                  {TIMELINE_EVENTS.map((event, i) => {
-                    const pos = (event.month / TOTAL_MONTHS) * 100;
-                    const isActive = indexPhase === i + 1 && indexMorphProgress >= 1;
-                    return (
-                      <span
-                        key={event.month}
-                        className="absolute text-[9px] font-medium whitespace-nowrap transition-colors duration-300"
-                        style={{ left: `${pos}%`, transform: "translateX(-50%)", color: isActive ? STRAT_BLUE : MUTED }}
-                      >
-                        Mo {event.month}
-                      </span>
-                    );
-                  })}
                 </div>
               </motion.div>
             )}

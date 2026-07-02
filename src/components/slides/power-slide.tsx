@@ -149,6 +149,22 @@ const SELECTED_FACTORS = [
   { label: "Cost to serve", color: ORANGE },
 ];
 
+const CATEGORY_ACTIONS: Record<string, { label: string; action: "elevate" | "remove" | "lower" }[]> = {
+  customer: [
+    { label: "Sales rep", action: "elevate" },
+    { label: "End market", action: "remove" },
+  ],
+  product: [
+    { label: "Cost to serve", action: "elevate" },
+  ],
+  market: [
+    { label: "Competitive price point", action: "elevate" },
+  ],
+  order: [
+    { label: "Seasonality", action: "lower" },
+  ],
+};
+
 const FEED_NUDGE_Y = [130, 35, -75, -170];
 
 const dissolveSeed = mulberry32(456);
@@ -346,12 +362,6 @@ const CLUSTER_TARGETS = Array.from({ length: DOT_COUNT }, (_, i) => {
 const SWEEP_DURATION = 12;
 const PILL_STAGGER_SPAN = 1.5;
 
-const CARD_FLY_TARGETS = [
-  { x: 400, y: -200 },
-  { x: -120, y: -200 },
-  { x: -350, y: -350 },
-  { x: 0, y: -350 },
-];
 
 function highlightDotsForCluster(cluster: number) {
   return DOTS
@@ -413,13 +423,6 @@ function CategoryIcon({ type, color, size = 18 }: { type: string; color: string;
 export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCategoryChange }: { step: number; onAutoAdvance?: () => void; skipAnimation?: boolean; onActiveCategoryChange?: (categories: string[]) => void }) {
   const chartStep = step;
 
-  const [preScan, setPreScan] = useState(false);
-  useEffect(() => {
-    if (step !== 1 || skipAnimation) { setPreScan(false); return; }
-    setPreScan(true);
-    const t = setTimeout(() => setPreScan(false), 2200);
-    return () => clearTimeout(t);
-  }, [step, skipAnimation]);
 
   const [introPhase, setIntroPhase] = useState(skipAnimation ? 5 : chartStep === 0 ? 0 : 4);
   const [selectionPhase, setSelectionPhase] = useState(chartStep > 2 || (skipAnimation && chartStep >= 2) ? 5 : -1);
@@ -456,22 +459,23 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
     if (chartStep < 2) { setSelectionPhase(-1); return; }
     if (chartStep > 2 || skipAnimation) { setSelectionPhase(5); return; }
     setSelectionPhase(-1);
-    const t0 = setTimeout(() => setSelectionPhase(0), 1000);
-    const t1 = setTimeout(() => setSelectionPhase(1), 3000);
-    const t2 = setTimeout(() => setSelectionPhase(2), 5000);
-    const t3 = setTimeout(() => setSelectionPhase(3), 7000);
-    const t4 = setTimeout(() => setSelectionPhase(4), 9000);
-    const t5 = setTimeout(() => setSelectionPhase(5), 11000);
+    const t0 = setTimeout(() => setSelectionPhase(0), 1500);
+    const t1 = setTimeout(() => setSelectionPhase(1), 5500);
+    const t2 = setTimeout(() => setSelectionPhase(2), 9500);
+    const t3 = setTimeout(() => setSelectionPhase(3), 13500);
+    const t4 = setTimeout(() => setSelectionPhase(4), 17500);
+    const t5 = setTimeout(() => setSelectionPhase(5), 20000);
     return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); clearTimeout(t5); };
   }, [chartStep, skipAnimation]);
 
+  const [actionRevealed, setActionRevealed] = useState(skipAnimation || chartStep > 2);
   useEffect(() => {
-    if (chartStep !== 2 || skipAnimation || !onAutoAdvance) return;
-    if (selectionPhase >= 5) {
-      const t = setTimeout(() => onAutoAdvance(), 2500);
-      return () => clearTimeout(t);
-    }
-  }, [chartStep, selectionPhase, skipAnimation, onAutoAdvance]);
+    if (selectionPhase < 0 || selectionPhase > 3) { setActionRevealed(false); return; }
+    if (skipAnimation) { setActionRevealed(true); return; }
+    setActionRevealed(false);
+    const t = setTimeout(() => setActionRevealed(true), 1200);
+    return () => clearTimeout(t);
+  }, [selectionPhase, skipAnimation]);
 
   useEffect(() => {
     if (!onActiveCategoryChange) return;
@@ -504,14 +508,12 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
     if (skipAnimation) { setScanCardCount(4); setDriversRevealed(true); return; }
     setScanCardCount(0);
     setDriversRevealed(false);
-    const sweepStart = 2200;
     const cardInterval = SWEEP_DURATION * 1000 / 4;
-    const s1 = setTimeout(() => setScanCardCount(1), sweepStart + 300);
-    const s2 = setTimeout(() => setScanCardCount(2), sweepStart + cardInterval);
-    const s3 = setTimeout(() => setScanCardCount(3), sweepStart + cardInterval * 2);
-    const s4 = setTimeout(() => setScanCardCount(4), sweepStart + cardInterval * 3);
-    const s5 = setTimeout(() => setDriversRevealed(true), sweepStart + cardInterval * 4);
-    return () => { clearTimeout(s1); clearTimeout(s2); clearTimeout(s3); clearTimeout(s4); clearTimeout(s5); };
+    const s1 = setTimeout(() => setScanCardCount(1), 600);
+    const s2 = setTimeout(() => setScanCardCount(2), cardInterval);
+    const s3 = setTimeout(() => setScanCardCount(3), cardInterval * 2);
+    const s4 = setTimeout(() => setScanCardCount(4), cardInterval * 3);
+    return () => { clearTimeout(s1); clearTimeout(s2); clearTimeout(s3); clearTimeout(s4); };
   }, [chartStep, skipAnimation, onAutoAdvance]);
 
   /* ── Chart flow ─────────────────────────────────────── */
@@ -520,7 +522,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
   const customized = chartStep >= 2;
   const feeding = chartStep >= 3;
   const converging = chartStep >= 3;
-  const sweepActive = chartStep === 1 && !preScan && !driversRevealed;
+  const sweepActive = chartStep === 1 && !driversRevealed;
 
   const revealedClusters = new Set(SPOTLIGHTS.slice(0, scanCardCount).map(s => s.cluster));
   const activeCluster = scanCardCount > 0 ? SPOTLIGHTS[scanCardCount - 1].cluster : -1;
@@ -611,18 +613,24 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
           )}
           {chartStep > 0 && (
             <motion.div
-              key={preScan ? "pre-scan-title" : `step-title-${chartStep}`}
+              key={`step-title-${chartStep}`}
               className="absolute inset-0 flex flex-col items-center justify-start"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.35, delay: preScan ? 0.2 : chartStep === 1 ? 0.2 : 0 }}
+              transition={{ duration: 0.5, delay: chartStep === 1 ? 0.2 : 0.15 }}
             >
               {chartStep === 2 ? (
                 <>
-                  <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: NAVY }}>
+                  <motion.h2
+                    className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
+                    style={{ color: NAVY }}
+                    initial={skipAnimation ? false : { opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: skipAnimation ? 0 : 0.1, ease: [0.22, 1, 0.36, 1] }}
+                  >
                     {TITLES[chartStep]}
-                  </h2>
+                  </motion.h2>
                   <div className="mx-auto mt-2 max-w-3xl text-center" style={{ minHeight: 28 }}>
                     <AnimatePresence mode="wait">
                       {selectionPhase >= 0 && selectionPhase <= 3 ? (
@@ -704,29 +712,18 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                 <>
                   <motion.h2
                     className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
-                    style={{ color: preScan ? TEAL : NAVY }}
+                    style={{ color: NAVY }}
                   >
-                    {preScan ? (
-                      <span className="relative inline-block">
-                        The model scans for patterns
-                        <motion.span
-                          className="absolute bottom-0 left-0 h-[3px] rounded-full"
-                          style={{ backgroundColor: TEAL }}
-                          initial={{ width: "0%" }}
-                          animate={{ width: "100%" }}
-                          transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }}
-                        />
-                      </span>
-                    ) : TITLES[chartStep]}
+                    {TITLES[chartStep]}
                   </motion.h2>
                   <motion.p
                     className="mx-auto mt-1 max-w-2xl text-center text-[1.05rem] leading-relaxed"
                     style={{ color: MUTED }}
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: preScan ? 0.4 : chartStep === 1 ? 0.4 : 0.15 }}
+                    transition={{ duration: 0.4, delay: chartStep === 1 ? 0.4 : 0.15 }}
                   >
-                    {preScan ? "Examining 36 million price points across four dimensions." : SUBTITLES[chartStep]}
+                    {SUBTITLES[chartStep]}
                   </motion.p>
                 </>
               )}
@@ -997,9 +994,8 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                 ? dot.sy
                 : [dot.sy, dot.sy + dot.driftDy, dot.sy - dot.driftDy * 0.6, dot.sy];
               if (chartStep === 1) {
-                const settleDelay = 0.3 + dot.delay * 0.5;
-                cxTransition = { duration: 2.0, delay: settleDelay, ease: "easeInOut" };
-                cyTransition = { duration: 2.0, delay: settleDelay, ease: "easeInOut" };
+                cxTransition = { duration: 0.4, ease: "easeOut" };
+                cyTransition = { duration: 0.4, ease: "easeOut" };
               } else if (chartStep > 1) {
                 cxTransition = { duration: 0.9, delay: dotEntranceDelay, ease: [0.22, 1, 0.36, 1] };
                 cyTransition = { duration: 0.9, delay: dotEntranceDelay, ease: [0.22, 1, 0.36, 1] };
@@ -1138,7 +1134,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                justifyContent: "center",
+                justifyContent: customized ? "flex-start" : "center",
                 fontFamily: "inherit",
                 position: "relative",
               }}>
@@ -1189,9 +1185,9 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                                       y: 0,
                                     }}
                                     transition={{
-                                      opacity: { duration: 0.4, delay: fi * 0.08 },
-                                      scale: { type: "spring", stiffness: 380, damping: 22, delay: fi * 0.08 },
-                                      y: { type: "spring", stiffness: 380, damping: 22, delay: fi * 0.08 },
+                                      opacity: { duration: 0.6, delay: fi * 0.15 },
+                                      scale: { type: "spring", stiffness: 260, damping: 26, delay: fi * 0.15 },
+                                      y: { type: "spring", stiffness: 260, damping: 26, delay: fi * 0.15 },
                                       layout: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
                                     }}
                                   >
@@ -1221,6 +1217,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                           const isActive = selectionPhase === catIdx;
                           const isRemoved = selectionPhase > catIdx;
                           if (isRemoved) return null;
+                          const catActions = CATEGORY_ACTIONS[cat.key] ?? [];
                           return (
                             <motion.div
                               key={cat.key}
@@ -1245,49 +1242,100 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                               }}
                             >
                               <div style={{ display: "flex", flexWrap: "wrap", gap: 10, flex: 1 }}>
-                                {catFactors.map((f, fi) => (
-                                  <motion.span
-                                    key={f.label}
-                                    layoutId={`factor-${f.label}`}
-                                    layout
-                                    initial={false}
-                                    style={{
-                                      display: "inline-flex",
-                                      alignItems: "center",
-                                      justifyContent: "center",
-                                      borderRadius: 8,
-                                      border: `2px solid ${cat.color}25`,
-                                      padding: "10px 18px",
-                                      fontSize: 16,
-                                      fontWeight: 600,
-                                      fontFamily: "inherit",
-                                      whiteSpace: "nowrap",
-                                      color: cat.color,
-                                      backgroundColor: SOLID_TINTS[cat.color] ?? "white",
-                                    }}
-                                    animate={feeding ? {
-                                      x: ((catFactors.length - 1) / 2 - fi) * 40,
-                                      y: FEED_NUDGE_Y[catIdx],
-                                      scale: 0,
-                                      opacity: 0,
-                                    } : {
-                                      x: 0,
-                                      y: 0,
-                                      scale: 1,
-                                      opacity: isActive ? 1 : 0.5,
-                                    }}
-                                    transition={feeding ? {
-                                      duration: 0.7,
-                                      delay: catIdx * 0.04 + fi * 0.02,
-                                      ease: [0.4, 0, 0.1, 1],
-                                    } : {
-                                      opacity: { duration: 0.4 },
-                                      layout: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
-                                    }}
-                                  >
-                                    {f.label}
-                                  </motion.span>
-                                ))}
+                                {catFactors.map((f, fi) => {
+                                  const chipAction = catActions.find(a => a.label === f.label);
+                                  const showAction = isActive && actionRevealed && !!chipAction;
+                                  const isElevated = showAction && chipAction?.action === "elevate";
+                                  const isLowered = showAction && chipAction?.action === "lower";
+                                  const isRemoving = showAction && chipAction?.action === "remove";
+                                  const hasAction = isActive && !!chipAction;
+                                  const noAction = isActive && actionRevealed && !chipAction;
+                                  return (
+                                    <motion.span
+                                      key={f.label}
+                                      layoutId={`factor-${f.label}`}
+                                      layout
+                                      initial={false}
+                                      style={{
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        gap: 4,
+                                        borderRadius: 8,
+                                        border: isElevated ? `2px solid ${TEAL}`
+                                          : isLowered ? `1.5px dashed ${PURPLE}40`
+                                          : isRemoving ? `2px solid ${MUTED}60`
+                                          : `2px solid ${cat.color}25`,
+                                        padding: isElevated ? "12px 20px" : isLowered ? "8px 14px" : "10px 18px",
+                                        fontSize: isElevated ? 17 : isLowered ? 14 : 16,
+                                        fontWeight: isElevated ? 700 : isLowered ? 500 : 600,
+                                        fontFamily: "inherit",
+                                        whiteSpace: "nowrap",
+                                        color: isRemoving ? MUTED : isElevated ? TEAL : isLowered ? PURPLE : cat.color,
+                                        backgroundColor: isRemoving ? "#F3F4F6" : isElevated ? "#E5F5FA" : isLowered ? `${PURPLE}08` : (SOLID_TINTS[cat.color] ?? "white"),
+                                        textDecoration: isRemoving ? "line-through" : "none",
+                                        transition: "color 0.5s, background-color 0.5s, border 0.5s, padding 0.5s, font-size 0.5s",
+                                      }}
+                                      animate={feeding ? {
+                                        x: ((catFactors.length - 1) / 2 - fi) * 40,
+                                        y: FEED_NUDGE_Y[catIdx],
+                                        scale: 0,
+                                        opacity: 0,
+                                      } : {
+                                        x: isRemoving ? [0, -4, 5, -3, 3, -1, 0] : 0,
+                                        y: 0,
+                                        scale: isElevated ? [1, 1.15, 1.05]
+                                          : isLowered ? [1, 1.08, 0.93]
+                                          : isRemoving ? [1, 1.02, 0.95] : 1,
+                                        opacity: noAction ? 0.35 : isActive ? 1 : 0.5,
+                                        boxShadow: isElevated
+                                          ? ["0 0 0px transparent", `0 0 20px ${TEAL}50`, `0 0 8px ${TEAL}25`]
+                                          : isLowered
+                                            ? ["0 0 0px transparent", `0 0 16px ${PURPLE}40`, `0 0 4px ${PURPLE}15`]
+                                            : isRemoving
+                                              ? ["0 0 0px transparent", `0 0 12px ${MUTED}30`, "0 0 0px transparent"]
+                                              : "0 0 0px transparent",
+                                      }}
+                                      transition={feeding ? {
+                                        duration: 0.7,
+                                        delay: catIdx * 0.04 + fi * 0.02,
+                                        ease: [0.4, 0, 0.1, 1],
+                                      } : {
+                                        x: isRemoving ? { duration: 0.5, delay: 0.3 } : { duration: 0 },
+                                        opacity: { duration: 0.4 },
+                                        scale: {
+                                          duration: (isElevated || isLowered) ? 0.7 : isRemoving ? 0.5 : 0.3,
+                                          times: (isElevated || isLowered || isRemoving) ? [0, 0.4, 1] : undefined,
+                                          ease: [0.22, 1, 0.36, 1],
+                                        },
+                                        boxShadow: { duration: showAction ? 0.7 : 0.3 },
+                                        layout: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+                                      }}
+                                    >
+                                      {f.label}
+                                      {isElevated && (
+                                        <motion.sup
+                                          style={{ fontSize: 14, fontWeight: 800, color: TEAL, marginLeft: 3, lineHeight: 1 }}
+                                          initial={{ opacity: 0, scale: 0 }}
+                                          animate={{ opacity: 1, scale: 1 }}
+                                          transition={{ delay: 0.3, duration: 0.3, type: "spring", stiffness: 300 }}
+                                        >
+                                          ↑
+                                        </motion.sup>
+                                      )}
+                                      {isLowered && (
+                                        <motion.sup
+                                          style={{ fontSize: 12, fontWeight: 700, color: PURPLE, marginLeft: 2, lineHeight: 1 }}
+                                          initial={{ opacity: 0, scale: 0 }}
+                                          animate={{ opacity: 1, scale: 1 }}
+                                          transition={{ delay: 0.3, duration: 0.3, type: "spring", stiffness: 300 }}
+                                        >
+                                          ↓
+                                        </motion.sup>
+                                      )}
+                                    </motion.span>
+                                  );
+                                })}
                               </div>
                             </motion.div>
                           );
@@ -1673,7 +1721,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
       {/* ── Bottom cards (sweep scan + drivers reveal + customize reference) ── */}
       <AnimatePresence mode="wait">
         {/* Step 1 scan: accumulating cards */}
-        {chartStep === 1 && !preScan && scanCardCount > 0 && !driversRevealed && (
+        {chartStep === 1 && scanCardCount > 0 && !driversRevealed && (
           <motion.div
             key="scan-cards"
             className="flex justify-center gap-2 w-full overflow-hidden -mt-10"

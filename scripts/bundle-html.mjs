@@ -137,5 +137,10 @@ console.log(`\nWrote ${DEST} (${sizeMB} MB)`);
 
 // ── Step 5: Clean up ──
 rmSync(OUT, { recursive: true, force: true });
-rmSync(join(ROOT, ".next"), { recursive: true, force: true });
-console.log("Cleaned up out/ and .next/ directories");
+const devServerRunning = existsSync(join(ROOT, ".next", "dev"));
+if (devServerRunning) {
+  console.log("Dev server detected — skipping .next/ cleanup");
+} else {
+  rmSync(join(ROOT, ".next"), { recursive: true, force: true });
+  console.log("Cleaned up out/ and .next/ directories");
+}
