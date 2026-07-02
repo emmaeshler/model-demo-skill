@@ -4,6 +4,11 @@ import { useEffect, useState } from "react";
 import { X, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { PowerSlide } from "@/components/slides/power-slide";
+import { OneModelSlide } from "@/components/slides/one-model";
+import { ProfitGrowthSlide } from "@/components/slides/profit-growth-slide";
+import { RefineSlide } from "@/components/slides/refine-slide";
+import { ExecuteSlide } from "@/components/slides/execute-slide";
 
 // ── Helpers ──
 
@@ -39,7 +44,7 @@ function SweepPreview() {
     [225, 33], [245, 50],
   ];
   return (
-    <PreviewBox label="power / profit-growth">
+    <PreviewBox label="power">
       <svg viewBox="0 0 270 130" className="h-full w-full">
         {dots.map(([cx, cy], i) => (
           <motion.circle
@@ -107,7 +112,7 @@ function SnapPreview() {
     [140, 52], [170, 46],
   ];
   return (
-    <PreviewBox label="refine / profit-growth">
+    <PreviewBox label="refine">
       <svg viewBox="0 0 270 130" className="h-full w-full">
         <motion.path
           key={`curve-${tick}`}
@@ -455,6 +460,97 @@ function CollapsePreview() {
   );
 }
 
+function ClusterSquarePreview() {
+  const tick = useLoop(5000);
+  const colors = ["#00446A", "#E56910", "#3A7D44", "#8B6CC1"];
+  const labels = ["CUST", "PROD", "MKT", "ORDER"];
+  const verts = [
+    { x: 60, y: 30 },
+    { x: 210, y: 30 },
+    { x: 60, y: 100 },
+    { x: 210, y: 100 },
+  ];
+  const dots = Array.from({ length: 48 }, (_, i) => {
+    const ci = i % 4;
+    const angle = ((i * 137.5) % 360) * (Math.PI / 180);
+    const dist = 8 + (i % 6) * 3;
+    return {
+      sx: 30 + ((i * 47) % 210),
+      sy: 15 + ((i * 31) % 100),
+      cx: verts[ci].x + Math.cos(angle) * dist,
+      cy: verts[ci].y + Math.sin(angle) * dist,
+      ci,
+    };
+  });
+  return (
+    <PreviewBox label="power step 2">
+      <svg viewBox="0 0 270 130" className="h-full w-full">
+        <motion.polygon
+          key={`sq-${tick}`}
+          points={verts.map((v) => `${v.x},${v.y}`).join(" ")}
+          fill="none"
+          stroke="#21A5D5"
+          strokeWidth={1}
+          strokeDasharray="4 3"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.3 }}
+          transition={{ delay: 2.5, duration: 0.5 }}
+        />
+        {dots.map((d, i) => (
+          <motion.circle
+            key={`${i}-${tick}`}
+            r={2}
+            initial={{ cx: d.sx, cy: d.sy, fill: "#94A3B8", opacity: 0.2 }}
+            animate={{ cx: d.cx, cy: d.cy, fill: colors[d.ci], opacity: 0.6 }}
+            transition={{
+              delay: 1 + i * 0.02,
+              duration: 0.7,
+              ease: [0.22, 1, 0.36, 1],
+            }}
+          />
+        ))}
+        {verts.map((v, i) => (
+          <motion.text
+            key={`lbl-${i}-${tick}`}
+            x={v.x}
+            y={v.y + 3}
+            textAnchor="middle"
+            fontSize={7}
+            fontWeight={700}
+            fill={colors[i]}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.8 }}
+            transition={{ delay: 2.8 + i * 0.1, duration: 0.3 }}
+          >
+            {labels[i]}
+          </motion.text>
+        ))}
+        {["Mix", "Share", "Channel", "Size", "Cost", "Terms"].map((f, i) => {
+          const ci = i % 4;
+          const ox = (i % 3) * 22 - 18;
+          const oy = i < 3 ? -18 : 18;
+          return (
+            <motion.text
+              key={`f-${i}-${tick}`}
+              x={verts[ci].x + ox}
+              y={verts[ci].y + oy}
+              textAnchor="middle"
+              fontSize={5}
+              fill={colors[ci]}
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 0.5, scale: 1 }}
+              transition={{ delay: 3.2 + i * 0.08, duration: 0.3 }}
+              style={{ transformOrigin: `${verts[ci].x + ox}px ${verts[ci].y + oy}px` }}
+            >
+              {f}
+            </motion.text>
+          );
+        })}
+      </svg>
+    </PreviewBox>
+  );
+}
+
 function SplitPreview() {
   const tick = useLoop(4000);
   return (
@@ -652,7 +748,7 @@ function BlurPreview() {
   const tick = useLoop(4000);
   const words = ["Dynamic", "Pricing", "Model"];
   return (
-    <PreviewBox label="profit-growth">
+    <PreviewBox label="power">
       <div className="flex h-full flex-col items-center justify-center gap-1">
         <div className="flex gap-2">
           {words.map((word, i) => (
@@ -949,7 +1045,7 @@ function WordBuildPreview() {
 function SkeletonPreview() {
   const tick = useLoop(5000);
   return (
-    <PreviewBox label="overview / power / refine / profit-growth">
+    <PreviewBox label="overview / power / refine">
       <svg viewBox="0 0 270 130" className="h-full w-full">
         {/* Skeleton phase — dashed axes, ghost curve, faint dots */}
         <motion.g
@@ -1002,14 +1098,55 @@ function SkeletonPreview() {
   );
 }
 
-// ── Composition Previews ──
+// ── Live Slide Previews for Compositions ──
 
-function CompPreviewBox({ children, label }: { children: React.ReactNode; label?: string }) {
+function LiveSlidePreview({
+  children,
+  label,
+  steps,
+  stepDurationMs = 4000,
+  restartDelayMs = 2000,
+}: {
+  children: (step: number) => React.ReactNode;
+  label?: string;
+  steps: number[];
+  stepDurationMs?: number;
+  restartDelayMs?: number;
+}) {
+  const [idx, setIdx] = useState(0);
+  const [cycle, setCycle] = useState(0);
+
+  useEffect(() => {
+    const delay = idx === steps.length ? restartDelayMs : stepDurationMs;
+    const t = setTimeout(() => {
+      if (idx >= steps.length) {
+        setCycle((c) => c + 1);
+        setIdx(0);
+      } else {
+        setIdx((i) => i + 1);
+      }
+    }, delay);
+    return () => clearTimeout(t);
+  }, [idx, steps.length, stepDurationMs, restartDelayMs]);
+
+  const currentStep = idx < steps.length ? steps[idx] : steps[steps.length - 1];
+
   return (
-    <div className="relative h-[220px] w-full overflow-hidden rounded-lg bg-gray-50">
-      {children}
+    <div className="relative h-[320px] w-full overflow-hidden rounded-t-xl border-b border-gray-100 bg-[#06283D]">
+      <div
+        key={cycle}
+        className="pointer-events-none absolute"
+        style={{
+          width: "1280px",
+          height: "720px",
+          transform: "scale(0.445)",
+          transformOrigin: "top left",
+        }}
+      >
+        {children(currentStep)}
+      </div>
       {label && (
-        <span className="absolute bottom-2 right-3 text-[9px] font-medium text-gray-300">
+        <span className="absolute bottom-2 right-3 text-[9px] font-medium text-white/25">
           {label}
         </span>
       )}
@@ -1017,378 +1154,51 @@ function CompPreviewBox({ children, label }: { children: React.ReactNode; label?
   );
 }
 
-function ChipCustomizeComp() {
-  const tick = useLoop(7000);
-  const pills = [
-    { label: "Win rate", action: "highlight" as const, delay: 1.5 },
-    { label: "Lead time", action: "none" as const, delay: 0.4 },
-    { label: "Region", action: "crossoff" as const, delay: 2.5 },
-    { label: "Order size", action: "none" as const, delay: 0.6 },
-    { label: "Seasonality", action: "deemph" as const, delay: 3.5 },
-    { label: "Cost to serve", action: "highlight" as const, delay: 4.2 },
-    { label: "Market share", action: "none" as const, delay: 0.8 },
-    { label: "Ship mode", action: "crossoff" as const, delay: 4.8 },
-  ];
-  const colors = ["#21A5D5", "#E56910", "#3A7D44", "#8B6CC1"];
+function ConvergeToPriceComp() {
   return (
-    <CompPreviewBox label="power-slide step 2">
-      <div className="flex h-full flex-col items-center justify-center gap-3 px-5">
-        <motion.p
-          key={`title-${tick}`}
-          className="text-[10px] font-semibold uppercase tracking-widest text-gray-400"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.4 }}
-        >
-          Customize your model
-        </motion.p>
-        <div className="flex flex-wrap justify-center gap-2">
-          {pills.map((pill, i) => {
-            const color = colors[i % colors.length];
-            if (pill.action === "crossoff") {
-              return (
-                <motion.div
-                  key={`${i}-${tick}`}
-                  className="rounded-full border px-3 py-1.5 text-[11px] font-medium"
-                  style={{ borderColor: `${color}40`, color, backgroundColor: `${color}10` }}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: [0, 1, 1, 0.3], x: [0, 0, 0, -4, 5, -3, 3, -1, 0, 0] }}
-                  transition={{ delay: pill.delay, duration: 1.2, times: [0, 0.15, 0.5, 1] }}
-                >
-                  {pill.label}
-                </motion.div>
-              );
-            }
-            if (pill.action === "highlight") {
-              return (
-                <motion.div
-                  key={`${i}-${tick}`}
-                  className="rounded-full border px-3 py-1.5 text-[11px] font-semibold"
-                  style={{ borderColor: `${color}60`, color, backgroundColor: `${color}15` }}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1, boxShadow: [`0 0 0 0 ${color}00`, `0 0 10px 3px ${color}40`, `0 0 4px 1px ${color}20`] }}
-                  transition={{ delay: pill.delay, duration: 0.8 }}
-                >
-                  {pill.label}
-                </motion.div>
-              );
-            }
-            if (pill.action === "deemph") {
-              return (
-                <motion.div
-                  key={`${i}-${tick}`}
-                  className="rounded-full border px-3 py-1.5 text-[11px] font-medium"
-                  style={{ borderColor: `${color}40`, color, backgroundColor: `${color}10` }}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: [0, 1, 1, 0.25], scale: [0.8, 1, 1, 0.92] }}
-                  transition={{ delay: pill.delay, duration: 0.8, times: [0, 0.15, 0.5, 1] }}
-                >
-                  {pill.label}
-                </motion.div>
-              );
-            }
-            return (
-              <motion.div
-                key={`${i}-${tick}`}
-                className="rounded-full border px-3 py-1.5 text-[11px] font-medium"
-                style={{ borderColor: `${color}40`, color, backgroundColor: `${color}10` }}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: i * 0.08, duration: 0.3, type: "spring", stiffness: 380, damping: 22 }}
-              >
-                {pill.label}
-              </motion.div>
-            );
-          })}
-        </div>
-        <motion.p
-          key={`sub-${tick}`}
-          className="text-[9px] text-gray-400"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 5.5, duration: 0.4 }}
-        >
-          cascade + shake + glow + deemph
-        </motion.p>
-      </div>
-    </CompPreviewBox>
+    <LiveSlidePreview label="power-slide" steps={[0, 1, 2, 3, 4]} stepDurationMs={5000} restartDelayMs={3000}>
+      {(step) => <PowerSlide step={step} />}
+    </LiveSlidePreview>
+  );
+}
+
+function ChipCustomizeComp() {
+  return (
+    <LiveSlidePreview label="power-slide step 2" steps={[1, 2]} stepDurationMs={5000} restartDelayMs={3000}>
+      {(step) => <PowerSlide step={step} />}
+    </LiveSlidePreview>
   );
 }
 
 function FlowToCenterComp() {
-  const tick = useLoop(5000);
-  const sources = [
-    { x: 30, y: 35, color: "#21A5D5", label: "CUST" },
-    { x: 30, y: 145, color: "#3A7D44", label: "MARKET" },
-    { x: 350, y: 35, color: "#E56910", label: "PROD" },
-    { x: 350, y: 145, color: "#8B6CC1", label: "ORDER" },
-  ];
-  const ctrX = 190;
-  const ctrY = 90;
   return (
-    <CompPreviewBox label="one-model / execute">
-      <svg viewBox="0 0 380 180" className="h-full w-full">
-        <circle cx={ctrX} cy={ctrY} r={28} fill="#00446A" opacity={0.6} />
-        <text x={ctrX} y={ctrY + 4} textAnchor="middle" fontSize={8} fontWeight={700} fill="white" opacity={0.6}>MODEL</text>
-        {sources.map((s, si) => {
-          const pts = Array.from({ length: 25 }, (_, t) => {
-            const p = t / 24;
-            const cpx = (s.x + ctrX) / 2 + (si % 2 === 0 ? -30 : 30);
-            const cpy = (s.y + ctrY) / 2 + (si < 2 ? 20 : -20);
-            const x = (1 - p) * (1 - p) * s.x + 2 * (1 - p) * p * cpx + p * p * ctrX;
-            const y = (1 - p) * (1 - p) * s.y + 2 * (1 - p) * p * cpy + p * p * ctrY;
-            return [x, y];
-          });
-          return (
-            <g key={si}>
-              <rect x={s.x - 25} y={s.y - 12} width={50} height={24} rx={4} fill={s.color} fillOpacity={0.12} stroke={s.color} strokeOpacity={0.25} strokeWidth={1} />
-              <text x={s.x} y={s.y + 3} textAnchor="middle" fontSize={7} fontWeight={600} fill={s.color} opacity={0.7}>{s.label}</text>
-              <path
-                d={`M ${s.x} ${s.y} Q ${(s.x + ctrX) / 2 + (si % 2 === 0 ? -30 : 30)} ${(s.y + ctrY) / 2 + (si < 2 ? 20 : -20)} ${ctrX} ${ctrY}`}
-                fill="none" stroke={s.color} strokeOpacity={0.12} strokeWidth={1}
-              />
-              {[0, 1].map((di) => (
-                <motion.circle
-                  key={`${si}-${di}-${tick}`}
-                  r={2.5}
-                  fill={s.color}
-                  animate={{
-                    cx: pts.map((p) => p[0]),
-                    cy: pts.map((p) => p[1]),
-                    opacity: [0, 0.7, 0.7, 0.7, 0],
-                  }}
-                  transition={{ duration: 2, repeat: Infinity, delay: si * 0.3 + di * 1, ease: "linear" }}
-                />
-              ))}
-            </g>
-          );
-        })}
-        {[0, 1, 2].map((i) => (
-          <motion.circle
-            key={`pulse-${i}`}
-            cx={ctrX} cy={ctrY} r={28}
-            fill="none" stroke="#21A5D5" strokeWidth={1}
-            animate={{ r: [28, 40 + i * 6], opacity: [0.4, 0] }}
-            transition={{ duration: 2, repeat: Infinity, delay: i * 0.5, ease: "easeOut" }}
-          />
-        ))}
-      </svg>
-    </CompPreviewBox>
-  );
-}
-
-function ConvergeToPriceComp() {
-  const tick = useLoop(8000);
-  const satellites = [
-    { angle: 0, color: "#21A5D5", price: "$4.20" },
-    { angle: 90, color: "#E56910", price: "$5.10" },
-    { angle: 180, color: "#3A7D44", price: "$4.65" },
-    { angle: 270, color: "#8B6CC1", price: "$4.80" },
-  ];
-  const ctrX = 190;
-  const ctrY = 105;
-  const orbitR = 60;
-  return (
-    <CompPreviewBox label="power-slide step 4">
-      <svg viewBox="0 0 380 210" className="h-full w-full">
-        {satellites.map((sat, i) => {
-          const rad = (sat.angle * Math.PI) / 180;
-          const sx = ctrX + Math.cos(rad) * orbitR;
-          const sy = ctrY + Math.sin(rad) * orbitR;
-          return (
-            <g key={i}>
-              <motion.line
-                key={`line-${i}-${tick}`}
-                x1={ctrX} y1={ctrY}
-                stroke={sat.color} strokeWidth={1} strokeOpacity={0.3}
-                initial={{ x2: sx, y2: sy }}
-                animate={{ x2: ctrX, y2: ctrY }}
-                transition={{ delay: 2 + i * 0.15, duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-              />
-              <motion.circle
-                key={`sat-${i}-${tick}`}
-                r={16}
-                fill={sat.color} fillOpacity={0.15}
-                stroke={sat.color} strokeWidth={1.5}
-                initial={{ cx: sx, cy: sy, opacity: 1 }}
-                animate={{ cx: ctrX, cy: ctrY, opacity: 0, r: 6 }}
-                transition={{ delay: 2 + i * 0.15, duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-              />
-              <motion.text
-                key={`price-${i}-${tick}`}
-                textAnchor="middle" fontSize={8} fontWeight={600} fill={sat.color}
-                initial={{ x: sx, y: sy + 3, opacity: 0.8 }}
-                animate={{ x: ctrX, y: ctrY + 3, opacity: 0 }}
-                transition={{ delay: 2 + i * 0.15, duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-              >
-                {sat.price}
-              </motion.text>
-            </g>
-          );
-        })}
-        <circle cx={ctrX} cy={ctrY} r={24} fill="#00446A" />
-        <motion.circle
-          key={`spin-${tick}`}
-          cx={ctrX} cy={ctrY} r={30}
-          fill="none" stroke="#E56910" strokeWidth={1.5} strokeDasharray="10 6"
-          initial={{ opacity: 0.5 }}
-          animate={{ rotate: 720, opacity: [0.5, 0.5, 0.5, 0] }}
-          transition={{ delay: 3.5, duration: 2.5, ease: "linear" }}
-          style={{ transformOrigin: `${ctrX}px ${ctrY}px` }}
-        />
-        <motion.text
-          key={`dots-${tick}`}
-          x={ctrX} y={ctrY + 3}
-          textAnchor="middle" fontSize={7} fill="white"
-          initial={{ opacity: 0.5 }}
-          animate={{ opacity: [0.5, 0.8, 0.5, 0.8, 0] }}
-          transition={{ delay: 3.5, duration: 2, ease: "easeInOut" }}
-        >
-          ● ● ●
-        </motion.text>
-        <motion.g
-          key={`final-${tick}`}
-          initial={{ opacity: 0, scale: 0.5 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 6, duration: 0.5, type: "spring", damping: 10 }}
-          style={{ transformOrigin: `${ctrX}px ${ctrY}px` }}
-        >
-          <text x={ctrX} y={ctrY - 4} textAnchor="middle" fontSize={6} fill="white" opacity={0.5}>RECOMMENDED</text>
-          <text x={ctrX} y={ctrY + 8} textAnchor="middle" fontSize={13} fontWeight={800} fill="white">$4.82</text>
-        </motion.g>
-        <motion.circle
-          key={`burst-${tick}`}
-          cx={ctrX} cy={ctrY} r={24}
-          fill="none" stroke="#E56910" strokeWidth={2}
-          initial={{ opacity: 0 }}
-          animate={{ r: [24, 55], opacity: [0, 0.5, 0] }}
-          transition={{ delay: 6.2, duration: 0.8, ease: "easeOut" }}
-        />
-      </svg>
-    </CompPreviewBox>
+    <LiveSlidePreview label="one-model" steps={[0, 1, 2]} stepDurationMs={4000} restartDelayMs={3000}>
+      {(step) => <OneModelSlide step={step} />}
+    </LiveSlidePreview>
   );
 }
 
 function ScanOptimizeComp() {
-  const tick = useLoop(6000);
-  const dots = Array.from({ length: 24 }, (_, i) => ({
-    x: 25 + (i % 8) * 42,
-    y: 30 + Math.floor(i / 8) * 50 + ((i * 7) % 20),
-    optY: 30 + Math.floor(i / 8) * 50 + ((i * 7) % 20) - 8 + ((i * 3) % 12),
-    color: ["#E56910", "#21A5D5", "#3A7D44", "#8B6CC1"][i % 4],
-  }));
   return (
-    <CompPreviewBox label="profit-growth">
-      <svg viewBox="0 0 380 180" className="h-full w-full">
-        {dots.map((d, i) => (
-          <motion.circle
-            key={`${i}-${tick}`}
-            cx={d.x} r={4}
-            initial={{ cy: d.y, fill: "#4B5563", opacity: 0.25 }}
-            animate={{ cy: d.optY, fill: d.color, opacity: 0.8 }}
-            transition={{ delay: (d.x / 360) * 2.5 + 1.5, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-          />
-        ))}
-        {dots.map((d, i) => (
-          <motion.circle
-            key={`ring-${i}-${tick}`}
-            cx={d.x} cy={d.optY} r={4}
-            fill="none" stroke={d.color} strokeWidth={1}
-            initial={{ opacity: 0 }}
-            animate={{ r: [4, 10], opacity: [0, 0.4, 0] }}
-            transition={{ delay: (d.x / 360) * 2.5 + 1.5, duration: 0.5 }}
-          />
-        ))}
-        <motion.line
-          key={`sweep-${tick}`}
-          y1={10} y2={170} stroke="#3A7D44" strokeWidth={2}
-          initial={{ x1: 10, x2: 10 }}
-          animate={{ x1: 370, x2: 370 }}
-          transition={{ delay: 1.5, duration: 3, ease: "linear" }}
-        />
-        <motion.g
-          key={`kpi-${tick}`}
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 5, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <rect x={290} y={25} width={80} height={55} rx={6} fill="white" stroke="#CBD5E1" strokeWidth={1} />
-          <text x={330} y={42} textAnchor="middle" fontSize={6} fill="#64748B">MARGIN LIFT</text>
-          <text x={330} y={60} textAnchor="middle" fontSize={16} fontWeight={800} fill="#3A7D44">+3.2%</text>
-        </motion.g>
-      </svg>
-    </CompPreviewBox>
+    <LiveSlidePreview label="profit-growth" steps={[0, 1, 2, 3, 4, 5]} stepDurationMs={4000} restartDelayMs={3000}>
+      {(step) => <ProfitGrowthSlide step={step} />}
+    </LiveSlidePreview>
   );
 }
 
 function ScatterToCurveComp() {
-  const tick = useLoop(7000);
-  const count = 28;
-  const dots = Array.from({ length: count }, (_, i) => {
-    const scatterX = 30 + ((i * 47) % 310);
-    const scatterY = 20 + ((i * 31) % 140);
-    const t = i / (count - 1);
-    const curveX = 30 + t * 310;
-    const curveY = 150 - (140 * Math.pow(1 - t, 0.6)) + ((i * 13) % 16) - 8;
-    return { scatterX, scatterY, curveX, curveY };
-  });
   return (
-    <CompPreviewBox label="refine-slide">
-      <svg viewBox="0 0 380 180" className="h-full w-full">
-        <motion.path
-          key={`curve-${tick}`}
-          d="M 30 150 Q 100 120 160 80 Q 220 45 280 30 Q 320 22 340 18"
-          fill="none" stroke="#334155" strokeWidth={2} strokeOpacity={0.4}
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ delay: 2.5, duration: 1, ease: "easeOut" }}
-        />
-        {dots.map((d, i) => (
-          <motion.circle
-            key={`${i}-${tick}`}
-            r={3} fill="#21A5D5"
-            initial={{ cx: d.scatterX, cy: d.scatterY, opacity: 0.2 }}
-            animate={{ cx: d.curveX, cy: d.curveY, opacity: 0.75 }}
-            transition={{ delay: 3.5 + i * 0.05, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          />
-        ))}
-        {[
-          { x: 100, y: 110, label: "QuickParts", color: "#E56910" },
-          { x: 200, y: 55, label: "Acme", color: "#3A7D44" },
-          { x: 300, y: 25, label: "MedSupply", color: "#8B6CC1" },
-        ].map((cust, i) => (
-          <motion.g
-            key={`cust-${i}-${tick}`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 5.2 + i * 0.3, duration: 0.4 }}
-          >
-            <motion.circle
-              cx={cust.x} r={5} fill={cust.color}
-              initial={{ cy: cust.y + 20 }}
-              animate={{ cy: cust.y }}
-              transition={{ delay: 5.2 + i * 0.3, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            />
-            <motion.line
-              x1={cust.x} x2={cust.x} y1={165}
-              stroke={cust.color} strokeWidth={1} strokeDasharray="3 2" strokeOpacity={0.4}
-              initial={{ y2: 165 }}
-              animate={{ y2: cust.y + 6 }}
-              transition={{ delay: 5.2 + i * 0.3, duration: 0.5, ease: "easeOut" }}
-            />
-            <motion.text
-              x={cust.x} y={cust.y - 10}
-              textAnchor="middle" fontSize={7} fontWeight={600} fill={cust.color}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.8 }}
-              transition={{ delay: 5.5 + i * 0.3, duration: 0.3 }}
-            >
-              {cust.label}
-            </motion.text>
-          </motion.g>
-        ))}
-      </svg>
-    </CompPreviewBox>
+    <LiveSlidePreview label="refine-slide" steps={[0, 1, 2, 3, 4, 5, 6, 7, 8]} stepDurationMs={3500} restartDelayMs={3000}>
+      {(step) => <RefineSlide step={step} />}
+    </LiveSlidePreview>
+  );
+}
+
+function ExecuteComp() {
+  return (
+    <LiveSlidePreview label="execute-slide" steps={[0, 1, 2]} stepDurationMs={4000} restartDelayMs={3000}>
+      {(step) => <ExecuteSlide step={step} />}
+    </LiveSlidePreview>
   );
 }
 
@@ -1401,9 +1211,9 @@ interface Composition {
 
 const COMPOSITIONS: Composition[] = [
   {
-    name: "Converge to Single Price",
-    description: "Four satellite prices orbit, converge inward along connection lines, spinner processes, then reveals the final recommended price with a burst",
-    pieces: ["Collapses", "Spinning Rings", "Pulses"],
+    name: "Full Power Slide",
+    description: "Spotlight cards → factor scan sweep → chip customization with shake/glow → cluster convergence → satellite prices collapse into single recommended price",
+    pieces: ["Sweeps", "Cascades", "Shakes & Glows", "Collapses", "Spinning Rings"],
     preview: ConvergeToPriceComp,
   },
   {
@@ -1413,21 +1223,27 @@ const COMPOSITIONS: Composition[] = [
     preview: ChipCustomizeComp,
   },
   {
-    name: "Data Flow to Model",
-    description: "Four data source cards send particles along Bezier curves into the central model circle, which pulses as it absorbs",
-    pieces: ["Flows", "Pulses"],
+    name: "One Model Flow",
+    description: "Circle splits into ML + Strategic halves, recombines, then four data sources send particles along Bezier curves into central model",
+    pieces: ["Splits", "Flows", "Pulses"],
     preview: FlowToCenterComp,
   },
   {
-    name: "Scan & Optimize",
-    description: "A sweep line scans across scattered dots, snapping each to its optimized position with color change and ring burst, then a KPI card slides in",
+    name: "Execute Sequence",
+    description: "Model output sliders fill with cascading bars and knob indicators, showing the execute-phase visualization",
+    pieces: ["Cascades", "Fills", "Draws"],
+    preview: ExecuteComp,
+  },
+  {
+    name: "Profit Growth",
+    description: "Sweep line scans across scattered dots, snapping each to optimized position with color and ring burst, KPI sidebar cascades in",
     pieces: ["Sweeps", "Snaps", "Cascades"],
     preview: ScanOptimizeComp,
   },
   {
-    name: "Scatter to Demand Curve",
-    description: "Dots drift in chaos, a demand curve draws, dots snap to alignment, then customer spotlights lift into position with drop lines",
-    pieces: ["Drifts", "Draws", "Snaps"],
+    name: "Refine Demand Curve",
+    description: "Dots drift in chaos, demand curves draw, dots snap to alignment, curves morph from three to one, customer spotlights lift into position",
+    pieces: ["Drifts", "Draws", "Snaps", "Morphs"],
     preview: ScatterToCurveComp,
   },
 ];
@@ -1445,13 +1261,13 @@ const CATEGORIES: Category[] = [
   {
     name: "Sweeps",
     description: "A line scans across the chart, activating elements as it passes",
-    usedIn: ["Power — scanning for patterns", "Profit Growth — model scan waves", "Profit Growth — green sweep line", "⊘ Model Indicator — vertical sweep glow"],
+    usedIn: ["Power — scanning for patterns", "⊘ Model Indicator — vertical sweep glow"],
     preview: SweepPreview,
   },
   {
     name: "Snaps",
     description: "Elements jump from scattered positions to aligned target positions",
-    usedIn: ["Refine — chaos to curve alignment", "Profit Growth — dots snap to optimized", "Power — scatter to clusters", "⊘ Power — cluster convergence through intermediate positions"],
+    usedIn: ["Refine — chaos to curve alignment", "Power — scatter to clusters", "⊘ Power — cluster convergence through intermediate positions"],
     preview: SnapPreview,
   },
   {
@@ -1469,7 +1285,7 @@ const CATEGORIES: Category[] = [
   {
     name: "Cascades",
     description: "Elements appear sequentially with staggered delays",
-    usedIn: ["Power — 24 factor pills in quadrants", "Closing — circle pop sequence", "Execute — slider bar fills", "Overview — numbered circle reveal", "Profit Growth — KPI sidebar"],
+    usedIn: ["Power — 24 factor pills in quadrants", "Closing — circle pop sequence", "Execute — slider bar fills", "Overview — numbered circle reveal", "⊘ Refine — sequential segment zone label cascade with timed highlight cycle"],
     preview: CascadePreview,
   },
   {
@@ -1489,6 +1305,12 @@ const CATEGORIES: Category[] = [
     description: "Multiple elements converge to a single center point",
     usedIn: ["Overview — five circles merge to center card", "Power — 48 dots dissolve into model", "Power — satellite price absorption", "⊘ Execute — four drivers fly along curves into center"],
     preview: CollapsePreview,
+  },
+  {
+    name: "Cluster to Square",
+    description: "Scattered dots cluster into four color-coded groups that form a square, then factor pills appear in each quadrant",
+    usedIn: ["Power — 48 dots cluster by category then snap to square grid", "Power — factor pills cascade into quadrants"],
+    preview: ClusterSquarePreview,
   },
   {
     name: "Splits",
@@ -1517,7 +1339,7 @@ const CATEGORIES: Category[] = [
   {
     name: "Blur Reveals",
     description: "Text appears by transitioning from blurred to sharp",
-    usedIn: ["Profit Growth — announcement overlay words"],
+    usedIn: [],
     preview: BlurPreview,
   },
   {
@@ -1559,7 +1381,7 @@ const CATEGORIES: Category[] = [
   {
     name: "Skeletons",
     description: "Dashed wireframe outlines preview the upcoming visual during text-only intros, then fade as real content appears",
-    usedIn: ["Overview — 5-circle timeline outline", "Power — scatter plot axes + ghost dots", "Refine — demand curve wireframe", "Profit Growth — chart preview"],
+    usedIn: ["Overview — 5-circle timeline outline", "Power — scatter plot axes + ghost dots", "Refine — demand curve wireframe"],
     preview: SkeletonPreview,
   },
 ];

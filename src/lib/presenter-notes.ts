@@ -75,24 +75,6 @@ const NOTES: Record<string, string[]> = {
     "When all customers are optimized together, the portfolio effect is powerful.",
     "Some prices go up, some go down — but total margin improves significantly.",
   ],
-  "profit-growth:0": [
-    "Let's talk about the bottom line.",
-    "The whole point of this model is to drive measurable profit growth.",
-  ],
-  "profit-growth:1": [
-    "Here's the status quo — where most companies sit without dynamic pricing.",
-  ],
-  "profit-growth:2": [
-    "With the dynamic model engaged, pricing moves toward optimization.",
-    "The model continuously adjusts based on market conditions and customer behavior.",
-  ],
-  "profit-growth:3": [
-    "The model scans the full portfolio, identifying the highest-impact opportunities first.",
-  ],
-  "profit-growth:4": [
-    "The optimized result — measurable, sustainable profit improvement.",
-    "This isn't a one-time gain. The model keeps learning and refining.",
-  ],
   "closing-summary": [
     "Let's recap what we've covered.",
     "Design, Power, Execute, Refine — four phases working together as one dynamic pricing engine.",

@@ -12,7 +12,6 @@ import { OneModelSlide, ONE_MODEL_TOTAL_STEPS } from "@/components/slides/one-mo
 import { PowerSlide, POWER_TOTAL_STEPS } from "@/components/slides/power-slide";
 import { ExecuteSlide, EXECUTE_TOTAL_STEPS } from "@/components/slides/execute-slide";
 import { RefineSlide, REFINE_TOTAL_STEPS } from "@/components/slides/refine-slide";
-import { ProfitGrowthSlide, PROFIT_GROWTH_TOTAL_STEPS } from "@/components/slides/profit-growth-slide";
 import { ClosingSummarySlide } from "@/components/slides/closing-summary";
 import { AnimationGlossary } from "@/components/animation-glossary";
 
@@ -23,7 +22,6 @@ type SlideKind =
   | "power"
   | "execute"
   | "refine"
-  | "profit-growth"
   | "closing-summary"
   | "end";
 
@@ -43,8 +41,6 @@ const SLIDES: SlideConfig[] = [
   { kind: "execute" },
   // Section 4: Refine
   { kind: "refine" },
-  // Section 5: Profit Growth
-  { kind: "profit-growth" },
   { kind: "closing-summary" },
   { kind: "end" },
 ];
@@ -54,7 +50,6 @@ const ONE_MODEL_INDEX = 2;
 const POWER_INDEX = 3;
 const EXECUTE_INDEX = 4;
 const REFINE_INDEX = 5;
-const PROFIT_GROWTH_INDEX = 6;
 
 const SUB_STEP_CONFIG: Record<number, number> = {
   [OVERVIEW_INDEX]: OVERVIEW_TOTAL_STEPS,
@@ -62,7 +57,6 @@ const SUB_STEP_CONFIG: Record<number, number> = {
   [POWER_INDEX]: POWER_TOTAL_STEPS,
   [EXECUTE_INDEX]: EXECUTE_TOTAL_STEPS,
   [REFINE_INDEX]: REFINE_TOTAL_STEPS,
-  [PROFIT_GROWTH_INDEX]: PROFIT_GROWTH_TOTAL_STEPS,
 };
 
 const EXECUTE_PRESENTER_STEPS = 4;
@@ -85,16 +79,12 @@ const ENGINE_FOCUS_MAP: Record<string, EngineFocus> = {
   [`${REFINE_INDEX}-5`]: "ml",
   [`${REFINE_INDEX}-6`]: "ml",
   [`${REFINE_INDEX}-7`]: "strat",
-  // profit-growth
-  [`${PROFIT_GROWTH_INDEX}-2`]: "both",
-  [`${PROFIT_GROWTH_INDEX}-3`]: "ml",
-  [`${PROFIT_GROWTH_INDEX}-4`]: "both",
 };
 
 const ML_GREEN = "#3A7D44";
 const STRAT_BLUE = "#2A7BA5";
 
-const ENGINE_INDICATOR_SLIDES = new Set([POWER_INDEX, EXECUTE_INDEX, REFINE_INDEX, PROFIT_GROWTH_INDEX]);
+const ENGINE_INDICATOR_SLIDES = new Set([POWER_INDEX, EXECUTE_INDEX, REFINE_INDEX]);
 
 type CategoryKey = "customer" | "product" | "market" | "order";
 
@@ -117,9 +107,6 @@ const ACTIVE_CATEGORIES_MAP: Record<string, CategoryKey[]> = {
   [`${REFINE_INDEX}-5`]: ["customer"],
   [`${REFINE_INDEX}-6`]: ["customer", "market"],
   [`${REFINE_INDEX}-7`]: ["market"],
-  [`${PROFIT_GROWTH_INDEX}-2`]: ["customer", "product", "market", "order"],
-  [`${PROFIT_GROWTH_INDEX}-3`]: ["customer", "product", "market", "order"],
-  [`${PROFIT_GROWTH_INDEX}-4`]: ["customer", "product", "market", "order"],
 };
 
 function EngineIndicator({ focus, visible }: { focus: EngineFocus; visible: boolean }) {
@@ -290,20 +277,10 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: "5 | Profit Growth",
-    slides: [
-      { index: PROFIT_GROWTH_INDEX, label: "The Scale", subStep: 0 },
-      { index: PROFIT_GROWTH_INDEX, label: "Status Quo", subStep: 1 },
-      { index: PROFIT_GROWTH_INDEX, label: "Dynamic Model", subStep: 2 },
-      { index: PROFIT_GROWTH_INDEX, label: "Model Scan", subStep: 3 },
-      { index: PROFIT_GROWTH_INDEX, label: "Optimized", subStep: 4 },
-    ],
-  },
-  {
     label: "Closing",
     slides: [
-      { index: 7, label: "Summary" },
-      { index: 8, label: "Thank You" },
+      { index: 6, label: "Summary" },
+      { index: 7, label: "Thank You" },
     ],
   },
 ];
@@ -339,6 +316,10 @@ export function Home() {
   const channelRef = useRef<BroadcastChannel | null>(null);
   const audienceWindowRef = useRef<Window | null>(null);
   const iframeSrcRef = useRef("");
+  const [railEntering, setRailEntering] = useState(false);
+  const [dynamicActiveCategories, setDynamicActiveCategories] = useState<CategoryKey[] | null>(null);
+  const handleActiveCategoryChange = useCallback((cats: string[]) => setDynamicActiveCategories(cats as CategoryKey[]), []);
+  const prevRailVisibleRef = useRef(false);
   const [presentElapsed, setPresentElapsed] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
   const [clockTime, setClockTime] = useState("");
@@ -361,7 +342,10 @@ export function Home() {
   const notes = getPresenterNotes(config?.kind ?? "", subStep);
   const engineFocus = ENGINE_FOCUS_MAP[`${slide}-${subStep}`] ?? null;
   const railVisible = ENGINE_INDICATOR_SLIDES.has(slide) && (slide !== POWER_INDEX || subStep >= 2);
-  const activeCategories = ACTIVE_CATEGORIES_MAP[`${slide}-${subStep}`] ?? [];
+  const staticActiveCategories = ACTIVE_CATEGORIES_MAP[`${slide}-${subStep}`] ?? [];
+  const activeCategories = (slide === POWER_INDEX && dynamicActiveCategories && dynamicActiveCategories.length > 0)
+    ? dynamicActiveCategories
+    : staticActiveCategories;
 
   const displayNavGroups = useMemo(() => {
     if (presenterSkipped.size === 0) return navGroups;
@@ -561,6 +545,16 @@ export function Home() {
     return () => clearTimeout(t0);
   }, [slide, subStep, mode, isAudience, skipAnimation]);
 
+  useEffect(() => {
+    if (railVisible && !prevRailVisibleRef.current && !skipAnimation) {
+      setRailEntering(true);
+      const t = setTimeout(() => setRailEntering(false), 700);
+      prevRailVisibleRef.current = true;
+      return () => clearTimeout(t);
+    }
+    prevRailVisibleRef.current = railVisible;
+  }, [railVisible, skipAnimation]);
+
   const markAnimationDone = useCallback(() => setAnimationDone(true), []);
 
   const handleReplay = useCallback(() => {
@@ -657,6 +651,7 @@ export function Home() {
           railVisible ? "pl-[140px]" : "",
           isAudience ? "" : "pb-16",
         )}
+        style={{ "--rail-inset": railVisible ? "140px" : "0px" } as React.CSSProperties}
       >
         <MotionConfig reducedMotion={skipAnimation ? "always" : "never"}>
         <AnimatePresence mode="wait">
@@ -668,6 +663,10 @@ export function Home() {
           transition={{ duration: skipAnimation ? 0 : 0.45, ease: [0.22, 1, 0.36, 1] }}
           className="w-full"
         >
+          <motion.div
+            animate={{ opacity: railEntering ? 0 : 1 }}
+            transition={{ duration: railEntering ? 0.1 : 0.4 }}
+          >
           {config.kind === "intro" && <IntroSlide />}
           {config.kind === "overview" && <OverviewSlide step={subStep} skipAnimation={skipAnimation} />}
           {config.kind === "one-model" && (
@@ -682,6 +681,7 @@ export function Home() {
               step={subStep}
               onAutoAdvance={skipAnimation ? undefined : () => navigate(slide + 1)}
               skipAnimation={skipAnimation}
+              onActiveCategoryChange={handleActiveCategoryChange}
             />
           )}
           {config.kind === "refine" && (
@@ -693,15 +693,9 @@ export function Home() {
             />
           )}
           {config.kind === "execute" && <ExecuteSlide step={subStep} skipAnimation={skipAnimation} />}
-          {config.kind === "profit-growth" && (
-            <ProfitGrowthSlide
-              step={subStep}
-              onAutoAdvance={skipAnimation ? undefined : () => navigate(slide + 1)}
-              skipAnimation={skipAnimation}
-            />
-          )}
           {config.kind === "closing-summary" && <ClosingSummarySlide />}
           {config.kind === "end" && <EndSlide onRestart={() => navigate(0)} />}
+          </motion.div>
         </motion.div>
         </AnimatePresence>
         </MotionConfig>
@@ -1191,7 +1185,7 @@ function IntroBackdrop() {
   );
 }
 
-const MODEL_WORDS = ["Design", "Power", "Execute", "Refine", "Grow"];
+const MODEL_WORDS = ["Design", "Power", "Execute", "Refine"];
 
 
 function RotatingWord() {

@@ -18,7 +18,6 @@ const MODULES: ModuleConfig[] = [
   { number: 2, label: "Power", color: TEAL },
   { number: 3, label: "Execute", color: ORANGE },
   { number: 4, label: "Refine", color: NAVY },
-  { number: 5, label: "Profit Growth", color: ORANGE },
 ];
 
 // Radial diagram constants

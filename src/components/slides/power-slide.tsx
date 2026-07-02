@@ -12,7 +12,6 @@ const MUTED = "#5A6A78";
 
 export const POWER_TOTAL_STEPS = 4;
 
-const ML_GREEN = "#3A7D44";
 
 const SOLID_TINTS: Record<string, string> = {
   [ORANGE]: "#FEF4EC",
@@ -142,26 +141,13 @@ const CATEGORY_NARRATION = [
   "How orders behave — frequency, size, lead time, terms, and seasonality.",
 ];
 
-const CUSTOMIZE_ACTIONS = [
-  { headline: "Add a factor", detail: "Competitive intelligence is critical in this market — add it to the model." },
-  { headline: "Remove a factor", detail: "End market isn’t a meaningful driver for this client — take it out." },
-  { headline: "Weight it higher", detail: "Sales rep relationships drive pricing power here." },
-  { headline: "Lower its weight", detail: "Seasonality has minimal impact for this customer — dial it down." },
+const SELECTED_FACTORS = [
+  { label: "Sales rep", color: NAVY },
+  { label: "Price sensitivity", color: ORANGE },
+  { label: "Competitive price point", color: GREEN },
+  { label: "Order frequency", color: PURPLE },
+  { label: "Cost to serve", color: ORANGE },
 ];
-
-const ACTION_META = [
-  { icon: "+", color: ML_GREEN },
-  { icon: "×", color: MUTED },
-  { icon: "↑", color: TEAL },
-  { icon: "↓", color: PURPLE },
-];
-
-const CUSTOMIZE_PILL_LAYOUT: Record<string, { x: number; y: number }> = {
-  customer: { x: 10, y: 15 },
-  product: { x: 10, y: 125 },
-  market: { x: 10, y: 235 },
-  order: { x: 10, y: 345 },
-};
 
 const FEED_NUDGE_Y = [130, 35, -75, -170];
 
@@ -372,11 +358,11 @@ function highlightDotsForCluster(cluster: number) {
     .map((dot, index) => ({
       index,
       cluster: dot.cluster,
-      normalizedX: (dot.sx - PLOT.left) / PLOT_W,
+      normalizedY: (dot.sy - PLOT.top) / PLOT_H,
     }))
     .filter((d) => d.cluster === cluster)
     .filter((_, i) => i % 3 === 0)
-    .sort((a, b) => a.normalizedX - b.normalizedX);
+    .sort((a, b) => a.normalizedY - b.normalizedY);
 }
 
 /* ─── Callout dots ─── */
@@ -424,7 +410,7 @@ function CategoryIcon({ type, color, size = 18 }: { type: string; color: string;
 
 /* ─── Main slide ─── */
 
-export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: number; onAutoAdvance?: () => void; skipAnimation?: boolean }) {
+export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCategoryChange }: { step: number; onAutoAdvance?: () => void; skipAnimation?: boolean; onActiveCategoryChange?: (categories: string[]) => void }) {
   const chartStep = step;
 
   const [preScan, setPreScan] = useState(false);
@@ -436,8 +422,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
   }, [step, skipAnimation]);
 
   const [introPhase, setIntroPhase] = useState(skipAnimation ? 5 : chartStep === 0 ? 0 : 4);
-  const [customizePhase, setCustomizePhase] = useState(chartStep > 2 || (skipAnimation && chartStep >= 2) ? CUSTOMIZE_ACTIONS.length : -1);
-  const [deemphasizeRevealed, setDeemphasizeRevealed] = useState(chartStep > 2 || (skipAnimation && chartStep >= 2));
+  const [selectionPhase, setSelectionPhase] = useState(chartStep > 2 || (skipAnimation && chartStep >= 2) ? 5 : -1);
   const [factorsPhase, setFactorsPhase] = useState(chartStep >= 2 ? 7 : 0);
   const [morphPhase, setMorphPhase] = useState(chartStep >= 2 ? 4 : -1);
   useEffect(() => {
@@ -466,48 +451,38 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
     setMorphPhase(4);
   }, [factorsPhase, chartStep, skipAnimation]);
 
+  // selectionPhase: -1=waiting, 0=customer, 1=product, 2=market, 3=order, 4=show picks, 5=done
   useEffect(() => {
-    if (chartStep < 2) { setCustomizePhase(-1); return; }
-    if (chartStep > 2 || skipAnimation) { setCustomizePhase(CUSTOMIZE_ACTIONS.length); return; }
-    setCustomizePhase(-1);
-    const t0 = setTimeout(() => setCustomizePhase(0), 2000);
-    const t1 = setTimeout(() => setCustomizePhase(1), 5800);
-    const t2 = setTimeout(() => setCustomizePhase(2), 8800);
-    const t3 = setTimeout(() => setCustomizePhase(3), 11800);
-    const t4 = setTimeout(() => setCustomizePhase(4), 14800);
-    return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
+    if (chartStep < 2) { setSelectionPhase(-1); return; }
+    if (chartStep > 2 || skipAnimation) { setSelectionPhase(5); return; }
+    setSelectionPhase(-1);
+    const t0 = setTimeout(() => setSelectionPhase(0), 1000);
+    const t1 = setTimeout(() => setSelectionPhase(1), 3000);
+    const t2 = setTimeout(() => setSelectionPhase(2), 5000);
+    const t3 = setTimeout(() => setSelectionPhase(3), 7000);
+    const t4 = setTimeout(() => setSelectionPhase(4), 9000);
+    const t5 = setTimeout(() => setSelectionPhase(5), 11000);
+    return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); clearTimeout(t5); };
   }, [chartStep, skipAnimation]);
 
   useEffect(() => {
-    if (customizePhase > 3 || skipAnimation) {
-      setDeemphasizeRevealed(true);
-      return;
-    }
-    if (customizePhase === 3) {
-      const t = setTimeout(() => setDeemphasizeRevealed(true), 800);
-      return () => clearTimeout(t);
-    }
-    setDeemphasizeRevealed(false);
-  }, [customizePhase, skipAnimation]);
-
-  const [reorganizing, setReorganizing] = useState(false);
-  useEffect(() => {
-    if (chartStep !== 2 || customizePhase < CUSTOMIZE_ACTIONS.length) {
-      setReorganizing(false);
-      return;
-    }
-    if (skipAnimation) { setReorganizing(true); return; }
-    const t = setTimeout(() => setReorganizing(true), 600);
-    return () => clearTimeout(t);
-  }, [chartStep, customizePhase, skipAnimation]);
-
-  useEffect(() => {
     if (chartStep !== 2 || skipAnimation || !onAutoAdvance) return;
-    if (customizePhase >= CUSTOMIZE_ACTIONS.length) {
-      const t = setTimeout(() => onAutoAdvance(), 3200);
+    if (selectionPhase >= 5) {
+      const t = setTimeout(() => onAutoAdvance(), 2500);
       return () => clearTimeout(t);
     }
-  }, [chartStep, customizePhase, skipAnimation, onAutoAdvance]);
+  }, [chartStep, selectionPhase, skipAnimation, onAutoAdvance]);
+
+  useEffect(() => {
+    if (!onActiveCategoryChange) return;
+    if (chartStep !== 2) { onActiveCategoryChange([]); return; }
+    const cats = ["customer", "product", "market", "order"] as const;
+    if (selectionPhase >= 0 && selectionPhase <= 3) {
+      onActiveCategoryChange([cats[selectionPhase]]);
+    } else {
+      onActiveCategoryChange([...cats]);
+    }
+  }, [chartStep, selectionPhase, onActiveCategoryChange]);
 
   const convergeReady = chartStep >= 3;
 
@@ -523,27 +498,21 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
   }, [absorbedCount]);
 
   const [scanCardCount, setScanCardCount] = useState(chartStep > 1 || skipAnimation ? 4 : 0);
+  const [driversRevealed, setDriversRevealed] = useState(chartStep > 1 || skipAnimation);
   useEffect(() => {
-    if (chartStep !== 1) { setScanCardCount(chartStep > 1 ? 4 : 0); return; }
-    if (skipAnimation) { setScanCardCount(4); return; }
+    if (chartStep !== 1) { setScanCardCount(chartStep > 1 ? 4 : 0); setDriversRevealed(chartStep > 1); return; }
+    if (skipAnimation) { setScanCardCount(4); setDriversRevealed(true); return; }
     setScanCardCount(0);
+    setDriversRevealed(false);
     const sweepStart = 2200;
-    const halfSweep = SWEEP_DURATION * 1000 / 2;
+    const cardInterval = SWEEP_DURATION * 1000 / 4;
     const s1 = setTimeout(() => setScanCardCount(1), sweepStart + 300);
-    const s2 = setTimeout(() => setScanCardCount(2), sweepStart + halfSweep);
-    const s3 = setTimeout(() => setScanCardCount(3), sweepStart + halfSweep * 2);
-    const s4 = setTimeout(() => setScanCardCount(4), sweepStart + halfSweep * 3);
-    return () => { clearTimeout(s1); clearTimeout(s2); clearTimeout(s3); clearTimeout(s4); };
+    const s2 = setTimeout(() => setScanCardCount(2), sweepStart + cardInterval);
+    const s3 = setTimeout(() => setScanCardCount(3), sweepStart + cardInterval * 2);
+    const s4 = setTimeout(() => setScanCardCount(4), sweepStart + cardInterval * 3);
+    const s5 = setTimeout(() => setDriversRevealed(true), sweepStart + cardInterval * 4);
+    return () => { clearTimeout(s1); clearTimeout(s2); clearTimeout(s3); clearTimeout(s4); clearTimeout(s5); };
   }, [chartStep, skipAnimation, onAutoAdvance]);
-
-  const [justScannedCluster, setJustScannedCluster] = useState(-1);
-  useEffect(() => {
-    if (chartStep !== 1 || scanCardCount === 0) { setJustScannedCluster(-1); return; }
-    const cluster = SPOTLIGHTS[scanCardCount - 1].cluster;
-    setJustScannedCluster(cluster);
-    const t = setTimeout(() => setJustScannedCluster(-1), 2000);
-    return () => clearTimeout(t);
-  }, [scanCardCount, chartStep]);
 
   /* ── Chart flow ─────────────────────────────────────── */
   const clustered = chartStep >= 2;
@@ -551,31 +520,24 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
   const customized = chartStep >= 2;
   const feeding = chartStep >= 3;
   const converging = chartStep >= 3;
-  const sweepActive = chartStep === 1 && !preScan;
+  const sweepActive = chartStep === 1 && !preScan && !driversRevealed;
 
   const revealedClusters = new Set(SPOTLIGHTS.slice(0, scanCardCount).map(s => s.cluster));
   const activeCluster = scanCardCount > 0 ? SPOTLIGHTS[scanCardCount - 1].cluster : -1;
 
-  const allScanned = scanCardCount >= 4;
-
   function dotFill(dot: (typeof DOTS)[0]) {
     if (factorsVisible) return TEAL;
-    if (chartStep >= 1 && allScanned && revealedClusters.has(dot.cluster)) return DRIVERS[dot.cluster].color;
-    if (chartStep >= 1 && dot.cluster === activeCluster) return DRIVERS[dot.cluster].color;
+    if (chartStep >= 1 && driversRevealed) return DRIVERS[dot.cluster].color;
+    if (chartStep >= 1 && revealedClusters.has(dot.cluster)) return DRIVERS[dot.cluster].color;
     return MUTED;
-  }
-
-  function dotRadius(dot: (typeof DOTS)[0]) {
-    if (chartStep === 1 && dot.cluster === justScannedCluster) return dot.r * 2.2;
-    return dot.r;
   }
 
   function dotOpacity(dot: (typeof DOTS)[0]) {
     if (customized) return 0;
     if (factorsVisible) return factorsPhase >= 2 ? 0 : 0.12;
     if (chartStep === 1) {
-      if (allScanned) return 0.7;
-      if (dot.cluster === activeCluster) return 0.7;
+      if (driversRevealed) return 0.7;
+      if (revealedClusters.has(dot.cluster)) return 0.7;
       return dot.scatterOpacity;
     }
     return dot.scatterOpacity;
@@ -584,7 +546,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
   return (
     <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-7xl flex-col items-center justify-start px-6 pt-4">
       {/* Title — fixed-height container so chart never resizes */}
-      <div className="relative w-full" style={{ height: 100, flexShrink: 0 }}>
+      <div className="relative w-full" style={{ height: 100, flexShrink: 0, transform: "translateX(calc(var(--rail-inset, 0px) * -0.5))" }}>
         <AnimatePresence mode="wait">
           {chartStep === 0 && (
             <motion.div
@@ -663,36 +625,33 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                   </h2>
                   <div className="mx-auto mt-2 max-w-3xl text-center" style={{ minHeight: 28 }}>
                     <AnimatePresence mode="wait">
-                      {customizePhase >= 0 && customizePhase < CUSTOMIZE_ACTIONS.length ? (
+                      {selectionPhase >= 0 && selectionPhase <= 3 ? (
                         <motion.div
-                          key={`action-narr-${customizePhase}`}
-                          className="flex items-center justify-center gap-2.5"
+                          key={`sel-narr-${selectionPhase}`}
+                          className="flex flex-col items-center gap-1"
                           initial={{ opacity: 0, y: 6 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -6 }}
                           transition={{ duration: 0.3 }}
                         >
-                          <span
-                            className="inline-flex items-center justify-center rounded-full"
-                            style={{
-                              width: 24,
-                              height: 24,
-                              backgroundColor: `${ACTION_META[customizePhase].color}15`,
-                              color: ACTION_META[customizePhase].color,
-                              fontSize: 14,
-                              fontWeight: 800,
-                              flexShrink: 0,
-                            }}
-                          >
-                            {ACTION_META[customizePhase].icon}
-                          </span>
-                          <span className="text-[1.05rem] font-bold" style={{ color: ACTION_META[customizePhase].color }}>
-                            {CUSTOMIZE_ACTIONS[customizePhase].headline}
+                          <span className="text-[1.05rem] font-bold" style={{ color: CATEGORY_LAYOUT[selectionPhase].color }}>
+                            {CATEGORY_TITLES[selectionPhase]}
                           </span>
                           <span className="text-[0.95rem] leading-relaxed" style={{ color: MUTED }}>
-                            {CUSTOMIZE_ACTIONS[customizePhase].detail}
+                            {CATEGORY_NARRATION[selectionPhase]}
                           </span>
                         </motion.div>
+                      ) : selectionPhase === 4 ? (
+                        <motion.p
+                          key="sel-picks"
+                          className="text-[1.05rem] font-semibold leading-relaxed"
+                          style={{ color: TEAL }}
+                          initial={{ opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.4 }}
+                        >
+                          Selected factors for the model
+                        </motion.p>
                       ) : (
                         <motion.p
                           key="final-sub"
@@ -923,8 +882,8 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
             points={`${SQUARE_VERTS.customer.x},${SQUARE_VERTS.customer.y} ${SQUARE_VERTS.product.x},${SQUARE_VERTS.product.y} ${SQUARE_VERTS.order.x},${SQUARE_VERTS.order.y} ${SQUARE_VERTS.market.x},${SQUARE_VERTS.market.y}`}
             fill="none"
             stroke={TEAL}
-            strokeWidth={customizePhase >= CUSTOMIZE_ACTIONS.length && !feeding ? 2.5 : 1.5}
-            strokeDasharray={customizePhase >= CUSTOMIZE_ACTIONS.length && !feeding ? "none" : "5 4"}
+            strokeWidth={selectionPhase >= 5 && !feeding ? 2.5 : 1.5}
+            strokeDasharray={selectionPhase >= 5 && !feeding ? "none" : "5 4"}
             initial={{ opacity: 0 }}
             animate={{ opacity: factorsPhase >= 1 && factorsPhase < 2 && !customized && !feeding ? 0.25 : 0 }}
             transition={{ delay: factorsPhase >= 1 && !customized ? 0.2 : 0, duration: 0.4 }}
@@ -974,7 +933,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
             let targetCy: number | number[];
             let targetFill = dotFill(dot);
             let targetOpacity = dotOpacity(dot);
-            let targetR = dotRadius(dot);
+            let targetR = dot.r;
             let cxTransition: Record<string, unknown>;
             let cyTransition: Record<string, unknown>;
             let opacityDelay = 0.1;
@@ -1085,7 +1044,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
           ).map((hi) => {
             const dot = DOTS[hi.index];
             const currentDriver = DRIVERS[hi.ci];
-            const sweepDelay = hi.normalizedX * (SWEEP_DURATION / 2);
+            const sweepDelay = hi.normalizedY * (SWEEP_DURATION / 2);
             return (
               <motion.circle
                 key={`hl-${hi.ci}-${hi.index}`}
@@ -1200,36 +1159,11 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                       }}
                     >
                       {CATEGORY_LAYOUT.map((cat, catIdx) => {
-                        const vert = SQUARE_VERTS[cat.key];
                         const chipsVisible = factorsPhase >= 7 || morphPhase >= catIdx;
                         const isHighlighted = morphPhase >= 0 && morphPhase < 4 && morphPhase === catIdx;
                         const dimmed = morphPhase >= 0 && morphPhase < 4 && morphPhase !== catIdx && morphPhase > catIdx;
                         return (
                           <div key={cat.key} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-                            <motion.div
-                              layoutId={`cat-label-${cat.key}`}
-                              layout
-                              style={{
-                                fontSize: 15,
-                                fontWeight: 800,
-                                color: cat.color,
-                                letterSpacing: "0.12em",
-                                fontFamily: "inherit",
-                                textAlign: "center",
-                                backgroundColor: SOLID_TINTS[cat.color] ?? "white",
-                                borderRadius: 4,
-                                padding: "2px 14px",
-                                flexShrink: 0,
-                              }}
-                              initial={{ opacity: 0 }}
-                              animate={{
-                                opacity: factorsPhase >= 1 ? (dimmed ? 0.4 : 1) : 0,
-                                scale: isHighlighted ? 1.08 : 1,
-                              }}
-                              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], layout: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } }}
-                            >
-                              {vert.label}
-                            </motion.div>
                             <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center", ...(cat.key === "market" || cat.key === "order" ? { maxWidth: 330 } : {}) }}>
                               {chipsVisible && SQUARE_FACTORS.filter(f => f.category === cat.key).map((f, fi) => (
                                   <motion.span
@@ -1279,279 +1213,126 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                         maxWidth: 960,
                         transformOrigin: "center center",
                       }}
-                      animate={{ scale: 1, opacity: 1, gap: reorganizing ? 8 : 18 }}
-                      transition={{ gap: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } }}
+                      animate={{ scale: 1, opacity: 1, gap: 18 }}
                     >
-                      {CATEGORY_LAYOUT.map((cat, catIdx) => {
-                        const vert = SQUARE_VERTS[cat.key];
-                        const catFactors = SQUARE_FACTORS.filter(f => f.category === cat.key);
-                        const isMarket = cat.key === "market";
-                        const isActiveRow =
-                          (customizePhase === 0 && isMarket) ||
-                          (customizePhase === 1 && cat.key === "customer") ||
-                          (customizePhase === 2 && cat.key === "customer") ||
-                          (customizePhase === 3 && cat.key === "order");
-                        return (
-                          <motion.div
-                            key={cat.key}
-                            style={{
-                              display: "flex",
-                              alignItems: "flex-start",
-                              gap: 14,
-                              borderRadius: 12,
-                              padding: "8px 12px",
-                            }}
-                            initial={false}
-                            animate={feeding ? {
-                              backgroundColor: "transparent",
-                            } : {
-                              opacity: 1,
-                              backgroundColor: isActiveRow ? `${cat.color}08` : "transparent",
-                            }}
-                            transition={feeding ? {
-                              backgroundColor: { duration: 0.3 },
-                            } : {
-                              opacity: { duration: 0.5 },
-                              backgroundColor: { duration: 0.5 },
-                            }}
-                          >
+                      <AnimatePresence mode="popLayout">
+                        {selectionPhase < 4 && CATEGORY_LAYOUT.map((cat, catIdx) => {
+                          const catFactors = SQUARE_FACTORS.filter(f => f.category === cat.key);
+                          const isActive = selectionPhase === catIdx;
+                          const isRemoved = selectionPhase > catIdx;
+                          if (isRemoved) return null;
+                          return (
                             <motion.div
-                              layoutId={`cat-label-${cat.key}`}
+                              key={cat.key}
                               layout
                               style={{
-                                fontSize: 13,
-                                fontWeight: 800,
-                                color: cat.color,
-                                letterSpacing: "0.1em",
-                                fontFamily: "inherit",
-                                minWidth: 96,
-                                textAlign: "center",
-                                padding: "12px 10px",
-                                borderRadius: 6,
-                                backgroundColor: SOLID_TINTS[cat.color] ?? "white",
-                                flexShrink: 0,
-                                marginTop: 1,
+                                display: "flex",
+                                alignItems: "flex-start",
+                                gap: 14,
+                                borderRadius: 12,
+                                padding: "8px 12px",
                               }}
-                              animate={feeding ? {
-                                scale: 0,
-                                opacity: 0,
-                                x: 200,
-                                y: FEED_NUDGE_Y[catIdx],
-                              } : reorganizing ? {
-                                scale: 0.85,
-                                opacity: 0.5,
-                                x: 0,
-                                y: 0,
-                                boxShadow: "0 0 0px transparent",
-                              } : {
-                                scale: isActiveRow ? [1, 1.06, 1] : 1,
+                              initial={false}
+                              animate={{
                                 opacity: 1,
-                                x: 0,
-                                y: 0,
-                                boxShadow: isActiveRow
-                                  ? [`0 0 0px transparent`, `0 0 14px ${cat.color}30`, `0 0 5px ${cat.color}15`]
-                                  : "0 0 0px transparent",
+                                backgroundColor: isActive ? `${cat.color}08` : "transparent",
                               }}
-                              transition={feeding ? {
-                                duration: 0.6,
-                                delay: catIdx * 0.04,
-                                ease: [0.4, 0, 0.1, 1],
-                                opacity: { duration: 0.3, delay: catIdx * 0.04 + 0.15 },
-                              } : reorganizing ? {
-                                duration: 0.5,
-                                delay: catIdx * 0.05,
-                                ease: [0.22, 1, 0.36, 1],
-                                layout: { duration: 0.5 },
-                              } : { duration: 0.6, delay: 0.3, layout: { duration: 0.6, delay: 0, ease: [0.22, 1, 0.36, 1] } }}
+                              exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } }}
+                              transition={{
+                                opacity: { duration: 0.5 },
+                                backgroundColor: { duration: 0.5 },
+                                layout: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+                              }}
                             >
-                              {vert.label}
-                            </motion.div>
-                            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, flex: 1 }}>
-                              <AnimatePresence mode="popLayout">
-                                {catFactors
-                                  .filter(f => !(f.emphasis === "crossoff" && customizePhase >= 2))
-                                  .map((f, fi, arr) => {
-                                    const convergeX = ((arr.length - 1) / 2 - fi) * 40;
-                                    const convergeY = FEED_NUDGE_Y[catIdx];
-                                    const isRemoving = f.emphasis === "crossoff" && customizePhase === 1;
-                                    const isActivelyElevating =
-                                      customizePhase === 2 && f.emphasis === "highlight";
-                                    const isElevated =
-                                      customizePhase >= 2 && customizePhase !== 3 && f.emphasis === "highlight";
-                                    const isActivelyDeemphasizing =
-                                      customizePhase === 3 && f.emphasis === "deemphasize" && deemphasizeRevealed;
-                                    const isDeemphasized =
-                                      customizePhase >= 3 && f.emphasis === "deemphasize" && deemphasizeRevealed;
-                                    const customizationActive = customizePhase >= 0 && customizePhase < CUSTOMIZE_ACTIONS.length;
-                                    const shouldFade = customizationActive && !isElevated && !isDeemphasized && !isRemoving && !isActivelyElevating && !isActivelyDeemphasizing && !(customizePhase === 3 && !deemphasizeRevealed);
-                                    return (
-                                      <motion.span
-                                        key={f.label}
-                                        layoutId={`factor-${f.label}`}
-                                        layout
-                                        initial={false}
-                                        exit={{ scale: 0, opacity: 0, x: -20, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } }}
-                                        style={{
-                                          display: "inline-flex",
-                                          alignItems: "center",
-                                          justifyContent: "center",
-                                          gap: 4,
-                                          borderRadius: 8,
-                                          border: isActivelyDeemphasizing
-                                            ? `2px solid ${PURPLE}`
-                                            : isDeemphasized
-                                              ? `1.5px dashed ${cat.color}30`
-                                              : `2px solid ${isRemoving ? `${MUTED}60` : isElevated ? TEAL : `${cat.color}25`}`,
-                                          padding: isElevated ? "12px 20px" : (isDeemphasized && !isActivelyDeemphasizing) ? "8px 14px" : "10px 18px",
-                                          fontSize: isElevated ? 17 : (isDeemphasized && !isActivelyDeemphasizing) ? 14 : 16,
-                                          fontWeight: isElevated ? 700 : (isDeemphasized && !isActivelyDeemphasizing) ? 500 : 600,
-                                          fontFamily: "inherit",
-                                          whiteSpace: "nowrap",
-                                          color: isRemoving ? MUTED : isActivelyDeemphasizing ? PURPLE : isElevated ? TEAL : isDeemphasized ? `${cat.color}90` : cat.color,
-                                          backgroundColor: isRemoving ? "#F3F4F6" : isActivelyDeemphasizing ? `${PURPLE}12` : isElevated ? "#E5F5FA" : isDeemphasized ? `${cat.color}06` : (SOLID_TINTS[cat.color] ?? "white"),
-                                          textDecoration: isRemoving ? "line-through" : "none",
-                                          transition: "color 0.5s, background-color 0.5s, border 0.5s, padding 0.5s, font-size 0.5s",
-                                        }}
-                                        animate={feeding ? {
-                                          x: convergeX,
-                                          y: convergeY,
-                                          scale: 0,
-                                          opacity: 0,
-                                        } : reorganizing ? {
-                                          x: 0,
-                                          y: 0,
-                                          scale: [1, 1.06, 1],
-                                          opacity: 1,
-                                          boxShadow: [`0 0 0px transparent`, `0 0 14px ${TEAL}40`, `0 0 6px ${TEAL}20`],
-                                        } : {
-                                          x: isRemoving ? [0, -4, 5, -3, 3, -1, 0] : 0,
-                                          y: 0,
-                                          scale: isActivelyElevating ? [1, 1.18, 1.05]
-                                            : isActivelyDeemphasizing ? [1, 1.12, 0.93]
-                                            : isRemoving ? [1, 1.02, 0.95] : 1,
-                                          opacity: shouldFade ? 0.35 : isDeemphasized && !isActivelyDeemphasizing ? 0.6 : 1,
-                                          boxShadow: isActivelyElevating
-                                            ? ["0 0 0px transparent", `0 0 24px ${TEAL}60`, `0 0 10px ${TEAL}30`]
-                                            : isActivelyDeemphasizing
-                                              ? ["0 0 0px transparent", `0 0 28px ${PURPLE}60`, `0 0 6px ${PURPLE}20`]
-                                              : isRemoving
-                                                ? ["0 0 0px transparent", `0 0 16px ${MUTED}40`, "0 0 0px transparent"]
-                                                : isElevated
-                                                  ? `0 0 8px ${TEAL}25`
-                                                  : "0 0 0px transparent",
-                                        }}
-                                        transition={feeding ? {
-                                          duration: 0.7,
-                                          delay: catIdx * 0.04 + fi * 0.02,
-                                          ease: [0.4, 0, 0.1, 1],
-                                          opacity: { duration: 0.35, delay: catIdx * 0.04 + fi * 0.02 + 0.15 },
-                                        } : reorganizing ? {
-                                          duration: 0.8,
-                                          delay: catIdx * 0.06 + fi * 0.03,
-                                          ease: [0.22, 1, 0.36, 1],
-                                          scale: { duration: 0.6, delay: catIdx * 0.06 + fi * 0.03, times: [0, 0.5, 1] },
-                                        } : {
-                                          x: isRemoving ? { duration: 0.5, delay: 0.5 } : { duration: 0 },
-                                          opacity: { duration: 0.5, delay: isActivelyDeemphasizing ? 0.4 : 0.1 },
-                                          scale: {
-                                            duration: isActivelyElevating ? 0.8 : (isActivelyDeemphasizing || isRemoving) ? 0.6 : 0.3,
-                                            delay: isActivelyDeemphasizing ? 0 : (isActivelyElevating || isRemoving) ? 0.8 : 0,
-                                            times: (isActivelyElevating || isActivelyDeemphasizing || isRemoving) ? [0, 0.4, 1] : undefined,
-                                            ease: [0.22, 1, 0.36, 1],
-                                          },
-                                          boxShadow: {
-                                            duration: (isActivelyElevating || isActivelyDeemphasizing) ? 0.8 : isRemoving ? 0.6 : 0.3,
-                                            delay: isActivelyDeemphasizing ? 0 : (isActivelyElevating || isRemoving) ? 0.8 : 0,
-                                          },
-                                          layout: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
-                                        }}
-                                      >
-                                        {f.label}
-                                        {isElevated && (
-                                          <motion.sup
-                                            style={{ fontSize: 15, fontWeight: 800, color: TEAL, marginLeft: 3, lineHeight: 1 }}
-                                            initial={{ opacity: 0, scale: 0 }}
-                                            animate={{ opacity: 1, scale: 1 }}
-                                            transition={{ delay: isActivelyElevating ? 1.2 : 0, duration: 0.3, type: "spring", stiffness: 300 }}
-                                          >
-                                            +2
-                                          </motion.sup>
-                                        )}
-                                        {isDeemphasized && (
-                                          <motion.sup
-                                            style={{ fontSize: 10, fontWeight: 700, color: PURPLE, marginLeft: 2, lineHeight: 1 }}
-                                            initial={{ opacity: 0, scale: 0 }}
-                                            animate={{ opacity: 1, scale: 1 }}
-                                            transition={{ delay: isActivelyDeemphasizing ? 0.4 : 0, duration: 0.3, type: "spring", stiffness: 300 }}
-                                          >
-                                            ↓
-                                          </motion.sup>
-                                        )}
-                                      </motion.span>
-                                    );
-                                  })}
-                                {isMarket && customizePhase >= 0 && (
+                              <div style={{ display: "flex", flexWrap: "wrap", gap: 10, flex: 1 }}>
+                                {catFactors.map((f, fi) => (
                                   <motion.span
-                                    key="comp-intel"
+                                    key={f.label}
+                                    layoutId={`factor-${f.label}`}
+                                    layout
+                                    initial={false}
                                     style={{
                                       display: "inline-flex",
                                       alignItems: "center",
                                       justifyContent: "center",
                                       borderRadius: 8,
-                                      border: `2px solid ${customizePhase > 0 && customizePhase < CUSTOMIZE_ACTIONS.length ? `${ML_GREEN}25` : ML_GREEN}`,
+                                      border: `2px solid ${cat.color}25`,
                                       padding: "10px 18px",
                                       fontSize: 16,
-                                      fontWeight: 700,
+                                      fontWeight: 600,
                                       fontFamily: "inherit",
                                       whiteSpace: "nowrap",
-                                      color: ML_GREEN,
-                                      backgroundColor: "#ECF4ED",
-                                      transition: "border 0.5s",
+                                      color: cat.color,
+                                      backgroundColor: SOLID_TINTS[cat.color] ?? "white",
                                     }}
-                                    initial={{ opacity: 0, scale: 0.6 }}
                                     animate={feeding ? {
-                                      opacity: 0,
+                                      x: ((catFactors.length - 1) / 2 - fi) * 40,
+                                      y: FEED_NUDGE_Y[catIdx],
                                       scale: 0,
-                                      y: FEED_NUDGE_Y[2],
-                                    } : reorganizing ? {
-                                      opacity: 1,
-                                      scale: [1, 1.06, 1],
-                                      y: 0,
-                                      boxShadow: [`0 0 0px transparent`, `0 0 14px ${TEAL}40`, `0 0 6px ${TEAL}20`],
+                                      opacity: 0,
                                     } : {
-                                      opacity: customizePhase > 0 && customizePhase < CUSTOMIZE_ACTIONS.length ? 0.35 : 1,
-                                      scale: 1,
+                                      x: 0,
                                       y: 0,
-                                      boxShadow: customizePhase === 0
-                                        ? `0 0 16px ${ML_GREEN}40`
-                                        : "0 0 0px transparent",
+                                      scale: 1,
+                                      opacity: isActive ? 1 : 0.5,
                                     }}
                                     transition={feeding ? {
                                       duration: 0.7,
-                                      delay: 0.1,
+                                      delay: catIdx * 0.04 + fi * 0.02,
                                       ease: [0.4, 0, 0.1, 1],
-                                      opacity: { duration: 0.35, delay: 0.25 },
-                                    } : reorganizing ? {
-                                      duration: 0.8,
-                                      delay: 0.2,
-                                      ease: [0.22, 1, 0.36, 1],
-                                      scale: { duration: 0.6, delay: 0.2, times: [0, 0.5, 1] },
                                     } : {
-                                      delay: customizePhase === 0 ? 0.8 : 0,
-                                      duration: 0.6,
-                                      scale: { type: "spring", stiffness: 280, damping: 20, delay: customizePhase === 0 ? 0.8 : 0 },
-                                      opacity: { duration: 0.4, delay: customizePhase === 0 ? 0.8 : 0 },
-                                      ease: [0.22, 1, 0.36, 1],
+                                      opacity: { duration: 0.4 },
+                                      layout: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
                                     }}
                                   >
-                                    Competitive intelligence
+                                    {f.label}
                                   </motion.span>
-                                )}
-                              </AnimatePresence>
-                            </div>
+                                ))}
+                              </div>
+                            </motion.div>
+                          );
+                        })}
+                        {selectionPhase >= 4 && (
+                          <motion.div
+                            key="selected-factors"
+                            style={{
+                              display: "flex",
+                              flexWrap: "wrap",
+                              gap: 14,
+                              justifyContent: "center",
+                              padding: "24px 12px",
+                            }}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                          >
+                            {SELECTED_FACTORS.map((sf, si) => (
+                              <motion.span
+                                key={sf.label}
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  borderRadius: 8,
+                                  border: `2px solid ${TEAL}`,
+                                  padding: "12px 22px",
+                                  fontSize: 17,
+                                  fontWeight: 700,
+                                  fontFamily: "inherit",
+                                  whiteSpace: "nowrap",
+                                  color: TEAL,
+                                  backgroundColor: "#E5F5FA",
+                                }}
+                                initial={{ opacity: 0, scale: 0.7, y: 10 }}
+                                animate={{ opacity: 1, scale: 1, y: 0, boxShadow: `0 0 12px ${TEAL}30` }}
+                                transition={{ duration: 0.5, delay: si * 0.1, ease: [0.22, 1, 0.36, 1] }}
+                              >
+                                {sf.label}
+                              </motion.span>
+                            ))}
                           </motion.div>
-                        );
-                      })}
+                        )}
+                      </AnimatePresence>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -1889,22 +1670,24 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
       </motion.div>
       </div>
 
-      {/* ── Bottom cards (sweep scan + customize reference) ── */}
-      <AnimatePresence>
-        {((chartStep === 1 && !preScan && scanCardCount > 0) || chartStep === 2) && (
+      {/* ── Bottom cards (sweep scan + drivers reveal + customize reference) ── */}
+      <AnimatePresence mode="wait">
+        {/* Step 1 scan: accumulating cards */}
+        {chartStep === 1 && !preScan && scanCardCount > 0 && !driversRevealed && (
           <motion.div
+            key="scan-cards"
             className="flex justify-center gap-2 w-full overflow-hidden -mt-10"
             style={{ maxWidth: "calc(100% - 2rem)", paddingLeft: "5%", paddingRight: "10%" }}
             initial={{ opacity: 0, y: 16, height: 0 }}
-            animate={{ opacity: chartStep === 2 ? 0.7 : 1, y: 0, height: "auto" }}
+            animate={{ opacity: 1, y: 0, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           >
             {SPOTLIGHTS.map((s, i) => {
               const d = DRIVERS[s.cluster];
-              const isActive = chartStep === 1 && i === scanCardCount - 1;
-              const isRevealed = chartStep >= 2 || i < scanCardCount;
-              const allRevealed = chartStep >= 2 || scanCardCount >= 4;
+              const isActive = i === scanCardCount - 1;
+              const isRevealed = i < scanCardCount;
+              const allDone = scanCardCount >= 4;
               if (!isRevealed) return null;
               return (
                 <motion.div
@@ -1918,17 +1701,13 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                   }}
                   initial={{ opacity: 0, y: 12, scale: 0.95 }}
                   animate={{
-                    opacity: allRevealed || isActive ? 1 : 0.55,
+                    opacity: allDone || isActive ? 1 : 0.55,
                     y: 0,
-                    x: 0,
                     scale: 1,
                   }}
-                  transition={{
-                    duration: 0.5,
-                    ease: [0.22, 1, 0.36, 1],
-                  }}
+                  transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                 >
-                  {isActive && !allRevealed && (
+                  {isActive && !allDone && (
                     <motion.div
                       className="absolute top-0 left-0 right-0 h-[2px]"
                       style={{
@@ -1942,7 +1721,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                   <div className="px-2.5 py-1.5">
                     <div className="flex items-center gap-1.5">
                       <div className="relative flex-shrink-0">
-                        {isActive && !allRevealed && (
+                        {isActive && !allDone && (
                           <motion.div
                             className="absolute inset-0 rounded-full"
                             style={{ backgroundColor: d.color }}
@@ -1958,10 +1737,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                         <div className="text-[0.68rem] font-bold tracking-[0.06em] uppercase truncate" style={{ color: d.color }}>
                           {s.label}
                         </div>
-                        <div
-                          className="text-[0.62rem]"
-                          style={{ color: MUTED }}
-                        >
+                        <div className="text-[0.62rem]" style={{ color: MUTED }}>
                           {s.count}
                         </div>
                       </div>
@@ -1970,6 +1746,37 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                 </motion.div>
               );
             })}
+          </motion.div>
+        )}
+        {/* Step 1 drivers: reveal 5 model drivers */}
+        {chartStep === 1 && driversRevealed && (
+          <motion.div
+            key="drivers-reveal"
+            className="flex justify-center gap-3 w-full overflow-hidden -mt-10"
+            style={{ maxWidth: "calc(100% - 2rem)" }}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {MODEL_DRIVERS.map((d, i) => (
+              <motion.div
+                key={d.label}
+                className="flex items-center gap-2 rounded-lg border px-3 py-2"
+                style={{
+                  borderColor: `${d.color}30`,
+                  backgroundColor: `${d.color}08`,
+                }}
+                initial={{ opacity: 0, scale: 0.85, y: 8 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: d.color }} />
+                <span className="text-[0.75rem] font-semibold whitespace-nowrap" style={{ color: d.color }}>
+                  {d.label}
+                </span>
+              </motion.div>
+            ))}
           </motion.div>
         )}
       </AnimatePresence>

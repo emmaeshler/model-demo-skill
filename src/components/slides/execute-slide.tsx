@@ -394,7 +394,7 @@ export function ModelOutputsOverview({ step }: { step: number }) {
     <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-6xl flex-col items-center justify-center px-6 relative">
       <motion.h2
         className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
-        style={{ color: NAVY }}
+        style={{ color: NAVY, transform: "translateX(calc(var(--rail-inset, 0px) * -0.5))" }}
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
@@ -402,7 +402,7 @@ export function ModelOutputsOverview({ step }: { step: number }) {
         What the model produces
       </motion.h2>
 
-      <div className="flex min-h-[3.5rem] items-center justify-center px-4 mb-1">
+      <div className="flex min-h-[3.5rem] items-center justify-center px-4 mb-1" style={{ transform: "translateX(calc(var(--rail-inset, 0px) * -0.5))" }}>
         <AnimatePresence mode="wait">
           {!showOutputs ? (
             <motion.p
@@ -672,7 +672,7 @@ export function ExecuteSlide({
             <motion.h2
               key={`reveal-title-${revealPhase <= 1 ? 1 : revealPhase >= 4 ? 4 : revealPhase}`}
               className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
-              style={{ color: NAVY }}
+              style={{ color: NAVY, transform: "translateX(calc(var(--rail-inset, 0px) * -0.5))" }}
               initial={skipAnimation ? false : { opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
@@ -691,6 +691,7 @@ export function ExecuteSlide({
           {/* Narrative area */}
           <motion.div
             className={`flex min-h-[3rem] items-center justify-center px-4 ${isPresenter ? "mb-1" : "mb-4"}`}
+            style={{ transform: "translateX(calc(var(--rail-inset, 0px) * -0.5))" }}
             initial={skipAnimation ? false : { opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.5 }}

@@ -7,14 +7,12 @@ const NAVY = "#00446A";
 const TEAL = "#21A5D5";
 const ORANGE = "#E56910";
 const SLATE = "#2E5A88";
-const AMBER = "#EF8B1D";
 
 const MODULES = [
   { number: 1, label: "Design", subtitle: "Architecting the", subtitle2: "right model", color: NAVY },
   { number: 2, label: "Power", subtitle: "Intelligence behind", subtitle2: "recommendations", color: TEAL },
   { number: 3, label: "Execute", subtitle: "From model", subtitle2: "to market", color: ORANGE },
   { number: 4, label: "Refine", subtitle: "Learning from", subtitle2: "every response", color: SLATE },
-  { number: 5, label: "Profit Growth", subtitle: "Measuring", subtitle2: "the impact", color: AMBER },
 ];
 
 const SVG_W = 1050;

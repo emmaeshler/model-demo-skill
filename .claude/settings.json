@@ -25,10 +25,13 @@
       "Skill(update-config)",
       "Skill(update-config:*)",
       "Bash(grep -rn \"Acme Industrial\\\\|Recommended price\\\\|Win probability\\\\|Margin impact\\\\|\\\\\\\\\\\\$19.24\\\\|SKU.*A-7200\\\\|\\\\\\\\\\\\$17.50.*list\" /Users/emmaeshler/ml-explainer/src/)",
-      "Bash(kill %1)"
+      "Bash(kill %1)",
+      "Bash(rm -rf /Users/emmaeshler/ml-explainer/.next && npx next build 2>&1 | tail -30)",
+      "Bash(grep -B8 -A15 \"exit={{ opacity: 0, y: -8 }}\")"
     ],
     "additionalDirectories": [
-      "/tmp"
+      "/tmp",
+      "/Users/emmaeshler/ml-explainer/.next"
     ]
   },
   "hooks": {

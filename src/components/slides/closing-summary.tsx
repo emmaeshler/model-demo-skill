@@ -32,12 +32,6 @@ const STAGES = [
     color: NAVY,
     takeaway: "Every market outcome teaches the model to sharpen precision",
   },
-  {
-    number: 5,
-    label: "Profit Growth",
-    color: ORANGE,
-    takeaway: "Compounding accuracy drives measurable margin uplift",
-  },
 ];
 
 const OUTCOMES = [
