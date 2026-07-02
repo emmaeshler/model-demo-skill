@@ -35,16 +35,12 @@ const NOTES: Record<string, string[]> = {
     "Add what matters, remove what doesn't, and adjust the balance.",
   ],
   "power:3": [
-    "Your customized factors now feed directly into the pricing engine.",
-    "The model combines all inputs into a unified recommendation.",
-  ],
-  "power:4": [
-    "Cost, competition, volume, and demand converge into one recommended price.",
-    "This is the output for a single SKU — the model does this for every product.",
+    "These four factors combine to produce a single SKU-level price.",
+    "From here, that price gets customized to each customer — that's the next step.",
   ],
   "execute:0": [
-    "All four pricing dimensions converge into a single recommended price — $17.50 for SKU #A-7200.",
-    "Click to see how that price changes for each customer.",
+    "The model produced $17.50 for SKU #A-7200 — now watch how it customizes that price for each customer.",
+    "Click to see how different customer profiles shift the recommendation.",
   ],
   "execute:1": [
     "Same product, same list price — but each customer gets a different answer.",
@@ -56,30 +52,26 @@ const NOTES: Record<string, string[]> = {
     "This is where your business expertise gets encoded into the model.",
   ],
   "refine:1": [
-    "Without segmentation, pricing is scattered and inconsistent.",
-    "The model needs structure to make sense of diverse customer behaviors.",
-  ],
-  "refine:2": [
     "The optimal pricing curve shows where the most profit opportunity lives.",
     "It's built from your historical win/loss data — price versus volume.",
   ],
-  "refine:3": [
+  "refine:2": [
     "Every product–customer combination gets its own curve.",
     "The model learns different price sensitivities for each relationship.",
   ],
-  "refine:4": [
+  "refine:3": [
     "QuickParts' curve appears — the model detects it's underpriced and adjusts automatically.",
     "Each customer gets a tailored recommendation based on their segment and behavior.",
   ],
-  "refine:5": [
+  "refine:4": [
     "Acme shows a different pattern — the model catches a subtler margin opportunity.",
     "The model adjusts its recommendations based on each customer's unique profile.",
   ],
-  "refine:6": [
+  "refine:5": [
     "MedSupply is at risk from a competitor — the model lowers price to defend the deal.",
     "Different segments, different optimal prices — that's the power of dynamic pricing.",
   ],
-  "refine:7": [
+  "refine:6": [
     "When all customers are optimized together, the portfolio effect is powerful.",
     "Some prices go up, some go down — but total margin improves significantly.",
   ],

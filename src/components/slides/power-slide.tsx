@@ -10,7 +10,7 @@ const GREEN = "#2e7d32";
 const PURPLE = "#7B5EA7";
 const MUTED = "#5A6A78";
 
-export const POWER_TOTAL_STEPS = 5;
+export const POWER_TOTAL_STEPS = 4;
 
 const ML_GREEN = "#3A7D44";
 
@@ -57,6 +57,14 @@ const DRIVERS = [
   { label: "Competitive Position", color: ORANGE, cx: 620, cy: 150 },
   { label: "Volume & Elasticity", color: GREEN, cx: 250, cy: 330 },
   { label: "Win / Loss Patterns", color: PURPLE, cx: 610, cy: 315 },
+];
+
+const MODEL_DRIVERS = [
+  { label: "Cost Trends", color: NAVY },
+  { label: "Competitive Position", color: ORANGE },
+  { label: "Volume & Elasticity", color: GREEN },
+  { label: "Win / Loss Patterns", color: PURPLE },
+  { label: "Customer Value", color: TEAL },
 ];
 
 /* ─── Cluster spread (step 5: dots cluster into 4 groups) ─── */
@@ -197,16 +205,16 @@ const SPOTLIGHTS = [
     count: "Found 18 months of product data",
   },
   {
-    cluster: 0,
-    icon: "grid",
-    label: "ORDER",
-    count: "Found 14,200 order records",
-  },
-  {
     cluster: 1,
     icon: "trend",
     label: "MARKET",
     count: "Found 36 market features",
+  },
+  {
+    cluster: 0,
+    icon: "grid",
+    label: "ORDER",
+    count: "Found 14,200 order records",
   },
 ];
 
@@ -214,16 +222,14 @@ const TITLES = [
   "2,400 accounts × 15,000 SKUs",
   "The model scans for patterns",
   "Your customized factors now feed the model",
-  "Customized for your business",
-  "All four factors converge into a single price",
+  "These factors combine into a single SKU-level price",
 ];
 
 const SUBTITLES = [
   "That's 36 million unique price points — far too many for any team to set manually. The model finds the patterns hiding inside.",
   "Examining 36 million price points across four dimensions.",
   "Every business is different. We weigh each factor based on your data — adding what matters, removing what doesn't, and tuning the balance.",
-  "Together, these factors uniquely configure your model.",
-  "Cost, competition, volume, and demand combine into one recommended price for every SKU.",
+  "Cost, competition, volume, and demand produce one price per SKU — then it gets customized to each customer.",
 ];
 
 /* ─── Pre-compute dot positions ─── */
@@ -351,7 +357,7 @@ const CLUSTER_TARGETS = Array.from({ length: DOT_COUNT }, (_, i) => {
 
 /* ─── Sweep config ─── */
 
-const SWEEP_DURATION = 22;
+const SWEEP_DURATION = 12;
 const PILL_STAGGER_SPAN = 1.5;
 
 const CARD_FLY_TARGETS = [
@@ -503,35 +509,10 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
     }
   }, [chartStep, customizePhase, skipAnimation, onAutoAdvance]);
 
-  const [feedIntro, setFeedIntro] = useState(false);
-  useEffect(() => {
-    if (chartStep !== 4 || skipAnimation) { setFeedIntro(false); return; }
-    setFeedIntro(true);
-    const t = setTimeout(() => setFeedIntro(false), 2000);
-    return () => clearTimeout(t);
-  }, [chartStep, skipAnimation]);
+  const convergeReady = chartStep >= 3;
 
-  const [convergeReady, setConvergeReady] = useState(skipAnimation && chartStep >= 4);
-  useEffect(() => {
-    if (chartStep < 4) { setConvergeReady(false); return; }
-    if (skipAnimation) { setConvergeReady(true); return; }
-    const t = setTimeout(() => setConvergeReady(true), 300);
-    return () => clearTimeout(t);
-  }, [chartStep, skipAnimation]);
-
-  const [absorbedCount, setAbsorbedCount] = useState(skipAnimation && chartStep >= 4 ? 4 : 0);
-  useEffect(() => {
-    if (chartStep < 4) { setAbsorbedCount(0); return; }
-    if (skipAnimation) { setAbsorbedCount(4); return; }
-    setAbsorbedCount(0);
-    const timers: ReturnType<typeof setTimeout>[] = [];
-    for (let i = 0; i < 4; i++) {
-      timers.push(setTimeout(() => setAbsorbedCount(i + 1), 1800 + i * 1500));
-    }
-    return () => timers.forEach(clearTimeout);
-  }, [chartStep, skipAnimation]);
-
-  const allAbsorbed = absorbedCount >= 4;
+  const allAbsorbed = chartStep >= 3;
+  const absorbedCount = chartStep >= 3 ? 4 : 0;
 
   const convergingPrice = useMemo(() => {
     let total = BASE_PRICE;
@@ -546,20 +527,30 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
     if (chartStep !== 1) { setScanCardCount(chartStep > 1 ? 4 : 0); return; }
     if (skipAnimation) { setScanCardCount(4); return; }
     setScanCardCount(0);
-    const baseDelay = 3500;
-    const s1 = setTimeout(() => setScanCardCount(1), baseDelay);
-    const s2 = setTimeout(() => setScanCardCount(2), baseDelay + 2500);
-    const s3 = setTimeout(() => setScanCardCount(3), baseDelay + 5000);
-    const s4 = setTimeout(() => setScanCardCount(4), baseDelay + 7500);
+    const sweepStart = 2200;
+    const halfSweep = SWEEP_DURATION * 1000 / 2;
+    const s1 = setTimeout(() => setScanCardCount(1), sweepStart + 300);
+    const s2 = setTimeout(() => setScanCardCount(2), sweepStart + halfSweep);
+    const s3 = setTimeout(() => setScanCardCount(3), sweepStart + halfSweep * 2);
+    const s4 = setTimeout(() => setScanCardCount(4), sweepStart + halfSweep * 3);
     return () => { clearTimeout(s1); clearTimeout(s2); clearTimeout(s3); clearTimeout(s4); };
   }, [chartStep, skipAnimation, onAutoAdvance]);
+
+  const [justScannedCluster, setJustScannedCluster] = useState(-1);
+  useEffect(() => {
+    if (chartStep !== 1 || scanCardCount === 0) { setJustScannedCluster(-1); return; }
+    const cluster = SPOTLIGHTS[scanCardCount - 1].cluster;
+    setJustScannedCluster(cluster);
+    const t = setTimeout(() => setJustScannedCluster(-1), 2000);
+    return () => clearTimeout(t);
+  }, [scanCardCount, chartStep]);
 
   /* ── Chart flow ─────────────────────────────────────── */
   const clustered = chartStep >= 2;
   const factorsVisible = chartStep >= 2;
   const customized = chartStep >= 2;
   const feeding = chartStep >= 3;
-  const converging = chartStep >= 4;
+  const converging = chartStep >= 3;
   const sweepActive = chartStep === 1 && !preScan;
 
   const revealedClusters = new Set(SPOTLIGHTS.slice(0, scanCardCount).map(s => s.cluster));
@@ -572,6 +563,11 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
     if (chartStep >= 1 && allScanned && revealedClusters.has(dot.cluster)) return DRIVERS[dot.cluster].color;
     if (chartStep >= 1 && dot.cluster === activeCluster) return DRIVERS[dot.cluster].color;
     return MUTED;
+  }
+
+  function dotRadius(dot: (typeof DOTS)[0]) {
+    if (chartStep === 1 && dot.cluster === justScannedCluster) return dot.r * 2.2;
+    return dot.r;
   }
 
   function dotOpacity(dot: (typeof DOTS)[0]) {
@@ -706,13 +702,13 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.4 }}
                         >
-                          {SUBTITLES[3]}
+                          {SUBTITLES[2]}
                         </motion.p>
                       )}
                     </AnimatePresence>
                   </div>
                 </>
-              ) : chartStep >= 4 ? (
+              ) : chartStep >= 3 ? (
                 <>
                   <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: NAVY, display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "0 0.3em" }}>
                     {(TITLES[chartStep] ?? "").split(" ").map((word, wi) => (
@@ -733,16 +729,16 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: skipAnimation ? 0.15 : 0.7 }}
                   >
-                    Cost, competition, volume, and demand combine into{" "}
+                    Cost, competition, volume, and demand produce{" "}
                     <motion.span
                       style={{ fontWeight: 600 }}
                       initial={skipAnimation ? { color: TEAL } : { color: MUTED }}
                       animate={{ color: TEAL }}
                       transition={{ duration: 0.6, delay: skipAnimation ? 0 : 1.2 }}
                     >
-                      one recommended price
-                    </motion.span>{" "}
-                    for every SKU.
+                      one price per SKU
+                    </motion.span>
+                    {" "}— then it gets customized to each customer.
                   </motion.p>
                 </>
               ) : (
@@ -939,7 +935,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
             <motion.g
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.8, delay: chartStep === 1 ? 1.5 : 0.3 }}
+              transition={{ duration: 0.5, delay: 0 }}
             >
               <defs>
                 <linearGradient id="sweep-glow" x1="0" y1="0" x2="1" y2="0">
@@ -978,7 +974,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
             let targetCy: number | number[];
             let targetFill = dotFill(dot);
             let targetOpacity = dotOpacity(dot);
-            let targetR = dot.r;
+            let targetR = dotRadius(dot);
             let cxTransition: Record<string, unknown>;
             let cyTransition: Record<string, unknown>;
             let opacityDelay = 0.1;
@@ -1084,7 +1080,9 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
           })}
 
           {/* ── Highlight rings — dots "found" by the sweep ── */}
-          {sweepActive && scanCardCount > 0 && !allScanned && highlightDotsForCluster(activeCluster).map(hi => ({ ...hi, ci: activeCluster })).map((hi) => {
+          {sweepActive && scanCardCount > 0 && Array.from(revealedClusters).flatMap(ci =>
+            highlightDotsForCluster(ci).map(hi => ({ ...hi, ci }))
+          ).map((hi) => {
             const dot = DOTS[hi.index];
             const currentDriver = DRIVERS[hi.ci];
             const sweepDelay = hi.normalizedX * (SWEEP_DURATION / 2);
@@ -1574,7 +1572,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
             return (
               <>
                 {/* Step 4: feed-the-model flow lines + dissolve dots */}
-                {!feedIntro && !convergeReady && FEED_SOURCES.map((src, si) => {
+                {!convergeReady && FEED_SOURCES.map((src, si) => {
                   const steps = 25;
                   const flowCx: number[] = [];
                   const flowCy: number[] = [];
@@ -1891,22 +1889,22 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
       </motion.div>
       </div>
 
-      {/* ── Bottom cards (steps 1-4, hidden at cluster step) ── */}
+      {/* ── Bottom cards (sweep scan + customize reference) ── */}
       <AnimatePresence>
-        {(chartStep === 1 && !preScan && scanCardCount > 0) && (
+        {((chartStep === 1 && !preScan && scanCardCount > 0) || chartStep === 2) && (
           <motion.div
             className="flex justify-center gap-2 w-full overflow-hidden -mt-10"
             style={{ maxWidth: "calc(100% - 2rem)", paddingLeft: "5%", paddingRight: "10%" }}
             initial={{ opacity: 0, y: 16, height: 0 }}
-            animate={{ opacity: 1, y: 0, height: "auto" }}
+            animate={{ opacity: chartStep === 2 ? 0.7 : 1, y: 0, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           >
             {SPOTLIGHTS.map((s, i) => {
               const d = DRIVERS[s.cluster];
               const isActive = chartStep === 1 && i === scanCardCount - 1;
-              const isRevealed = i < scanCardCount;
-              const allRevealed = scanCardCount >= 4;
+              const isRevealed = chartStep >= 2 || i < scanCardCount;
+              const allRevealed = chartStep >= 2 || scanCardCount >= 4;
               if (!isRevealed) return null;
               return (
                 <motion.div

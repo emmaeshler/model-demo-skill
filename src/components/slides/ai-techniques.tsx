@@ -32,7 +32,7 @@ const ROWS = [
 const fadeUp = (delay: number) => ({
   initial: { opacity: 0, y: 16 } as const,
   animate: { opacity: 1, y: 0 } as const,
-  transition: { delay, duration: 0.4 },
+  transition: { delay, duration: 0.25 },
 });
 
 export function AiTechniquesSlide() {
@@ -91,7 +91,7 @@ export function AiTechniquesSlide() {
                 className="border-b last:border-b-0"
                 initial={{ opacity: 0, x: -12 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 + i * 0.08, duration: 0.35 }}
+                transition={{ delay: 0.15 + i * 0.05, duration: 0.25 }}
               >
                 <td className="bg-muted/15 px-4 py-3">
                   <span className="text-xs font-bold" style={{ color: NAVY }}>{row.dimension}</span>

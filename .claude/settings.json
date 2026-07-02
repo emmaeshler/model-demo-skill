@@ -23,7 +23,9 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code} %{redirect_url}\" http://localhost:3000)",
       "Bash(git show *)",
       "Skill(update-config)",
-      "Skill(update-config:*)"
+      "Skill(update-config:*)",
+      "Bash(grep -rn \"Acme Industrial\\\\|Recommended price\\\\|Win probability\\\\|Margin impact\\\\|\\\\\\\\\\\\$19.24\\\\|SKU.*A-7200\\\\|\\\\\\\\\\\\$17.50.*list\" /Users/emmaeshler/ml-explainer/src/)",
+      "Bash(kill %1)"
     ],
     "additionalDirectories": [
       "/tmp"

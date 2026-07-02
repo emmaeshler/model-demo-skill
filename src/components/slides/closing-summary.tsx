@@ -50,7 +50,7 @@ const OUTCOMES = [
 const fadeUp = (delay: number) => ({
   initial: { opacity: 0, y: 14 } as const,
   animate: { opacity: 1, y: 0 } as const,
-  transition: { delay, duration: 0.45 },
+  transition: { delay, duration: 0.3 },
 });
 
 export function ClosingSummarySlide() {
@@ -63,7 +63,7 @@ export function ClosingSummarySlide() {
           style={{ color: NAVY }}
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 1.1, ease: "easeOut" }}
+          transition={{ duration: 0.4, delay: 0.15, ease: "easeOut" }}
         >
           An evidence-based pricing model, end to end
         </motion.h2>
@@ -71,7 +71,7 @@ export function ClosingSummarySlide() {
           className="mx-auto mt-1.5 max-w-2xl text-sm text-muted-foreground"
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 1.5 }}
+          transition={{ duration: 0.35, delay: 0.3 }}
         >
           Five interconnected stages turn raw data into measurable profit — and every cycle makes the next one sharper.
         </motion.p>
@@ -82,14 +82,14 @@ export function ClosingSummarySlide() {
         className="w-full max-w-5xl"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.8, delay: 2.2 }}
+        transition={{ duration: 0.5, delay: 0.45 }}
       >
         <div className="grid grid-cols-5 gap-0">
           {STAGES.map((stage, i) => (
             <motion.div
               key={stage.number}
               className="relative flex flex-col items-center text-center"
-              {...fadeUp(0.15 + i * 0.1)}
+              {...fadeUp(0.08 + i * 0.06)}
             >
               {/* Connector line to next stage */}
               {i < STAGES.length - 1 && (
@@ -103,7 +103,7 @@ export function ClosingSummarySlide() {
                   }}
                   initial={{ scaleX: 0 }}
                   animate={{ scaleX: 1 }}
-                  transition={{ delay: 0.3 + i * 0.1, duration: 0.4 }}
+                  transition={{ delay: 0.15 + i * 0.06, duration: 0.3 }}
                 />
               )}
 
@@ -114,8 +114,8 @@ export function ClosingSummarySlide() {
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{
-                  delay: 0.2 + i * 0.1,
-                  duration: 0.35,
+                  delay: 0.1 + i * 0.06,
+                  duration: 0.3,
                   type: "spring",
                   damping: 14,
                 }}
@@ -143,7 +143,7 @@ export function ClosingSummarySlide() {
       </motion.div>
 
       {/* Outcome KPIs */}
-      <motion.div className="w-full max-w-3xl" {...fadeUp(0.7)}>
+      <motion.div className="w-full max-w-3xl" {...fadeUp(0.35)}>
         <div
           className="rounded-xl border px-6 py-3.5"
           style={{ borderColor: `${NAVY}15`, backgroundColor: `${NAVY}04` }}
@@ -161,7 +161,7 @@ export function ClosingSummarySlide() {
                 className="flex flex-col items-center gap-0.5"
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.8 + i * 0.08, duration: 0.35 }}
+                transition={{ delay: 0.4 + i * 0.05, duration: 0.25 }}
               >
                 <span
                   className="text-xl font-bold"
@@ -182,7 +182,7 @@ export function ClosingSummarySlide() {
       <motion.p
         className="max-w-xl text-center text-sm leading-relaxed"
         style={{ color: NAVY }}
-        {...fadeUp(1)}
+        {...fadeUp(0.5)}
       >
         <span className="font-semibold" style={{ color: NAVY }}>
           The model doesn&apos;t just set prices

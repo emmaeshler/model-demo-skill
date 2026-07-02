@@ -46,7 +46,7 @@ const SCENARIOS: Scenario[] = [
 const fadeUp = (delay: number) => ({
   initial: { opacity: 0, y: 16 } as const,
   animate: { opacity: 1, y: 0 } as const,
-  transition: { delay, duration: 0.4 },
+  transition: { delay, duration: 0.25 },
 });
 
 function ScenarioCard({ label, price, traits, color }: { label: string; price: string; traits: string[]; color: string }) {

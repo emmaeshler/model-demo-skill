@@ -74,7 +74,6 @@ const ENGINE_FOCUS_MAP: Record<string, EngineFocus> = {
   [`${POWER_INDEX}-1`]: "ml",
   [`${POWER_INDEX}-2`]: "strat",
   [`${POWER_INDEX}-3`]: "both",
-  [`${POWER_INDEX}-4`]: "both",
   // execute
   [`${EXECUTE_INDEX}-0`]: "both",
   [`${EXECUTE_INDEX}-1`]: "both",
@@ -85,8 +84,7 @@ const ENGINE_FOCUS_MAP: Record<string, EngineFocus> = {
   [`${REFINE_INDEX}-4`]: "ml",
   [`${REFINE_INDEX}-5`]: "ml",
   [`${REFINE_INDEX}-6`]: "ml",
-  [`${REFINE_INDEX}-7`]: "ml",
-  [`${REFINE_INDEX}-8`]: "strat",
+  [`${REFINE_INDEX}-7`]: "strat",
   // profit-growth
   [`${PROFIT_GROWTH_INDEX}-2`]: "both",
   [`${PROFIT_GROWTH_INDEX}-3`]: "ml",
@@ -96,13 +94,41 @@ const ENGINE_FOCUS_MAP: Record<string, EngineFocus> = {
 const ML_GREEN = "#3A7D44";
 const STRAT_BLUE = "#2A7BA5";
 
-function EngineIndicator({ focus }: { focus: EngineFocus }) {
+const ENGINE_INDICATOR_SLIDES = new Set([POWER_INDEX, EXECUTE_INDEX, REFINE_INDEX, PROFIT_GROWTH_INDEX]);
+
+type CategoryKey = "customer" | "product" | "market" | "order";
+
+const FACTOR_CATEGORIES: { key: CategoryKey; label: string; color: string; tint: string }[] = [
+  { key: "customer", label: "Customer", color: "#00446A", tint: "rgba(0,68,106,0.08)" },
+  { key: "product", label: "Product", color: "#E56910", tint: "rgba(229,105,16,0.08)" },
+  { key: "market", label: "Market", color: "#2e7d32", tint: "rgba(46,125,50,0.08)" },
+  { key: "order", label: "Order", color: "#7B5EA7", tint: "rgba(123,94,167,0.08)" },
+];
+
+const ACTIVE_CATEGORIES_MAP: Record<string, CategoryKey[]> = {
+  [`${POWER_INDEX}-2`]: ["customer", "product", "market", "order"],
+  [`${POWER_INDEX}-3`]: ["customer", "product", "market", "order"],
+  [`${EXECUTE_INDEX}-0`]: ["customer", "order"],
+  [`${EXECUTE_INDEX}-1`]: ["customer"],
+  [`${REFINE_INDEX}-1`]: ["customer", "market"],
+  [`${REFINE_INDEX}-2`]: ["customer"],
+  [`${REFINE_INDEX}-3`]: ["customer"],
+  [`${REFINE_INDEX}-4`]: ["customer"],
+  [`${REFINE_INDEX}-5`]: ["customer"],
+  [`${REFINE_INDEX}-6`]: ["customer", "market"],
+  [`${REFINE_INDEX}-7`]: ["market"],
+  [`${PROFIT_GROWTH_INDEX}-2`]: ["customer", "product", "market", "order"],
+  [`${PROFIT_GROWTH_INDEX}-3`]: ["customer", "product", "market", "order"],
+  [`${PROFIT_GROWTH_INDEX}-4`]: ["customer", "product", "market", "order"],
+};
+
+function EngineIndicator({ focus, visible }: { focus: EngineFocus; visible: boolean }) {
   const mlActive = focus === "ml" || focus === "both";
   const stratActive = focus === "strat" || focus === "both";
 
   return (
     <AnimatePresence>
-      {focus && (
+      {visible && (
         <motion.div
           className="fixed top-[80px] left-4 z-50 flex items-center gap-2.5 rounded-lg bg-white/95 px-3 py-2 shadow-md ring-1 ring-black/[0.06] backdrop-blur-sm"
           initial={{ opacity: 0, y: -8 }}
@@ -144,6 +170,81 @@ function EngineIndicator({ focus }: { focus: EngineFocus }) {
   );
 }
 
+function FactorCategoryRail({
+  activeCategories,
+}: {
+  activeCategories: CategoryKey[];
+}) {
+  const activeSet = useMemo(() => new Set(activeCategories), [activeCategories]);
+
+  return (
+    <motion.div
+      className="fixed left-0 top-1/2 z-40 flex w-[120px] -translate-y-1/2 flex-col gap-1.5 rounded-r-xl bg-white/95 px-3 py-4 shadow-md ring-1 ring-black/[0.06] backdrop-blur-sm"
+      initial={{ x: -130 }}
+      animate={{ x: 0 }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <motion.span
+        className="mb-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-gray-400"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3, delay: 0.3 }}
+      >
+        Your Factors
+      </motion.span>
+
+      {FACTOR_CATEGORIES.map(({ key, label, color, tint }, i) => {
+        const active = activeSet.has(key);
+        return (
+          <motion.div
+            key={key}
+            className="flex items-center gap-2 rounded-md border px-2 py-1.5"
+            initial={{ x: 120, opacity: 0, scale: 1.15 }}
+            animate={{
+              x: 0,
+              opacity: 1,
+              scale: 1,
+              backgroundColor: active ? tint : "#f3f4f6",
+              borderColor: active ? color : "transparent",
+            }}
+            transition={{
+              x: { duration: 0.45, delay: 0.35 + i * 0.09, ease: [0.22, 1, 0.36, 1] },
+              opacity: { duration: 0.3, delay: 0.35 + i * 0.09 },
+              scale: { duration: 0.4, delay: 0.35 + i * 0.09, ease: [0.22, 1, 0.36, 1] },
+              backgroundColor: { duration: 0.2 },
+              borderColor: { duration: 0.2 },
+            }}
+          >
+            <div
+              className="size-2 shrink-0 rounded"
+              style={{ backgroundColor: color }}
+            />
+            <motion.span
+              className="text-[11px] leading-tight"
+              animate={{
+                color: active ? "#374151" : "#9CA3AF",
+                fontWeight: active ? 700 : 500,
+              }}
+              transition={{ duration: 0.2 }}
+            >
+              {label}
+            </motion.span>
+          </motion.div>
+        );
+      })}
+
+      <motion.span
+        className="mt-1 text-[8px] leading-tight text-gray-400"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3, delay: 0.72 }}
+      >
+        31 factors tuned to your business
+      </motion.span>
+    </motion.div>
+  );
+}
+
 const DEFAULT_NAV_GROUPS: NavGroup[] = [
   {
     label: "Introduction",
@@ -165,8 +266,7 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
       { index: POWER_INDEX, label: "Too many prices to manually set", subStep: 0 },
       { index: POWER_INDEX, label: "The model scans for patterns", subStep: 1 },
       { index: POWER_INDEX, label: "Customize factors for the model", subStep: 2 },
-      { index: POWER_INDEX, label: "Unique model", subStep: 3 },
-      { index: POWER_INDEX, label: "A single price is created", subStep: 4 },
+      { index: POWER_INDEX, label: "A single SKU-level price", subStep: 3 },
     ],
   },
   {
@@ -180,14 +280,13 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
     label: "4 | Refine",
     slides: [
       { index: REFINE_INDEX, label: "Refine section intro", subStep: 0 },
-      { index: REFINE_INDEX, label: "The model sees segmentation", subStep: 1 },
-      { index: REFINE_INDEX, label: "Your optimal demand curve", subStep: 2 },
-      { index: REFINE_INDEX, label: "Each customer gets their own curve", subStep: 3 },
-      { index: REFINE_INDEX, label: "Quickparts curve adjustment", subStep: 4 },
-      { index: REFINE_INDEX, label: "Acme curve adjustment", subStep: 5 },
-      { index: REFINE_INDEX, label: "Medsupply curve adjustment", subStep: 6 },
-      { index: REFINE_INDEX, label: "Every price optimized to the curve", subStep: 7 },
-      { index: REFINE_INDEX, label: "The market moves the curve", subStep: 8 },
+      { index: REFINE_INDEX, label: "Your optimal demand curve", subStep: 1 },
+      { index: REFINE_INDEX, label: "Each customer gets their own curve", subStep: 2 },
+      { index: REFINE_INDEX, label: "Quickparts curve adjustment", subStep: 3 },
+      { index: REFINE_INDEX, label: "Acme curve adjustment", subStep: 4 },
+      { index: REFINE_INDEX, label: "Medsupply curve adjustment", subStep: 5 },
+      { index: REFINE_INDEX, label: "Every price optimized to the curve", subStep: 6 },
+      { index: REFINE_INDEX, label: "The market moves the curve", subStep: 7 },
     ],
   },
   {
@@ -261,6 +360,8 @@ export function Home() {
   const config = SLIDES[slide];
   const notes = getPresenterNotes(config?.kind ?? "", subStep);
   const engineFocus = ENGINE_FOCUS_MAP[`${slide}-${subStep}`] ?? null;
+  const railVisible = ENGINE_INDICATOR_SLIDES.has(slide) && (slide !== POWER_INDEX || subStep >= 2);
+  const activeCategories = ACTIVE_CATEGORIES_MAP[`${slide}-${subStep}`] ?? [];
 
   const displayNavGroups = useMemo(() => {
     if (presenterSkipped.size === 0) return navGroups;
@@ -327,7 +428,7 @@ export function Home() {
         return {
           ...g,
           slides: refineCurveMode === "one"
-            ? allSlides.filter((s) => s.subStep !== 3)
+            ? allSlides.filter((s) => s.subStep !== 2)
             : allSlides,
         };
       }),
@@ -552,7 +653,8 @@ export function Home() {
     <>
       <main
         className={cn(
-          "flex min-h-[var(--slide-h,100vh)] flex-col items-center justify-start overflow-x-hidden pt-14",
+          "flex min-h-[var(--slide-h,100vh)] flex-col items-center justify-start overflow-x-hidden pt-14 transition-[padding-left] duration-300",
+          railVisible ? "pl-[140px]" : "",
           isAudience ? "" : "pb-16",
         )}
       >
@@ -605,7 +707,11 @@ export function Home() {
         </MotionConfig>
       </main>
 
-      <EngineIndicator focus={engineFocus} />
+      <EngineIndicator focus={engineFocus} visible={ENGINE_INDICATOR_SLIDES.has(slide)} />
+
+      {railVisible && (
+        <FactorCategoryRail activeCategories={activeCategories} />
+      )}
 
       {isAudience ? (
         <AudienceTopBar

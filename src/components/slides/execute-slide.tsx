@@ -21,16 +21,16 @@ const SVG_H = 440;
 const BOX_H = 230;
 
 const MODEL_W = BOX_H;
-const MODEL_X = 440;
+const MODEL_X = 445;
 const MODEL_Y = 50;
 const MODEL_CX = MODEL_X + MODEL_W / 2;
 const MODEL_CY = MODEL_Y + BOX_H / 2;
 
-const PROFILE_W = 290;
-const PROFILE_X = 18;
+const PROFILE_W = 265;
+const PROFILE_X = 80;
 
-const RESULT_CARD_W = 240;
-const RESULT_CARD_X = MODEL_X + MODEL_W + 80;
+const RESULT_CARD_W = 265;
+const RESULT_CARD_X = MODEL_X + MODEL_W + 100;
 
 /* ── Product ─────────────────────────────────────────── */
 
