@@ -1562,6 +1562,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
             ];
             return (
               <>
+                {/* Step 4: feed-the-model flow lines + dissolve dots */}
                 {!feedIntro && !convergeReady && FEED_SOURCES.map((src, si) => {
                   const steps = 25;
                   const flowCx: number[] = [];
@@ -1577,17 +1578,29 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                   const pathD = `M ${src.vert.x} ${src.vert.y} Q ${cpX} ${cpY}, ${PLOT_CX} ${PLOT_CY}`;
                   return (
                     <g key={`feed-src-${si}`}>
-                      <motion.text
-                        x={src.vert.x}
-                        y={src.vert.y + (si === 0 || si === 2 ? -14 : 28)}
-                        textAnchor="middle"
-                        style={{ fontSize: 13, fontWeight: 700, fill: src.color, fontFamily: "inherit", letterSpacing: "0.08em" }}
+                      <motion.foreignObject
+                        x={src.vert.x - 70}
+                        y={src.vert.y + (si === 0 || si === 2 ? -42 : 14)}
+                        width={140}
+                        height={36}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 0.7 }}
                         transition={{ duration: 0.4, delay: 0.2 + si * 0.15 }}
                       >
-                        {src.label.toUpperCase()}
-                      </motion.text>
+                        <div style={{
+                          fontSize: 15,
+                          fontWeight: 800,
+                          color: src.color,
+                          letterSpacing: "0.12em",
+                          fontFamily: "inherit",
+                          textAlign: "center",
+                          backgroundColor: SOLID_TINTS[src.color] ?? "white",
+                          borderRadius: 6,
+                          padding: "6px 10px",
+                        }}>
+                          {src.label.toUpperCase()}
+                        </div>
+                      </motion.foreignObject>
                       <motion.path
                         d={pathD}
                         fill="none"
@@ -1662,6 +1675,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                     />
                   );
                 })}
+
                 <motion.circle
                   cx={PLOT_CX} cy={PLOT_CY}
                   fill="white" stroke={TEAL} strokeWidth={2.5}
@@ -1748,22 +1762,25 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                     >
                       RECOMMENDED
                     </motion.text>
-                    {/* Price — grey & flickering while calculating, snaps to bold teal when finalized */}
+                    {/* Price — grey & flickering while calculating, snaps to bold TEAL when finalized */}
                     <motion.text
                       x={PLOT_CX} y={PLOT_CY + 18}
                       textAnchor="middle"
-                      style={{ fontSize: 72, fontWeight: 800, fill: allAbsorbed ? NAVY : "#9EAAB4", fontFamily: "inherit" }}
-                      initial={{ opacity: 0, scale: 1 }}
+                      style={{ fontSize: 72, fontWeight: 800, fontFamily: "inherit" }}
+                      initial={{ opacity: 0, scale: 1, fill: "#9EAAB4" }}
                       animate={allAbsorbed ? {
                         opacity: 1,
                         scale: [1.06, 1],
+                        fill: TEAL,
                       } : {
                         opacity: [0.45, 0.7, 0.45],
                         scale: 1,
+                        fill: "#9EAAB4",
                       }}
                       transition={allAbsorbed ? {
                         opacity: { duration: 0.4 },
                         scale: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+                        fill: { duration: 0.4 },
                       } : {
                         opacity: { duration: 1.4, repeat: Infinity, ease: "easeInOut" },
                       }}

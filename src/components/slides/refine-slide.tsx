@@ -141,7 +141,7 @@ const SEGMENT_HIGHLIGHTS = [
     change: "+$2.10",
     dotColor: ORANGE,
     beforeTitle: "Priced too low",
-    shortReason: "Costs rising, no competition",
+    shortReason: "No competition",
     beforeBody: "No competition in this niche, but cost increases aren’t reflected in the price.",
     afterTitle: "Adjusted +$2.10",
     afterBody: "Cost pressure passes through — price moves to the optimal curve.",
@@ -155,7 +155,7 @@ const SEGMENT_HIGHLIGHTS = [
     change: "+$0.56",
     dotColor: NAVY,
     beforeTitle: "Underpriced",
-    shortReason: "Win rate climbing — room to raise",
+    shortReason: "Win rate climbing",
     beforeBody: "Win rate is climbing — a pattern, not noise. There’s room to price higher.",
     afterTitle: "Adjusted +$0.56",
     afterBody: "Price rises to capture margin the data says is available.",
@@ -196,8 +196,8 @@ const LEGEND_ITEMS = (() => {
 
 const STEP_CONTEXT: Record<number, { title: string; body: string }> = {
   0: {
-    title: "Prices are scattered",
-    body: "Every transaction is priced independently — most too low. There’s no guiding strategy.",
+    title: "Now the model looks at all of them at once",
+    body: "Thousands of transactions, seen together, reveal the shape of your market — and every price gets refined against it.",
   },
   1: {
     title: "Segmentation detected",
@@ -271,22 +271,23 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
 
   const chartStep = step;
   /* ── Intro phase for chartStep 0 animated title build ── */
-  const [introPhase, setIntroPhase] = useState(skipAnimation ? 4 : chartStep === 0 ? 0 : 4);
+  const [introPhase, setIntroPhase] = useState(skipAnimation ? 5 : chartStep === 0 ? 0 : 5);
   useEffect(() => {
     if (skipAnimation) {
-      const t0 = setTimeout(() => setIntroPhase(4));
+      const t0 = setTimeout(() => setIntroPhase(5));
       return () => clearTimeout(t0);
     }
     if (chartStep !== 0) {
-      const t0 = setTimeout(() => setIntroPhase(4));
+      const t0 = setTimeout(() => setIntroPhase(5));
       return () => clearTimeout(t0);
     }
     const t0 = setTimeout(() => setIntroPhase(0));
     const t1 = setTimeout(() => setIntroPhase(1), 400);
     const t2 = setTimeout(() => setIntroPhase(2), 2200);
-    const t3 = setTimeout(() => setIntroPhase(3), 3600);
-    const t4 = setTimeout(() => setIntroPhase(4), 4600);
-    return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
+    const t3 = setTimeout(() => setIntroPhase(3), 4000);
+    const t4 = setTimeout(() => setIntroPhase(4), 5400);
+    const t5 = setTimeout(() => setIntroPhase(5), 6400);
+    return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); clearTimeout(t5); };
   }, [chartStep, skipAnimation]);
 
   /* ── Spotlight auto-animation (steps 4-6) ────────────── */
@@ -340,7 +341,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
       : (chartStep >= 2 && chartStep <= 3)
         ? "Your optimal demand curve"
         : chartStep === 0
-          ? "Prices are scattered across the board"
+          ? "Now the model looks at all of them at once"
           : isSpotlight
             ? "Your optimal demand curve"
             : "Detect patterns, refine pricing guidance";
@@ -354,7 +355,6 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
           ? STEP_CONTEXT[2]?.body
           : STEP_CONTEXT[chartStep]?.body || null;
 
-  const activeHighlight = isSpotlight ? SEGMENT_HIGHLIGHTS[spotlightIdx] : null;
   const isLifted = spotPhase >= 1;
 
   return (
@@ -383,10 +383,24 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
                   }}
                   transition={{ duration: 0.5 }}
                 >
-                  Every price, set on its own
+                  Every product, priced right
+                </motion.h2>
+                <motion.h2
+                  className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
+                  style={{ color: NAVY }}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{
+                    opacity: introPhase >= 2 && introPhase < 3 ? 1 : 0,
+                    y: introPhase >= 2 && introPhase < 3 ? 0 : introPhase >= 3 ? -12 : 8,
+                    height: introPhase < 2 || introPhase >= 3 ? 0 : "auto",
+                    marginBottom: introPhase < 2 || introPhase >= 3 ? 0 : 4,
+                  }}
+                  transition={{ duration: 0.5 }}
+                >
+                  But each price was set on its own
                 </motion.h2>
                 <AnimatePresence>
-                  {introPhase >= 2 && (
+                  {introPhase >= 3 && (
                     <motion.h2
                       className="text-center text-3xl font-bold tracking-tight sm:text-4xl"
                       style={{ color: STRAT_BLUE }}
@@ -394,20 +408,20 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ duration: 0.6, ease: "easeOut" }}
                     >
-                      Every price, refined together
+                      Now the model looks at all of them at once
                     </motion.h2>
                   )}
                 </AnimatePresence>
               </div>
               <motion.p
-                className="mx-auto mt-2 max-w-lg text-center text-[1.05rem] leading-relaxed"
+                className="mx-auto mt-2 max-w-xl text-center text-[1.05rem] leading-relaxed"
                 style={{ color: MUTED }}
                 initial={{ opacity: 0 }}
-                animate={{ opacity: introPhase >= 3 ? 1 : 0, y: introPhase >= 3 ? 0 : 6 }}
+                animate={{ opacity: introPhase >= 4 ? 1 : 0, y: introPhase >= 4 ? 0 : 6 }}
                 transition={{ duration: 0.4 }}
               >
-                The strategic layer looks across your entire portfolio&nbsp;— aligning
-                each price to the optimal demand&nbsp;curve.
+                Thousands of transactions, seen together, reveal the shape of your
+                market&nbsp;— and every price gets refined against&nbsp;it.
               </motion.p>
             </motion.div>
           )}
@@ -470,8 +484,8 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
         style={{ maxHeight: "calc(100% - 120px)" }}
         initial={{ opacity: 0, y: 20 }}
         animate={{
-          opacity: chartStep === 0 && introPhase < 1 ? 0 : 1,
-          y: chartStep === 0 && introPhase < 1 ? 20 : 0,
+          opacity: chartStep === 0 && introPhase < 5 ? 0 : 1,
+          y: chartStep === 0 && introPhase < 5 ? 20 : 0,
         }}
         transition={{ duration: 1.0, ease: [0.22, 1, 0.36, 1] }}
       >
@@ -540,69 +554,6 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
             )}
           </AnimatePresence>
 
-          <AnimatePresence mode="wait">
-            {isSpotlight && activeHighlight && (
-              <motion.div
-                key={`overlay-${spotlightIdx}`}
-                className="absolute z-10 w-48 rounded-xl border-l-4 bg-white/95 px-3 py-2.5 shadow-lg backdrop-blur-sm"
-                style={{
-                  borderLeftColor: activeHighlight.dotColor,
-                  ...(spotlightIdx === 2
-                    ? { right: "4%", top: "10%" }
-                    : spotlightIdx === 1
-                      ? { left: "48%", top: "8%" }
-                      : { left: "36%", top: "8%" }),
-                }}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ delay: 0.3, duration: 0.4 }}
-              >
-                <div className="mb-1 flex items-center gap-1.5">
-                  <span className="size-2.5 rounded-full" style={{ backgroundColor: activeHighlight.dotColor }} />
-                  <span className="text-xs font-bold uppercase tracking-wide" style={{ color: activeHighlight.dotColor }}>
-                    {activeHighlight.label}
-                  </span>
-                </div>
-                <AnimatePresence mode="wait">
-                  {spotPhase < 2 ? (
-                    <motion.div key="before" exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.25 }}>
-                      <p className="text-[13px] font-bold leading-snug" style={{ color: activeHighlight.dotColor }}>
-                        {activeHighlight.beforeTitle}
-                      </p>
-                      <p className="mt-0.5 text-[11px] leading-snug" style={{ color: MUTED }}>
-                        {activeHighlight.shortReason}
-                      </p>
-                      <motion.div
-                        className="mt-1.5 flex items-center gap-1.5 text-xs"
-                        style={{ color: MUTED }}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 0.7 }}
-                        transition={{ delay: 0.6, duration: 0.3 }}
-                      >
-                        <span className="font-semibold">{activeHighlight.oldPrice}</span>
-                        <span style={{ color: activeHighlight.dotColor }}>→ adjusting…</span>
-                      </motion.div>
-                    </motion.div>
-                  ) : (
-                    <motion.div key="after" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
-                      <p className="text-[13px] font-bold leading-snug" style={{ color: GREEN }}>
-                        {activeHighlight.afterTitle}
-                      </p>
-                      <motion.div
-                        className="mt-1 flex items-baseline gap-2"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.15, duration: 0.3 }}
-                      >
-                        <span className="text-[11px]" style={{ color: MUTED }}>{activeHighlight.oldPrice} → {activeHighlight.newPrice}</span>
-                      </motion.div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            )}
-          </AnimatePresence>
             <svg
               viewBox={`0 -6 ${CURVE_SLOT.x + CURVE_SLOT.w + 40} ${BASE_Y + 30}`}
               className="w-full h-full"
@@ -819,7 +770,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
                 const dotColor = STATUS_COLORS[dot.status];
                 const dotOpacity = dotOpacityBase;
 
-                const inChaos = chartStep === 0 && introPhase < 2;
+                const inChaos = chartStep === 0 && introPhase < 5;
                 const settling = chartStep === 0 && !inChaos;
                 const settleDelay = (dot.driftDelay / 5) * 0.6;
 
@@ -948,7 +899,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
                       }}
                     />
 
-                    {/* Label below dot (before lift) */}
+                    {/* Label above dot (before lift) */}
                     {isActive && !dotLifted && (
                       <motion.g
                         initial={{ opacity: 0 }}
@@ -957,7 +908,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
                       >
                         <text
                           x={pt.x}
-                          y={belowY + 18}
+                          y={belowY - 18}
                           fontSize="9"
                           fontWeight="600"
                           fill={seg.dotColor}
@@ -968,10 +919,10 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
                         </text>
                         <text
                           x={pt.x}
-                          y={belowY + 28}
-                          fontSize="10"
-                          fontWeight="700"
-                          fill={MUTED}
+                          y={belowY - 9}
+                          fontSize="11"
+                          fontWeight="800"
+                          fill={seg.dotColor}
                           textAnchor="middle"
                           style={{ fontFamily: "inherit" }}
                         >
@@ -989,7 +940,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
                       >
                         <text
                           x={pt.x}
-                          y={pt.y - 20}
+                          y={pt.y - 26}
                           fontSize="9"
                           fontWeight="600"
                           fill={seg.dotColor}
@@ -1000,7 +951,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
                         </text>
                         <text
                           x={pt.x}
-                          y={pt.y - 11}
+                          y={pt.y - 16}
                           fontSize="11"
                           fontWeight="800"
                           fill={seg.dotColor}
@@ -1011,6 +962,101 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
                         </text>
                       </motion.g>
                     )}
+
+                    {/* Info card — close to the right of the dot */}
+                    <AnimatePresence>
+                      {isActive && (() => {
+                        const CARD_W = 108;
+                        const CARD_H = 28;
+                        const cardOnRight = pt.x < CURVE_SLOT.x + CURVE_SLOT.w * 0.6;
+                        const cardX = cardOnRight ? pt.x + 18 : pt.x - 18 - CARD_W;
+                        return (
+                          <motion.g
+                            key={`card-${si}`}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ delay: 0.3, duration: 0.4 }}
+                          >
+                            <motion.g
+                              initial={{ y: belowY }}
+                              animate={{ y: dotLifted ? pt.y : belowY }}
+                              transition={{ y: { duration: 1.0, ease: [0.22, 1, 0.36, 1] } }}
+                            >
+                              <rect
+                                x={cardX}
+                                y={-CARD_H / 2}
+                                width={CARD_W}
+                                height={CARD_H}
+                                rx={3}
+                                ry={3}
+                                fill="white"
+                                fillOpacity={0.95}
+                                stroke={seg.dotColor}
+                                strokeOpacity={0.2}
+                                strokeWidth={0.5}
+                              />
+                              <rect
+                                x={cardX}
+                                y={-CARD_H / 2}
+                                width={1.5}
+                                height={CARD_H}
+                                rx={0.75}
+                                fill={seg.dotColor}
+                              />
+                              <AnimatePresence mode="wait">
+                                {spotPhase < 2 ? (
+                                  <motion.g key="before" exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
+                                    <text
+                                      x={cardX + 6}
+                                      y={-3}
+                                      fontSize="7"
+                                      fontWeight="700"
+                                      fill={seg.dotColor}
+                                      style={{ fontFamily: "inherit" }}
+                                    >
+                                      {seg.beforeTitle}
+                                    </text>
+                                    <text
+                                      x={cardX + 6}
+                                      y={7}
+                                      fontSize="6"
+                                      fontWeight="500"
+                                      fill={MUTED}
+                                      style={{ fontFamily: "inherit" }}
+                                    >
+                                      {seg.shortReason}
+                                    </text>
+                                  </motion.g>
+                                ) : (
+                                  <motion.g key="after" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.35 }}>
+                                    <text
+                                      x={cardX + 6}
+                                      y={-3}
+                                      fontSize="7"
+                                      fontWeight="700"
+                                      fill={GREEN}
+                                      style={{ fontFamily: "inherit" }}
+                                    >
+                                      Adjusted {seg.change}
+                                    </text>
+                                    <text
+                                      x={cardX + 6}
+                                      y={7}
+                                      fontSize="6"
+                                      fill={MUTED}
+                                      style={{ fontFamily: "inherit" }}
+                                    >
+                                      {seg.oldPrice} → {seg.newPrice}
+                                    </text>
+                                  </motion.g>
+                                )}
+                              </AnimatePresence>
+                            </motion.g>
+                          </motion.g>
+                        );
+                      })()}
+                    </AnimatePresence>
                   </g>
                 );
               })}

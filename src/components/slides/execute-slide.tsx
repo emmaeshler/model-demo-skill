@@ -15,22 +15,22 @@ export const EXECUTE_TOTAL_STEPS = 2;
 
 /* ── Layout ──────────────────────────────────────────── */
 
-const SVG_W = 960;
-const SVG_H = 380;
+const SVG_W = 1120;
+const SVG_H = 440;
 
-const BOX_H = 200;
+const BOX_H = 230;
 
 const MODEL_W = BOX_H;
-const MODEL_X = 380;
-const MODEL_Y = 25;
+const MODEL_X = 440;
+const MODEL_Y = 50;
 const MODEL_CX = MODEL_X + MODEL_W / 2;
 const MODEL_CY = MODEL_Y + BOX_H / 2;
 
-const PROFILE_W = 260;
+const PROFILE_W = 290;
 const PROFILE_X = 18;
 
-const RESULT_CARD_W = 220;
-const RESULT_CARD_X = MODEL_X + MODEL_W + 70;
+const RESULT_CARD_W = 240;
+const RESULT_CARD_X = MODEL_X + MODEL_W + 80;
 
 /* ── Product ─────────────────────────────────────────── */
 
@@ -174,41 +174,30 @@ function FlowLabel({
   duration: number;
   repeatDelay: number;
 }) {
-  const lifted = { ...path, sy: path.sy - 20, cp1y: path.cp1y - 20, cp2y: path.cp2y - 20, ey: path.ey - 20 };
+  const lifted = { ...path, sy: path.sy - 18, cp1y: path.cp1y - 18, cp2y: path.cp2y - 18, ey: path.ey - 18 };
   const { cxArr, cyArr } = sampleCubicBezier(
     lifted.sx, lifted.sy, lifted.cp1x, lifted.cp1y, lifted.cp2x, lifted.cp2y, lifted.ex, lifted.ey, 40,
   );
-  const chipW = text.length * 5.2 + 16;
-  const chipH = 18;
 
   return (
-    <motion.g
+    <motion.text
+      fontSize="8.5"
+      fontWeight="500"
+      fontStyle="italic"
+      fill={STEEL}
+      textAnchor="middle"
+      dominantBaseline="auto"
       initial={{ opacity: 0 }}
       animate={{
         x: cxArr,
         y: cyArr,
-        opacity: [0, 0.65, 0.65, 0.65, 0.5, 0],
+        // fade in over first 15%, hold, then fade out over last 30% as it hits the model
+        opacity: [0, 0, 0.5, 0.5, 0.5, 0.3, 0.1, 0],
       }}
       transition={{ duration, delay, repeat: Infinity, repeatDelay, ease: "linear" }}
     >
-      <rect
-        x={-chipW / 2} y={-chipH / 2}
-        width={chipW} height={chipH}
-        rx={chipH / 2}
-        fill="white" stroke={STEEL} strokeWidth={0.8}
-        opacity={0.9}
-      />
-      <text
-        x={0} y={0.5}
-        fontSize="7.5"
-        fontWeight="600"
-        fill={STEEL}
-        textAnchor="middle"
-        dominantBaseline="central"
-      >
-        {text}
-      </text>
-    </motion.g>
+      {text}
+    </motion.text>
   );
 }
 
@@ -676,7 +665,7 @@ export function ExecuteSlide({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className={`mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-6xl flex-col items-center justify-center px-6 relative ${isPresenter ? "pt-2" : "pt-8"}`}
+          className={`mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-7xl flex-col items-center justify-center px-6 relative ${isPresenter ? "pt-2" : "pt-8"}`}
         >
           {/* Title */}
           <AnimatePresence mode="wait">
@@ -728,7 +717,7 @@ export function ExecuteSlide({
           </motion.div>
 
           {/* Diagram */}
-          <div className="relative w-full max-w-5xl flex-1 min-h-0 overflow-hidden">
+          <div className="relative w-full flex-1 min-h-0 overflow-hidden">
             <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} className="w-full h-full">
 
                   {/* Pricing model circle */}
