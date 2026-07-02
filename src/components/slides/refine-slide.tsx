@@ -26,6 +26,12 @@ const TIMELINE_EVENTS = [
   { month: 20, label: "Resin +12%", factor: "Raw material spike", steepness: 6.5, kpi: { winRate: 74, priceAdoption: 87, marginImpact: 4.5 } },
 ];
 
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+function getMonthLabel(month: number): string {
+  const m = Math.round(Math.max(0, month));
+  return `${MONTH_NAMES[m % 12]} '${24 + Math.floor(m / 12)}`;
+}
+
 /* ── Seeded PRNG (same as power-slide) ─────────────────── */
 
 function mulberry32(seed: number) {
@@ -70,6 +76,7 @@ interface ScatterDot {
   chaosY: number;
   residualY: number;
   customer: Customer;
+  birthMonth: number;
 }
 
 const rng = mulberry32(73);
@@ -133,6 +140,7 @@ const SCATTER_DOTS: ScatterDot[] = Array.from({ length: DOT_COUNT }, () => {
     chaosY: CURVE_SLOT.y + 5 + rng() * (CURVE_SLOT.h - 10),
     residualY: (() => { const r = rng(); return r < 0.55 ? 0 : r < 0.8 ? 2 + rng() * 6 : 6 + rng() * 10; })(),
     customer: (t < 0.25 ? "QuickParts" : t < 0.55 ? "Acme" : "MedSupply") as Customer,
+    birthMonth: (() => { const r = rng(); if (r < 0.22) return 0; if (r < 0.38) return 4; if (r < 0.54) return 8; if (r < 0.70) return 12; if (r < 0.85) return 16; return 20; })(),
   };
 });
 
@@ -309,12 +317,12 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
       return () => clearTimeout(t0);
     }
     const t0 = setTimeout(() => setIntroPhase(0));
-    const t1 = setTimeout(() => setIntroPhase(1), 600);
-    const t2 = setTimeout(() => setIntroPhase(2), 3000);
-    const t3 = setTimeout(() => setIntroPhase(3), 5500);
-    const t4 = setTimeout(() => setIntroPhase(4), 7500);
-    const t5 = setTimeout(() => setIntroPhase(5), 9200);
-    const t6 = setTimeout(() => setIntroPhase(6), 11000);
+    const t1 = setTimeout(() => setIntroPhase(1), 400);
+    const t2 = setTimeout(() => setIntroPhase(2), 1600);
+    const t3 = setTimeout(() => setIntroPhase(3), 2800);
+    const t4 = setTimeout(() => setIntroPhase(4), 3800);
+    const t5 = setTimeout(() => setIntroPhase(5), 4700);
+    const t6 = setTimeout(() => setIntroPhase(6), 5600);
     return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); clearTimeout(t5); clearTimeout(t6); };
   }, [chartStep, skipAnimation]);
 
@@ -339,16 +347,19 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
     return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, [chartStep, isSpotlight, skipAnimation, onAutoAdvance]);
 
-  /* ── Timeline auto-animation (step 7) ─────────────── */
+  /* ── Timeline click-to-advance (step 7) ────────────── */
   const [indexPhase, setIndexPhase] = useState(0);
   useEffect(() => {
     if (chartStep !== 7) { setIndexPhase(0); return; }
     if (skipAnimation) { setIndexPhase(TIMELINE_EVENTS.length); return; }
-    const timers = TIMELINE_EVENTS.map((_, i) =>
-      setTimeout(() => setIndexPhase(i + 1), 1200 + i * 2800)
-    );
-    return () => timers.forEach(clearTimeout);
   }, [chartStep, skipAnimation]);
+
+  const advanceTimeline = () => {
+    if (indexPhase < TIMELINE_EVENTS.length) setIndexPhase(prev => prev + 1);
+  };
+  const retreatTimeline = () => {
+    if (indexPhase > 0) setIndexPhase(prev => prev - 1);
+  };
 
   const [indexMorphFrom, setIndexMorphFrom] = useState(0);
   const [indexMorphProgress, setIndexMorphProgress] = useState(1);
@@ -356,7 +367,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
   useEffect(() => {
     const prev = prevIndexPhaseRef.current;
     prevIndexPhaseRef.current = indexPhase;
-    if (indexPhase === prev || indexPhase === 0) { setIndexMorphProgress(1); return; }
+    if (indexPhase === prev) { setIndexMorphProgress(1); return; }
     setIndexMorphFrom(prev);
     setIndexMorphProgress(0);
     if (skipAnimation) { setIndexMorphProgress(1); return; }
@@ -443,10 +454,11 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
   const currentEvent = indexPhase > 0 ? TIMELINE_EVENTS[indexPhase - 1] : null;
 
   const morphedIndexCurveD = useMemo(() => {
-    if (!isIndexShift || indexPhase === 0) return curve.d;
-    if (indexMorphProgress >= 1) return curve.indexCurves[indexPhase - 1].d;
+    if (!isIndexShift) return curve.d;
+    if (indexPhase === 0 && indexMorphProgress >= 1) return curve.d;
     const fromPts = indexMorphFrom > 0 ? curve.indexCurves[indexMorphFrom - 1].pts : curve.navyPts;
-    const toPts = curve.indexCurves[indexPhase - 1].pts;
+    const toPts = indexPhase > 0 ? curve.indexCurves[indexPhase - 1].pts : curve.navyPts;
+    if (indexMorphProgress >= 1) return "M " + toPts.map(p => `${p.x},${p.y}`).join(" L ");
     return "M " + fromPts.map((fp, i) => {
       const tp = toPts[i];
       return `${fp.x + (tp.x - fp.x) * indexMorphProgress},${fp.y + (tp.y - fp.y) * indexMorphProgress}`;
@@ -456,10 +468,11 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
   const ghostIndexCurveD = indexMorphFrom > 0 ? curve.indexCurves[indexMorphFrom - 1].d : curve.d;
 
   const currentKpi = useMemo(() => {
-    if (!isIndexShift || indexPhase === 0) return BASELINE_KPI;
-    const targetKpi = TIMELINE_EVENTS[indexPhase - 1].kpi;
-    if (indexMorphProgress >= 1) return targetKpi;
+    if (!isIndexShift) return BASELINE_KPI;
+    if (indexPhase === 0 && indexMorphProgress >= 1) return BASELINE_KPI;
+    const targetKpi = indexPhase > 0 ? TIMELINE_EVENTS[indexPhase - 1].kpi : BASELINE_KPI;
     const fromKpi = indexMorphFrom > 0 ? TIMELINE_EVENTS[indexMorphFrom - 1].kpi : BASELINE_KPI;
+    if (indexMorphProgress >= 1) return targetKpi;
     return {
       winRate: fromKpi.winRate + (targetKpi.winRate - fromKpi.winRate) * indexMorphProgress,
       priceAdoption: fromKpi.priceAdoption + (targetKpi.priceAdoption - fromKpi.priceAdoption) * indexMorphProgress,
@@ -468,12 +481,30 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
   }, [isIndexShift, indexPhase, indexMorphFrom, indexMorphProgress]);
 
   const currentMonth = useMemo(() => {
-    if (!isIndexShift || indexPhase === 0) return 0;
-    const targetMonth = TIMELINE_EVENTS[indexPhase - 1].month;
-    if (indexMorphProgress >= 1) return targetMonth;
-    const fromMonth = indexMorphFrom > 0 ? TIMELINE_EVENTS[indexMorphFrom - 1].month : 0;
-    return fromMonth + (targetMonth - fromMonth) * indexMorphProgress;
+    if (!isIndexShift) return 0;
+    if (indexPhase === 0 && indexMorphProgress >= 1) return 0;
+    const targetMo = indexPhase > 0 ? TIMELINE_EVENTS[indexPhase - 1].month : 0;
+    const fromMo = indexMorphFrom > 0 ? TIMELINE_EVENTS[indexMorphFrom - 1].month : 0;
+    if (indexMorphProgress >= 1) return targetMo;
+    return fromMo + (targetMo - fromMo) * indexMorphProgress;
   }, [isIndexShift, indexPhase, indexMorphFrom, indexMorphProgress]);
+
+  const timelineTargetMonth = useMemo(() => {
+    if (!isIndexShift || indexPhase === 0) return 0;
+    return TIMELINE_EVENTS[indexPhase - 1].month;
+  }, [isIndexShift, indexPhase]);
+
+  const kpiDelta = useMemo(() => {
+    if (!isIndexShift || indexPhase === 0) return { winRate: 0, priceAdoption: 0, marginImpact: 0, eventLabel: "" };
+    const current = TIMELINE_EVENTS[indexPhase - 1].kpi;
+    const prev = indexPhase > 1 ? TIMELINE_EVENTS[indexPhase - 2].kpi : BASELINE_KPI;
+    return {
+      winRate: Math.round(current.winRate - prev.winRate),
+      priceAdoption: Math.round(current.priceAdoption - prev.priceAdoption),
+      marginImpact: +(current.marginImpact - prev.marginImpact).toFixed(1),
+      eventLabel: TIMELINE_EVENTS[indexPhase - 1].label,
+    };
+  }, [isIndexShift, indexPhase]);
 
   const dotOpacityBase = (chartStep >= 1 && chartStep <= 2) ? 0.15 : isSpotlight ? 0 : isIndexShift ? 0.35 : 1;
 
@@ -628,148 +659,170 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
         </AnimatePresence>
       </div>
 
-      {/* Timeline strip (step 7) — KPIs + progress bar + factor card */}
+      {/* Timeline strip (step 7) — date/card + scrubber */}
       <AnimatePresence>
         {isIndexShift && (
           <motion.div
             key="timeline-strip"
-            className="w-full flex-shrink-0 px-2"
+            className="w-full flex-shrink-0"
+            style={{ paddingRight: 175 }}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <div className="flex gap-5">
-              {/* Left: KPIs + timeline */}
-              <div className="flex-1 min-w-0">
-                {/* KPIs */}
-                <div className="flex items-baseline gap-8 mb-2">
-                  {[
-                    { label: "Win Rate", value: `${Math.round(currentKpi.winRate)}%`, color: TEAL },
-                    { label: "Price Adoption", value: `${Math.round(currentKpi.priceAdoption)}%`, color: NAVY },
-                    { label: "Margin Impact", value: `+${currentKpi.marginImpact.toFixed(1)}%`, color: GREEN },
-                  ].map(kpi => (
-                    <div key={kpi.label}>
-                      <div className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: MUTED }}>{kpi.label}</div>
-                      <div className="text-lg font-bold tabular-nums leading-tight" style={{ color: kpi.color }}>{kpi.value}</div>
-                    </div>
-                  ))}
-                </div>
-                {/* Timeline bar */}
-                <div className="relative h-[3px] rounded-full" style={{ backgroundColor: `${NAVY}12` }}>
+            {/* Date display / Event card */}
+            <div className="relative flex items-center justify-center" style={{ height: 52 }}>
+              {indexPhase > 0 && (
+                <motion.button
+                  className="absolute left-0 z-10 flex h-8 w-8 items-center justify-center rounded-full"
+                  style={{ backgroundColor: `${NAVY}08`, color: MUTED }}
+                  onClick={retreatTimeline}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 0.7 }}
+                  whileHover={{ opacity: 1, scale: 1.1 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 3L4.5 7L8.5 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </motion.button>
+              )}
+              <AnimatePresence mode="wait">
+                {indexPhase === 0 ? (
+                  <motion.button
+                    key="start-prompt"
+                    onClick={advanceTimeline}
+                    className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-[13px] font-semibold"
+                    style={{ backgroundColor: `${STRAT_BLUE}0A`, color: STRAT_BLUE, border: `1.5px solid ${STRAT_BLUE}20` }}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    whileHover={{ backgroundColor: `${STRAT_BLUE}18` }}
+                    transition={{ duration: 0.3, delay: 0.2 }}
+                  >
+                    Start timeline &#8250;
+                  </motion.button>
+                ) : currentEvent && indexMorphProgress >= 0.8 ? (
                   <motion.div
-                    className="absolute left-0 top-0 h-full rounded-full"
-                    style={{ backgroundColor: STRAT_BLUE }}
-                    animate={{ width: `${(currentMonth / TOTAL_MONTHS) * 100}%` }}
-                    transition={{ duration: 0.6, ease: "easeOut" }}
-                  />
-                  {/* Small tick at every month */}
-                  {Array.from({ length: TOTAL_MONTHS + 1 }, (_, m) => {
-                    const pos = (m / TOTAL_MONTHS) * 100;
-                    const isEvent = TIMELINE_EVENTS.some(e => e.month === m);
-                    const isPast = currentMonth >= m;
-                    if (isEvent) return null;
-                    return (
-                      <div
-                        key={m}
-                        className="absolute rounded-full"
-                        style={{
-                          left: `${pos}%`, top: "50%",
-                          width: 3, height: 3,
-                          transform: "translateX(-50%) translateY(-50%)",
-                          backgroundColor: isPast ? `${NAVY}50` : `${NAVY}18`,
-                        }}
-                      />
-                    );
-                  })}
-                  {/* Larger dots at event months */}
-                  {TIMELINE_EVENTS.map((event, i) => {
-                    const pos = (event.month / TOTAL_MONTHS) * 100;
-                    const isActive = indexPhase === i + 1 && indexMorphProgress >= 1;
-                    const isPast = currentMonth >= event.month;
-                    return (
-                      <motion.div
-                        key={event.month}
-                        className="absolute rounded-full"
-                        style={{ left: `${pos}%`, top: "50%", transform: "translateX(-50%) translateY(-50%)" }}
-                        animate={{
-                          width: isActive ? 10 : 6,
-                          height: isActive ? 10 : 6,
-                          backgroundColor: isActive ? STRAT_BLUE : isPast ? NAVY : `${NAVY}30`,
-                        }}
-                        transition={{ duration: 0.3 }}
-                      />
-                    );
-                  })}
-                  {/* Start dot */}
-                  <div
-                    className="absolute rounded-full"
-                    style={{ left: 0, top: "50%", width: 6, height: 6, backgroundColor: NAVY, transform: "translateX(-50%) translateY(-50%)" }}
-                  />
-                </div>
-                {/* Month labels */}
-                <div className="relative mt-1.5" style={{ height: 14 }}>
-                  <span className="absolute text-[9px] font-medium" style={{ left: 0, transform: "translateX(-50%)", color: NAVY }}>0</span>
-                  {TIMELINE_EVENTS.map((event, i) => {
-                    const pos = (event.month / TOTAL_MONTHS) * 100;
-                    const isActive = indexPhase === i + 1 && indexMorphProgress >= 1;
-                    return (
-                      <span
-                        key={event.month}
-                        className="absolute text-[9px] font-medium transition-colors duration-300"
-                        style={{ left: `${pos}%`, transform: "translateX(-50%)", color: isActive ? STRAT_BLUE : MUTED }}
-                      >
-                        {event.month}
+                    key={`event-${indexPhase}`}
+                    className="rounded-xl px-5 py-2 shadow-md cursor-pointer"
+                    style={{ backgroundColor: "white", border: `1.5px solid ${STRAT_BLUE}30` }}
+                    onClick={advanceTimeline}
+                    initial={{ opacity: 0, y: 6, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.96 }}
+                    transition={{ duration: 0.25, ease: "easeOut" }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: STRAT_BLUE }}>
+                        {getMonthLabel(currentEvent.month)}
                       </span>
-                    );
-                  })}
-                </div>
-              </div>
-              {/* Right: Factor card */}
-              <div className="w-44 flex-shrink-0">
-                <AnimatePresence mode="wait">
-                  {currentEvent && indexMorphProgress >= 0.8 ? (
+                      <span className="text-[15px] font-bold" style={{ color: NAVY }}>{currentEvent.label}</span>
+                      {indexPhase < TIMELINE_EVENTS.length && <span className="text-[11px] font-medium" style={{ color: `${STRAT_BLUE}80` }}>Next &#8250;</span>}
+                    </div>
+                    <div className="text-[11px] mt-0.5" style={{ color: MUTED }}>{currentEvent.factor}</div>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="month-label"
+                    className="text-center"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <div className="text-[22px] font-bold tabular-nums" style={{ color: NAVY }}>
+                      {getMonthLabel(currentMonth)}
+                    </div>
+                    <div className="text-[11px] font-medium" style={{ color: `${MUTED}90` }}>
+                      Month {Math.round(currentMonth)}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              {indexPhase > 0 && indexPhase < TIMELINE_EVENTS.length && (
+                <motion.button
+                  className="absolute right-0 z-10 flex h-8 w-8 items-center justify-center rounded-full"
+                  style={{ backgroundColor: `${STRAT_BLUE}10`, color: STRAT_BLUE }}
+                  onClick={advanceTimeline}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  whileHover={{ scale: 1.1 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5.5 3L9.5 7L5.5 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </motion.button>
+              )}
+            </div>
+
+            {/* Timeline scrubber */}
+            <div className="relative mt-1" style={{ height: 32 }}>
+              {/* Track bg */}
+              <div className="absolute rounded-full" style={{ left: 0, right: 0, top: "50%", height: 3, transform: "translateY(-50%)", backgroundColor: `${NAVY}0D` }} />
+              {/* Track fill */}
+              <motion.div
+                className="absolute rounded-full"
+                style={{ left: 0, top: "50%", height: 3, transform: "translateY(-50%)", backgroundColor: `${STRAT_BLUE}80` }}
+                animate={{ width: `${(currentMonth / TOTAL_MONTHS) * 100}%` }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
+              />
+              {/* Milestone dots — clickable */}
+              {TIMELINE_EVENTS.map((event, i) => {
+                const pos = (event.month / TOTAL_MONTHS) * 100;
+                const isPast = currentMonth >= event.month;
+                const isActive = indexPhase === i + 1 && indexMorphProgress >= 1;
+                return (
+                  <div
+                    key={event.month}
+                    className="absolute cursor-pointer"
+                    style={{ left: `${pos}%`, top: "50%", transform: "translate(-50%, -50%)", padding: 8, zIndex: 2 }}
+                    onClick={() => setIndexPhase(i + 1)}
+                  >
                     <motion.div
-                      key={`factor-${indexPhase}`}
-                      className="rounded-lg px-3 py-2"
-                      style={{ backgroundColor: `${STRAT_BLUE}08`, border: `1px solid ${STRAT_BLUE}20` }}
-                      initial={{ opacity: 0, y: 4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -4 }}
-                      transition={{ duration: 0.25 }}
+                      className="rounded-full"
+                      animate={{
+                        width: isActive ? 14 : isPast ? 10 : 8,
+                        height: isActive ? 14 : isPast ? 10 : 8,
+                        backgroundColor: isActive ? STRAT_BLUE : isPast ? NAVY : `${NAVY}25`,
+                      }}
+                      whileHover={{ scale: 1.3 }}
+                      transition={{ duration: 0.3 }}
+                    />
+                  </div>
+                );
+              })}
+              {/* Start dot */}
+              <div className="absolute rounded-full" style={{ left: 0, top: "50%", width: 6, height: 6, backgroundColor: NAVY, transform: "translate(-50%, -50%)", zIndex: 1 }} />
+              {/* Big circle scrubber */}
+              <motion.div
+                className="absolute z-10 rounded-full"
+                style={{
+                  top: "50%",
+                  width: 22, height: 22,
+                  marginLeft: -11, marginTop: -11,
+                  backgroundColor: STRAT_BLUE,
+                  border: "3px solid white",
+                  boxShadow: `0 2px 12px ${STRAT_BLUE}50`,
+                }}
+                animate={{ left: `${(currentMonth / TOTAL_MONTHS) * 100}%` }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
+              />
+              {/* Month labels below track */}
+              <div className="absolute w-full" style={{ top: "50%", marginTop: 14 }}>
+                <span className="absolute text-[10px] font-medium" style={{ left: 0, transform: "translateX(-50%)", color: MUTED }}>0</span>
+                {TIMELINE_EVENTS.map((event, i) => {
+                  const pos = (event.month / TOTAL_MONTHS) * 100;
+                  const isActive = indexPhase === i + 1 && indexMorphProgress >= 1;
+                  return (
+                    <span
+                      key={event.month}
+                      className="absolute text-[10px] font-medium transition-colors duration-300 cursor-pointer"
+                      style={{ left: `${pos}%`, transform: "translateX(-50%)", color: isActive ? STRAT_BLUE : MUTED }}
+                      onClick={() => setIndexPhase(i + 1)}
                     >
-                      <div className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: STRAT_BLUE }}>
-                        Month {currentEvent.month}
-                      </div>
-                      <div className="mt-0.5 text-[13px] font-bold leading-snug" style={{ color: NAVY }}>
-                        {currentEvent.label}
-                      </div>
-                      <div className="mt-0.5 text-[11px] leading-snug" style={{ color: MUTED }}>
-                        {currentEvent.factor}
-                      </div>
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      key="factor-empty"
-                      className="rounded-lg px-3 py-2"
-                      style={{ backgroundColor: `${NAVY}04`, border: `1px solid ${NAVY}08` }}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <div className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: `${MUTED}80` }}>
-                        Month {Math.round(currentMonth)}
-                      </div>
-                      <div className="mt-0.5 text-[13px] font-bold leading-snug" style={{ color: `${NAVY}60` }}>
-                        Model active
-                      </div>
-                      <div className="mt-0.5 text-[11px] leading-snug" style={{ color: `${MUTED}60` }}>
-                        Continuous optimization
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                      {event.month}
+                    </span>
+                  );
+                })}
               </div>
             </div>
           </motion.div>
@@ -823,9 +876,9 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
         transition={{ duration: 1.0, ease: [0.22, 1, 0.36, 1] }}
       >
         {/* Chart */}
-        <div className="relative min-w-0 flex-1 flex items-center justify-center">
+        <div className="relative min-w-0 flex-1 flex items-center justify-center" style={isIndexShift ? { paddingRight: 175 } : undefined}>
           {/* Curve mode toggle — internal review tool */}
-          <div className="absolute right-3 bottom-3 z-20 flex items-center gap-1 rounded-lg bg-white/90 px-2.5 py-1.5 shadow-sm backdrop-blur-sm border border-gray-200/60">
+          {!isIndexShift && <div className="absolute right-3 bottom-3 z-20 flex items-center gap-1 rounded-lg bg-white/90 px-2.5 py-1.5 shadow-sm backdrop-blur-sm border border-gray-200/60">
             <button
               onClick={() => setCurveMode("one")}
               className="rounded-md px-2 py-0.5 text-[11px] font-medium transition-colors"
@@ -846,7 +899,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
             >
               3 Curves
             </button>
-          </div>
+          </div>}
 
           {/* Product–customer legend card (step 2) */}
           <AnimatePresence>
@@ -892,15 +945,15 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
               className="w-full h-full"
               preserveAspectRatio="xMidYMid meet"
             >
-              {/* Legend — bottom-left below chart */}
-              <g>
+              {/* Legend — bottom-left below chart (hidden during timeline) */}
+              {!isIndexShift && <g>
                 {LEGEND_ITEMS.map((item) => (
                   <g key={item.label} transform={`translate(${CURVE_SLOT.x + item.x}, ${BASE_Y + 14})`}>
                     <circle cx={0} cy={0} r={1.2} fill={item.color} opacity={0.7} />
                     <text x={3.5} y={1.5} fontSize="4.5" fontWeight="500" fill={MUTED} style={{ fontFamily: "inherit" }}>{item.label}</text>
                   </g>
                 ))}
-              </g>
+              </g>}
 
               {/* Subtle gridlines */}
               {Array.from({ length: 7 }, (_, i) => {
@@ -1063,8 +1116,9 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
                 const fromShift = indexMorphFrom > 0 ? curve.indexCurves[indexMorphFrom - 1].sampleAt(dot.t).y - pt.y : 0;
                 const shiftOffset = isIndexShift ? fromShift + (toShift - fromShift) * indexMorphProgress : 0;
                 const targetY = rawTargetY + shiftOffset;
-                const dotColor = STATUS_COLORS[dot.status];
-                const dotOpacity = dotOpacityBase;
+                const dotColor = isIndexShift ? MUTED : STATUS_COLORS[dot.status];
+                const dotVisible = !isIndexShift || dot.birthMonth <= timelineTargetMonth;
+                const dotOpacity = dotVisible ? dotOpacityBase : 0;
 
                 const inChaos = chartStep === 0 && introPhase < 5;
                 const settling = chartStep === 0 && !inChaos;
@@ -1137,11 +1191,11 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
                             ? { duration: 0.6 + (Math.abs(dot.offsetY) / 36) * 0.3, delay: i * 0.01, ease: "easeInOut" }
                             : { duration: dot.driftDuration, delay: dot.driftDelay, repeat: Infinity, ease: "easeInOut" },
                       opacity: {
-                        delay: chartStep === 0 ? 0.1 + i * 0.007 : 0.1,
-                        duration: isSpotlight ? 0.5 : 0.3,
+                        delay: chartStep === 0 ? 0.1 + i * 0.007 : isIndexShift ? 0.15 + (i % 36) * 0.012 : 0.1,
+                        duration: isSpotlight ? 0.5 : isIndexShift ? 0.5 : 0.3,
                       },
                       scale: {
-                        delay: chartStep === 0 ? 0.1 + i * 0.007 : 0.1,
+                        delay: chartStep === 0 ? 0.1 + i * 0.007 : isIndexShift ? 0.15 + (i % 36) * 0.012 : 0.1,
                         type: "spring",
                         stiffness: 300,
                       },
@@ -1399,6 +1453,98 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
         </div>
 
       </motion.div>
+
+      {/* KPI sidebar (step 7) */}
+      <AnimatePresence>
+        {isIndexShift && (
+          <motion.div
+            key="kpi-sidebar"
+            className="absolute right-3 top-0 bottom-0 z-20 flex flex-col justify-center gap-4"
+            style={{ width: 165 }}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            {/* Win rate */}
+            <div className="rounded-xl px-3.5 py-3" style={{ backgroundColor: `${NAVY}05` }}>
+              <div className="text-[11px] font-semibold tracking-wide" style={{ color: MUTED }}>Win rate</div>
+              <div className="text-[26px] font-bold tabular-nums leading-tight mt-0.5" style={{ color: NAVY }}>
+                {Math.round(currentKpi.winRate)}%
+              </div>
+              <AnimatePresence mode="wait">
+                {indexPhase > 0 && indexMorphProgress >= 1 && kpiDelta.winRate !== 0 && (
+                  <motion.div
+                    key={`wr-${indexPhase}`}
+                    className="text-[11px] font-medium mt-1"
+                    style={{ color: TEAL }}
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ delay: 0.15, duration: 0.25 }}
+                  >
+                    &#x2197; +{kpiDelta.winRate} pts this month
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Price adoption */}
+            <div className="rounded-xl px-3.5 py-3" style={{ backgroundColor: `${NAVY}05` }}>
+              <div className="text-[11px] font-semibold tracking-wide" style={{ color: MUTED }}>Price adoption</div>
+              <div className="text-[26px] font-bold tabular-nums leading-tight mt-0.5" style={{ color: NAVY }}>
+                {Math.round(currentKpi.priceAdoption)}%
+              </div>
+              <AnimatePresence mode="wait">
+                {indexPhase > 0 && indexMorphProgress >= 1 && (
+                  <motion.div
+                    key={`pa-${indexPhase}`}
+                    className="text-[11px] font-medium mt-1"
+                    style={{ color: kpiDelta.priceAdoption > 0 ? TEAL : MUTED }}
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ delay: 0.15, duration: 0.25 }}
+                  >
+                    {kpiDelta.priceAdoption > 0 ? `↗ +${kpiDelta.priceAdoption} pts` : "— No change"}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Margin impact */}
+            <motion.div
+              className="rounded-xl px-3.5 py-3"
+              animate={{
+                backgroundColor: indexPhase > 0 && indexMorphProgress >= 1 ? `${ORANGE}0A` : `${NAVY}05`,
+                borderColor: indexPhase > 0 && indexMorphProgress >= 1 ? `${ORANGE}40` : "transparent",
+              }}
+              style={{ border: "1.5px solid transparent" }}
+              transition={{ duration: 0.4 }}
+            >
+              <div className="text-[11px] font-semibold tracking-wide" style={{ color: MUTED }}>Margin impact</div>
+              <div className="text-[26px] font-bold tabular-nums leading-tight mt-0.5" style={{ color: ORANGE }}>
+                +{currentKpi.marginImpact.toFixed(1)}%
+              </div>
+              <AnimatePresence mode="wait">
+                {indexPhase > 0 && indexMorphProgress >= 1 && kpiDelta.marginImpact > 0 && (
+                  <motion.div
+                    key={`mi-${indexPhase}`}
+                    className="text-[11px] font-medium mt-1"
+                    style={{ color: ORANGE }}
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ delay: 0.15, duration: 0.25 }}
+                  >
+                    &#x2197; +{kpiDelta.marginImpact} after {kpiDelta.eventLabel.toLowerCase()}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       </div>
     </div>
   );

@@ -436,11 +436,11 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
     }
     const settle = 700;
     const t0 = setTimeout(() => setIntroPhase(0));
-    const t1 = setTimeout(() => setIntroPhase(1), settle + 800);
-    const t2 = setTimeout(() => setIntroPhase(2), settle + 1800);
-    const t3 = setTimeout(() => setIntroPhase(3), settle + 3200);
-    const t4 = setTimeout(() => setIntroPhase(4), settle + 5000);
-    const t5 = setTimeout(() => setIntroPhase(5), settle + 5800);
+    const t1 = setTimeout(() => setIntroPhase(1), settle + 400);
+    const t2 = setTimeout(() => setIntroPhase(2), settle + 1000);
+    const t3 = setTimeout(() => setIntroPhase(3), settle + 1800);
+    const t4 = setTimeout(() => setIntroPhase(4), settle + 2600);
+    const t5 = setTimeout(() => setIntroPhase(5), settle + 3200);
     return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); clearTimeout(t5); };
   }, [chartStep, skipAnimation]);
 
@@ -622,16 +622,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
             >
               {chartStep === 2 ? (
                 <>
-                  <motion.h2
-                    className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
-                    style={{ color: NAVY }}
-                    initial={skipAnimation ? false : { opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: skipAnimation ? 0 : 0.1, ease: [0.22, 1, 0.36, 1] }}
-                  >
-                    {TITLES[chartStep]}
-                  </motion.h2>
-                  <div className="mx-auto mt-2 max-w-3xl text-center" style={{ minHeight: 28 }}>
+                  <div className="mx-auto max-w-3xl text-center">
                     <AnimatePresence mode="wait">
                       {selectionPhase >= 0 && selectionPhase <= 3 ? (
                         <motion.div
@@ -642,35 +633,41 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                           exit={{ opacity: 0, y: -6 }}
                           transition={{ duration: 0.3 }}
                         >
-                          <span className="text-[1.05rem] font-bold" style={{ color: CATEGORY_LAYOUT[selectionPhase].color }}>
+                          <motion.h2
+                            className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
+                            style={{ color: CATEGORY_LAYOUT[selectionPhase].color }}
+                          >
                             {CATEGORY_TITLES[selectionPhase]}
-                          </span>
+                          </motion.h2>
                           <span className="text-[0.95rem] leading-relaxed" style={{ color: MUTED }}>
                             {CATEGORY_NARRATION[selectionPhase]}
                           </span>
                         </motion.div>
                       ) : selectionPhase === 4 ? (
-                        <motion.p
+                        <motion.div
                           key="sel-picks"
-                          className="text-[1.05rem] font-semibold leading-relaxed"
-                          style={{ color: TEAL }}
                           initial={{ opacity: 0, y: 6 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.4 }}
                         >
-                          Selected factors for the model
-                        </motion.p>
+                          <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: TEAL }}>
+                            Selected factors for the model
+                          </h2>
+                        </motion.div>
                       ) : (
-                        <motion.p
+                        <motion.div
                           key="final-sub"
-                          className="text-[1.05rem] leading-relaxed"
-                          style={{ color: MUTED }}
                           initial={{ opacity: 0, y: 6 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.4 }}
                         >
-                          {SUBTITLES[2]}
-                        </motion.p>
+                          <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: NAVY }}>
+                            {TITLES[chartStep]}
+                          </h2>
+                          <p className="mt-1 text-[1.05rem] leading-relaxed" style={{ color: MUTED }}>
+                            {SUBTITLES[2]}
+                          </p>
+                        </motion.div>
                       )}
                     </AnimatePresence>
                   </div>
@@ -1120,11 +1117,14 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
           })}
 
           {/* ── Factor pills (step 6 quadrants → step 7+ grid) ── */}
+          <AnimatePresence>
           {factorsVisible && !convergeReady && (
             <motion.foreignObject
+              key="factor-pills-fo"
               x={10} y={-25} width={1000} height={560}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
+              exit={{ x: -350, scale: 0.6, opacity: 0, transition: { duration: 0.6, ease: [0.4, 0, 0.2, 1] } }}
               transition={{ duration: 0.4 }}
             >
               <LayoutGroup>
@@ -1388,6 +1388,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
               </LayoutGroup>
             </motion.foreignObject>
           )}
+          </AnimatePresence>
 
           {/* ── Feed the model (step 7) ── */}
           {feeding && (() => {
