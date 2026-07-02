@@ -165,6 +165,13 @@ const CATEGORY_ACTIONS: Record<string, { label: string; action: "elevate" | "rem
   ],
 };
 
+const CATEGORY_ACTION_HINTS: { icon: string; color: string; headline: string; detail: string }[] = [
+  { icon: "×", color: MUTED, headline: "Remove a factor", detail: "End market isn't a meaningful driver for this client — take it out." },
+  { icon: "↑", color: TEAL, headline: "Weight it higher", detail: "Cost to serve is a key profitability driver — weight it higher." },
+  { icon: "+", color: GREEN, headline: "Add a factor", detail: "Competitive intelligence is critical in this market — add it to the model." },
+  { icon: "↓", color: PURPLE, headline: "Lower its weight", detail: "Seasonality has minimal impact for this customer — dial it down." },
+];
+
 const FEED_NUDGE_Y = [130, 35, -75, -170];
 
 const dissolveSeed = mulberry32(456);
@@ -642,6 +649,39 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                           <span className="text-[0.95rem] leading-relaxed" style={{ color: MUTED }}>
                             {CATEGORY_NARRATION[selectionPhase]}
                           </span>
+                          <AnimatePresence>
+                            {actionRevealed && CATEGORY_ACTION_HINTS[selectionPhase] && (
+                              <motion.div
+                                key={`action-hint-${selectionPhase}`}
+                                className="mt-2 flex items-center justify-center gap-2"
+                                initial={{ opacity: 0, y: 6 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -4 }}
+                                transition={{ duration: 0.35 }}
+                              >
+                                <span
+                                  className="inline-flex items-center justify-center rounded-full"
+                                  style={{
+                                    width: 24,
+                                    height: 24,
+                                    backgroundColor: `${CATEGORY_ACTION_HINTS[selectionPhase].color}15`,
+                                    color: CATEGORY_ACTION_HINTS[selectionPhase].color,
+                                    fontSize: 14,
+                                    fontWeight: 800,
+                                    flexShrink: 0,
+                                  }}
+                                >
+                                  {CATEGORY_ACTION_HINTS[selectionPhase].icon}
+                                </span>
+                                <span className="text-[0.95rem] font-bold" style={{ color: CATEGORY_ACTION_HINTS[selectionPhase].color }}>
+                                  {CATEGORY_ACTION_HINTS[selectionPhase].headline}
+                                </span>
+                                <span className="text-[0.85rem] leading-relaxed" style={{ color: MUTED }}>
+                                  {CATEGORY_ACTION_HINTS[selectionPhase].detail}
+                                </span>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
                         </motion.div>
                       ) : selectionPhase === 4 ? (
                         <motion.div

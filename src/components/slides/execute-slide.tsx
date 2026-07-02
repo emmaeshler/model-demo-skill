@@ -224,6 +224,15 @@ function FlowLabels({
   );
 }
 
+/* ── Slider ↔ Driver color mapping ──────────────────── */
+
+const SLIDER_DRIVER_DOT: Record<string, string> = {
+  "Order volume": "#7B5EA7",
+  "Price sensitivity": "#E56910",
+  "Product specificity": "#2e7d32",
+  "Relationship depth": "#00446A",
+};
+
 /* ── Profile card with sliders (SVG) ─────────────────── */
 
 function ProfileCard({ cust }: { cust: CustomerScenario }) {
@@ -241,7 +250,7 @@ function ProfileCard({ cust }: { cust: CustomerScenario }) {
     >
       <rect
         x={PROFILE_X} y={y} width={PROFILE_W} height={BOX_H}
-        rx={14} fill="white" stroke={cust.color} strokeWidth={1.5}
+        rx={14} fill="white" stroke={GREY} strokeWidth={1.5}
       />
       <rect x={PROFILE_X} y={y} width={PROFILE_W} height={34} rx={14} fill={cust.color} />
       <rect x={PROFILE_X} y={y + 20} width={PROFILE_W} height={14} fill={cust.color} />
@@ -254,20 +263,24 @@ function ProfileCard({ cust }: { cust: CustomerScenario }) {
 
       {cust.sliders.map((s, si) => {
         const sy = y + 52 + si * 38;
+        const dotColor = SLIDER_DRIVER_DOT[s.label];
         return (
           <g key={s.label}>
+            {dotColor && (
+              <circle cx={SLIDER_X - 8} cy={sy - 3.5} r={3} fill={dotColor} />
+            )}
             <text x={SLIDER_X} y={sy} fontSize="9.5" fontWeight="600" fill="#4A5568">
               {s.label}
             </text>
             <rect x={SLIDER_X} y={sy + 6} width={SLIDER_W} height={6} rx={3} fill="#E8ECF0" />
             <motion.rect
-              x={SLIDER_X} y={sy + 6} height={6} rx={3} fill={ORANGE}
+              x={SLIDER_X} y={sy + 6} height={6} rx={3} fill={dotColor || ORANGE}
               initial={{ width: 0 }}
               animate={{ width: SLIDER_W * s.value }}
               transition={{ duration: 0.6, delay: 0.15 + si * 0.08, ease: "easeOut" }}
             />
             <motion.circle
-              cy={sy + 9} r={5} fill="white" stroke={ORANGE} strokeWidth={2}
+              cy={sy + 9} r={5} fill="white" stroke={dotColor || ORANGE} strokeWidth={2}
               initial={{ cx: SLIDER_X }}
               animate={{ cx: SLIDER_X + SLIDER_W * s.value }}
               transition={{ duration: 0.6, delay: 0.15 + si * 0.08, ease: "easeOut" }}

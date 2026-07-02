@@ -104,17 +104,6 @@ const DRIVER_RAIL_ITEMS: { label: string; color: string; tint: string }[] = [
   { label: "Cost to serve", color: "#E56910", tint: "rgba(229,105,16,0.08)" },
 ];
 
-type DriverSignal = "up" | "down" | "neutral";
-const SIGNAL_COLORS: Record<DriverSignal, string> = {
-  up: "#3A7D44",
-  neutral: "#D4A843",
-  down: "#A65A52",
-};
-const CUSTOMER_DRIVER_SIGNALS: Record<string, DriverSignal[]> = {
-  Acme: ["up", "up", "neutral", "up", "up"],
-  MedSupply: ["neutral", "down", "down", "neutral", "down"],
-  QuickParts: ["neutral", "up", "up", "down", "neutral"],
-};
 
 const ACTIVE_CATEGORIES_MAP: Record<string, CategoryKey[]> = {
   [`${POWER_INDEX}-2`]: ["customer", "product", "market", "order"],
@@ -141,13 +130,13 @@ function ModelStatusRail({
   drivers,
   engineFocus,
   showEngine = true,
-  driverSignals,
+  customerDotColor,
 }: {
   activeCategories: CategoryKey[];
   drivers?: { label: string; color: string; tint: string }[];
   engineFocus: EngineFocus;
   showEngine?: boolean;
-  driverSignals?: DriverSignal[];
+  customerDotColor?: string;
 }) {
   const activeSet = useMemo(() => new Set(activeCategories), [activeCategories]);
 
@@ -219,14 +208,25 @@ function ModelStatusRail({
       </>)}
 
       {/* Factors section */}
-      <div className="flex flex-col gap-1.5">
+      {(drivers || activeSet.size > 0) && <div className="flex flex-col gap-1.5">
         <motion.span
           className="text-[9px] font-semibold uppercase tracking-[0.12em] text-gray-400"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3, delay: 0.3 }}
         >
-          {drivers ? "Model Drivers" : "Your Factors"}
+          {drivers ? (
+            <span className="flex items-center gap-1.5">
+              Model Drivers
+              {customerDotColor && (
+                <motion.span
+                  className="size-[6px] shrink-0 rounded-full"
+                  animate={{ backgroundColor: customerDotColor }}
+                  transition={{ duration: 0.25 }}
+                />
+              )}
+            </span>
+          ) : "Your Factors"}
         </motion.span>
 
         <AnimatePresence mode="wait">
@@ -239,30 +239,20 @@ function ModelStatusRail({
               exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.3 }}
             >
-              {drivers.map(({ label, color, tint }, i) => {
-                const signal = driverSignals?.[i];
-                return (
+              {drivers.map(({ label, color }, i) => (
                 <motion.div
                   key={label}
-                  className="flex items-center gap-2 rounded-md border px-2 py-1.5"
+                  className="flex items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-2 py-1.5"
                   initial={{ x: 80, opacity: 0, scale: 0.85 }}
-                  animate={{
-                    x: 0,
-                    opacity: 1,
-                    scale: 1,
-                    backgroundColor: tint,
-                    borderColor: color,
-                  }}
+                  animate={{ x: 0, opacity: 1, scale: 1 }}
                   transition={{
                     x: { duration: 0.5, delay: 0.3 + i * 0.08, ease: [0.22, 1, 0.36, 1] },
                     opacity: { duration: 0.35, delay: 0.3 + i * 0.08 },
                     scale: { duration: 0.45, delay: 0.3 + i * 0.08, ease: [0.22, 1, 0.36, 1] },
-                    backgroundColor: { duration: 0.2 },
-                    borderColor: { duration: 0.2 },
                   }}
                 >
                   <div
-                    className="size-2 shrink-0 rounded"
+                    className="size-2 shrink-0 rounded-full"
                     style={{ backgroundColor: color }}
                   />
                   <span
@@ -271,17 +261,8 @@ function ModelStatusRail({
                   >
                     {label}
                   </span>
-                  {signal && (
-                    <motion.div
-                      className="size-[6px] shrink-0 rounded-full"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1, backgroundColor: SIGNAL_COLORS[signal] }}
-                      transition={{ scale: { delay: 0.5 + i * 0.1, type: "spring", stiffness: 400 }, backgroundColor: { duration: 0.3 } }}
-                    />
-                  )}
                 </motion.div>
-                );
-              })}
+              ))}
             </motion.div>
           ) : (
             <motion.div
@@ -343,6 +324,64 @@ function ModelStatusRail({
         >
           {drivers ? `${drivers.length} factors selected` : "31 factors tuned to your business"}
         </motion.span>
+      </div>}
+    </motion.div>
+  );
+}
+
+const CUSTOMER_DOT_COLORS: Record<string, string> = {
+  Acme: "#00446A",
+  MedSupply: "#4A8FA8",
+  QuickParts: "#C27A3A",
+};
+
+function MiniExecuteConnector() {
+  const NAVY = "#00446A";
+  const MUTED = "#8A9AAA";
+
+  const customers = [
+    { label: "Acme Industrial", price: "$19.24", dot: CUSTOMER_DOT_COLORS.Acme },
+    { label: "MedSupply Co", price: "$14.89", dot: CUSTOMER_DOT_COLORS.MedSupply },
+    { label: "QuickParts LLC", price: "$22.10", dot: CUSTOMER_DOT_COLORS.QuickParts },
+  ];
+
+  return (
+    <motion.div
+      className="fixed left-0 top-1/2 z-40 flex w-[130px] -translate-y-1/2 flex-col rounded-r-xl bg-white/95 px-3 py-4 shadow-md ring-1 ring-black/[0.06] backdrop-blur-sm"
+      initial={{ x: -140 }}
+      animate={{ x: 0 }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <motion.span
+        className="mb-2.5 text-[8px] font-semibold uppercase tracking-[0.12em] text-gray-400"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3, delay: 0.2 }}
+      >
+        Customer Prices
+      </motion.span>
+
+      <div className="flex flex-col gap-1.5">
+        {customers.map((c, i) => (
+          <motion.div
+            key={c.label}
+            className="flex items-center gap-2 rounded-md px-2 py-1.5"
+            style={{ backgroundColor: `${NAVY}05` }}
+            initial={{ opacity: 0, x: -8 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3 + i * 0.08, duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <div className="size-[5px] shrink-0 rounded-full" style={{ backgroundColor: c.dot }} />
+            <div className="flex-1 min-w-0">
+              <span className="text-[10px] font-semibold leading-none block" style={{ color: NAVY }}>
+                {c.label}
+              </span>
+              <span className="text-[13px] font-bold tabular-nums leading-tight block mt-0.5" style={{ color: NAVY }}>
+                {c.price}
+              </span>
+            </div>
+          </motion.div>
+        ))}
       </div>
     </motion.div>
   );
@@ -460,7 +499,7 @@ export function Home() {
   const config = SLIDES[slide];
   const notes = getPresenterNotes(config?.kind ?? "", subStep);
   const engineFocus = ENGINE_FOCUS_MAP[`${slide}-${subStep}`] ?? null;
-  const railVisible = ENGINE_INDICATOR_SLIDES.has(slide) && (slide !== POWER_INDEX || subStep >= 2);
+  const railVisible = ENGINE_INDICATOR_SLIDES.has(slide) && !(slide === REFINE_INDEX && subStep === (REFINE_TOTAL_STEPS - 1));
   const showDrivers = (slide === POWER_INDEX && subStep >= 3) || slide === EXECUTE_INDEX || slide === REFINE_INDEX;
   const staticActiveCategories = ACTIVE_CATEGORIES_MAP[`${slide}-${subStep}`] ?? [];
   const activeCategories = (slide === POWER_INDEX && dynamicActiveCategories && dynamicActiveCategories.length > 0)
@@ -822,13 +861,17 @@ export function Home() {
       </main>
 
       {railVisible && (
-        <ModelStatusRail
-          activeCategories={activeCategories}
-          drivers={showDrivers ? DRIVER_RAIL_ITEMS : undefined}
-          engineFocus={engineFocus}
-          showEngine={slide === POWER_INDEX}
-          driverSignals={slide === EXECUTE_INDEX ? CUSTOMER_DRIVER_SIGNALS[executeCustomer] : undefined}
-        />
+        slide === REFINE_INDEX ? (
+          <MiniExecuteConnector />
+        ) : (
+          <ModelStatusRail
+            activeCategories={activeCategories}
+            drivers={showDrivers ? DRIVER_RAIL_ITEMS : undefined}
+            engineFocus={engineFocus}
+            showEngine={slide === POWER_INDEX}
+            customerDotColor={slide === EXECUTE_INDEX ? CUSTOMER_DOT_COLORS[executeCustomer] : undefined}
+          />
+        )
       )}
 
       {isAudience ? (

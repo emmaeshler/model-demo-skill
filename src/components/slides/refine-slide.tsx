@@ -20,10 +20,10 @@ const BASELINE_KPI = { winRate: 62, priceAdoption: 71, marginImpact: 1.8 };
 const TOTAL_MONTHS = 20;
 const TIMELINE_EVENTS = [
   { month: 4, label: "Steel +8%", factor: "Steel cost surge reshapes demand", steepness: 7.5, kpi: { winRate: 65, priceAdoption: 74, marginImpact: 2.4 } },
-  { month: 8, label: "New Entrant", factor: "Competitor enters market", steepness: 3.5, kpi: { winRate: 67, priceAdoption: 78, marginImpact: 2.9 } },
-  { month: 12, label: "Demand Shift", factor: "Seasonal demand surge", steepness: 9, kpi: { winRate: 69, priceAdoption: 81, marginImpact: 3.5 } },
-  { month: 16, label: "Freight −5%", factor: "Freight costs drop", steepness: 4.5, kpi: { winRate: 72, priceAdoption: 84, marginImpact: 3.9 } },
-  { month: 20, label: "Resin +12%", factor: "Raw material spike", steepness: 6.5, kpi: { winRate: 74, priceAdoption: 87, marginImpact: 4.5 } },
+  { month: 8, label: "New Entrant", factor: "Competitor enters market", steepness: 7.5, kpi: { winRate: 59, priceAdoption: 66, marginImpact: 1.5 } },
+  { month: 12, label: "Demand Shift", factor: "Seasonal demand surge", steepness: 9, kpi: { winRate: 64, priceAdoption: 73, marginImpact: 2.6 } },
+  { month: 16, label: "Freight −5%", factor: "Freight costs drop", steepness: 4.5, kpi: { winRate: 69, priceAdoption: 79, marginImpact: 3.2 } },
+  { month: 20, label: "Resin +12%", factor: "Raw material spike", steepness: 6.5, kpi: { winRate: 72, priceAdoption: 83, marginImpact: 3.8 } },
 ];
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -248,6 +248,8 @@ const STEP_CONTEXT: Record<number, { title: string; body: string }> = {
 
 const MINI_SLOT = { x: 4, y: 2, w: 52, h: 24 };
 
+type PortfolioFeature = "scatter" | "delta" | "price-dot" | "live" | "plain";
+
 const PORTFOLIO_SEGMENTS = (() => {
   const pRng = mulberry32(42);
   const names = [
@@ -262,20 +264,57 @@ const PORTFOLIO_SEGMENTS = (() => {
     "Caps – Packaging", "Shims – Precision", "Plates – Structural",
     "O-Rings – Hydraulic", "Bolts – Wind Energy", "Chains – Agriculture",
   ];
-  const flipY = (y: number) => 2 * MINI_SLOT.y + MINI_SLOT.h - y;
-  return names.map((name) => {
+  const features: PortfolioFeature[] = [
+    "scatter", "delta", "price-dot", "live", "plain", "scatter",
+    "delta", "plain", "price-dot", "scatter", "live", "delta",
+    "plain", "scatter", "price-dot", "delta", "live", "scatter",
+    "delta", "price-dot", "plain", "scatter", "live", "price-dot",
+    "plain", "scatter", "delta", "live", "price-dot", "plain",
+  ];
+  const deltas = [
+    "+1.8%", "-0.4%", "+3.2%", "+0.9%", "-1.1%", "+2.4%",
+    "-0.7%", "+1.5%", "+0.3%", "-0.9%", "+2.7%", "+1.2%",
+    "-0.5%", "+1.9%", "-0.2%", "+3.1%", "+0.8%", "-1.3%",
+    "+2.0%", "-0.6%", "+1.4%", "+0.7%", "-0.3%", "+2.5%",
+    "+1.1%", "-0.8%", "+1.6%", "+0.4%", "-1.0%", "+2.2%",
+  ];
+  return names.map((name, i) => {
     const steepness = 2 + pRng() * 10;
     const raw = makeCurve(MINI_SLOT, steepness);
     const n = 32;
     const pts = Array.from({ length: n + 1 }, (_, j) => {
       const pt = raw.sampleAt(j / n);
-      return { x: pt.x, y: flipY(pt.y) };
+      return { x: pt.x, y: pt.y };
     });
-    return {
-      name,
-      d: "M " + pts.map(p => `${p.x},${p.y}`).join(" L "),
-    };
+    const d = "M " + pts.map(p => `${p.x},${p.y}`).join(" L ");
+    const feature = features[i];
+    const col = i % 6;
+    const row = Math.floor(i / 6);
+    const dist = Math.sqrt(Math.pow(col - 2.5, 2) + Math.pow(row - 2, 2));
+
+    const scatterDots = feature === "scatter" ? Array.from({ length: 5 }, () => {
+      const t = 0.05 + pRng() * 0.9;
+      const curvePt = raw.sampleAt(t);
+      const cy = curvePt.y + (pRng() - 0.5) * 12;
+      return { cx: curvePt.x, cy: Math.max(3, Math.min(25, cy)), r: 0.7 + pRng() * 0.6 };
+    }) : undefined;
+
+    const priceDotPt = feature === "price-dot" ? (() => {
+      const t = 0.15 + pRng() * 0.5;
+      const curvePt = raw.sampleAt(t);
+      return { x: curvePt.x, y: curvePt.y };
+    })() : undefined;
+
+    return { name, d, feature, dist, delta: deltas[i], scatterDots, priceDotPt };
   });
+})();
+
+const PORTFOLIO_REVEAL_ORDER = (() => {
+  const indexed = PORTFOLIO_SEGMENTS.map((seg, i) => ({ i, dist: seg.dist }));
+  indexed.sort((a, b) => a.dist - b.dist);
+  const order = new Array<number>(PORTFOLIO_SEGMENTS.length);
+  indexed.forEach((item, ri) => { order[item.i] = ri; });
+  return order;
 })();
 
 export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeChange }: { step: number; onAutoAdvance?: () => void; skipAnimation?: boolean; onCurveModeChange?: (mode: "one" | "three") => void }) {
@@ -286,12 +325,11 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
   }, [curveMode, onCurveModeChange]);
 
   const curve = useMemo(() => {
-    const flipY = (y: number) => 2 * CURVE_SLOT.y + CURVE_SLOT.h - y;
     const raw = makeCurve(CURVE_SLOT, 5);
     const n = 64;
     const navyPts = Array.from({ length: n + 1 }, (_, i) => {
       const pt = raw.sampleAt(i / n);
-      return { x: pt.x, y: flipY(pt.y) };
+      return { x: pt.x, y: pt.y };
     });
     const ghostCurvePts: { x: number; y: number }[][] = [];
     const ghostCurves = [
@@ -301,13 +339,13 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
       const g = makeCurve(CURVE_SLOT, steepness);
       const gPts = Array.from({ length: n + 1 }, (_, i) => {
         const pt = g.sampleAt(i / n);
-        return { x: pt.x, y: flipY(pt.y) };
+        return { x: pt.x, y: pt.y };
       });
       ghostCurvePts.push(gPts);
       const d = "M " + gPts.map(p => `${p.x},${p.y}`).join(" L ");
       const ghostSample = (t: number) => {
         const pt = g.sampleAt(t);
-        return { x: pt.x, y: flipY(pt.y) };
+        return { x: pt.x, y: pt.y };
       };
       return { d, sampleAt: ghostSample, customer, color };
     });
@@ -315,14 +353,14 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
       const rawShifted = makeCurve(CURVE_SLOT, event.steepness);
       const pts = Array.from({ length: n + 1 }, (_, i) => {
         const pt = rawShifted.sampleAt(i / n);
-        return { x: pt.x, y: flipY(pt.y) };
+        return { x: pt.x, y: pt.y };
       });
       return {
         d: "M " + pts.map(p => `${p.x},${p.y}`).join(" L "),
         pts,
         sampleAt: (t: number) => {
           const pt = rawShifted.sampleAt(t);
-          return { x: pt.x, y: flipY(pt.y) };
+          return { x: pt.x, y: pt.y };
         },
       };
     });
@@ -335,7 +373,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
       indexCurves,
       sampleAt: (t: number) => {
         const pt = raw.sampleAt(t);
-        return { x: pt.x, y: flipY(pt.y) };
+        return { x: pt.x, y: pt.y };
       },
     };
   }, []);
@@ -488,6 +526,19 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
     );
   }, [morphProgress, curve]);
 
+  /* ── Portfolio headline phases (step 8) ──────────────── */
+  const [portfolioPhase, setPortfolioPhase] = useState(0);
+  useEffect(() => {
+    if (chartStep !== 8) { setPortfolioPhase(0); return; }
+    if (skipAnimation) { setPortfolioPhase(4); return; }
+    setPortfolioPhase(0);
+    const t1 = setTimeout(() => setPortfolioPhase(1), 200);
+    const t2 = setTimeout(() => setPortfolioPhase(2), 1200);
+    const t3 = setTimeout(() => setPortfolioPhase(3), 2200);
+    const t4 = setTimeout(() => setPortfolioPhase(4), 2800);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
+  }, [chartStep, skipAnimation]);
+
   /* ── Chart animation ────────────────────────────────── */
 
   const showCurve = chartStep >= 1;
@@ -585,10 +636,10 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
   const isLifted = spotPhase >= 1;
 
   return (
-    <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-7xl flex-col items-center justify-start px-6 pt-2">
+    <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-5.5rem)] max-w-7xl flex-col items-center justify-start px-6 pt-2">
 
       {/* Title — fixed-height container so chart never resizes */}
-      <div className="relative w-full" style={{ height: 90, flexShrink: 0, transform: "translateX(calc(var(--rail-inset, 0px) * -0.5))" }}>
+      <div className="relative w-full" style={{ height: 76, flexShrink: 0, transform: "translateX(calc(var(--rail-inset, 0px) * -0.5))" }}>
         <AnimatePresence>
           {chartStep === 0 && (
             <motion.div
@@ -653,7 +704,69 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
               </motion.p>
             </motion.div>
           )}
-          {chartStep > 0 && (
+          {isPortfolio && (
+            <motion.div
+              key="portfolio-title"
+              className="absolute inset-0 flex flex-col items-center justify-start"
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.6, ease: "easeInOut" }}
+            >
+              <div className="flex flex-col items-center gap-1">
+                <motion.h2
+                  className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
+                  style={{ color: NAVY }}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{
+                    opacity: portfolioPhase >= 1 && portfolioPhase < 3 ? 1 : 0,
+                    y: portfolioPhase >= 1 && portfolioPhase < 3 ? 0 : portfolioPhase >= 3 ? -12 : 8,
+                    height: portfolioPhase >= 3 ? 0 : "auto",
+                    marginBottom: portfolioPhase >= 3 ? 0 : 4,
+                  }}
+                  transition={{ duration: 0.5 }}
+                >
+                  One segment, one curve
+                </motion.h2>
+                <motion.h2
+                  className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
+                  style={{ color: NAVY }}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{
+                    opacity: portfolioPhase >= 2 && portfolioPhase < 3 ? 1 : 0,
+                    y: portfolioPhase >= 2 && portfolioPhase < 3 ? 0 : portfolioPhase >= 3 ? -12 : 8,
+                    height: portfolioPhase < 2 || portfolioPhase >= 3 ? 0 : "auto",
+                    marginBottom: portfolioPhase < 2 || portfolioPhase >= 3 ? 0 : 4,
+                  }}
+                  transition={{ duration: 0.5 }}
+                >
+                  Then another. And another.
+                </motion.h2>
+                <AnimatePresence>
+                  {portfolioPhase >= 3 && (
+                    <motion.h2
+                      className="text-center text-3xl font-bold tracking-tight sm:text-4xl"
+                      style={{ color: STRAT_BLUE }}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.6, ease: "easeOut" }}
+                    >
+                      We do this across your entire portfolio
+                    </motion.h2>
+                  )}
+                </AnimatePresence>
+              </div>
+              <motion.p
+                className="mx-auto mt-2 max-w-xl text-center text-[1.05rem] leading-relaxed"
+                style={{ color: MUTED }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: portfolioPhase >= 4 ? 1 : 0, y: portfolioPhase >= 4 ? 0 : 6 }}
+                transition={{ duration: 0.4 }}
+              >
+                Every product segment gets its own demand curve — continuously{" "}
+                <span className="font-bold" style={{ color: NAVY, whiteSpace: "nowrap", textDecoration: "underline", textDecorationColor: STRAT_BLUE, textUnderlineOffset: "4px", textDecorationThickness: "2px" }}>recalibrated as the market shifts</span>.
+              </motion.p>
+            </motion.div>
+          )}
+          {chartStep > 0 && !isPortfolio && (
             <motion.div
               key={`step-title-${chartStep >= 1 && chartStep <= 2 ? 'curve-intro' : `step-${chartStep}`}`}
               className="absolute inset-0 flex flex-col items-center justify-start"
@@ -713,14 +826,15 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
         {isIndexShift && (
           <motion.div
             key="timeline-strip"
-            className="w-full flex-shrink-0"
+            className="w-full flex-shrink-0 rounded-t-2xl bg-white/80 px-6 pt-3 pb-2 backdrop-blur-sm"
+            style={{ border: `1px solid ${NAVY}0A`, borderBottom: 'none' }}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
           >
             {/* Date display / Event card */}
-            <div className="relative flex items-center justify-center" style={{ height: 82, marginBottom: 6 }}>
+            <div className="relative flex items-center justify-center" style={{ height: 70, marginBottom: 4 }}>
               {indexPhase > 0 && (
                 <motion.button
                   className="absolute left-0 z-10 flex h-8 w-8 items-center justify-center rounded-full"
@@ -865,7 +979,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
       </AnimatePresence>
 
       {/* Chart area */}
-      <div className="relative w-full flex-1 min-h-0 mt-0" style={{ maxHeight: "calc(100% - 120px)" }}>
+      <div className={`relative w-full flex-1 min-h-0 mt-0${isIndexShift ? ' rounded-b-2xl bg-white/80 backdrop-blur-sm shadow-sm' : ''}`} style={{ maxHeight: "calc(100% - 80px)", ...(isIndexShift ? { border: `1px solid ${NAVY}0A`, borderTop: 'none' } : {}) }}>
         {/* Wireframe skeleton — visible while chart fades in */}
         <motion.div
           className="absolute inset-0 flex items-center justify-center"
@@ -1495,8 +1609,8 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
         {isIndexShift && (
           <motion.div
             key="kpi-sidebar"
-            className="absolute right-3 top-0 bottom-0 z-20 flex flex-col justify-center gap-4"
-            style={{ width: 165 }}
+            className="absolute right-0 top-0 bottom-0 z-20 flex flex-col justify-center gap-3 px-3"
+            style={{ width: 175, borderLeft: `1px solid ${NAVY}0A` }}
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 20 }}
@@ -1588,39 +1702,132 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
           <motion.div
             key="portfolio-grid"
             className="absolute inset-0 flex flex-col items-center justify-center"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
           >
             <div className="grid grid-cols-6 gap-2.5 px-6" style={{ maxWidth: 900, width: "100%" }}>
-              {PORTFOLIO_SEGMENTS.map((seg, i) => (
-                <motion.div
-                  key={seg.name}
-                  className="rounded-lg px-2.5 pt-2 pb-1.5"
-                  style={{ backgroundColor: `${NAVY}04`, border: `1px solid ${NAVY}0A` }}
-                  initial={{ opacity: 0, y: 14, scale: 0.94 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ duration: 0.35, delay: 0.15 + i * 0.035, ease: "easeOut" }}
-                >
-                  <svg viewBox="0 0 60 28" className="w-full" preserveAspectRatio="xMidYMid meet">
-                    <path d={`${seg.d} L 56,26 L 4,26 Z`} fill={`${NAVY}06`} />
-                    <line x1={4} y1={26} x2={56} y2={26} stroke={`${NAVY}15`} strokeWidth={0.5} />
-                    <line x1={4} y1={2} x2={4} y2={26} stroke={`${NAVY}15`} strokeWidth={0.5} />
-                    <path d={seg.d} fill="none" stroke={NAVY} strokeWidth={1.5} strokeLinecap="round" opacity={0.65} />
-                  </svg>
-                  <div className="text-[9px] font-medium truncate mt-0.5" style={{ color: MUTED }}>
-                    {seg.name}
-                  </div>
-                </motion.div>
-              ))}
+              {PORTFOLIO_SEGMENTS.map((seg, i) => {
+                const revealIdx = PORTFOLIO_REVEAL_ORDER[i];
+                const enterDelay = revealIdx === 0 ? 0.15 : 0.5 + Math.sqrt(revealIdx - 1) * 0.38;
+                const curveDelay = enterDelay + 0.2;
+                const isPositive = seg.delta.startsWith("+");
+
+                return (
+                  <motion.div
+                    key={seg.name}
+                    className="rounded-lg px-2.5 pt-2 pb-1.5 relative overflow-hidden"
+                    style={{ backgroundColor: `${NAVY}04`, border: `1px solid ${NAVY}0A` }}
+                    initial={{ opacity: 0, scale: 0.55 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.45, delay: enterDelay, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    {seg.feature === "delta" && (
+                      <motion.div
+                        className="absolute top-1 right-1.5 rounded px-1 py-0.5"
+                        style={{
+                          fontSize: 7, fontWeight: 700,
+                          color: isPositive ? GREEN : RED,
+                          backgroundColor: isPositive ? `${GREEN}10` : `${RED}10`,
+                        }}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: curveDelay + 0.5, duration: 0.3 }}
+                      >
+                        {seg.delta}
+                      </motion.div>
+                    )}
+
+                    {seg.feature === "live" && (
+                      <motion.div
+                        className="absolute top-1.5 right-2 flex items-center gap-1"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: curveDelay + 0.6, duration: 0.3 }}
+                      >
+                        <motion.div
+                          className="rounded-full"
+                          style={{ width: 4, height: 4, backgroundColor: GREEN }}
+                          animate={{ opacity: [1, 0.3, 1] }}
+                          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: curveDelay + 0.8 }}
+                        />
+                        <span style={{ fontSize: 6, fontWeight: 600, letterSpacing: "0.08em", color: GREEN, textTransform: "uppercase" as const }}>Live</span>
+                      </motion.div>
+                    )}
+
+                    <svg viewBox="0 0 60 28" className="w-full" preserveAspectRatio="xMidYMid meet">
+                      <motion.path
+                        d={`${seg.d} L 56,26 L 4,26 Z`}
+                        fill={`${NAVY}06`}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: curveDelay + 0.3, duration: 0.5 }}
+                      />
+                      <line x1={4} y1={26} x2={56} y2={26} stroke={`${NAVY}15`} strokeWidth={0.5} />
+                      <line x1={4} y1={2} x2={4} y2={26} stroke={`${NAVY}15`} strokeWidth={0.5} />
+                      <motion.path
+                        d={seg.d}
+                        fill="none"
+                        stroke={NAVY}
+                        strokeWidth={1.5}
+                        strokeLinecap="round"
+                        opacity={0.65}
+                        initial={{ pathLength: 0 }}
+                        animate={{ pathLength: 1 }}
+                        transition={{ duration: 0.7, delay: curveDelay, ease: "easeOut" }}
+                      />
+
+                      {seg.scatterDots?.map((dot, di) => (
+                        <motion.circle
+                          key={di}
+                          cx={dot.cx}
+                          cy={dot.cy}
+                          r={dot.r}
+                          fill={NAVY}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 0.35 }}
+                          transition={{ delay: curveDelay + 0.4 + di * 0.06, duration: 0.3 }}
+                        />
+                      ))}
+
+                      {seg.priceDotPt && (
+                        <>
+                          <motion.circle
+                            cx={seg.priceDotPt.x}
+                            cy={seg.priceDotPt.y}
+                            r={3.5}
+                            fill={STRAT_BLUE}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: [0, 0.2, 0.08, 0.2] }}
+                            transition={{ delay: curveDelay + 0.5, duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                          />
+                          <motion.circle
+                            cx={seg.priceDotPt.x}
+                            cy={seg.priceDotPt.y}
+                            r={1.5}
+                            fill={STRAT_BLUE}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 0.7 }}
+                            transition={{ delay: curveDelay + 0.5, duration: 0.3 }}
+                          />
+                        </>
+                      )}
+                    </svg>
+
+                    <div className="text-[9px] font-medium truncate mt-0.5" style={{ color: MUTED }}>
+                      {seg.name}
+                    </div>
+                  </motion.div>
+                );
+              })}
             </div>
             <motion.p
               className="mt-4 text-center text-sm"
               style={{ color: MUTED }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 1.3, duration: 0.5 }}
+              transition={{ delay: 2.8, duration: 0.5 }}
             >
               Showing 30 of <span style={{ color: NAVY, fontWeight: 700 }}>247 segments</span> monitored continuously
             </motion.p>
