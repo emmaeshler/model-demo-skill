@@ -136,7 +136,7 @@ const AUTO_ANIM_SLIDES = new Set<SlideKind>([]);
 
 const DEFAULT_DONE_MS = 2000;
 
-export default function Home() {
+export function Home() {
   const [slide, setSlide] = useState(0);
   const [subStep, setSubStep] = useState(0);
   const [animationDone, setAnimationDone] = useState(false);
@@ -449,7 +449,7 @@ export default function Home() {
           groups={navGroups}
           onNavigate={navigate}
           animationDone={animationDone}
-          onStartPresenting={startPresenting}
+          onStartPresenting={mode === "presenter" ? startPresenting : undefined}
           showReplay={skipAnimation}
           onReplay={handleReplay}
         />
@@ -943,3 +943,5 @@ function EndSlide({ onRestart }: { onRestart: () => void }) {
     </div>
   );
 }
+
+export default Home;
