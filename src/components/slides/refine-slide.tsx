@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { makeCurve } from "../visuals/demand-curve";
 
@@ -18,10 +18,10 @@ const CURVE_SLOT = { x: 50, y: 20, w: 460, h: 140 };
 const BASE_Y = CURVE_SLOT.y + CURVE_SLOT.h;
 const INDEX_SHIFTS = (() => {
   const entries = [
-    { label: "Steel", change: "+8%", impact: "+$1.40", steepness: 6.0, vShift: -8, up: true, data: [38,40,39,41,43,42,44,46,45,48,50,52,55] },
-    { label: "Diesel", change: "−3%", impact: "−$0.52", steepness: 5.2, vShift: -3, up: false, data: [52,51,53,50,49,51,48,47,49,46,48,45,44] },
-    { label: "Labor", change: "+5%", impact: "+$0.90", steepness: 5.8, vShift: -10, up: true, data: [30,31,31,32,33,33,34,35,35,36,37,38,39] },
-    { label: "Resin", change: "+12%", impact: "+$2.10", steepness: 7.0, vShift: -18, up: true, data: [28,29,30,29,31,33,35,34,38,42,45,48,52] },
+    { label: "Steel", change: "+8%", impact: "+$1.40", steepness: 8.5, vShift: -18, up: true, data: [38,40,39,41,43,42,44,46,45,48,50,52,55] },
+    { label: "Diesel", change: "−3%", impact: "−$0.52", steepness: 4.0, vShift: 10, up: false, data: [52,51,53,50,49,51,48,47,49,46,48,45,44] },
+    { label: "Labor", change: "+5%", impact: "+$0.90", steepness: 10.0, vShift: -25, up: true, data: [30,31,31,32,33,33,34,35,35,36,37,38,39] },
+    { label: "Resin", change: "+12%", impact: "+$2.10", steepness: 3.5, vShift: -30, up: true, data: [28,29,30,29,31,33,35,34,38,42,45,48,52] },
   ];
   return entries.map(e => {
     const min = Math.min(...e.data);
@@ -298,6 +298,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
       });
       return {
         d: "M " + pts.map(p => `${p.x},${p.y}`).join(" L "),
+        pts,
         sampleAt: (t: number) => {
           const pt = rawShifted.sampleAt(t);
           return { x: pt.x, y: flipY(pt.y) + shift.vShift };
@@ -387,6 +388,28 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
     return () => timers.forEach(clearTimeout);
   }, [chartStep, skipAnimation]);
 
+  const [indexMorphFrom, setIndexMorphFrom] = useState(0);
+  const [indexMorphProgress, setIndexMorphProgress] = useState(1);
+  const prevIndexPhaseRef = useRef(0);
+  useEffect(() => {
+    const prev = prevIndexPhaseRef.current;
+    prevIndexPhaseRef.current = indexPhase;
+    if (indexPhase === prev || indexPhase === 0) { setIndexMorphProgress(1); return; }
+    setIndexMorphFrom(prev);
+    setIndexMorphProgress(0);
+    if (skipAnimation) { setIndexMorphProgress(1); return; }
+    let start = 0;
+    let frame: number;
+    const tick = (now: number) => {
+      if (!start) start = now;
+      const raw = Math.min(1, (now - start) / 1200);
+      setIndexMorphProgress(1 - Math.pow(1 - raw, 3));
+      if (raw < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [indexPhase, skipAnimation]);
+
   /* ── Collapse animation (step 7, three-curves mode) ── */
   const isCollapseStep = chartStep === 7 && curveMode === "three";
   const [collapsePhase, setCollapsePhase] = useState(0);
@@ -456,9 +479,20 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
   const isAllToCurve = chartStep >= 7;
   const isIndexShift = chartStep >= 8;
   const activeIndexCurve = isIndexShift && indexPhase > 0 ? curve.indexCurves[indexPhase - 1] : null;
-  const currentCurveD = activeIndexCurve ? activeIndexCurve.d : curve.d;
-  const prevCurveD = isIndexShift && indexPhase > 1 ? curve.indexCurves[indexPhase - 2].d : curve.d;
   const currentIndex = indexPhase > 0 ? INDEX_SHIFTS[indexPhase - 1] : null;
+
+  const morphedIndexCurveD = useMemo(() => {
+    if (!isIndexShift || indexPhase === 0) return curve.d;
+    if (indexMorphProgress >= 1) return curve.indexCurves[indexPhase - 1].d;
+    const fromPts = indexMorphFrom > 0 ? curve.indexCurves[indexMorphFrom - 1].pts : curve.navyPts;
+    const toPts = curve.indexCurves[indexPhase - 1].pts;
+    return "M " + fromPts.map((fp, i) => {
+      const tp = toPts[i];
+      return `${fp.x + (tp.x - fp.x) * indexMorphProgress},${fp.y + (tp.y - fp.y) * indexMorphProgress}`;
+    }).join(" L ");
+  }, [isIndexShift, indexPhase, indexMorphFrom, indexMorphProgress, curve]);
+
+  const ghostIndexCurveD = indexMorphFrom > 0 ? curve.indexCurves[indexMorphFrom - 1].d : curve.d;
   const dotOpacityBase = chartStep === 1 ? 0.2 : (chartStep >= 2 && chartStep <= 3) ? 0.15 : isSpotlight ? 0 : isIndexShift ? 0.35 : 1;
 
   const heading = isIndexShift
@@ -891,35 +925,32 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
               {/* Ghost "old" curve — shows previous shape during index shifts */}
               {isIndexShift && indexPhase > 0 && (
                 <motion.path
+                  d={ghostIndexCurveD}
                   fill="none"
                   stroke={MUTED}
                   strokeWidth={1.5}
                   strokeDasharray="6 4"
                   strokeLinecap="round"
-                  initial={{ opacity: 0, d: curve.d }}
-                  animate={{ opacity: 0.25, d: prevCurveD }}
-                  transition={{ opacity: { duration: 0.6 }, d: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 0.25 }}
+                  transition={{ opacity: { duration: 0.6 } }}
                 />
               )}
 
               {/* Demand curve (Acme's curve = base) */}
               {showCurve && (
                 <motion.path
+                  d={isIndexShift ? morphedIndexCurveD : curve.d}
                   fill="none"
                   stroke={NAVY}
                   strokeLinecap="round"
-                  initial={{ pathLength: 0, opacity: 0, d: curve.d }}
+                  initial={{ pathLength: 0, opacity: 0 }}
                   animate={{
-                    d: currentCurveD,
                     pathLength: 1,
                     opacity: showGhostCurves ? 0.6 : isSpotlight ? (spotlightIdx === 1 ? 1 : 0.15) : 1,
                     strokeWidth: isSpotlight && spotlightIdx === 1 ? 3 : 2,
                   }}
-                  transition={{
-                    duration: 1,
-                    ease: "easeOut",
-                    d: { duration: 1.0, ease: [0.22, 1, 0.36, 1] },
-                  }}
+                  transition={{ duration: 1, ease: "easeOut" }}
                 />
               )}
 
@@ -998,7 +1029,9 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
                   : scatterY + (customerPt.y - scatterY) * 0.15;
 
                 const rawTargetY = isAllToCurve ? (isBelowCurve ? pt.y + dot.residualY : scatterY) : scatterY;
-                const shiftOffset = activeIndexCurve ? activeIndexCurve.sampleAt(dot.t).y - pt.y : 0;
+                const toShift = activeIndexCurve ? activeIndexCurve.sampleAt(dot.t).y - pt.y : 0;
+                const fromShift = indexMorphFrom > 0 ? curve.indexCurves[indexMorphFrom - 1].sampleAt(dot.t).y - pt.y : 0;
+                const shiftOffset = isIndexShift ? fromShift + (toShift - fromShift) * indexMorphProgress : 0;
                 const targetY = rawTargetY + shiftOffset;
                 const dotColor = STATUS_COLORS[dot.status];
                 const dotOpacity = dotOpacityBase;
@@ -1102,7 +1135,9 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
                 } else {
                   rawPt = isAllToCurve ? curve.sampleAt(seg.t) : segCustomerSample(seg.t);
                 }
-                const segShiftOffset = activeIndexCurve ? activeIndexCurve.sampleAt(seg.t).y - curve.sampleAt(seg.t).y : 0;
+                const segToShift = activeIndexCurve ? activeIndexCurve.sampleAt(seg.t).y - curve.sampleAt(seg.t).y : 0;
+                const segFromShift = indexMorphFrom > 0 ? curve.indexCurves[indexMorphFrom - 1].sampleAt(seg.t).y - curve.sampleAt(seg.t).y : 0;
+                const segShiftOffset = isIndexShift ? segFromShift + (segToShift - segFromShift) * indexMorphProgress : 0;
                 const pt = isIndexShift ? { x: rawPt.x, y: rawPt.y + segShiftOffset } : rawPt;
                 const belowY = pt.y + seg.offsetY;
                 const isActive = isSpotlight && si === spotlightIdx;

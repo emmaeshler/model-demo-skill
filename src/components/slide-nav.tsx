@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, ChevronDown, Check, Download, MonitorPlay, RotateCcw, Maximize, Minimize, LayoutGrid, Sun, Moon } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, Check, Download, MonitorPlay, RotateCcw, Maximize, Minimize, LayoutGrid, Sun, Moon, PlayCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 export interface NavGroup {
@@ -173,13 +173,24 @@ export function TopBar({
 
           <div className="ml-auto flex items-center gap-3">
 {onStartPresenting && (
-              <button
-                onClick={onStartPresenting}
-                className="flex items-center gap-1.5 rounded-md border border-white/15 px-2.5 py-1 text-xs font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white"
-              >
-                <MonitorPlay className="size-3.5" />
-                Present
-              </button>
+              <>
+                <a
+                  href="/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 rounded-md border border-white/15 px-2.5 py-1 text-xs font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white"
+                >
+                  <PlayCircle className="size-3.5" />
+                  Walk Through
+                </a>
+                <button
+                  onClick={onStartPresenting}
+                  className="flex items-center gap-1.5 rounded-md border border-white/15 px-2.5 py-1 text-xs font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white"
+                >
+                  <MonitorPlay className="size-3.5" />
+                  Present
+                </button>
+              </>
             )}
             <DownloadLink />
             <FullPageButton />
