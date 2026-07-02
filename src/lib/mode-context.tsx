@@ -20,9 +20,18 @@ interface ModeContextValue {
 const ModeContext = createContext<ModeContextValue | null>(null);
 
 export function ModeProvider({ children }: { children: ReactNode }) {
-  const [mode, setModeState] = useState<PresentationMode>("presenter");
+  const [mode, setModeState] = useState<PresentationMode>(() => {
+    if (typeof window !== "undefined" && window.location.pathname.startsWith("/walkthrough")) {
+      return "self";
+    }
+    return "presenter";
+  });
 
   useEffect(() => {
+    if (window.location.pathname.startsWith("/walkthrough")) {
+      setModeState("self");
+      return;
+    }
     const param = new URLSearchParams(window.location.search).get("mode");
     if (param === "presenter" || param === "self") {
       const t = setTimeout(() => setModeState(param));
