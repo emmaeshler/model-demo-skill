@@ -71,43 +71,45 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
     label: "Introduction",
     slides: [
       { index: 0, label: "Welcome" },
-      { index: OVERVIEW_INDEX, label: "Overview", subStep: 0 },
-      { index: OVERVIEW_INDEX, label: "The Model", subStep: 1 },
+      { index: OVERVIEW_INDEX, label: "Five core pillars", subStep: 0 },
     ],
   },
   {
     label: "1 | Design",
     slides: [
-      { index: ONE_MODEL_INDEX, label: "Inputs", subStep: 0 },
-      { index: ONE_MODEL_INDEX, label: "Two Engines", subStep: 1 },
+      { index: ONE_MODEL_INDEX, label: "Intro to pricing model", subStep: 0 },
+      { index: ONE_MODEL_INDEX, label: "Pricing model with ML and strat. guidance", subStep: 1 },
     ],
   },
   {
     label: "2 | Power",
     slides: [
-      { index: POWER_INDEX, label: "Price Points", subStep: 0 },
-      { index: POWER_INDEX, label: "Data Scan", subStep: 1 },
-      { index: POWER_INDEX, label: "Factors", subStep: 2 },
-      { index: POWER_INDEX, label: "Customize", subStep: 3 },
-      { index: POWER_INDEX, label: "Feed", subStep: 4 },
+      { index: POWER_INDEX, label: "Too many prices to manually set", subStep: 0 },
+      { index: POWER_INDEX, label: "The model scans for patterns", subStep: 1 },
+      { index: POWER_INDEX, label: "Pricing factors identified", subStep: 2 },
+      { index: POWER_INDEX, label: "Customize factors for the model", subStep: 3 },
+      { index: POWER_INDEX, label: "Unique model", subStep: 4 },
+      { index: POWER_INDEX, label: "A single price is created", subStep: 5 },
     ],
   },
   {
     label: "3 | Execute",
     slides: [
-      { index: EXECUTE_INDEX, label: "Customer Pricing", subStep: 0 },
+      { index: EXECUTE_INDEX, label: "Acme walkthrough", subStep: 0 },
+      { index: EXECUTE_INDEX, label: "Price adjusted for each customer", subStep: 1 },
     ],
   },
   {
     label: "4 | Refine",
     slides: [
-      { index: REFINE_INDEX, label: "Scattered", subStep: 0 },
-      { index: REFINE_INDEX, label: "Segmentation", subStep: 1 },
-      { index: REFINE_INDEX, label: "Optimal Curve", subStep: 2 },
-      { index: REFINE_INDEX, label: "QuickParts", subStep: 3 },
-      { index: REFINE_INDEX, label: "Acme", subStep: 5 },
-      { index: REFINE_INDEX, label: "MedSupply", subStep: 7 },
-      { index: REFINE_INDEX, label: "Optimized", subStep: 9 },
+      { index: REFINE_INDEX, label: "Refine section intro", subStep: 0 },
+      { index: REFINE_INDEX, label: "The model sees segmentation", subStep: 1 },
+      { index: REFINE_INDEX, label: "Your optimal demand curve", subStep: 2 },
+      { index: REFINE_INDEX, label: "Each customer gets their own curve", subStep: 3 },
+      { index: REFINE_INDEX, label: "Quickparts curve adjustment", subStep: 4 },
+      { index: REFINE_INDEX, label: "Acme curve adjustment", subStep: 5 },
+      { index: REFINE_INDEX, label: "Medsupply curve adjustment", subStep: 6 },
+      { index: REFINE_INDEX, label: "Every price optimized to the curve", subStep: 7 },
     ],
   },
   {
@@ -144,6 +146,7 @@ export default function Home() {
   const [slideSorterOpen, setSlideSorterOpen] = useState(false);
   const [sorterCols, setSorterCols] = useState(4);
   const [navGroups, setNavGroups] = useState(DEFAULT_NAV_GROUPS);
+  const [refineCurveMode, setRefineCurveMode] = useState<"one" | "three">("three");
   const [darkMode, setDarkMode] = useState(false);
   const [presenterNavOpen, setPresenterNavOpen] = useState(false);
   const { mode } = useMode();
@@ -207,6 +210,21 @@ export default function Home() {
       return next;
     });
   }, []);
+
+  useEffect(() => {
+    setNavGroups((prev) =>
+      prev.map((g) => {
+        if (g.label !== "4 | Refine") return g;
+        const allSlides = DEFAULT_NAV_GROUPS.find((dg) => dg.label === "4 | Refine")!.slides;
+        return {
+          ...g,
+          slides: refineCurveMode === "one"
+            ? allSlides.filter((s) => s.subStep !== 3)
+            : allSlides,
+        };
+      }),
+    );
+  }, [refineCurveMode]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode);
@@ -398,6 +416,7 @@ export default function Home() {
               step={subStep}
               onAutoAdvance={skipAnimation ? undefined : () => navigate(slide + 1)}
               skipAnimation={skipAnimation}
+              onCurveModeChange={setRefineCurveMode}
             />
           )}
           {config.kind === "execute" && <ExecuteSlide step={subStep} skipAnimation={skipAnimation} />}

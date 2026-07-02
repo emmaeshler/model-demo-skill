@@ -93,6 +93,7 @@ export function TopBar({
   onToggleDark,
 }: SlideNavProps) {
   const [open, setOpen] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set());
   const panelRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -203,15 +204,29 @@ export function TopBar({
               );
               const groupActive = gi === currentGroupIndex;
 
+              const isExpanded = groupActive || expandedGroups.has(gi);
+
               return (
                 <div key={gi} className="mb-1.5 last:mb-0">
                   <button
-                    onClick={() =>
-                      handleNavigate(
-                        group.slides[0].index,
-                        group.slides[0].subStep ?? 0,
-                      )
-                    }
+                    onClick={() => {
+                      if (groupActive) {
+                        handleNavigate(
+                          group.slides[0].index,
+                          group.slides[0].subStep ?? 0,
+                        );
+                      } else {
+                        setExpandedGroups((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(gi)) {
+                            next.delete(gi);
+                          } else {
+                            next.add(gi);
+                          }
+                          return next;
+                        });
+                      }
+                    }}
                     className={cn(
                       "flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-sm font-medium transition-colors",
                       groupActive
@@ -234,8 +249,16 @@ export function TopBar({
                       {groupDone ? <Check className="size-3" /> : gi + 1}
                     </span>
                     {group.label}
+                    {!groupActive && group.slides.length > 1 && (
+                      <ChevronDown
+                        className={cn(
+                          "ml-auto size-3 text-white/30 transition-transform",
+                          isExpanded && "rotate-180",
+                        )}
+                      />
+                    )}
                   </button>
-                  {groupActive && group.slides.length > 1 && (
+                  {isExpanded && group.slides.length > 1 && (
                     <div className="ml-7 mt-0.5 space-y-0.5">
                       {group.slides.map((s, si) => {
                         const isSlideActive =

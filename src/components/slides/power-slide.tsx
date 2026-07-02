@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 
 const NAVY = "#00446A";
@@ -173,11 +173,12 @@ const DISSOLVE_DOTS = Array.from({ length: 48 }, (_, i) => {
 });
 
 const PRICE_SATELLITES = [
-  { label: "Customer", price: "+$0.60", color: NAVY, cx: 185, cy: 240, r: 65 },
-  { label: "Product", price: "+$0.85", color: ORANGE, cx: 810, cy: 90, r: 65 },
-  { label: "Market", price: "−$0.30", color: GREEN, cx: 250, cy: 410, r: 60 },
-  { label: "Order", price: "+$0.45", color: PURPLE, cx: 855, cy: 370, r: 68 },
+  { label: "Customer", price: "+$0.60", value: 0.60, color: NAVY, cx: 185, cy: 240, r: 65 },
+  { label: "Product", price: "+$0.85", value: 0.85, color: ORANGE, cx: 810, cy: 90, r: 65 },
+  { label: "Market", price: "−$0.30", value: -0.30, color: GREEN, cx: 250, cy: 410, r: 60 },
+  { label: "Order", price: "+$0.45", value: 0.45, color: PURPLE, cx: 855, cy: 370, r: 68 },
 ];
+const BASE_PRICE = 15.90;
 const CONVERGE_MODEL_R = 170;
 
 /* ─── Spotlight data (steps 1-4) ─── */
@@ -439,6 +440,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
 
   const [introPhase, setIntroPhase] = useState(skipAnimation ? 5 : chartStep === 0 ? 0 : 4);
   const [customizePhase, setCustomizePhase] = useState(chartStep > 3 || (skipAnimation && chartStep >= 3) ? CUSTOMIZE_ACTIONS.length : -1);
+  const [deemphasizeRevealed, setDeemphasizeRevealed] = useState(chartStep > 3 || (skipAnimation && chartStep >= 3));
   const [factorsPhase, setFactorsPhase] = useState(chartStep > 2 || (skipAnimation && chartStep >= 2) ? 7 : 0);
   const [morphPhase, setMorphPhase] = useState(chartStep > 2 || (skipAnimation && chartStep >= 2) ? 4 : -1);
   useEffect(() => {
@@ -492,9 +494,32 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
   }, [chartStep, skipAnimation]);
 
   useEffect(() => {
+    if (customizePhase > 3 || skipAnimation) {
+      setDeemphasizeRevealed(true);
+      return;
+    }
+    if (customizePhase === 3) {
+      const t = setTimeout(() => setDeemphasizeRevealed(true), 800);
+      return () => clearTimeout(t);
+    }
+    setDeemphasizeRevealed(false);
+  }, [customizePhase, skipAnimation]);
+
+  const [reorganizing, setReorganizing] = useState(false);
+  useEffect(() => {
+    if (chartStep !== 3 || customizePhase < CUSTOMIZE_ACTIONS.length) {
+      setReorganizing(false);
+      return;
+    }
+    if (skipAnimation) { setReorganizing(true); return; }
+    const t = setTimeout(() => setReorganizing(true), 600);
+    return () => clearTimeout(t);
+  }, [chartStep, customizePhase, skipAnimation]);
+
+  useEffect(() => {
     if (chartStep !== 3 || skipAnimation || !onAutoAdvance) return;
     if (customizePhase >= CUSTOMIZE_ACTIONS.length) {
-      const t = setTimeout(() => onAutoAdvance(), 2500);
+      const t = setTimeout(() => onAutoAdvance(), 3200);
       return () => clearTimeout(t);
     }
   }, [chartStep, customizePhase, skipAnimation, onAutoAdvance]);
@@ -515,13 +540,27 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
     return () => clearTimeout(t);
   }, [chartStep, skipAnimation]);
 
-  const [collapseStarted, setCollapseStarted] = useState(skipAnimation && chartStep >= 5);
+  const [absorbedCount, setAbsorbedCount] = useState(skipAnimation && chartStep >= 5 ? 4 : 0);
   useEffect(() => {
-    if (chartStep < 5) { setCollapseStarted(false); return; }
-    if (skipAnimation) { setCollapseStarted(true); return; }
-    const t = setTimeout(() => setCollapseStarted(true), 2500);
-    return () => clearTimeout(t);
+    if (chartStep < 5) { setAbsorbedCount(0); return; }
+    if (skipAnimation) { setAbsorbedCount(4); return; }
+    setAbsorbedCount(0);
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    for (let i = 0; i < 4; i++) {
+      timers.push(setTimeout(() => setAbsorbedCount(i + 1), 1800 + i * 1500));
+    }
+    return () => timers.forEach(clearTimeout);
   }, [chartStep, skipAnimation]);
+
+  const allAbsorbed = absorbedCount >= 4;
+
+  const convergingPrice = useMemo(() => {
+    let total = BASE_PRICE;
+    for (let i = 0; i < absorbedCount; i++) {
+      total += PRICE_SATELLITES[i].value;
+    }
+    return `$${total.toFixed(2)}`;
+  }, [absorbedCount]);
 
   const [scanCardCount, setScanCardCount] = useState(chartStep > 1 || skipAnimation ? 4 : 0);
   useEffect(() => {
@@ -1227,12 +1266,12 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                       style={{
                         display: "flex",
                         flexDirection: "column",
-                        gap: 18,
                         width: "100%",
                         maxWidth: 960,
                         transformOrigin: "center center",
                       }}
-                      animate={{ scale: 1, opacity: 1 }}
+                      animate={{ scale: 1, opacity: 1, gap: reorganizing ? 8 : 18 }}
+                      transition={{ gap: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } }}
                     >
                       {CATEGORY_LAYOUT.map((cat, catIdx) => {
                         const vert = SQUARE_VERTS[cat.key];
@@ -1289,6 +1328,12 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                                 opacity: 0,
                                 x: 200,
                                 y: FEED_NUDGE_Y[catIdx],
+                              } : reorganizing ? {
+                                scale: 0.85,
+                                opacity: 0.5,
+                                x: 0,
+                                y: 0,
+                                boxShadow: "0 0 0px transparent",
                               } : {
                                 scale: isActiveRow ? [1, 1.06, 1] : 1,
                                 opacity: 1,
@@ -1303,6 +1348,11 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                                 delay: catIdx * 0.04,
                                 ease: [0.4, 0, 0.1, 1],
                                 opacity: { duration: 0.3, delay: catIdx * 0.04 + 0.15 },
+                              } : reorganizing ? {
+                                duration: 0.5,
+                                delay: catIdx * 0.05,
+                                ease: [0.22, 1, 0.36, 1],
+                                layout: { duration: 0.5 },
                               } : { duration: 0.6, delay: 0.3, layout: { duration: 0.6, delay: 0, ease: [0.22, 1, 0.36, 1] } }}
                             >
                               {vert.label}
@@ -1318,13 +1368,13 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                                     const isActivelyElevating =
                                       customizePhase === 2 && f.emphasis === "highlight";
                                     const isElevated =
-                                      customizePhase >= 2 && f.emphasis === "highlight";
+                                      customizePhase >= 2 && customizePhase !== 3 && f.emphasis === "highlight";
                                     const isActivelyDeemphasizing =
-                                      customizePhase === 3 && f.emphasis === "deemphasize";
+                                      customizePhase === 3 && f.emphasis === "deemphasize" && deemphasizeRevealed;
                                     const isDeemphasized =
-                                      customizePhase >= 3 && f.emphasis === "deemphasize";
+                                      customizePhase >= 3 && f.emphasis === "deemphasize" && deemphasizeRevealed;
                                     const customizationActive = customizePhase >= 0 && customizePhase < CUSTOMIZE_ACTIONS.length;
-                                    const shouldFade = customizationActive && !isElevated && !isDeemphasized && !isRemoving && !isActivelyElevating && !isActivelyDeemphasizing;
+                                    const shouldFade = customizationActive && !isElevated && !isDeemphasized && !isRemoving && !isActivelyElevating && !isActivelyDeemphasizing && !(customizePhase === 3 && !deemphasizeRevealed);
                                     return (
                                       <motion.span
                                         key={f.label}
@@ -1358,6 +1408,12 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                                           y: convergeY,
                                           scale: 0,
                                           opacity: 0,
+                                        } : reorganizing ? {
+                                          x: 0,
+                                          y: 0,
+                                          scale: [1, 1.06, 1],
+                                          opacity: 1,
+                                          boxShadow: [`0 0 0px transparent`, `0 0 14px ${TEAL}40`, `0 0 6px ${TEAL}20`],
                                         } : {
                                           x: isRemoving ? [0, -4, 5, -3, 3, -1, 0] : 0,
                                           y: 0,
@@ -1380,18 +1436,23 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                                           delay: catIdx * 0.04 + fi * 0.02,
                                           ease: [0.4, 0, 0.1, 1],
                                           opacity: { duration: 0.35, delay: catIdx * 0.04 + fi * 0.02 + 0.15 },
+                                        } : reorganizing ? {
+                                          duration: 0.8,
+                                          delay: catIdx * 0.06 + fi * 0.03,
+                                          ease: [0.22, 1, 0.36, 1],
+                                          scale: { duration: 0.6, delay: catIdx * 0.06 + fi * 0.03, times: [0, 0.5, 1] },
                                         } : {
                                           x: isRemoving ? { duration: 0.5, delay: 0.5 } : { duration: 0 },
-                                          opacity: { duration: 0.5, delay: isActivelyDeemphasizing ? 1.2 : 0.1 },
+                                          opacity: { duration: 0.5, delay: isActivelyDeemphasizing ? 0.4 : 0.1 },
                                           scale: {
                                             duration: isActivelyElevating ? 0.8 : (isActivelyDeemphasizing || isRemoving) ? 0.6 : 0.3,
-                                            delay: (isActivelyElevating || isActivelyDeemphasizing || isRemoving) ? 0.8 : 0,
+                                            delay: isActivelyDeemphasizing ? 0 : (isActivelyElevating || isRemoving) ? 0.8 : 0,
                                             times: (isActivelyElevating || isActivelyDeemphasizing || isRemoving) ? [0, 0.4, 1] : undefined,
                                             ease: [0.22, 1, 0.36, 1],
                                           },
                                           boxShadow: {
                                             duration: (isActivelyElevating || isActivelyDeemphasizing) ? 0.8 : isRemoving ? 0.6 : 0.3,
-                                            delay: (isActivelyElevating || isActivelyDeemphasizing || isRemoving) ? 0.8 : 0,
+                                            delay: isActivelyDeemphasizing ? 0 : (isActivelyElevating || isRemoving) ? 0.8 : 0,
                                           },
                                           layout: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
                                         }}
@@ -1399,7 +1460,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                                         {f.label}
                                         {isElevated && (
                                           <motion.sup
-                                            style={{ fontSize: 11, fontWeight: 800, color: TEAL, marginLeft: 2, lineHeight: 1 }}
+                                            style={{ fontSize: 15, fontWeight: 800, color: TEAL, marginLeft: 3, lineHeight: 1 }}
                                             initial={{ opacity: 0, scale: 0 }}
                                             animate={{ opacity: 1, scale: 1 }}
                                             transition={{ delay: isActivelyElevating ? 1.2 : 0, duration: 0.3, type: "spring", stiffness: 300 }}
@@ -1412,7 +1473,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                                             style={{ fontSize: 10, fontWeight: 700, color: PURPLE, marginLeft: 2, lineHeight: 1 }}
                                             initial={{ opacity: 0, scale: 0 }}
                                             animate={{ opacity: 1, scale: 1 }}
-                                            transition={{ delay: isActivelyDeemphasizing ? 1.2 : 0, duration: 0.3, type: "spring", stiffness: 300 }}
+                                            transition={{ delay: isActivelyDeemphasizing ? 0.4 : 0, duration: 0.3, type: "spring", stiffness: 300 }}
                                           >
                                             ↓
                                           </motion.sup>
@@ -1423,7 +1484,6 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                                 {isMarket && customizePhase >= 0 && (
                                   <motion.span
                                     key="comp-intel"
-                                    layout
                                     style={{
                                       display: "inline-flex",
                                       alignItems: "center",
@@ -1439,19 +1499,22 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                                       backgroundColor: "#ECF4ED",
                                       transition: "border 0.5s",
                                     }}
-                                    initial={{ opacity: 0, scale: 0.5, x: 30 }}
+                                    initial={{ opacity: 0, scale: 0.6 }}
                                     animate={feeding ? {
                                       opacity: 0,
                                       scale: 0,
-                                      x: 0,
                                       y: FEED_NUDGE_Y[2],
+                                    } : reorganizing ? {
+                                      opacity: 1,
+                                      scale: [1, 1.06, 1],
+                                      y: 0,
+                                      boxShadow: [`0 0 0px transparent`, `0 0 14px ${TEAL}40`, `0 0 6px ${TEAL}20`],
                                     } : {
                                       opacity: customizePhase > 0 && customizePhase < CUSTOMIZE_ACTIONS.length ? 0.35 : 1,
-                                      scale: customizePhase === 0 ? [0.5, 1.15, 1] : 1,
-                                      x: 0,
+                                      scale: 1,
                                       y: 0,
                                       boxShadow: customizePhase === 0
-                                        ? ["0 0 0px transparent", `0 0 24px ${ML_GREEN}50`, `0 0 8px ${ML_GREEN}25`]
+                                        ? `0 0 16px ${ML_GREEN}40`
                                         : "0 0 0px transparent",
                                     }}
                                     transition={feeding ? {
@@ -1459,13 +1522,17 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                                       delay: 0.1,
                                       ease: [0.4, 0, 0.1, 1],
                                       opacity: { duration: 0.35, delay: 0.25 },
-                                    } : {
-                                      delay: customizePhase === 0 ? 1.0 : 0,
+                                    } : reorganizing ? {
                                       duration: 0.8,
-                                      x: { type: "spring", stiffness: 200, damping: 18, delay: customizePhase === 0 ? 0.8 : 0 },
-                                      times: customizePhase === 0 ? [0, 0.5, 1] : undefined,
+                                      delay: 0.2,
                                       ease: [0.22, 1, 0.36, 1],
-                                      layout: { duration: 0.4 },
+                                      scale: { duration: 0.6, delay: 0.2, times: [0, 0.5, 1] },
+                                    } : {
+                                      delay: customizePhase === 0 ? 0.8 : 0,
+                                      duration: 0.6,
+                                      scale: { type: "spring", stiffness: 280, damping: 20, delay: customizePhase === 0 ? 0.8 : 0 },
+                                      opacity: { duration: 0.4, delay: customizePhase === 0 ? 0.8 : 0 },
+                                      ease: [0.22, 1, 0.36, 1],
                                     }}
                                   >
                                     Competitive intelligence
@@ -1577,6 +1644,24 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                     style={{ transformOrigin: `${PLOT_CX}px ${PLOT_CY}px` }}
                   />
                 )}
+                {convergeReady && PRICE_SATELLITES.map((sat, si) => {
+                  const absorbed = si < absorbedCount;
+                  return (
+                    <motion.line
+                      key={`sat-line-${si}`}
+                      x1={PLOT_CX} y1={PLOT_CY}
+                      stroke="#C0C8D0"
+                      strokeWidth={1.2}
+                      initial={{ x2: sat.cx, y2: sat.cy, opacity: 0.35 }}
+                      animate={{
+                        x2: absorbed ? PLOT_CX : sat.cx,
+                        y2: absorbed ? PLOT_CY : sat.cy,
+                        opacity: absorbed ? 0 : 0.35,
+                      }}
+                      transition={{ duration: 0.8, ease: [0.4, 0, 0.1, 1] }}
+                    />
+                  );
+                })}
                 <motion.circle
                   cx={PLOT_CX} cy={PLOT_CY}
                   fill="white" stroke={TEAL} strokeWidth={2.5}
@@ -1613,44 +1698,84 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                     transition={{ duration: 0.6, delay: 0.5 }}
                   />
                 )}
-                {collapseStarted && (
+                {allAbsorbed && (
                   <motion.circle
                     cx={PLOT_CX} cy={PLOT_CY} r={CONVERGE_MODEL_R}
                     fill="none" stroke={TEAL} strokeWidth={3}
                     initial={{ opacity: 0.7, scale: 1 }}
                     animate={{ opacity: 0, scale: 1.8 }}
-                    transition={{ duration: 1.2, delay: 0.6, ease: "easeOut" }}
+                    transition={{ duration: 1.2, delay: 0.3, ease: "easeOut" }}
                     style={{ transformOrigin: `${PLOT_CX}px ${PLOT_CY}px` }}
                   />
                 )}
                 {convergeReady && (
                   <g key="converge-text">
-                    <motion.text
-                      x={PLOT_CX} y={PLOT_CY - 50}
-                      textAnchor="middle"
-                      style={{ fontSize: 18, fontWeight: 700, letterSpacing: "0.18em", fill: MUTED, fontFamily: "inherit" }}
+                    {/* Spinning loader — visible while satellites are being absorbed */}
+                    <motion.circle
+                      cx={PLOT_CX} cy={PLOT_CY - 55}
+                      r={14}
+                      fill="none"
+                      stroke={`${TEAL}30`}
+                      strokeWidth={2.5}
                       initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.4, delay: skipAnimation ? 0 : 0.5 }}
+                      animate={{ opacity: allAbsorbed ? 0 : 1 }}
+                      transition={{ duration: 0.3 }}
+                    />
+                    <motion.circle
+                      cx={PLOT_CX} cy={PLOT_CY - 55}
+                      r={14}
+                      fill="none"
+                      stroke={TEAL}
+                      strokeWidth={2.5}
+                      strokeLinecap="round"
+                      strokeDasharray="22 66"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: allAbsorbed ? 0 : 0.8, rotate: 360 }}
+                      transition={{
+                        opacity: { duration: 0.3 },
+                        rotate: { duration: 1.2, repeat: Infinity, ease: "linear" },
+                      }}
+                      style={{ transformOrigin: `${PLOT_CX}px ${PLOT_CY - 55}px` }}
+                    />
+                    {/* "RECOMMENDED" label — replaces spinner when done */}
+                    <motion.text
+                      x={PLOT_CX} y={PLOT_CY - 48}
+                      textAnchor="middle"
+                      style={{ fontSize: 18, fontWeight: 700, letterSpacing: "0.18em", fill: TEAL, fontFamily: "inherit" }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: allAbsorbed ? 1 : 0 }}
+                      transition={{ duration: 0.4, delay: allAbsorbed ? 0.15 : 0 }}
                     >
                       RECOMMENDED
                     </motion.text>
+                    {/* Price — grey & flickering while calculating, snaps to bold teal when finalized */}
                     <motion.text
-                      x={PLOT_CX} y={PLOT_CY + 30}
+                      x={PLOT_CX} y={PLOT_CY + 18}
                       textAnchor="middle"
-                      style={{ fontSize: 80, fontWeight: 800, fill: NAVY, fontFamily: "inherit" }}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.5, delay: skipAnimation ? 0 : 0.7 }}
+                      style={{ fontSize: 72, fontWeight: 800, fill: allAbsorbed ? NAVY : "#9EAAB4", fontFamily: "inherit" }}
+                      initial={{ opacity: 0, scale: 1 }}
+                      animate={allAbsorbed ? {
+                        opacity: 1,
+                        scale: [1.06, 1],
+                      } : {
+                        opacity: [0.45, 0.7, 0.45],
+                        scale: 1,
+                      }}
+                      transition={allAbsorbed ? {
+                        opacity: { duration: 0.4 },
+                        scale: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+                      } : {
+                        opacity: { duration: 1.4, repeat: Infinity, ease: "easeInOut" },
+                      }}
                     >
-                      $17.50
+                      {convergingPrice}
                     </motion.text>
                     <motion.text
-                      x={PLOT_CX} y={PLOT_CY + 65}
+                      x={PLOT_CX} y={PLOT_CY + 50}
                       textAnchor="middle"
-                      style={{ fontSize: 22, fontWeight: 500, fill: MUTED, fontFamily: "inherit" }}
+                      style={{ fontSize: 20, fontWeight: 500, fill: MUTED, fontFamily: "inherit" }}
                       initial={{ opacity: 0 }}
-                      animate={{ opacity: 0.85 }}
+                      animate={{ opacity: allAbsorbed ? 0.85 : 0.35 }}
                       transition={{ duration: 0.4, delay: skipAnimation ? 0 : 0.9 }}
                     >
                       SKU #A-7200
@@ -1681,74 +1806,50 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                     </motion.text>
                   </g>
                 )}
-                {convergeReady && PRICE_SATELLITES.map((sat, si) => (
-                  <g key={`sat-${si}`}>
-                    <motion.line
-                      x1={PLOT_CX} y1={PLOT_CY}
-                      stroke="#C0C8D0"
-                      strokeWidth={1.2}
-                      initial={{ x2: sat.cx, y2: sat.cy, opacity: 0 }}
-                      animate={collapseStarted ? {
-                        x2: PLOT_CX, y2: PLOT_CY, opacity: 0,
-                      } : {
-                        x2: sat.cx, y2: sat.cy, opacity: 0.35,
-                      }}
-                      transition={collapseStarted ? {
-                        duration: 0.8, delay: si * 0.08, ease: [0.4, 0, 0.1, 1],
-                      } : {
-                        duration: 0.5, delay: 0.3 + si * 0.12,
-                      }}
-                    />
-                    <motion.circle
-                      fill="white" stroke={sat.color} strokeWidth={2.5}
-                      initial={{ cx: sat.cx, cy: sat.cy, r: 0, opacity: 0 }}
-                      animate={collapseStarted ? {
-                        cx: PLOT_CX, cy: PLOT_CY, r: 0, opacity: 0,
-                      } : {
-                        cx: sat.cx, cy: sat.cy, r: sat.r, opacity: 1,
-                      }}
-                      transition={collapseStarted ? {
-                        duration: 1.0, delay: si * 0.1, ease: [0.4, 0, 0.1, 1],
-                      } : {
-                        duration: 0.5, delay: 0.5 + si * 0.15, ease: [0.22, 1, 0.36, 1],
-                      }}
-                    />
-                    <motion.text
-                      textAnchor="middle"
-                      style={{ fontSize: 16, fontWeight: 700, fill: sat.color, fontFamily: "inherit" }}
-                      initial={{ x: sat.cx, y: sat.cy - sat.r - 10, opacity: 0 }}
-                      animate={collapseStarted ? {
-                        x: PLOT_CX, y: PLOT_CY - 20, opacity: 0,
-                      } : {
-                        x: sat.cx, y: sat.cy - sat.r - 10, opacity: 1,
-                      }}
-                      transition={collapseStarted ? {
-                        duration: 0.8, delay: si * 0.08, ease: [0.4, 0, 0.1, 1],
-                      } : {
-                        duration: 0.4, delay: 0.7 + si * 0.15,
-                      }}
-                    >
-                      {sat.label}
-                    </motion.text>
-                    <motion.text
-                      textAnchor="middle"
-                      style={{ fontSize: 30, fontWeight: 800, fill: sat.color, fontFamily: "inherit" }}
-                      initial={{ x: sat.cx, y: sat.cy + 10, opacity: 0 }}
-                      animate={collapseStarted ? {
-                        x: PLOT_CX, y: PLOT_CY, opacity: 0,
-                      } : {
-                        x: sat.cx, y: sat.cy + 10, opacity: 1,
-                      }}
-                      transition={collapseStarted ? {
-                        duration: 0.8, delay: si * 0.08, ease: [0.4, 0, 0.1, 1],
-                      } : {
-                        duration: 0.4, delay: 0.8 + si * 0.15,
-                      }}
-                    >
-                      {sat.price}
-                    </motion.text>
-                  </g>
-                ))}
+                {convergeReady && PRICE_SATELLITES.map((sat, si) => {
+                  const absorbed = si < absorbedCount;
+                  return (
+                    <g key={`sat-${si}`}>
+                      <motion.circle
+                        fill="white" stroke={sat.color} strokeWidth={2.5}
+                        initial={{ cx: sat.cx, cy: sat.cy, r: sat.r, opacity: 1 }}
+                        animate={{
+                          cx: absorbed ? PLOT_CX : sat.cx,
+                          cy: absorbed ? PLOT_CY : sat.cy,
+                          r: absorbed ? 0 : sat.r,
+                          opacity: absorbed ? 0 : 1,
+                        }}
+                        transition={{ duration: 1.2, ease: [0.4, 0, 0.1, 1] }}
+                      />
+                      <motion.text
+                        textAnchor="middle"
+                        style={{ fontSize: 16, fontWeight: 700, fill: sat.color, fontFamily: "inherit" }}
+                        initial={{ x: sat.cx, y: sat.cy - sat.r - 10, opacity: 1 }}
+                        animate={{
+                          x: absorbed ? PLOT_CX : sat.cx,
+                          y: absorbed ? PLOT_CY - 20 : sat.cy - sat.r - 10,
+                          opacity: absorbed ? 0 : 1,
+                        }}
+                        transition={{ duration: 1.0, ease: [0.4, 0, 0.1, 1] }}
+                      >
+                        {sat.label}
+                      </motion.text>
+                      <motion.text
+                        textAnchor="middle"
+                        style={{ fontSize: 30, fontWeight: 800, fill: sat.color, fontFamily: "inherit" }}
+                        initial={{ x: sat.cx, y: sat.cy + 10, opacity: 1 }}
+                        animate={{
+                          x: absorbed ? PLOT_CX : sat.cx,
+                          y: absorbed ? PLOT_CY : sat.cy + 10,
+                          opacity: absorbed ? 0 : 1,
+                        }}
+                        transition={{ duration: 1.0, ease: [0.4, 0, 0.1, 1] }}
+                      >
+                        {sat.price}
+                      </motion.text>
+                    </g>
+                  );
+                })}
               </>
             );
           })()}

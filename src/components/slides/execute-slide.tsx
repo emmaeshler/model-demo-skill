@@ -11,7 +11,7 @@ const STEEL = "#4A7DAA";
 const GREY = "#B8BFC6";
 const ORANGE = "#E56910";
 
-export const EXECUTE_TOTAL_STEPS = 1;
+export const EXECUTE_TOTAL_STEPS = 2;
 
 /* ── Layout ──────────────────────────────────────────── */
 
@@ -152,6 +152,86 @@ function FlowDot({
       }}
       transition={{ duration: 4.5, delay, repeat: Infinity, ease: "linear" }}
     />
+  );
+}
+
+function factorLabel(label: string, value: number): string {
+  const prefix = value >= 0.7 ? "high" : value <= 0.35 ? "low" : "moderate";
+  const name = label.toLowerCase();
+  return `${prefix} ${name}`;
+}
+
+function FlowLabel({
+  text,
+  path,
+  delay,
+  duration,
+  repeatDelay,
+}: {
+  text: string;
+  path: { sx: number; sy: number; cp1x: number; cp1y: number; cp2x: number; cp2y: number; ex: number; ey: number };
+  delay: number;
+  duration: number;
+  repeatDelay: number;
+}) {
+  const lifted = { ...path, sy: path.sy - 20, cp1y: path.cp1y - 20, cp2y: path.cp2y - 20, ey: path.ey - 20 };
+  const { cxArr, cyArr } = sampleCubicBezier(
+    lifted.sx, lifted.sy, lifted.cp1x, lifted.cp1y, lifted.cp2x, lifted.cp2y, lifted.ex, lifted.ey, 40,
+  );
+  const chipW = text.length * 5.2 + 16;
+  const chipH = 18;
+
+  return (
+    <motion.g
+      initial={{ opacity: 0 }}
+      animate={{
+        x: cxArr,
+        y: cyArr,
+        opacity: [0, 0.65, 0.65, 0.65, 0.5, 0],
+      }}
+      transition={{ duration, delay, repeat: Infinity, repeatDelay, ease: "linear" }}
+    >
+      <rect
+        x={-chipW / 2} y={-chipH / 2}
+        width={chipW} height={chipH}
+        rx={chipH / 2}
+        fill="white" stroke={STEEL} strokeWidth={0.8}
+        opacity={0.9}
+      />
+      <text
+        x={0} y={0.5}
+        fontSize="7.5"
+        fontWeight="600"
+        fill={STEEL}
+        textAnchor="middle"
+        dominantBaseline="central"
+      >
+        {text}
+      </text>
+    </motion.g>
+  );
+}
+
+function FlowLabels({
+  cust,
+  path,
+}: {
+  cust: CustomerScenario;
+  path: { sx: number; sy: number; cp1x: number; cp1y: number; cp2x: number; cp2y: number; ex: number; ey: number };
+}) {
+  const labels = cust.sliders.map(s => factorLabel(s.label, s.value));
+  const oneDuration = 4;
+  const gap = 2;
+  const stagger = oneDuration + gap;
+  const totalCycle = stagger * labels.length;
+  const perLabelRepeatDelay = totalCycle - oneDuration;
+
+  return (
+    <g>
+      {labels.map((text, i) => (
+        <FlowLabel key={text} text={text} path={path} delay={0.5 + i * stagger} duration={oneDuration} repeatDelay={perLabelRepeatDelay} />
+      ))}
+    </g>
   );
 }
 
@@ -529,13 +609,15 @@ export function ExecuteSlide({
   const [revealPhase, setRevealPhase] = useState(skipAnimation ? 4 : 1);
   const cust = CUSTOMERS[selected];
 
+  const selfMaxPhase = step === 0 ? 3 : 4;
+
   useEffect(() => {
     if (isPresenter) {
       setRevealPhase(skipAnimation ? 4 : step + 1);
     } else {
-      setRevealPhase(skipAnimation ? 4 : 1);
+      setRevealPhase(skipAnimation ? selfMaxPhase : (step >= 1 ? 4 : 1));
     }
-  }, [step, skipAnimation, isPresenter]);
+  }, [step, skipAnimation, isPresenter, selfMaxPhase]);
 
   useEffect(() => {
     if (revealPhase !== 4) return;
@@ -546,12 +628,12 @@ export function ExecuteSlide({
 
   useEffect(() => {
     if (isPresenter) return;
-    if (revealPhase >= 4) return;
+    if (revealPhase >= selfMaxPhase) return;
     function onKey(e: KeyboardEvent) {
       if (e.key === "ArrowRight" || e.key === "ArrowDown") {
         e.preventDefault();
         e.stopPropagation();
-        setRevealPhase(p => Math.min(p + 1, 4));
+        setRevealPhase(p => Math.min(p + 1, selfMaxPhase));
       } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
         if (revealPhase <= 1) return;
         e.preventDefault();
@@ -751,6 +833,7 @@ export function ExecuteSlide({
                             {[0, 0.8, 1.6, 2.4, 3.2].map((d, i) => (
                               <FlowDot key={`in-dot-${i}`} path={inPathObj} color={ORANGE} delay={0.3 + d} />
                             ))}
+                            <FlowLabels cust={cust} path={inPathObj} />
                           </motion.g>
                         </AnimatePresence>
                         {/* Absorption pulse on the model circle */}

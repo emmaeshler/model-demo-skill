@@ -229,8 +229,12 @@ const STEP_CONTEXT: Record<number, { title: string; body: string }> = {
   },
 };
 
-export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: number; onAutoAdvance?: () => void; skipAnimation?: boolean }) {
+export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeChange }: { step: number; onAutoAdvance?: () => void; skipAnimation?: boolean; onCurveModeChange?: (mode: "one" | "three") => void }) {
   const [curveMode, setCurveMode] = useState<"one" | "three">("three");
+
+  useEffect(() => {
+    onCurveModeChange?.(curveMode);
+  }, [curveMode, onCurveModeChange]);
 
   const curve = useMemo(() => {
     const flipY = (y: number) => 2 * CURVE_SLOT.y + CURVE_SLOT.h - y;
@@ -346,7 +350,9 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
       ? (spotPhase >= 2 ? SEGMENT_HIGHLIGHTS[spotlightIdx].afterBody : SEGMENT_HIGHLIGHTS[spotlightIdx].beforeBody)
       : segZone
         ? segZone.why
-        : STEP_CONTEXT[chartStep]?.body || null;
+        : chartStep === 3 && curveMode === "one"
+          ? STEP_CONTEXT[2]?.body
+          : STEP_CONTEXT[chartStep]?.body || null;
 
   const activeHighlight = isSpotlight ? SEGMENT_HIGHLIGHTS[spotlightIdx] : null;
   const isLifted = spotPhase >= 1;
