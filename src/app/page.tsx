@@ -432,8 +432,6 @@ export default function Home() {
           onStartPresenting={startPresenting}
           showReplay={skipAnimation}
           onReplay={handleReplay}
-          darkMode={darkMode}
-          onToggleDark={() => setDarkMode((d) => !d)}
         />
       )}
 

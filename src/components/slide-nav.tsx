@@ -171,15 +171,6 @@ export function TopBar({
           </button>
 
           <div className="ml-auto flex items-center gap-3">
-            {onToggleDark && (
-              <button
-                onClick={onToggleDark}
-                className="flex items-center gap-1.5 rounded-md border border-white/15 px-2.5 py-1 text-xs font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white"
-              >
-                {darkMode ? <Sun className="size-3.5" /> : <Moon className="size-3.5" />}
-                {darkMode ? "Light" : "Dark"}
-              </button>
-            )}
 {onStartPresenting && (
               <button
                 onClick={onStartPresenting}
