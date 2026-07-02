@@ -259,8 +259,32 @@ export function ProfitGrowthSlide({ step = 0, onAutoAdvance, skipAnimation }: { 
         </AnimatePresence>
       </div>
 
+      <div className="relative w-full flex-1 min-h-0 overflow-hidden">
+        {/* Wireframe skeleton — visible while content fades in */}
+        {step === 0 && !skipAnimation && (
+          <motion.div
+            className="absolute inset-0 flex items-center justify-center"
+            initial={{ opacity: 1 }}
+            animate={{ opacity: 0 }}
+            transition={{ duration: 0.6, delay: 1.8 }}
+            style={{ pointerEvents: "none" }}
+          >
+            <svg viewBox={`0 0 ${CHART_W} ${CHART_H}`} className="w-full" style={{ maxWidth: 700, maxHeight: 240 }} preserveAspectRatio="xMidYMid meet">
+              {/* Axes */}
+              <line x1={PAD} y1={PAD} x2={PAD} y2={CHART_H - PAD} stroke={NAVY} strokeWidth={1.2} strokeDasharray="5 4" opacity={0.18} />
+              <line x1={PAD} y1={CHART_H - PAD} x2={CHART_W - PAD} y2={CHART_H - PAD} stroke={NAVY} strokeWidth={1.2} strokeDasharray="5 4" opacity={0.18} />
+              {/* Ghost demand curve */}
+              <path d={DEMAND_D} fill="none" stroke={NAVY} strokeWidth={2} strokeDasharray="6 4" opacity={0.12} />
+              {/* Ghost scatter */}
+              {DOTS.filter((_, i) => i % 4 === 0).map((d, i) => (
+                <circle key={`psg-${i}`} cx={d.sqX} cy={d.sqY} r={2} fill={NAVY} opacity={0.08} />
+              ))}
+            </svg>
+          </motion.div>
+        )}
+
       <motion.div
-        className="relative w-full flex-1 min-h-0 overflow-hidden"
+        className="absolute inset-0"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8, delay: step === 0 ? 2.2 : 0 }}
@@ -785,6 +809,7 @@ export function ProfitGrowthSlide({ step = 0, onAutoAdvance, skipAnimation }: { 
           )}
         </AnimatePresence>
       </motion.div>
+      </div>
     </div>
   );
 }

@@ -10,7 +10,7 @@ const GREEN = "#2e7d32";
 const PURPLE = "#7B5EA7";
 const MUTED = "#5A6A78";
 
-export const POWER_TOTAL_STEPS = 6;
+export const POWER_TOTAL_STEPS = 5;
 
 const ML_GREEN = "#3A7D44";
 
@@ -185,39 +185,34 @@ const CONVERGE_MODEL_R = 170;
 
 const SPOTLIGHTS = [
   {
-    cluster: 0,
-    icon: "grid",
-    label: "ORDER",
-    count: "14,200 records",
-    pills: ["Acme Corp · $58.20", "Beta Mfg · $42.10", "Coastal · $64.50", "Delta · $31.75"],
-  },
-  {
-    cluster: 1,
-    icon: "trend",
-    label: "MARKET",
-    count: "36 features",
-    pills: ["Resin ↑ 4.2%", "Comp avg $59.10", "Q3 peak", "+2.8% growth"],
-  },
-  {
     cluster: 2,
     icon: "people",
     label: "CUSTOMER",
-    count: "2,400 accounts",
-    pills: ["Strategic / Core / Opp", "Volume & contracts", "Tenure 3.2 yrs"],
+    count: "Found 2,400 customer accounts",
   },
   {
     cluster: 3,
     icon: "chart",
     label: "PRODUCT",
-    count: "18 months",
-    pills: ["Win rate 87%", "Elasticity −0.34", "Discount 6.2%", "Lost gap $4.20"],
+    count: "Found 18 months of product data",
+  },
+  {
+    cluster: 0,
+    icon: "grid",
+    label: "ORDER",
+    count: "Found 14,200 order records",
+  },
+  {
+    cluster: 1,
+    icon: "trend",
+    label: "MARKET",
+    count: "Found 36 market features",
   },
 ];
 
 const TITLES = [
   "2,400 accounts × 15,000 SKUs",
   "The model scans for patterns",
-  "Pricing factors identified",
   "Your customized factors now feed the model",
   "Customized for your business",
   "All four factors converge into a single price",
@@ -226,7 +221,6 @@ const TITLES = [
 const SUBTITLES = [
   "That's 36 million unique price points — far too many for any team to set manually. The model finds the patterns hiding inside.",
   "Examining 36 million price points across four dimensions.",
-  "The model identifies the variables that drive every price — grouped by customer, product, market, and order.",
   "Every business is different. We weigh each factor based on your data — adding what matters, removing what doesn't, and tuning the balance.",
   "Together, these factors uniquely configure your model.",
   "Cost, competition, volume, and demand combine into one recommended price for every SKU.",
@@ -286,10 +280,7 @@ const DOTS = Array.from({ length: DOT_COUNT }, (_, i) => {
   sx = Math.max(PLOT.left + 4, Math.min(PLOT.right - 4, sx));
   sy = Math.max(PLOT.top + 4, Math.min(PLOT.bottom - 4, sy));
 
-  const sizeRoll = rand();
-  const r = sizeRoll < 0.5 ? rand() * 0.8 + 0.8
-          : sizeRoll < 0.85 ? rand() * 1.2 + 1.4
-          : rand() * 1.5 + 2.2;
+  const r = 1.8;
 
   const driftAngle = rand() * Math.PI * 2;
   const driftRadius = rand() * 3 + 1.5;
@@ -304,7 +295,7 @@ const DOTS = Array.from({ length: DOT_COUNT }, (_, i) => {
     cluster,
     r,
     delay: rand() * 0.9,
-    scatterOpacity: rand() * 0.35 + 0.12,
+    scatterOpacity: 0.3,
     driftDx: Math.cos(driftAngle) * driftRadius,
     driftDy: Math.sin(driftAngle) * driftRadius,
     driftDuration,
@@ -360,7 +351,7 @@ const CLUSTER_TARGETS = Array.from({ length: DOT_COUNT }, (_, i) => {
 
 /* ─── Sweep config ─── */
 
-const SWEEP_DURATION = 14;
+const SWEEP_DURATION = 22;
 const PILL_STAGGER_SPAN = 1.5;
 
 const CARD_FLY_TARGETS = [
@@ -439,10 +430,10 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
   }, [step, skipAnimation]);
 
   const [introPhase, setIntroPhase] = useState(skipAnimation ? 5 : chartStep === 0 ? 0 : 4);
-  const [customizePhase, setCustomizePhase] = useState(chartStep > 3 || (skipAnimation && chartStep >= 3) ? CUSTOMIZE_ACTIONS.length : -1);
-  const [deemphasizeRevealed, setDeemphasizeRevealed] = useState(chartStep > 3 || (skipAnimation && chartStep >= 3));
-  const [factorsPhase, setFactorsPhase] = useState(chartStep > 2 || (skipAnimation && chartStep >= 2) ? 7 : 0);
-  const [morphPhase, setMorphPhase] = useState(chartStep > 2 || (skipAnimation && chartStep >= 2) ? 4 : -1);
+  const [customizePhase, setCustomizePhase] = useState(chartStep > 2 || (skipAnimation && chartStep >= 2) ? CUSTOMIZE_ACTIONS.length : -1);
+  const [deemphasizeRevealed, setDeemphasizeRevealed] = useState(chartStep > 2 || (skipAnimation && chartStep >= 2));
+  const [factorsPhase, setFactorsPhase] = useState(chartStep >= 2 ? 7 : 0);
+  const [morphPhase, setMorphPhase] = useState(chartStep >= 2 ? 4 : -1);
   useEffect(() => {
     if (skipAnimation) { setIntroPhase(5); return; }
     if (chartStep !== 0) {
@@ -462,28 +453,16 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
 
   useEffect(() => {
     if (chartStep < 2) { setFactorsPhase(0); return; }
-    if (chartStep > 2 || skipAnimation) { setFactorsPhase(7); return; }
-    setFactorsPhase(0);
-    const t1 = setTimeout(() => setFactorsPhase(1), 1000);
-    return () => { clearTimeout(t1); };
+    setFactorsPhase(7);
   }, [chartStep, skipAnimation]);
 
   useEffect(() => {
-    if (chartStep > 2 || skipAnimation) { setMorphPhase(4); return; }
-    if (factorsPhase < 1) { setMorphPhase(-1); return; }
-    if (factorsPhase > 1 && factorsPhase < 7) return;
-    setMorphPhase(-1);
-    const t0 = setTimeout(() => setMorphPhase(0), 2000);
-    const t1 = setTimeout(() => setMorphPhase(1), 5000);
-    const t2 = setTimeout(() => setMorphPhase(2), 8000);
-    const t3 = setTimeout(() => setMorphPhase(3), 11000);
-    const t4 = setTimeout(() => setFactorsPhase(7), 13000);
-    return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
+    setMorphPhase(4);
   }, [factorsPhase, chartStep, skipAnimation]);
 
   useEffect(() => {
-    if (chartStep < 3) { setCustomizePhase(-1); return; }
-    if (chartStep > 3 || skipAnimation) { setCustomizePhase(CUSTOMIZE_ACTIONS.length); return; }
+    if (chartStep < 2) { setCustomizePhase(-1); return; }
+    if (chartStep > 2 || skipAnimation) { setCustomizePhase(CUSTOMIZE_ACTIONS.length); return; }
     setCustomizePhase(-1);
     const t0 = setTimeout(() => setCustomizePhase(0), 2000);
     const t1 = setTimeout(() => setCustomizePhase(1), 5800);
@@ -507,7 +486,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
 
   const [reorganizing, setReorganizing] = useState(false);
   useEffect(() => {
-    if (chartStep !== 3 || customizePhase < CUSTOMIZE_ACTIONS.length) {
+    if (chartStep !== 2 || customizePhase < CUSTOMIZE_ACTIONS.length) {
       setReorganizing(false);
       return;
     }
@@ -517,7 +496,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
   }, [chartStep, customizePhase, skipAnimation]);
 
   useEffect(() => {
-    if (chartStep !== 3 || skipAnimation || !onAutoAdvance) return;
+    if (chartStep !== 2 || skipAnimation || !onAutoAdvance) return;
     if (customizePhase >= CUSTOMIZE_ACTIONS.length) {
       const t = setTimeout(() => onAutoAdvance(), 3200);
       return () => clearTimeout(t);
@@ -526,23 +505,23 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
 
   const [feedIntro, setFeedIntro] = useState(false);
   useEffect(() => {
-    if (chartStep !== 5 || skipAnimation) { setFeedIntro(false); return; }
+    if (chartStep !== 4 || skipAnimation) { setFeedIntro(false); return; }
     setFeedIntro(true);
     const t = setTimeout(() => setFeedIntro(false), 2000);
     return () => clearTimeout(t);
   }, [chartStep, skipAnimation]);
 
-  const [convergeReady, setConvergeReady] = useState(skipAnimation && chartStep >= 5);
+  const [convergeReady, setConvergeReady] = useState(skipAnimation && chartStep >= 4);
   useEffect(() => {
-    if (chartStep < 5) { setConvergeReady(false); return; }
+    if (chartStep < 4) { setConvergeReady(false); return; }
     if (skipAnimation) { setConvergeReady(true); return; }
     const t = setTimeout(() => setConvergeReady(true), 300);
     return () => clearTimeout(t);
   }, [chartStep, skipAnimation]);
 
-  const [absorbedCount, setAbsorbedCount] = useState(skipAnimation && chartStep >= 5 ? 4 : 0);
+  const [absorbedCount, setAbsorbedCount] = useState(skipAnimation && chartStep >= 4 ? 4 : 0);
   useEffect(() => {
-    if (chartStep < 5) { setAbsorbedCount(0); return; }
+    if (chartStep < 4) { setAbsorbedCount(0); return; }
     if (skipAnimation) { setAbsorbedCount(4); return; }
     setAbsorbedCount(0);
     const timers: ReturnType<typeof setTimeout>[] = [];
@@ -569,23 +548,29 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
     setScanCardCount(0);
     const baseDelay = 3500;
     const s1 = setTimeout(() => setScanCardCount(1), baseDelay);
-    const s2 = setTimeout(() => setScanCardCount(2), baseDelay + 1500);
-    const s3 = setTimeout(() => setScanCardCount(3), baseDelay + 3000);
-    const s4 = setTimeout(() => setScanCardCount(4), baseDelay + 4500);
+    const s2 = setTimeout(() => setScanCardCount(2), baseDelay + 2500);
+    const s3 = setTimeout(() => setScanCardCount(3), baseDelay + 5000);
+    const s4 = setTimeout(() => setScanCardCount(4), baseDelay + 7500);
     return () => { clearTimeout(s1); clearTimeout(s2); clearTimeout(s3); clearTimeout(s4); };
   }, [chartStep, skipAnimation, onAutoAdvance]);
 
   /* ── Chart flow ─────────────────────────────────────── */
   const clustered = chartStep >= 2;
   const factorsVisible = chartStep >= 2;
-  const customized = chartStep >= 3;
-  const feeding = chartStep >= 4;
-  const converging = chartStep >= 5;
+  const customized = chartStep >= 2;
+  const feeding = chartStep >= 3;
+  const converging = chartStep >= 4;
   const sweepActive = chartStep === 1 && !preScan;
+
+  const revealedClusters = new Set(SPOTLIGHTS.slice(0, scanCardCount).map(s => s.cluster));
+  const activeCluster = scanCardCount > 0 ? SPOTLIGHTS[scanCardCount - 1].cluster : -1;
+
+  const allScanned = scanCardCount >= 4;
 
   function dotFill(dot: (typeof DOTS)[0]) {
     if (factorsVisible) return TEAL;
-    if (chartStep >= 1 && dot.cluster < scanCardCount) return DRIVERS[dot.cluster].color;
+    if (chartStep >= 1 && allScanned && revealedClusters.has(dot.cluster)) return DRIVERS[dot.cluster].color;
+    if (chartStep >= 1 && dot.cluster === activeCluster) return DRIVERS[dot.cluster].color;
     return MUTED;
   }
 
@@ -593,8 +578,8 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
     if (customized) return 0;
     if (factorsVisible) return factorsPhase >= 2 ? 0 : 0.12;
     if (chartStep === 1) {
-      if (dot.cluster === scanCardCount - 1) return 0.7;
-      if (dot.cluster < scanCardCount - 1) return 0.45;
+      if (allScanned) return 0.7;
+      if (dot.cluster === activeCluster) return 0.7;
       return dot.scatterOpacity;
     }
     return dot.scatterOpacity;
@@ -675,7 +660,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.35, delay: preScan ? 0.2 : chartStep === 1 ? 0.2 : 0 }}
             >
-              {chartStep === 3 ? (
+              {chartStep === 2 ? (
                 <>
                   <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: NAVY }}>
                     {TITLES[chartStep]}
@@ -721,13 +706,13 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.4 }}
                         >
-                          {SUBTITLES[4]}
+                          {SUBTITLES[3]}
                         </motion.p>
                       )}
                     </AnimatePresence>
                   </div>
                 </>
-              ) : chartStep >= 5 ? (
+              ) : chartStep >= 4 ? (
                 <>
                   <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: NAVY, display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "0 0.3em" }}>
                     {(TITLES[chartStep] ?? "").split(" ").map((word, wi) => (
@@ -762,68 +747,32 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                 </>
               ) : (
                 <>
-                  {chartStep === 2 ? (
-                    <AnimatePresence mode="wait">
-                      <motion.div
-                        key={factorsPhase >= 7 ? 'factors-final' : morphPhase >= 0 && morphPhase < 4 ? `factors-cat-${morphPhase}` : 'factors-transition'}
-                        className="flex flex-col items-center"
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -6 }}
-                        transition={{ duration: 0.5 }}
-                      >
-                        <h2
-                          className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
-                          style={{ color: factorsPhase >= 7 ? NAVY : morphPhase >= 0 && morphPhase < 4 ? CATEGORY_LAYOUT[morphPhase].color : TEAL }}
-                        >
-                          {factorsPhase >= 7
-                            ? "Pricing factors identified"
-                            : morphPhase >= 0 && morphPhase < 4
-                              ? CATEGORY_TITLES[morphPhase]
-                              : "Each pattern becomes a pricing factor"}
-                        </h2>
-                        <p
-                          className="mx-auto mt-1 max-w-2xl text-center text-[1.05rem] leading-relaxed"
-                          style={{ color: MUTED }}
-                        >
-                          {factorsPhase >= 7
-                            ? "The model identifies the variables that drive every price — grouped by customer, product, market, and order."
-                            : morphPhase >= 0 && morphPhase < 4
-                              ? CATEGORY_NARRATION[morphPhase]
-                              : "The model transforms raw signals into the drivers behind every price."}
-                        </p>
-                      </motion.div>
-                    </AnimatePresence>
-                  ) : (
-                    <>
-                      <motion.h2
-                        className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
-                        style={{ color: preScan ? TEAL : NAVY }}
-                      >
-                        {preScan ? (
-                          <span className="relative inline-block">
-                            The model scans for patterns
-                            <motion.span
-                              className="absolute bottom-0 left-0 h-[3px] rounded-full"
-                              style={{ backgroundColor: TEAL }}
-                              initial={{ width: "0%" }}
-                              animate={{ width: "100%" }}
-                              transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }}
-                            />
-                          </span>
-                        ) : TITLES[chartStep]}
-                      </motion.h2>
-                      <motion.p
-                        className="mx-auto mt-1 max-w-2xl text-center text-[1.05rem] leading-relaxed"
-                        style={{ color: MUTED }}
-                        initial={{ opacity: 0, y: 6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4, delay: preScan ? 0.4 : chartStep === 1 ? 0.4 : 0.15 }}
-                      >
-                        {preScan ? "Examining 36 million price points across four dimensions." : SUBTITLES[chartStep]}
-                      </motion.p>
-                    </>
-                  )}
+                  <motion.h2
+                    className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
+                    style={{ color: preScan ? TEAL : NAVY }}
+                  >
+                    {preScan ? (
+                      <span className="relative inline-block">
+                        The model scans for patterns
+                        <motion.span
+                          className="absolute bottom-0 left-0 h-[3px] rounded-full"
+                          style={{ backgroundColor: TEAL }}
+                          initial={{ width: "0%" }}
+                          animate={{ width: "100%" }}
+                          transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }}
+                        />
+                      </span>
+                    ) : TITLES[chartStep]}
+                  </motion.h2>
+                  <motion.p
+                    className="mx-auto mt-1 max-w-2xl text-center text-[1.05rem] leading-relaxed"
+                    style={{ color: MUTED }}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: preScan ? 0.4 : chartStep === 1 ? 0.4 : 0.15 }}
+                  >
+                    {preScan ? "Examining 36 million price points across four dimensions." : SUBTITLES[chartStep]}
+                  </motion.p>
                 </>
               )}
             </motion.div>
@@ -831,9 +780,57 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
         </AnimatePresence>
       </div>
 
-      {/* Chart area */}
+      {/* Chart area wrapper */}
+      <div className="relative w-full flex-1 min-h-0 mt-0">
+        {/* Wireframe skeleton — visible while chart fades in */}
+        <motion.div
+          className="absolute inset-0 flex items-center justify-center"
+          initial={{ opacity: 1 }}
+          animate={{ opacity: chartStep === 0 && introPhase < 4 ? 1 : 0 }}
+          transition={{ duration: 0.6 }}
+          style={{ pointerEvents: "none" }}
+        >
+          <svg viewBox="0 -40 1020 570" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
+            {/* Axes */}
+            <line x1={PLOT.left} y1={PLOT.top} x2={PLOT.left} y2={PLOT.bottom} stroke={NAVY} strokeWidth={1.5} strokeDasharray="6 4" opacity={0.2} />
+            <line x1={PLOT.left} y1={PLOT.bottom} x2={PLOT.right} y2={PLOT.bottom} stroke={NAVY} strokeWidth={1.5} strokeDasharray="6 4" opacity={0.2} />
+            {/* Grid lines */}
+            {Y_TICKS.map((_, i) => (
+              <line key={`sg-y${i}`} x1={PLOT.left} y1={yForTick(i)} x2={PLOT.right} y2={yForTick(i)} stroke={NAVY} strokeWidth={0.7} strokeDasharray="4 6" opacity={0.08} />
+            ))}
+            {X_TICKS.map((_, i) => (
+              <line key={`sg-x${i}`} x1={xForTick(i)} y1={PLOT.top} x2={xForTick(i)} y2={PLOT.bottom} stroke={NAVY} strokeWidth={0.7} strokeDasharray="4 6" opacity={0.08} />
+            ))}
+            {/* Tick labels */}
+            {Y_TICKS.map((label, i) => (
+              <text key={`sg-yl${i}`} x={PLOT.left - 8} y={yForTick(i) + 3.5} textAnchor="end" style={{ fill: NAVY, fontSize: 10, opacity: 0.15 }}>{label}</text>
+            ))}
+            {X_TICKS.map((label, i) => (
+              <text key={`sg-xl${i}`} x={xForTick(i)} y={PLOT.bottom + 16} textAnchor="middle" style={{ fill: NAVY, fontSize: 10, opacity: 0.15 }}>{label}</text>
+            ))}
+            {/* Ghost data points */}
+            {[
+              [180, 120], [250, 200], [350, 160], [420, 280], [500, 220],
+              [300, 340], [600, 300], [700, 260], [150, 310], [550, 150],
+              [450, 370], [200, 250], [650, 180], [380, 100], [800, 320],
+              [280, 80], [520, 350], [750, 140], [160, 380], [620, 240],
+              [230, 150], [470, 310], [580, 200], [340, 250], [720, 350],
+              [140, 220], [680, 130], [400, 400], [560, 280], [850, 250],
+            ].map(([cx, cy], i) => (
+              <circle key={`sg-d${i}`} cx={cx} cy={cy} r={3.5} fill={TEAL} opacity={0.12} />
+            ))}
+            {/* Axis labels */}
+            <text x={PLOT.left + PLOT_W / 2} y={PLOT.bottom + 38} textAnchor="middle" style={{ fill: NAVY, fontSize: 11, fontWeight: 600, opacity: 0.15 }}>
+              Monthly Transaction Volume
+            </text>
+            <text textAnchor="middle" style={{ fill: NAVY, fontSize: 11, fontWeight: 600, opacity: 0.15 }} transform={`translate(28, ${PLOT.top + PLOT_H / 2}) rotate(-90)`}>
+              Selling Price ($)
+            </text>
+          </svg>
+        </motion.div>
+
       <motion.div
-        className="relative w-full flex-1 min-h-0 mt-0 flex items-stretch gap-0"
+        className="absolute inset-0 flex items-stretch gap-0"
         initial={{ opacity: 0, y: 20 }}
         animate={{
           opacity: chartStep === 0 && introPhase < 4 ? 0 : 1,
@@ -1087,9 +1084,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
           })}
 
           {/* ── Highlight rings — dots "found" by the sweep ── */}
-          {sweepActive && Array.from({ length: Math.max(0, scanCardCount) }, (_, ci) => ci).flatMap(ci =>
-            highlightDotsForCluster(ci).map(hi => ({ ...hi, ci }))
-          ).map((hi) => {
+          {sweepActive && scanCardCount > 0 && !allScanned && highlightDotsForCluster(activeCluster).map(hi => ({ ...hi, ci: activeCluster })).map((hi) => {
             const dot = DOTS[hi.index];
             const currentDriver = DRIVERS[hi.ci];
             const sweepDelay = hi.normalizedX * (SWEEP_DURATION / 2);
@@ -1894,12 +1889,14 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
 
 
       </motion.div>
+      </div>
 
       {/* ── Bottom cards (steps 1-4, hidden at cluster step) ── */}
       <AnimatePresence>
         {(chartStep === 1 && !preScan && scanCardCount > 0) && (
           <motion.div
-            className="flex flex-wrap justify-center gap-2 w-full px-4 overflow-hidden"
+            className="flex justify-center gap-2 w-full overflow-hidden -mt-10"
+            style={{ maxWidth: "calc(100% - 2rem)", paddingLeft: "5%", paddingRight: "10%" }}
             initial={{ opacity: 0, y: 16, height: 0 }}
             animate={{ opacity: 1, y: 0, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
@@ -1909,22 +1906,21 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
               const d = DRIVERS[s.cluster];
               const isActive = chartStep === 1 && i === scanCardCount - 1;
               const isRevealed = i < scanCardCount;
+              const allRevealed = scanCardCount >= 4;
               if (!isRevealed) return null;
               return (
                 <motion.div
                   key={s.label}
-                  className="relative overflow-hidden rounded-xl border shadow-sm backdrop-blur-sm"
+                  className="relative overflow-hidden rounded-xl border shadow-sm backdrop-blur-sm flex-1"
                   style={{
                     borderLeftWidth: 4,
                     borderLeftColor: d.color,
                     borderColor: `${d.color}20`,
-                    minWidth: 200,
-                    maxWidth: 260,
                     backgroundColor: "rgba(255,255,255,0.95)",
                   }}
                   initial={{ opacity: 0, y: 12, scale: 0.95 }}
                   animate={{
-                    opacity: isActive ? 1 : 0.55,
+                    opacity: allRevealed || isActive ? 1 : 0.55,
                     y: 0,
                     x: 0,
                     scale: 1,
@@ -1934,7 +1930,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                     ease: [0.22, 1, 0.36, 1],
                   }}
                 >
-                  {isActive && (
+                  {isActive && !allRevealed && (
                     <motion.div
                       className="absolute top-0 left-0 right-0 h-[2px]"
                       style={{
@@ -1946,9 +1942,9 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                     />
                   )}
                   <div className="px-2.5 py-1.5">
-                    <div className="flex items-center gap-1.5 mb-0.5">
+                    <div className="flex items-center gap-1.5">
                       <div className="relative flex-shrink-0">
-                        {isActive && (
+                        {isActive && !allRevealed && (
                           <motion.div
                             className="absolute inset-0 rounded-full"
                             style={{ backgroundColor: d.color }}
@@ -1971,28 +1967,6 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                           {s.count}
                         </div>
                       </div>
-                    </div>
-                    <div className="flex flex-wrap gap-1">
-                      {s.pills.map((pill, pi) => (
-                        <motion.span
-                          key={pill}
-                          className="rounded-full border px-2 py-px text-[0.62rem] font-medium whitespace-nowrap"
-                          style={{
-                            borderColor: `${d.color}25`,
-                            color: d.color,
-                            backgroundColor: `${d.color}06`,
-                          }}
-                          initial={{ opacity: 0, x: -20, scale: 0.8 }}
-                          animate={{ opacity: isActive ? 1 : 0.6, x: 0, scale: 1 }}
-                          transition={{
-                            duration: 0.6,
-                            delay: isActive ? 0.5 + pi * (PILL_STAGGER_SPAN / s.pills.length) : 0,
-                            ease: [0.22, 1, 0.36, 1],
-                          }}
-                        >
-                          {pill}
-                        </motion.span>
-                      ))}
                     </div>
                   </div>
                 </motion.div>

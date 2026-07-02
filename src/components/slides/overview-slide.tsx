@@ -89,12 +89,67 @@ export function OverviewSlide({ step, skipAnimation }: { step: number; skipAnima
         </AnimatePresence>
       </div>
 
-      <motion.div
-        className="relative w-full flex-1 min-h-0 mt-1"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8, delay: 2.2 }}
-      >
+      <div className="relative w-full flex-1 min-h-0 mt-1">
+        {/* Wireframe skeleton — visible while real SVG fades in */}
+        <motion.div
+          className="absolute inset-0"
+          initial={{ opacity: skipAnimation ? 0 : 1 }}
+          animate={{ opacity: 0 }}
+          transition={{ duration: 0.6, delay: skipAnimation ? 0 : 2.0 }}
+          style={{ pointerEvents: "none" }}
+        >
+          <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} className="w-full h-full">
+            {/* Dashed connecting line */}
+            <line
+              x1={LINE[0].x} y1={LINE_Y}
+              x2={LINE[MODULES.length - 1].x} y2={LINE_Y}
+              stroke={NAVY} strokeWidth={1.5} strokeDasharray="8 6" opacity={0.15}
+            />
+            {/* Arrow hints between circles */}
+            {MODULES.slice(0, -1).map((m, i) => {
+              const x2 = LINE[i + 1].x - R - 6;
+              return (
+                <polygon key={`skel-arr-${i}`} points={`${x2},${LINE_Y} ${x2 - 7},${LINE_Y - 4} ${x2 - 7},${LINE_Y + 4}`} fill={m.color} opacity={0.1} />
+              );
+            })}
+            {/* Circle outlines + label placeholders */}
+            {MODULES.map((m, i) => (
+              <g key={`skel-${i}`}>
+                <circle
+                  cx={LINE[i].x} cy={LINE_Y} r={R}
+                  fill={m.color} fillOpacity={0.04}
+                  stroke={m.color} strokeWidth={1.5} strokeDasharray="6 4"
+                  opacity={0.25}
+                />
+                <text
+                  x={LINE[i].x} y={LINE_Y + 1}
+                  fontSize="18" fontWeight="700" fill={m.color}
+                  textAnchor="middle" dominantBaseline="central" opacity={0.18}
+                >
+                  {m.number}
+                </text>
+                <rect
+                  x={LINE[i].x - 35} y={LINE_Y + R + 16}
+                  width={70} height={8} rx={4}
+                  fill={m.color} opacity={0.12}
+                />
+                <rect
+                  x={LINE[i].x - 50} y={LINE_Y + R + 32}
+                  width={100} height={6} rx={3}
+                  fill={NAVY} opacity={0.07}
+                />
+              </g>
+            ))}
+          </svg>
+        </motion.div>
+
+        {/* Real content */}
+        <motion.div
+          className="absolute inset-0"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, delay: 2.2 }}
+        >
         <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} className="w-full h-full">
           {/* Connecting arrows between adjacent steps */}
           {MODULES.slice(0, -1).map((m, i) => {
@@ -318,7 +373,8 @@ export function OverviewSlide({ step, skipAnimation }: { step: number; skipAnima
             );
           })}
         </svg>
-      </motion.div>
+        </motion.div>
+      </div>
     </div>
   );
 }

@@ -31,18 +31,14 @@ const NOTES: Record<string, string[]> = {
     "Every past pricing decision — win or loss — teaches the model about price sensitivity.",
   ],
   "power:2": [
-    "Key pricing drivers are identified and weighted.",
-    "The model learns which factors matter most for each segment and situation.",
-  ],
-  "power:3": [
     "Every business is different — we tune each factor based on your data.",
     "Add what matters, remove what doesn't, and adjust the balance.",
   ],
-  "power:4": [
+  "power:3": [
     "Your customized factors now feed directly into the pricing engine.",
     "The model combines all inputs into a unified recommendation.",
   ],
-  "power:5": [
+  "power:4": [
     "Cost, competition, volume, and demand converge into one recommended price.",
     "This is the output for a single SKU — the model does this for every product.",
   ],

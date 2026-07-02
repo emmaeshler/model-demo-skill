@@ -14,6 +14,7 @@ import { ExecuteSlide, EXECUTE_TOTAL_STEPS } from "@/components/slides/execute-s
 import { RefineSlide, REFINE_TOTAL_STEPS } from "@/components/slides/refine-slide";
 import { ProfitGrowthSlide, PROFIT_GROWTH_TOTAL_STEPS } from "@/components/slides/profit-growth-slide";
 import { ClosingSummarySlide } from "@/components/slides/closing-summary";
+import { AnimationGlossary } from "@/components/animation-glossary";
 
 type SlideKind =
   | "intro"
@@ -66,6 +67,83 @@ const SUB_STEP_CONFIG: Record<number, number> = {
 
 const EXECUTE_PRESENTER_STEPS = 4;
 
+type EngineFocus = "ml" | "strat" | "both" | null;
+
+const ENGINE_FOCUS_MAP: Record<string, EngineFocus> = {
+  // power
+  [`${POWER_INDEX}-1`]: "ml",
+  [`${POWER_INDEX}-2`]: "strat",
+  [`${POWER_INDEX}-3`]: "both",
+  [`${POWER_INDEX}-4`]: "both",
+  // execute
+  [`${EXECUTE_INDEX}-0`]: "both",
+  [`${EXECUTE_INDEX}-1`]: "both",
+  // refine
+  [`${REFINE_INDEX}-1`]: "ml",
+  [`${REFINE_INDEX}-2`]: "ml",
+  [`${REFINE_INDEX}-3`]: "ml",
+  [`${REFINE_INDEX}-4`]: "ml",
+  [`${REFINE_INDEX}-5`]: "ml",
+  [`${REFINE_INDEX}-6`]: "ml",
+  [`${REFINE_INDEX}-7`]: "ml",
+  [`${REFINE_INDEX}-8`]: "strat",
+  // profit-growth
+  [`${PROFIT_GROWTH_INDEX}-2`]: "both",
+  [`${PROFIT_GROWTH_INDEX}-3`]: "ml",
+  [`${PROFIT_GROWTH_INDEX}-4`]: "both",
+};
+
+const ML_GREEN = "#3A7D44";
+const STRAT_BLUE = "#2A7BA5";
+
+function EngineIndicator({ focus }: { focus: EngineFocus }) {
+  const mlActive = focus === "ml" || focus === "both";
+  const stratActive = focus === "strat" || focus === "both";
+
+  return (
+    <AnimatePresence>
+      {focus && (
+        <motion.div
+          className="fixed top-[80px] left-4 z-50 flex items-center gap-2.5 rounded-lg bg-white/95 px-3 py-2 shadow-md ring-1 ring-black/[0.06] backdrop-blur-sm"
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+        >
+          <svg viewBox="0 0 28 28" className="size-7 shrink-0" aria-hidden="true">
+            <motion.path
+              d="M 14 2 A 12 12 0 0 1 14 26 Z"
+              animate={{ fill: mlActive ? ML_GREEN : "#D1D5DB" }}
+              transition={{ duration: 0.35 }}
+            />
+            <motion.path
+              d="M 14 26 A 12 12 0 0 1 14 2 Z"
+              animate={{ fill: stratActive ? STRAT_BLUE : "#D1D5DB" }}
+              transition={{ duration: 0.35 }}
+            />
+          </svg>
+          <div className="flex flex-col gap-0.5">
+            <motion.span
+              className="text-[11px] font-semibold leading-tight"
+              animate={{ color: mlActive ? ML_GREEN : "#9CA3AF", opacity: mlActive ? 1 : 0.6 }}
+              transition={{ duration: 0.35 }}
+            >
+              ML Prediction
+            </motion.span>
+            <motion.span
+              className="text-[11px] font-semibold leading-tight"
+              animate={{ color: stratActive ? STRAT_BLUE : "#9CA3AF", opacity: stratActive ? 1 : 0.6 }}
+              transition={{ duration: 0.35 }}
+            >
+              Strategic Guidance
+            </motion.span>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 const DEFAULT_NAV_GROUPS: NavGroup[] = [
   {
     label: "Introduction",
@@ -86,10 +164,9 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
     slides: [
       { index: POWER_INDEX, label: "Too many prices to manually set", subStep: 0 },
       { index: POWER_INDEX, label: "The model scans for patterns", subStep: 1 },
-      { index: POWER_INDEX, label: "Pricing factors identified", subStep: 2 },
-      { index: POWER_INDEX, label: "Customize factors for the model", subStep: 3 },
-      { index: POWER_INDEX, label: "Unique model", subStep: 4 },
-      { index: POWER_INDEX, label: "A single price is created", subStep: 5 },
+      { index: POWER_INDEX, label: "Customize factors for the model", subStep: 2 },
+      { index: POWER_INDEX, label: "Unique model", subStep: 3 },
+      { index: POWER_INDEX, label: "A single price is created", subStep: 4 },
     ],
   },
   {
@@ -157,6 +234,7 @@ export function Home() {
   const [navGroups, setNavGroups] = useState(DEFAULT_NAV_GROUPS);
   const [refineCurveMode, setRefineCurveMode] = useState<"one" | "three">("three");
   const [darkMode, setDarkMode] = useState(false);
+  const [glossaryOpen, setGlossaryOpen] = useState(false);
   const [presenterNavOpen, setPresenterNavOpen] = useState(false);
   const { mode } = useMode();
   const channelRef = useRef<BroadcastChannel | null>(null);
@@ -182,6 +260,7 @@ export function Home() {
   const hasSubSteps = maxSteps > 0;
   const config = SLIDES[slide];
   const notes = getPresenterNotes(config?.kind ?? "", subStep);
+  const engineFocus = ENGINE_FOCUS_MAP[`${slide}-${subStep}`] ?? null;
 
   const displayNavGroups = useMemo(() => {
     if (presenterSkipped.size === 0) return navGroups;
@@ -455,6 +534,8 @@ export function Home() {
       } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
         e.preventDefault();
         navigate(slide - 1);
+      } else if (e.key === "Escape" && glossaryOpen) {
+        setGlossaryOpen(false);
       } else if (e.key === "Escape" && presenterNavOpen) {
         setPresenterNavOpen(false);
       } else if (e.key === "Escape" && slideSorterOpen) {
@@ -465,7 +546,7 @@ export function Home() {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [slide, navigate, isAudience, presenting, endPresenting, slideSorterOpen, presenterNavOpen]);
+  }, [slide, navigate, isAudience, presenting, endPresenting, slideSorterOpen, presenterNavOpen, glossaryOpen]);
 
   return (
     <>
@@ -524,6 +605,8 @@ export function Home() {
         </MotionConfig>
       </main>
 
+      <EngineIndicator focus={engineFocus} />
+
       {isAudience ? (
         <AudienceTopBar
           groups={displayNavGroups}
@@ -539,6 +622,7 @@ export function Home() {
           onNavigate={navigate}
           animationDone={animationDone}
           onStartPresenting={mode === "presenter" ? startPresenting : undefined}
+          onAnimationGlossary={() => setGlossaryOpen(true)}
           showReplay={skipAnimation}
           onReplay={handleReplay}
         />
@@ -686,6 +770,8 @@ export function Home() {
           </div>
         </div>
       )}
+
+      {glossaryOpen && <AnimationGlossary onClose={() => setGlossaryOpen(false)} />}
 
       {/* Presenter console overlay */}
       {presenting && !isAudience && (

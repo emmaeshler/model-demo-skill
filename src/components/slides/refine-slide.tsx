@@ -654,9 +654,44 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
       </div>
 
       {/* Chart area */}
+      <div className="relative w-full flex-1 min-h-0 mt-0" style={{ maxHeight: "calc(100% - 120px)" }}>
+        {/* Wireframe skeleton — visible while chart fades in */}
+        <motion.div
+          className="absolute inset-0 flex items-center justify-center"
+          initial={{ opacity: 1 }}
+          animate={{ opacity: chartStep === 0 && introPhase < 5 ? 1 : 0 }}
+          transition={{ duration: 0.6 }}
+          style={{ pointerEvents: "none" }}
+        >
+          <svg viewBox={`0 -6 ${CURVE_SLOT.x + CURVE_SLOT.w + 40} ${BASE_Y + 30}`} className="w-full h-full" preserveAspectRatio="xMidYMid meet">
+            {/* Axes */}
+            <line x1={CURVE_SLOT.x} y1={CURVE_SLOT.y} x2={CURVE_SLOT.x} y2={BASE_Y} stroke={NAVY} strokeWidth={1} strokeDasharray="4 3" opacity={0.18} />
+            <line x1={CURVE_SLOT.x} y1={BASE_Y} x2={CURVE_SLOT.x + CURVE_SLOT.w} y2={BASE_Y} stroke={NAVY} strokeWidth={1} strokeDasharray="4 3" opacity={0.18} />
+            {/* Grid */}
+            {Array.from({ length: 5 }, (_, i) => {
+              const y = CURVE_SLOT.y + ((i + 1) / 6) * CURVE_SLOT.h;
+              return <line key={`rsg-h${i}`} x1={CURVE_SLOT.x} y1={y} x2={CURVE_SLOT.x + CURVE_SLOT.w} y2={y} stroke={NAVY} strokeWidth={0.5} strokeDasharray="3 5" opacity={0.07} />;
+            })}
+            {/* Ghost demand curve */}
+            <path
+              d={`M ${CURVE_SLOT.x} ${CURVE_SLOT.y + 8} Q ${CURVE_SLOT.x + CURVE_SLOT.w * 0.25} ${CURVE_SLOT.y + CURVE_SLOT.h * 0.35} ${CURVE_SLOT.x + CURVE_SLOT.w * 0.5} ${CURVE_SLOT.y + CURVE_SLOT.h * 0.65} T ${CURVE_SLOT.x + CURVE_SLOT.w} ${BASE_Y - 8}`}
+              fill="none" stroke={NAVY} strokeWidth={2} strokeDasharray="6 4" opacity={0.14}
+            />
+            {/* Ghost scatter dots */}
+            {[
+              [0.08, 0.15], [0.12, 0.22], [0.18, 0.35], [0.25, 0.30], [0.15, 0.50],
+              [0.35, 0.48], [0.42, 0.55], [0.50, 0.62], [0.30, 0.70], [0.55, 0.58],
+              [0.62, 0.72], [0.70, 0.78], [0.78, 0.82], [0.85, 0.88], [0.92, 0.90],
+              [0.22, 0.60], [0.45, 0.45], [0.68, 0.68], [0.38, 0.80], [0.75, 0.75],
+              [0.05, 0.40], [0.28, 0.55], [0.52, 0.50], [0.65, 0.85], [0.88, 0.82],
+            ].map(([tx, ty], i) => (
+              <circle key={`rsg-d${i}`} cx={CURVE_SLOT.x + tx * CURVE_SLOT.w} cy={CURVE_SLOT.y + ty * CURVE_SLOT.h} r={1.8} fill={NAVY} opacity={0.09} />
+            ))}
+          </svg>
+        </motion.div>
+
       <motion.div
-        className="w-full flex-1 min-h-0 mt-0 flex flex-col"
-        style={{ maxHeight: "calc(100% - 120px)" }}
+        className="absolute inset-0 flex flex-col"
         initial={{ opacity: 0, y: 20 }}
         animate={{
           opacity: chartStep === 0 && introPhase < 5 ? 0 : 1,
@@ -1400,6 +1435,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
         </div>
 
       </motion.div>
+      </div>
     </div>
   );
 }
