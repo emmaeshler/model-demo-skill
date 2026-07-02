@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, ChevronDown, X, LayoutGrid, ZoomIn, ZoomOut, Sun, Moon } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, X, LayoutGrid, ZoomIn, ZoomOut, Sun, Moon, Pause, Play, RotateCcw } from "lucide-react";
 import { AnimatePresence, motion, MotionConfig } from "framer-motion";
 import { type NavGroup, SlideNav, AudienceTopBar } from "@/components/slide-nav";
 import { useMode } from "@/lib/mode-context";
@@ -132,6 +132,14 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
   },
 ];
 
+function formatElapsed(seconds: number) {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
 const AUTO_ANIM_SLIDES = new Set<SlideKind>([]);
 
 const DEFAULT_DONE_MS = 2000;
@@ -154,7 +162,16 @@ export function Home() {
   const channelRef = useRef<BroadcastChannel | null>(null);
   const audienceWindowRef = useRef<Window | null>(null);
   const iframeSrcRef = useRef("");
+  const [presentElapsed, setPresentElapsed] = useState(0);
+  const [timerRunning, setTimerRunning] = useState(false);
+  const [clockTime, setClockTime] = useState("");
+  const timerStartRef = useRef(0);
   const total = SLIDES.length;
+
+  const presenterSkipped = useMemo(
+    () => (mode === "presenter" ? new Set([OVERVIEW_INDEX]) : new Set<number>()),
+    [mode],
+  );
 
   const subStepConfig = useMemo(() => {
     if (mode !== "presenter") return SUB_STEP_CONFIG;
@@ -166,22 +183,33 @@ export function Home() {
   const config = SLIDES[slide];
   const notes = getPresenterNotes(config?.kind ?? "", subStep);
 
+  const displayNavGroups = useMemo(() => {
+    if (presenterSkipped.size === 0) return navGroups;
+    return navGroups
+      .map((g) => ({
+        ...g,
+        slides: g.slides.filter((s) => !presenterSkipped.has(s.index)),
+      }))
+      .filter((g) => g.slides.length > 0);
+  }, [navGroups, presenterSkipped]);
+
   const currentGroup =
-    navGroups.find((g) =>
+    displayNavGroups.find((g) =>
       g.slides.some(
         (s) =>
           s.index === slide &&
           (s.subStep === undefined || s.subStep === subStep),
       ),
-    ) ?? navGroups.find((g) => g.slides.some((s) => s.index === slide));
+    ) ?? displayNavGroups.find((g) => g.slides.some((s) => s.index === slide));
 
   const allClickSteps = useMemo(() => {
     const steps: { slideIndex: number; stepIndex: number; kind: SlideKind; label: string; groupLabel: string; groupIndex: number; slideInGroupIndex: number }[] = [];
     for (let i = 0; i < SLIDES.length; i++) {
+      if (presenterSkipped.has(i)) continue;
       const kind = SLIDES[i].kind;
       const stepsCount = subStepConfig[i] ?? 0;
-      const gi = navGroups.findIndex((g) => g.slides.some((s) => s.index === i));
-      const group = gi >= 0 ? navGroups[gi] : undefined;
+      const gi = displayNavGroups.findIndex((g) => g.slides.some((s) => s.index === i));
+      const group = gi >= 0 ? displayNavGroups[gi] : undefined;
       const groupLabel = group?.label ?? "";
       if (stepsCount === 0) {
         const si = group?.slides.findIndex((s) => s.index === i) ?? -1;
@@ -197,7 +225,7 @@ export function Home() {
       }
     }
     return steps;
-  }, [navGroups, subStepConfig]);
+  }, [displayNavGroups, subStepConfig, presenterSkipped]);
 
   const updateSlideLabel = useCallback((groupIndex: number, slideInGroupIndex: number, newLabel: string) => {
     setNavGroups((prev) => {
@@ -280,13 +308,64 @@ export function Home() {
     audienceWindowRef.current = window.open(base + qs, "audience-view") ?? null;
     iframeSrcRef.current = base + qs;
     setPresenting(true);
+    timerStartRef.current = Date.now();
+    setPresentElapsed(0);
+    setTimerRunning(true);
   }, [slide, subStep]);
 
   const endPresenting = useCallback(() => {
     audienceWindowRef.current?.close();
     audienceWindowRef.current = null;
     setPresenting(false);
+    setTimerRunning(false);
   }, []);
+
+  useEffect(() => {
+    if (!timerRunning) return;
+    const id = setInterval(() => {
+      setPresentElapsed(Math.floor((Date.now() - timerStartRef.current) / 1000));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [timerRunning]);
+
+  useEffect(() => {
+    if (!presenting) return;
+    const update = () =>
+      setClockTime(new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }));
+    update();
+    const id = setInterval(update, 30_000);
+    return () => clearInterval(id);
+  }, [presenting]);
+
+  const toggleTimer = useCallback(() => {
+    if (timerRunning) {
+      setTimerRunning(false);
+    } else {
+      timerStartRef.current = Date.now() - presentElapsed * 1000;
+      setTimerRunning(true);
+    }
+  }, [timerRunning, presentElapsed]);
+
+  const resetTimer = useCallback(() => {
+    timerStartRef.current = Date.now();
+    setPresentElapsed(0);
+  }, []);
+
+  const nextPosition = useMemo(() => {
+    const currentMax = subStepConfig[slide] ?? 0;
+    if (currentMax > 0 && subStep < currentMax - 1) {
+      return { slideIndex: slide, stepIndex: subStep + 1 };
+    }
+    let next = slide + 1;
+    while (presenterSkipped.has(next) && next < total) next++;
+    if (next >= total) return null;
+    return { slideIndex: next, stepIndex: 0 };
+  }, [slide, subStep, subStepConfig, presenterSkipped, total]);
+
+  const currentClickIndex = useMemo(
+    () => allClickSteps.findIndex((s) => s.slideIndex === slide && s.stepIndex === subStep),
+    [allClickSteps, slide, subStep],
+  );
 
   useEffect(() => {
     if (skipAnimation || isAudience || mode === "presenter") {
@@ -311,12 +390,22 @@ export function Home() {
 
   const navigate = useCallback(
     (index: number, targetSubStep?: number) => {
+      // Skip over presenter-hidden slides
+      let target = index;
+      if (targetSubStep === undefined && presenterSkipped.has(target)) {
+        const forward = target > slide;
+        while (presenterSkipped.has(target) && target >= 0 && target < total) {
+          target += forward ? 1 : -1;
+        }
+        if (target < 0 || target >= total) return;
+      }
+
       if (targetSubStep !== undefined) {
         const goingBack =
-          index < slide || (index === slide && targetSubStep < subStep);
-        if (index >= 0 && index < total) {
+          target < slide || (target === slide && targetSubStep < subStep);
+        if (target >= 0 && target < total) {
           setSkipAnimation(goingBack);
-          setSlide(index);
+          setSlide(target);
           setSubStep(targetSubStep);
         }
         return;
@@ -325,36 +414,36 @@ export function Home() {
       const currentMax = subStepConfig[slide] ?? 0;
 
       // Forward within sub-steps
-      if (index === slide + 1 && currentMax > 0 && subStep < currentMax - 1) {
+      if (target === slide + 1 && currentMax > 0 && subStep < currentMax - 1) {
         setSkipAnimation(false);
         setSubStep((s) => s + 1);
         return;
       }
       // Back within sub-steps
-      if (index === slide - 1 && currentMax > 0 && subStep > 0) {
+      if (target === slide - 1 && currentMax > 0 && subStep > 0) {
         setSkipAnimation(true);
         setSubStep((s) => s - 1);
         return;
       }
 
-      if (index >= 0 && index < total) {
-        const goingBack = index < slide;
+      if (target >= 0 && target < total) {
+        const goingBack = target < slide;
 
         // Going back into a sub-step slide from the next slide → land on last step
-        const targetMax = subStepConfig[index] ?? 0;
-        if (goingBack && targetMax > 0 && slide === index + 1) {
+        const targetMax = subStepConfig[target] ?? 0;
+        if (goingBack && targetMax > 0 && slide === target + 1) {
           setSkipAnimation(true);
-          setSlide(index);
+          setSlide(target);
           setSubStep(targetMax - 1);
           return;
         }
 
         setSkipAnimation(goingBack);
-        setSlide(index);
+        setSlide(target);
         setSubStep(0);
       }
     },
-    [total, slide, subStep, subStepConfig],
+    [total, slide, subStep, subStepConfig, presenterSkipped],
   );
 
   useEffect(() => {
@@ -437,7 +526,7 @@ export function Home() {
 
       {isAudience ? (
         <AudienceTopBar
-          groups={navGroups}
+          groups={displayNavGroups}
           current={slide}
           currentSubStep={hasSubSteps ? subStep : undefined}
         />
@@ -446,7 +535,7 @@ export function Home() {
           current={slide}
           currentSubStep={hasSubSteps ? subStep : undefined}
           total={total}
-          groups={navGroups}
+          groups={displayNavGroups}
           onNavigate={navigate}
           animationDone={animationDone}
           onStartPresenting={mode === "presenter" ? startPresenting : undefined}
@@ -600,137 +689,194 @@ export function Home() {
 
       {/* Presenter console overlay */}
       {presenting && !isAudience && (
-        <div className="fixed inset-0 z-[100] flex flex-col bg-[#0a0a0a]">
-          <div className="relative flex shrink-0 items-center justify-between border-b border-white/10 bg-[#111]/90 px-5 py-2.5">
-            <div className="flex items-center gap-3">
-              <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-white/40">
-                Presenter Console
-              </span>
-              <span className="text-white/15">|</span>
-              <button
-                onClick={() => setPresenterNavOpen((o) => !o)}
-                className="flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium text-white/70 transition-colors hover:bg-white/10"
-              >
-                {currentGroup?.label}
-                <ChevronDown
-                  className={cn(
-                    "size-3 text-white/40 transition-transform",
-                    presenterNavOpen && "rotate-180",
-                  )}
-                />
-              </button>
-            </div>
+        <div className={cn("fixed inset-0 z-[100] flex flex-col transition-colors", darkMode ? "bg-[#0a0a0a]" : "bg-gray-100")}>
+          {/* Top bar */}
+          <div className={cn("relative flex shrink-0 items-center border-b px-4 py-2 transition-colors", darkMode ? "border-white/10 bg-[#111]/90" : "border-black/10 bg-white")}>
             <div className="flex items-center gap-2">
               <button
+                onClick={endPresenting}
+                className={cn("flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors", darkMode ? "border-white/15 bg-white/5 text-white/70 hover:border-red-500/30 hover:bg-red-500/20 hover:text-red-300" : "border-black/15 bg-black/5 text-gray-600 hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-600")}
+              >
+                <X className="size-3.5" />
+                End Show
+              </button>
+              <span className={darkMode ? "text-white/15" : "text-black/15"}>|</span>
+              <button
+                onClick={() => setPresenterNavOpen((o) => !o)}
+                className={cn("flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium transition-colors", darkMode ? "text-white/70 hover:bg-white/10" : "text-gray-600 hover:bg-black/5")}
+              >
+                {currentGroup?.label}
+                <ChevronDown className={cn("size-3 transition-transform", darkMode ? "text-white/40" : "text-gray-400", presenterNavOpen && "rotate-180")} />
+              </button>
+            </div>
+
+            {/* Center: Timer */}
+            <div className="absolute left-1/2 flex -translate-x-1/2 items-center gap-2">
+              <span className={cn("font-mono text-xl font-semibold tabular-nums", darkMode ? "text-white" : "text-gray-900")}>
+                {formatElapsed(presentElapsed)}
+              </span>
+              <button
+                onClick={toggleTimer}
+                className={cn("rounded-md p-1.5 transition-colors", darkMode ? "text-white/50 hover:bg-white/10 hover:text-white" : "text-gray-400 hover:bg-black/5 hover:text-gray-700")}
+                aria-label={timerRunning ? "Pause timer" : "Resume timer"}
+              >
+                {timerRunning ? <Pause className="size-3.5" /> : <Play className="size-3.5" />}
+              </button>
+              <button
+                onClick={resetTimer}
+                className={cn("rounded-md p-1.5 transition-colors", darkMode ? "text-white/50 hover:bg-white/10 hover:text-white" : "text-gray-400 hover:bg-black/5 hover:text-gray-700")}
+                aria-label="Reset timer"
+              >
+                <RotateCcw className="size-3.5" />
+              </button>
+            </div>
+
+            {/* Right: Clock + Dark mode */}
+            <div className="ml-auto flex items-center gap-3">
+              <span className={cn("text-lg font-medium", darkMode ? "text-white/60" : "text-gray-500")}>
+                {clockTime}
+              </span>
+              <button
                 onClick={() => setDarkMode((d) => !d)}
-                className="flex items-center gap-1.5 rounded-md border border-white/15 bg-white/5 px-2.5 py-1.5 text-xs font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white"
+                className={cn("flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors", darkMode ? "border-white/15 bg-white/5 text-white/70 hover:border-white/30 hover:bg-white/10 hover:text-white" : "border-black/15 bg-black/5 text-gray-600 hover:border-black/30 hover:bg-black/10 hover:text-gray-900")}
               >
                 {darkMode ? <Sun className="size-3.5" /> : <Moon className="size-3.5" />}
                 {darkMode ? "Light" : "Dark"}
               </button>
-              <button
-                onClick={endPresenting}
-                className="flex items-center gap-1.5 rounded-md border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/70 transition-colors hover:border-red-500/30 hover:bg-red-500/20 hover:text-red-300"
-              >
-                <X className="size-3.5" />
-                End Presenting
-              </button>
             </div>
 
+            {/* Nav dropdown */}
             {presenterNavOpen && (
-              <div className="absolute left-0 right-0 top-full z-10 max-h-[50vh] overflow-y-auto border-b border-white/10 bg-[#111]/95 p-3 backdrop-blur-md">
-                {navGroups.map((group, gi) => {
-                  return (
-                    <div key={gi} className="mb-2 last:mb-0">
-                      <div className="mb-1 px-2 text-[10px] font-bold uppercase tracking-wider text-white/30">
-                        {group.label}
-                      </div>
-                      {group.slides.map((s, si) => {
-                        const isActive =
-                          s.index === slide &&
-                          (s.subStep === undefined || s.subStep === subStep);
-                        return (
-                          <button
-                            key={si}
-                            onClick={() => {
-                              navigate(s.index, s.subStep);
-                              setPresenterNavOpen(false);
-                            }}
-                            className={cn(
-                              "w-full rounded px-3 py-1.5 text-left text-xs transition-colors",
-                              isActive
-                                ? "bg-white/10 font-medium text-white"
-                                : "text-white/50 hover:bg-white/5 hover:text-white/70",
-                            )}
-                          >
-                            {s.label}
-                          </button>
-                        );
-                      })}
+              <div className={cn("absolute left-0 right-0 top-full z-10 max-h-[50vh] overflow-y-auto border-b p-3 backdrop-blur-md", darkMode ? "border-white/10 bg-[#111]/95" : "border-black/10 bg-white/95")}>
+                {displayNavGroups.map((group, gi) => (
+                  <div key={gi} className="mb-2 last:mb-0">
+                    <div className={cn("mb-1 px-2 text-[10px] font-bold uppercase tracking-wider", darkMode ? "text-white/30" : "text-gray-400")}>
+                      {group.label}
                     </div>
-                  );
-                })}
+                    {group.slides.map((s, si) => {
+                      const isActive = s.index === slide && (s.subStep === undefined || s.subStep === subStep);
+                      return (
+                        <button
+                          key={si}
+                          onClick={() => { navigate(s.index, s.subStep); setPresenterNavOpen(false); }}
+                          className={cn(
+                            "w-full rounded px-3 py-1.5 text-left text-xs transition-colors",
+                            darkMode
+                              ? isActive ? "bg-white/10 font-medium text-white" : "text-white/50 hover:bg-white/5 hover:text-white/70"
+                              : isActive ? "bg-black/10 font-medium text-gray-900" : "text-gray-500 hover:bg-black/5 hover:text-gray-700",
+                          )}
+                        >
+                          {s.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ))}
               </div>
             )}
           </div>
 
+          {/* Content area */}
           <div className="flex min-h-0 flex-1">
+            {/* Left: Current slide + progress */}
             <div className="flex flex-1 flex-col p-4">
-              <div className="relative flex-1 overflow-hidden rounded-xl border border-white/10 bg-[#06283D]">
+              <div className={cn("relative flex-1 overflow-hidden rounded-xl border", darkMode ? "border-white/10 bg-[#06283D]" : "border-black/10 bg-[#06283D]")}>
                 <iframe
                   src={iframeSrcRef.current}
                   className="pointer-events-none absolute inset-0 h-full w-full border-0"
                   title="Slide Preview"
                   onLoad={() => {
-                    channelRef.current?.postMessage({
-                      type: "navigate",
-                      slide,
-                      subStep,
-                    });
+                    channelRef.current?.postMessage({ type: "navigate", slide, subStep });
                   }}
                 />
               </div>
+              {/* Slide counter + progress bar */}
+              <div className="mt-3 flex items-center gap-4 px-1">
+                <button
+                  onClick={() => navigate(slide - 1)}
+                  disabled={slide === 0 && subStep === 0}
+                  className={cn("rounded-md p-1.5 transition-colors disabled:opacity-30", darkMode ? "text-white/50 hover:bg-white/10" : "text-gray-400 hover:bg-black/5")}
+                >
+                  <ChevronLeft className="size-5" />
+                </button>
+                <div className="flex flex-1 flex-col items-center gap-1.5">
+                  <span className={cn("text-sm font-medium", darkMode ? "text-white/70" : "text-gray-600")}>
+                    Slide {currentClickIndex + 1} of {allClickSteps.length}
+                  </span>
+                  <div className={cn("h-1 w-full max-w-xs rounded-full", darkMode ? "bg-white/10" : "bg-black/10")}>
+                    <div
+                      className="h-full rounded-full bg-[#E56910] transition-all duration-300"
+                      style={{ width: `${((currentClickIndex + 1) / allClickSteps.length) * 100}%` }}
+                    />
+                  </div>
+                </div>
+                <button
+                  onClick={() => navigate(slide + 1)}
+                  disabled={slide === total - 1}
+                  className={cn("rounded-md p-1.5 transition-colors disabled:opacity-30", darkMode ? "text-white/50 hover:bg-white/10" : "text-gray-400 hover:bg-black/5")}
+                >
+                  <ChevronRight className="size-5" />
+                </button>
+              </div>
             </div>
 
-            <div className="flex w-[360px] shrink-0 flex-col border-l border-white/10 bg-[#111]">
+            {/* Right panel */}
+            <div className={cn("flex w-[380px] shrink-0 flex-col border-l transition-colors", darkMode ? "border-white/10 bg-[#111]" : "border-black/10 bg-white")}>
+              {/* Next slide preview */}
+              <div className={cn("shrink-0 border-b p-4", darkMode ? "border-white/10" : "border-black/10")}>
+                <h3 className={cn("mb-2 text-[10px] font-bold uppercase tracking-[0.15em]", darkMode ? "text-white/40" : "text-gray-400")}>
+                  Next slide
+                </h3>
+                <div className={cn("relative aspect-[16/10] overflow-hidden rounded-lg border", darkMode ? "border-white/10 bg-[#06283D]" : "border-black/10 bg-gray-900")}>
+                  <div className={cn("absolute inset-0 flex items-center justify-center text-sm", darkMode ? "text-white/30" : "text-white/40")}>
+                    {nextPosition ? "Preview unavailable" : "End of presentation"}
+                  </div>
+                  {nextPosition && (
+                    <img
+                      src={`/slide-thumbnails/slide-${nextPosition.slideIndex}-${nextPosition.stepIndex}.jpg`}
+                      alt="Next slide"
+                      className="relative h-full w-full object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    />
+                  )}
+                </div>
+              </div>
+
+              {/* Speaker notes */}
               <div className="flex-1 overflow-y-auto p-5">
-                <h3 className="mb-4 text-[10px] font-bold uppercase tracking-[0.15em] text-white/40">
+                <h3 className={cn("mb-4 text-[10px] font-bold uppercase tracking-[0.15em]", darkMode ? "text-white/40" : "text-gray-400")}>
                   Speaker Notes
                 </h3>
                 {notes.length > 0 ? (
                   <div className="space-y-3">
                     {notes.map((note, i) => (
-                      <p
-                        key={i}
-                        className="text-[13px] leading-relaxed text-white/70"
-                      >
+                      <p key={i} className={cn("text-[13px] leading-relaxed", darkMode ? "text-white/70" : "text-gray-600")}>
                         {note}
                       </p>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-[13px] italic text-white/30">
+                  <p className={cn("text-[13px] italic", darkMode ? "text-white/30" : "text-gray-400")}>
                     No notes for this step.
                   </p>
                 )}
               </div>
 
-              <div className="border-t border-white/10 px-4 py-3">
+              {/* Bottom navigation */}
+              <div className={cn("border-t px-4 py-3", darkMode ? "border-white/10" : "border-black/10")}>
                 {currentGroup && currentGroup.slides.length > 1 && (
                   <div className="mb-3 flex items-center justify-center gap-1.5">
                     {currentGroup.slides.map((s) => {
-                      const isActive =
-                        s.index === slide &&
-                        (s.subStep === undefined || s.subStep === subStep);
+                      const isActive = s.index === slide && (s.subStep === undefined || s.subStep === subStep);
                       return (
                         <button
                           key={`${s.index}-${s.subStep ?? ""}`}
                           onClick={() => navigate(s.index, s.subStep)}
                           className={cn(
                             "size-2 rounded-full transition-all",
-                            isActive
-                              ? "scale-125 bg-white"
-                              : "bg-white/30 hover:bg-white/50",
+                            darkMode
+                              ? isActive ? "scale-125 bg-white" : "bg-white/30 hover:bg-white/50"
+                              : isActive ? "scale-125 bg-gray-800" : "bg-gray-300 hover:bg-gray-400",
                           )}
                         />
                       );
@@ -741,7 +887,7 @@ export function Home() {
                   <button
                     onClick={() => navigate(slide - 1)}
                     disabled={slide === 0 && subStep === 0}
-                    className="flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium text-white/60 transition-colors hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+                    className={cn("flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-30", darkMode ? "text-white/60 hover:bg-white/10 hover:text-white" : "text-gray-500 hover:bg-black/5 hover:text-gray-800")}
                   >
                     <ChevronLeft className="size-4" />
                     Back
@@ -749,7 +895,7 @@ export function Home() {
                   <button
                     onClick={() => navigate(slide + 1)}
                     disabled={slide === total - 1}
-                    className="flex items-center gap-1 rounded-md bg-white/10 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-30"
+                    className={cn("flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-30", darkMode ? "bg-white/10 text-white hover:bg-white/15" : "bg-black/10 text-gray-800 hover:bg-black/15")}
                   >
                     Next
                     <ChevronRight className="size-4" />

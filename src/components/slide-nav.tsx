@@ -62,22 +62,77 @@ function FullPageButton() {
   );
 }
 
-function DownloadLink() {
+function DownloadDropdown() {
   const [show, setShow] = useState(false);
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const t = setTimeout(() => setShow(!document.getElementById("__export_root")));
     return () => clearTimeout(t);
   }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    function onClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
   if (!show) return null;
+
   return (
-    <a
-      href="/Inside Your Dynamic Model - INSIGHT2PROFIT.html"
-      download="Inside Your Dynamic Model - INSIGHT2PROFIT.html"
-      className="flex items-center gap-1.5 rounded-md border border-white/15 px-2.5 py-1 text-xs font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white"
-    >
-      <Download className="size-3.5" />
-      Download
-    </a>
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-1.5 rounded-md border border-white/15 px-2.5 py-1 text-xs font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white"
+      >
+        <Download className="size-3.5" />
+        Download
+        <ChevronDown
+          className={cn(
+            "size-3 text-white/40 transition-transform",
+            open && "rotate-180",
+          )}
+        />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full mt-1.5 w-72 rounded-lg border border-white/10 bg-[#06283D]/95 p-1.5 shadow-xl backdrop-blur-md">
+          <a
+            href="/presentation.html"
+            download="Inside Your Dynamic Model - Presenter.html"
+            onClick={() => setOpen(false)}
+            className="group flex flex-col gap-0.5 rounded-md px-3 py-2.5 transition-colors hover:bg-white/10"
+          >
+            <span className="text-xs font-medium text-white/90">Presenter&apos;s Version</span>
+            <span className="text-[11px] leading-snug text-white/45 group-hover:text-white/55">
+              Designed to accompany a live presenter — lighter on-screen content with speaker notes
+            </span>
+          </a>
+          <a
+            href="/Inside Your Dynamic Model - INSIGHT2PROFIT.html"
+            download="Inside Your Dynamic Model - INSIGHT2PROFIT.html"
+            onClick={() => setOpen(false)}
+            className="group flex flex-col gap-0.5 rounded-md px-3 py-2.5 transition-colors hover:bg-white/10"
+          >
+            <span className="text-xs font-medium text-white/90">Client Walkthrough</span>
+            <span className="text-[11px] leading-snug text-white/45 group-hover:text-white/55">
+              Self-guided version with more detail on screen — no presenter needed
+            </span>
+          </a>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -192,7 +247,7 @@ export function TopBar({
                 </button>
               </>
             )}
-            <DownloadLink />
+            <DownloadDropdown />
             <FullPageButton />
           </div>
         </div>
