@@ -110,6 +110,7 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
       { index: REFINE_INDEX, label: "Acme curve adjustment", subStep: 5 },
       { index: REFINE_INDEX, label: "Medsupply curve adjustment", subStep: 6 },
       { index: REFINE_INDEX, label: "Every price optimized to the curve", subStep: 7 },
+      { index: REFINE_INDEX, label: "The market moves the curve", subStep: 8 },
     ],
   },
   {

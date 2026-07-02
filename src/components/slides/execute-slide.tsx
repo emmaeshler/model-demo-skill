@@ -665,7 +665,7 @@ export function ExecuteSlide({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className={`mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-7xl flex-col items-center justify-center px-6 relative ${isPresenter ? "pt-2" : "pt-8"}`}
+          className={`mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-7xl flex-col items-center justify-start px-6 relative ${isPresenter ? "pt-2" : "pt-8"}`}
         >
           {/* Title */}
           <AnimatePresence mode="wait">

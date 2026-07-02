@@ -729,18 +729,34 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: n
                 </>
               ) : chartStep >= 5 ? (
                 <>
-                  <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: NAVY }}>
-                    {TITLES[chartStep]}
+                  <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: NAVY, display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "0 0.3em" }}>
+                    {(TITLES[chartStep] ?? "").split(" ").map((word, wi) => (
+                      <motion.span
+                        key={wi}
+                        initial={skipAnimation ? false : { opacity: 0, y: 14, filter: "blur(4px)" }}
+                        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                        transition={{ duration: 0.4, delay: skipAnimation ? 0 : wi * 0.08, ease: [0.22, 1, 0.36, 1] }}
+                      >
+                        {word}
+                      </motion.span>
+                    ))}
                   </h2>
                   <motion.p
                     className="mx-auto mt-1 max-w-2xl text-center text-[1.05rem] leading-relaxed"
                     style={{ color: MUTED }}
-                    initial={{ opacity: 0, y: 6 }}
+                    initial={skipAnimation ? false : { opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: 0.15 }}
+                    transition={{ duration: 0.4, delay: skipAnimation ? 0.15 : 0.7 }}
                   >
                     Cost, competition, volume, and demand combine into{" "}
-                    <span style={{ color: TEAL, fontWeight: 600 }}>one recommended price</span>{" "}
+                    <motion.span
+                      style={{ fontWeight: 600 }}
+                      initial={skipAnimation ? { color: TEAL } : { color: MUTED }}
+                      animate={{ color: TEAL }}
+                      transition={{ duration: 0.6, delay: skipAnimation ? 0 : 1.2 }}
+                    >
+                      one recommended price
+                    </motion.span>{" "}
                     for every SKU.
                   </motion.p>
                 </>
