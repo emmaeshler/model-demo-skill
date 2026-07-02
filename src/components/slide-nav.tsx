@@ -175,7 +175,7 @@ export function TopBar({
 {onStartPresenting && (
               <>
                 <a
-                  href="/"
+                  href="/walkthrough"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-1.5 rounded-md border border-white/15 px-2.5 py-1 text-xs font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white"
