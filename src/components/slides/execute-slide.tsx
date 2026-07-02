@@ -589,16 +589,22 @@ export function ModelOutputsOverview({ step }: { step: number }) {
 export function ExecuteSlide({
   step,
   skipAnimation,
+  onCustomerChange,
 }: {
   step: number;
   onAnimationDone?: () => void;
   skipAnimation?: boolean;
+  onCustomerChange?: (customer: string) => void;
 }) {
   const { mode } = useMode();
   const isPresenter = mode === "presenter";
   const [selected, setSelected] = useState(0);
   const [revealPhase, setRevealPhase] = useState(skipAnimation ? 4 : 1);
   const cust = CUSTOMERS[selected];
+
+  useEffect(() => {
+    onCustomerChange?.(cust.label.split(" ")[0]);
+  }, [selected, cust.label, onCustomerChange]);
 
   const selfMaxPhase = step === 0 ? 3 : 4;
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect, useLayoutEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { makeCurve } from "../visuals/demand-curve";
 
@@ -12,7 +12,7 @@ const STRAT_BLUE = "#21A5D5";
 const GREEN = "#4A8A5C";
 const RED = "#A65A52";
 
-export const REFINE_TOTAL_STEPS = 8;
+export const REFINE_TOTAL_STEPS = 9;
 
 const CURVE_SLOT = { x: 50, y: 20, w: 460, h: 140 };
 const BASE_Y = CURVE_SLOT.y + CURVE_SLOT.h;
@@ -240,10 +240,46 @@ const STEP_CONTEXT: Record<number, { title: string; body: string }> = {
     title: "The market moves. The curve moves with it.",
     body: "Price indices — published benchmarks for costs like steel, freight, or labor — feed the model continuously. When the market shifts, the curve shifts, and every price stays current.",
   },
+  8: {
+    title: "We do this across your entire portfolio",
+    body: "Every product segment gets its own demand curve — continuously recalibrated as the market shifts.",
+  },
 };
 
+const MINI_SLOT = { x: 4, y: 2, w: 52, h: 24 };
+
+const PORTFOLIO_SEGMENTS = (() => {
+  const pRng = mulberry32(42);
+  const names = [
+    "Fasteners – Industrial", "Bearings – Heavy Duty", "Filters – Automotive",
+    "Gaskets – Marine", "Valves – HVAC", "Tubing – Medical",
+    "Adhesives – Aerospace", "Seals – Oil & Gas", "Coatings – Marine",
+    "Fittings – Plumbing", "Wire – Telecom", "Insulation – Commercial",
+    "Clamps – Automotive", "Connectors – Electronics", "Hinges – Furniture",
+    "Springs – Defense", "Rods – Construction", "Brackets – Solar",
+    "Panels – Signage", "Rivets – Aerospace", "Washers – Rail",
+    "Bushings – Mining", "Flanges – Petrochem", "Pins – Electronics",
+    "Caps – Packaging", "Shims – Precision", "Plates – Structural",
+    "O-Rings – Hydraulic", "Bolts – Wind Energy", "Chains – Agriculture",
+  ];
+  const flipY = (y: number) => 2 * MINI_SLOT.y + MINI_SLOT.h - y;
+  return names.map((name) => {
+    const steepness = 2 + pRng() * 10;
+    const raw = makeCurve(MINI_SLOT, steepness);
+    const n = 32;
+    const pts = Array.from({ length: n + 1 }, (_, j) => {
+      const pt = raw.sampleAt(j / n);
+      return { x: pt.x, y: flipY(pt.y) };
+    });
+    return {
+      name,
+      d: "M " + pts.map(p => `${p.x},${p.y}`).join(" L "),
+    };
+  });
+})();
+
 export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeChange }: { step: number; onAutoAdvance?: () => void; skipAnimation?: boolean; onCurveModeChange?: (mode: "one" | "three") => void }) {
-  const [curveMode, setCurveMode] = useState<"one" | "three">("three");
+  const [curveMode, setCurveMode] = useState<"one" | "three">("one");
 
   useEffect(() => {
     onCurveModeChange?.(curveMode);
@@ -363,24 +399,32 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
 
   const [indexMorphFrom, setIndexMorphFrom] = useState(0);
   const [indexMorphProgress, setIndexMorphProgress] = useState(1);
+  const [kpiRevealed, setKpiRevealed] = useState(false);
   const prevIndexPhaseRef = useRef(0);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const prev = prevIndexPhaseRef.current;
     prevIndexPhaseRef.current = indexPhase;
     if (indexPhase === prev) { setIndexMorphProgress(1); return; }
     setIndexMorphFrom(prev);
     setIndexMorphProgress(0);
-    if (skipAnimation) { setIndexMorphProgress(1); return; }
-    let start = 0;
+    setKpiRevealed(false);
+    if (skipAnimation) { setIndexMorphProgress(1); setKpiRevealed(true); return; }
+    const CARD_DELAY = 600;
+    const MORPH_DURATION = 1400;
+    const KPI_DELAY = 400;
     let frame: number;
-    const tick = (now: number) => {
-      if (!start) start = now;
-      const raw = Math.min(1, (now - start) / 1400);
-      setIndexMorphProgress(1 - Math.pow(1 - raw, 3));
-      if (raw < 1) frame = requestAnimationFrame(tick);
-    };
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
+    const delayTimer = setTimeout(() => {
+      let start = 0;
+      const tick = (now: number) => {
+        if (!start) start = now;
+        const raw = Math.min(1, (now - start) / MORPH_DURATION);
+        setIndexMorphProgress(1 - Math.pow(1 - raw, 3));
+        if (raw < 1) frame = requestAnimationFrame(tick);
+      };
+      frame = requestAnimationFrame(tick);
+    }, CARD_DELAY);
+    const kpiTimer = setTimeout(() => setKpiRevealed(true), CARD_DELAY + MORPH_DURATION + KPI_DELAY);
+    return () => { clearTimeout(delayTimer); clearTimeout(kpiTimer); cancelAnimationFrame(frame); };
   }, [indexPhase, skipAnimation]);
 
   /* ── Collapse animation (step 6, three-curves mode) ── */
@@ -449,7 +493,8 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
   const showCurve = chartStep >= 1;
   const showGhostCurves = chartStep === 2 && curveMode === "three";
   const isAllToCurve = chartStep >= 6;
-  const isIndexShift = chartStep >= 7;
+  const isIndexShift = chartStep === 7;
+  const isPortfolio = chartStep === 8;
   const activeIndexCurve = isIndexShift && indexPhase > 0 ? curve.indexCurves[indexPhase - 1] : null;
   const currentEvent = indexPhase > 0 ? TIMELINE_EVENTS[indexPhase - 1] : null;
 
@@ -508,7 +553,9 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
 
   const dotOpacityBase = (chartStep >= 1 && chartStep <= 2) ? 0.15 : isSpotlight ? 0 : isIndexShift ? 0.35 : 1;
 
-  const heading = isIndexShift
+  const heading = isPortfolio
+    ? "We do this across your entire portfolio"
+    : isIndexShift
     ? "The market moves. The curve moves with it."
     : isAllToCurve
       ? (curveMode === "three" ? "Every price, on its curve." : "Every price, aligned to the curve")
@@ -520,7 +567,9 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
             ? "Your optimal demand curve"
             : "Detect patterns, refine pricing guidance";
 
-  const subtitle = isIndexShift
+  const subtitle = isPortfolio
+      ? "Every product segment gets its own demand curve — continuously recalibrated as the market shifts."
+      : isIndexShift
       ? null
       : isCollapseStep
         ? (showFinalSubtitle
@@ -665,14 +714,13 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
           <motion.div
             key="timeline-strip"
             className="w-full flex-shrink-0"
-            style={{ paddingRight: 175 }}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
           >
             {/* Date display / Event card */}
-            <div className="relative flex items-center justify-center" style={{ height: 52 }}>
+            <div className="relative flex items-center justify-center" style={{ height: 82, marginBottom: 6 }}>
               {indexPhase > 0 && (
                 <motion.button
                   className="absolute left-0 z-10 flex h-8 w-8 items-center justify-center rounded-full"
@@ -701,43 +749,30 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
                   >
                     Start timeline &#8250;
                   </motion.button>
-                ) : currentEvent && indexMorphProgress >= 0.8 ? (
+                ) : currentEvent ? (
                   <motion.div
                     key={`event-${indexPhase}`}
-                    className="rounded-xl px-5 py-2 shadow-md cursor-pointer"
-                    style={{ backgroundColor: "white", border: `1.5px solid ${STRAT_BLUE}30` }}
+                    className="flex flex-col items-center cursor-pointer"
                     onClick={advanceTimeline}
-                    initial={{ opacity: 0, y: 6, scale: 0.96 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -6, scale: 0.96 }}
-                    transition={{ duration: 0.25, ease: "easeOut" }}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
                   >
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: STRAT_BLUE }}>
-                        {getMonthLabel(currentEvent.month)}
-                      </span>
-                      <span className="text-[15px] font-bold" style={{ color: NAVY }}>{currentEvent.label}</span>
-                      {indexPhase < TIMELINE_EVENTS.length && <span className="text-[11px] font-medium" style={{ color: `${STRAT_BLUE}80` }}>Next &#8250;</span>}
-                    </div>
-                    <div className="text-[11px] mt-0.5" style={{ color: MUTED }}>{currentEvent.factor}</div>
+                    <span
+                      className="rounded-full px-3.5 py-0.5 text-[11px] font-bold uppercase tracking-widest"
+                      style={{ backgroundColor: `${STRAT_BLUE}12`, color: STRAT_BLUE }}
+                    >
+                      {getMonthLabel(currentEvent.month)}
+                    </span>
+                    <span className="mt-1.5 text-[22px] font-bold leading-tight" style={{ color: NAVY }}>
+                      {currentEvent.label}
+                    </span>
+                    <span className="mt-0.5 text-[13px]" style={{ color: MUTED }}>
+                      {currentEvent.factor}
+                    </span>
                   </motion.div>
-                ) : (
-                  <motion.div
-                    key="month-label"
-                    className="text-center"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <div className="text-[22px] font-bold tabular-nums" style={{ color: NAVY }}>
-                      {getMonthLabel(currentMonth)}
-                    </div>
-                    <div className="text-[11px] font-medium" style={{ color: `${MUTED}90` }}>
-                      Month {Math.round(currentMonth)}
-                    </div>
-                  </motion.div>
-                )}
+                ) : null}
               </AnimatePresence>
               {indexPhase > 0 && indexPhase < TIMELINE_EVENTS.length && (
                 <motion.button
@@ -755,7 +790,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
             </div>
 
             {/* Timeline scrubber */}
-            <div className="relative mt-1" style={{ height: 32 }}>
+            <div className="relative mt-1 cursor-pointer" style={{ height: 32 }} onClick={advanceTimeline}>
               {/* Track bg */}
               <div className="absolute rounded-full" style={{ left: 0, right: 0, top: "50%", height: 3, transform: "translateY(-50%)", backgroundColor: `${NAVY}0D` }} />
               {/* Track fill */}
@@ -775,7 +810,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
                     key={event.month}
                     className="absolute cursor-pointer"
                     style={{ left: `${pos}%`, top: "50%", transform: "translate(-50%, -50%)", padding: 8, zIndex: 2 }}
-                    onClick={() => setIndexPhase(i + 1)}
+                    onClick={(e) => { e.stopPropagation(); setIndexPhase(i + 1); }}
                   >
                     <motion.div
                       className="rounded-full"
@@ -792,9 +827,9 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
               })}
               {/* Start dot */}
               <div className="absolute rounded-full" style={{ left: 0, top: "50%", width: 6, height: 6, backgroundColor: NAVY, transform: "translate(-50%, -50%)", zIndex: 1 }} />
-              {/* Big circle scrubber */}
+              {/* Big circle scrubber — pointer-events-none so dots underneath stay clickable */}
               <motion.div
-                className="absolute z-10 rounded-full"
+                className="absolute z-10 rounded-full pointer-events-none"
                 style={{
                   top: "50%",
                   width: 22, height: 22,
@@ -808,7 +843,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
               />
               {/* Month labels below track */}
               <div className="absolute w-full" style={{ top: "50%", marginTop: 14 }}>
-                <span className="absolute text-[10px] font-medium" style={{ left: 0, transform: "translateX(-50%)", color: MUTED }}>0</span>
+                <span className="absolute text-[10px] font-medium" style={{ left: 0, transform: "translateX(-50%)", color: MUTED }}>{getMonthLabel(0)}</span>
                 {TIMELINE_EVENTS.map((event, i) => {
                   const pos = (event.month / TOTAL_MONTHS) * 100;
                   const isActive = indexPhase === i + 1 && indexMorphProgress >= 1;
@@ -817,9 +852,9 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
                       key={event.month}
                       className="absolute text-[10px] font-medium transition-colors duration-300 cursor-pointer"
                       style={{ left: `${pos}%`, transform: "translateX(-50%)", color: isActive ? STRAT_BLUE : MUTED }}
-                      onClick={() => setIndexPhase(i + 1)}
+                      onClick={(e) => { e.stopPropagation(); setIndexPhase(i + 1); }}
                     >
-                      {event.month}
+                      {getMonthLabel(event.month)}
                     </span>
                   );
                 })}
@@ -870,10 +905,11 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
         className="absolute inset-0 flex flex-col"
         initial={{ opacity: 0, y: 20 }}
         animate={{
-          opacity: chartStep === 0 && introPhase < 5 ? 0 : 1,
+          opacity: (chartStep === 0 && introPhase < 5) || isPortfolio ? 0 : 1,
           y: chartStep === 0 && introPhase < 5 ? 20 : 0,
         }}
         transition={{ duration: 1.0, ease: [0.22, 1, 0.36, 1] }}
+        style={isPortfolio ? { pointerEvents: "none" as const } : undefined}
       >
         {/* Chart */}
         <div className="relative min-w-0 flex-1 flex items-center justify-center" style={isIndexShift ? { paddingRight: 175 } : undefined}>
@@ -1454,7 +1490,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
 
       </motion.div>
 
-      {/* KPI sidebar (step 7) */}
+      {/* KPI sidebar (step 7) — skeleton until kpiRevealed */}
       <AnimatePresence>
         {isIndexShift && (
           <motion.div
@@ -1473,17 +1509,17 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
                 {Math.round(currentKpi.winRate)}%
               </div>
               <AnimatePresence mode="wait">
-                {indexPhase > 0 && indexMorphProgress >= 1 && kpiDelta.winRate !== 0 && (
+                {kpiRevealed && indexPhase > 0 && kpiDelta.winRate !== 0 && (
                   <motion.div
                     key={`wr-${indexPhase}`}
-                    className="text-[11px] font-medium mt-1"
-                    style={{ color: TEAL }}
-                    initial={{ opacity: 0, y: 4 }}
+                    className="text-[11px] font-semibold mt-1"
+                    style={{ color: kpiDelta.winRate > 0 ? GREEN : RED }}
+                    initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ delay: 0.15, duration: 0.25 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.35, ease: "easeOut" }}
                   >
-                    &#x2197; +{kpiDelta.winRate} pts this month
+                    {kpiDelta.winRate > 0 ? "↗" : "↘"} {kpiDelta.winRate > 0 ? "+" : ""}{kpiDelta.winRate} pts this month
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -1496,17 +1532,17 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
                 {Math.round(currentKpi.priceAdoption)}%
               </div>
               <AnimatePresence mode="wait">
-                {indexPhase > 0 && indexMorphProgress >= 1 && (
+                {kpiRevealed && indexPhase > 0 && (
                   <motion.div
                     key={`pa-${indexPhase}`}
-                    className="text-[11px] font-medium mt-1"
-                    style={{ color: kpiDelta.priceAdoption > 0 ? TEAL : MUTED }}
-                    initial={{ opacity: 0, y: 4 }}
+                    className="text-[11px] font-semibold mt-1"
+                    style={{ color: kpiDelta.priceAdoption > 0 ? GREEN : kpiDelta.priceAdoption < 0 ? RED : MUTED }}
+                    initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ delay: 0.15, duration: 0.25 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.35, ease: "easeOut" }}
                   >
-                    {kpiDelta.priceAdoption > 0 ? `↗ +${kpiDelta.priceAdoption} pts` : "— No change"}
+                    {kpiDelta.priceAdoption > 0 ? `↗ +${kpiDelta.priceAdoption} pts` : kpiDelta.priceAdoption < 0 ? `↘ ${kpiDelta.priceAdoption} pts` : "— No change"}
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -1516,32 +1552,78 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
             <motion.div
               className="rounded-xl px-3.5 py-3"
               animate={{
-                backgroundColor: indexPhase > 0 && indexMorphProgress >= 1 ? `${ORANGE}0A` : `${NAVY}05`,
-                borderColor: indexPhase > 0 && indexMorphProgress >= 1 ? `${ORANGE}40` : "transparent",
+                backgroundColor: kpiRevealed && indexPhase > 0 ? (kpiDelta.marginImpact >= 0 ? `${GREEN}0A` : `${RED}0A`) : `${NAVY}05`,
+                borderColor: kpiRevealed && indexPhase > 0 ? (kpiDelta.marginImpact >= 0 ? `${GREEN}40` : `${RED}40`) : "transparent",
               }}
               style={{ border: "1.5px solid transparent" }}
               transition={{ duration: 0.4 }}
             >
               <div className="text-[11px] font-semibold tracking-wide" style={{ color: MUTED }}>Margin impact</div>
-              <div className="text-[26px] font-bold tabular-nums leading-tight mt-0.5" style={{ color: ORANGE }}>
+              <div className="text-[26px] font-bold tabular-nums leading-tight mt-0.5" style={{ color: kpiRevealed && indexPhase > 0 ? (kpiDelta.marginImpact >= 0 ? GREEN : RED) : NAVY }}>
                 +{currentKpi.marginImpact.toFixed(1)}%
               </div>
               <AnimatePresence mode="wait">
-                {indexPhase > 0 && indexMorphProgress >= 1 && kpiDelta.marginImpact > 0 && (
+                {kpiRevealed && indexPhase > 0 && kpiDelta.marginImpact !== 0 && (
                   <motion.div
                     key={`mi-${indexPhase}`}
-                    className="text-[11px] font-medium mt-1"
-                    style={{ color: ORANGE }}
-                    initial={{ opacity: 0, y: 4 }}
+                    className="text-[11px] font-semibold mt-1"
+                    style={{ color: kpiDelta.marginImpact > 0 ? GREEN : RED }}
+                    initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ delay: 0.15, duration: 0.25 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.35, ease: "easeOut" }}
                   >
-                    &#x2197; +{kpiDelta.marginImpact} after {kpiDelta.eventLabel.toLowerCase()}
+                    {kpiDelta.marginImpact > 0 ? "↗" : "↘"} {kpiDelta.marginImpact > 0 ? "+" : ""}{kpiDelta.marginImpact} after {kpiDelta.eventLabel.toLowerCase()}
                   </motion.div>
                 )}
               </AnimatePresence>
             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Portfolio grid (step 8) — 30 mini demand curves */}
+      <AnimatePresence>
+        {isPortfolio && (
+          <motion.div
+            key="portfolio-grid"
+            className="absolute inset-0 flex flex-col items-center justify-center"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <div className="grid grid-cols-6 gap-2.5 px-6" style={{ maxWidth: 900, width: "100%" }}>
+              {PORTFOLIO_SEGMENTS.map((seg, i) => (
+                <motion.div
+                  key={seg.name}
+                  className="rounded-lg px-2.5 pt-2 pb-1.5"
+                  style={{ backgroundColor: `${NAVY}04`, border: `1px solid ${NAVY}0A` }}
+                  initial={{ opacity: 0, y: 14, scale: 0.94 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: 0.35, delay: 0.15 + i * 0.035, ease: "easeOut" }}
+                >
+                  <svg viewBox="0 0 60 28" className="w-full" preserveAspectRatio="xMidYMid meet">
+                    <path d={`${seg.d} L 56,26 L 4,26 Z`} fill={`${NAVY}06`} />
+                    <line x1={4} y1={26} x2={56} y2={26} stroke={`${NAVY}15`} strokeWidth={0.5} />
+                    <line x1={4} y1={2} x2={4} y2={26} stroke={`${NAVY}15`} strokeWidth={0.5} />
+                    <path d={seg.d} fill="none" stroke={NAVY} strokeWidth={1.5} strokeLinecap="round" opacity={0.65} />
+                  </svg>
+                  <div className="text-[9px] font-medium truncate mt-0.5" style={{ color: MUTED }}>
+                    {seg.name}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+            <motion.p
+              className="mt-4 text-center text-sm"
+              style={{ color: MUTED }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.3, duration: 0.5 }}
+            >
+              Showing 30 of <span style={{ color: NAVY, fontWeight: 700 }}>247 segments</span> monitored continuously
+            </motion.p>
           </motion.div>
         )}
       </AnimatePresence>

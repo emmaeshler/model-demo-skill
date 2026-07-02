@@ -79,12 +79,13 @@ const ENGINE_FOCUS_MAP: Record<string, EngineFocus> = {
   [`${REFINE_INDEX}-5`]: "ml",
   [`${REFINE_INDEX}-6`]: "ml",
   [`${REFINE_INDEX}-7`]: "strat",
+  [`${REFINE_INDEX}-8`]: "both",
 };
 
 const ML_GREEN = "#3A7D44";
 const STRAT_BLUE = "#2A7BA5";
 
-const ENGINE_INDICATOR_SLIDES = new Set([POWER_INDEX]);
+const ENGINE_INDICATOR_SLIDES = new Set([POWER_INDEX, EXECUTE_INDEX, REFINE_INDEX]);
 
 type CategoryKey = "customer" | "product" | "market" | "order";
 
@@ -103,6 +104,18 @@ const DRIVER_RAIL_ITEMS: { label: string; color: string; tint: string }[] = [
   { label: "Cost to serve", color: "#E56910", tint: "rgba(229,105,16,0.08)" },
 ];
 
+type DriverSignal = "up" | "down" | "neutral";
+const SIGNAL_COLORS: Record<DriverSignal, string> = {
+  up: "#3A7D44",
+  neutral: "#D4A843",
+  down: "#A65A52",
+};
+const CUSTOMER_DRIVER_SIGNALS: Record<string, DriverSignal[]> = {
+  Acme: ["up", "up", "neutral", "up", "up"],
+  MedSupply: ["neutral", "down", "down", "neutral", "down"],
+  QuickParts: ["neutral", "up", "up", "down", "neutral"],
+};
+
 const ACTIVE_CATEGORIES_MAP: Record<string, CategoryKey[]> = {
   [`${POWER_INDEX}-2`]: ["customer", "product", "market", "order"],
   [`${POWER_INDEX}-3`]: ["customer", "product", "market", "order"],
@@ -115,6 +128,7 @@ const ACTIVE_CATEGORIES_MAP: Record<string, CategoryKey[]> = {
   [`${REFINE_INDEX}-5`]: ["customer"],
   [`${REFINE_INDEX}-6`]: ["customer", "market"],
   [`${REFINE_INDEX}-7`]: ["market"],
+  [`${REFINE_INDEX}-8`]: ["customer", "product", "market", "order"],
 };
 
 const ENGINE_ITEMS: { key: "ml" | "strat"; label: string; color: string; tint: string }[] = [
@@ -122,171 +136,127 @@ const ENGINE_ITEMS: { key: "ml" | "strat"; label: string; color: string; tint: s
   { key: "strat", label: "Strategic Guidance", color: STRAT_BLUE, tint: "rgba(42,123,165,0.08)" },
 ];
 
-function EngineIndicator({ focus, visible }: { focus: EngineFocus; visible: boolean }) {
-  const mlActive = focus === "both" || focus === "ml";
-  const stratActive = focus === "both" || focus === "strat";
-  const activeLabel = focus === "both"
-    ? "ML Prediction &\nStrategic Guidance"
-    : focus === "ml"
-    ? "ML Prediction"
-    : focus === "strat"
-    ? "Strategic Guidance"
-    : "";
+function ModelStatusRail({
+  activeCategories,
+  drivers,
+  engineFocus,
+  showEngine = true,
+  driverSignals,
+}: {
+  activeCategories: CategoryKey[];
+  drivers?: { label: string; color: string; tint: string }[];
+  engineFocus: EngineFocus;
+  showEngine?: boolean;
+  driverSignals?: DriverSignal[];
+}) {
+  const activeSet = useMemo(() => new Set(activeCategories), [activeCategories]);
 
-  const R = 28;
+  const mlActive = engineFocus === "both" || engineFocus === "ml";
+  const stratActive = engineFocus === "both" || engineFocus === "strat";
+  const R = 18;
   const CX = R + 2;
   const CY = R + 2;
   const svgSize = (R + 2) * 2;
 
   return (
-    <AnimatePresence>
-      {visible && (
-        <motion.div
-          className="fixed right-3 top-[80px] z-50 flex flex-col items-center gap-1"
-          initial={{ opacity: 0, scale: 0.7 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.7 }}
-          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+    <motion.div
+      className="fixed left-0 top-1/2 z-40 flex w-[130px] -translate-y-1/2 flex-col gap-3 rounded-r-xl bg-white/95 px-3 py-4 shadow-md ring-1 ring-black/[0.06] backdrop-blur-sm"
+      initial={{ x: -140 }}
+      animate={{ x: 0 }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+    >
+      {/* Engine section */}
+      {showEngine && (<>
+      <div className="flex flex-col items-center gap-1">
+        <motion.span
+          className="text-[8px] font-semibold uppercase tracking-[0.12em] text-gray-400"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
         >
-          <motion.span
-            className="text-[8px] font-semibold uppercase tracking-[0.12em] text-gray-400"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3, delay: 0.2 }}
-          >
-            Model Engine
-          </motion.span>
+          Model Engine
+        </motion.span>
 
+        <div className="flex items-center gap-2">
           <svg width={svgSize} height={svgSize} viewBox={`0 0 ${svgSize} ${svgSize}`}>
-            {/* Left half — ML Prediction */}
             <motion.path
               d={`M ${CX} ${CY - R} A ${R} ${R} 0 0 0 ${CX} ${CY + R} L ${CX} ${CY} Z`}
               fill={ML_GREEN}
               animate={{ opacity: mlActive ? 1 : 0.15 }}
               transition={{ duration: 0.3 }}
             />
-            {/* Right half — Strategic Guidance */}
             <motion.path
               d={`M ${CX} ${CY - R} A ${R} ${R} 0 0 1 ${CX} ${CY + R} L ${CX} ${CY} Z`}
               fill={STRAT_BLUE}
               animate={{ opacity: stratActive ? 1 : 0.15 }}
               transition={{ duration: 0.3 }}
             />
-            {/* Divider line */}
             <line x1={CX} y1={CY - R} x2={CX} y2={CY + R} stroke="white" strokeWidth={1.5} />
-            {/* Outer ring */}
             <circle cx={CX} cy={CY} r={R} fill="none" stroke="white" strokeWidth={1.5} opacity={0.4} />
           </svg>
 
-          <motion.span
-            className="max-w-[90px] text-center text-[9px] font-semibold leading-tight text-gray-600 whitespace-pre-line"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3, delay: 0.3 }}
-          >
-            {activeLabel}
-          </motion.span>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
+          <div className="flex flex-col gap-0.5">
+            <motion.span
+              className="text-[8px] font-semibold leading-tight"
+              animate={{ color: mlActive ? ML_GREEN : "#D1D5DB" }}
+              transition={{ duration: 0.3 }}
+            >
+              ML Prediction
+            </motion.span>
+            <motion.span
+              className="text-[8px] font-semibold leading-tight"
+              animate={{ color: stratActive ? STRAT_BLUE : "#D1D5DB" }}
+              transition={{ duration: 0.3 }}
+            >
+              Strategic Guidance
+            </motion.span>
+          </div>
+        </div>
+      </div>
 
-function FactorCategoryRail({
-  activeCategories,
-  drivers,
-}: {
-  activeCategories: CategoryKey[];
-  drivers?: { label: string; color: string; tint: string }[];
-}) {
-  const activeSet = useMemo(() => new Set(activeCategories), [activeCategories]);
+      {/* Divider */}
+      <div className="h-px bg-gray-200" />
+      </>)}
 
-  return (
-    <motion.div
-      className="fixed left-0 top-[220px] z-40 flex w-[120px] flex-col gap-1.5 rounded-r-xl bg-white/95 px-3 py-4 shadow-md ring-1 ring-black/[0.06] backdrop-blur-sm"
-      initial={{ x: -130 }}
-      animate={{ x: 0 }}
-      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-    >
-      <motion.span
-        className="mb-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-gray-400"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.3, delay: 0.3 }}
-      >
-        {drivers ? "Model Drivers" : "Your Factors"}
-      </motion.span>
+      {/* Factors section */}
+      <div className="flex flex-col gap-1.5">
+        <motion.span
+          className="text-[9px] font-semibold uppercase tracking-[0.12em] text-gray-400"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.3 }}
+        >
+          {drivers ? "Model Drivers" : "Your Factors"}
+        </motion.span>
 
-      <AnimatePresence mode="wait">
-        {drivers ? (
-          <motion.div
-            key="drivers"
-            className="flex flex-col gap-1.5"
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.3 }}
-          >
-            {drivers.map(({ label, color, tint }, i) => (
-              <motion.div
-                key={label}
-                className="flex items-center gap-2 rounded-md border px-2 py-1.5"
-                initial={{ x: 80, opacity: 0, scale: 0.85 }}
-                animate={{
-                  x: 0,
-                  opacity: 1,
-                  scale: 1,
-                  backgroundColor: tint,
-                  borderColor: color,
-                }}
-                transition={{
-                  x: { duration: 0.5, delay: 0.3 + i * 0.08, ease: [0.22, 1, 0.36, 1] },
-                  opacity: { duration: 0.35, delay: 0.3 + i * 0.08 },
-                  scale: { duration: 0.45, delay: 0.3 + i * 0.08, ease: [0.22, 1, 0.36, 1] },
-                  backgroundColor: { duration: 0.2 },
-                  borderColor: { duration: 0.2 },
-                }}
-              >
-                <div
-                  className="size-2 shrink-0 rounded"
-                  style={{ backgroundColor: color }}
-                />
-                <span
-                  className="text-[11px] font-bold leading-tight"
-                  style={{ color: "#374151" }}
-                >
-                  {label}
-                </span>
-              </motion.div>
-            ))}
-          </motion.div>
-        ) : (
-          <motion.div
-            key="categories"
-            className="flex flex-col gap-1.5"
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.3 }}
-          >
-            {FACTOR_CATEGORIES.map(({ key, label, color, tint }, i) => {
-              const active = activeSet.has(key);
-              return (
+        <AnimatePresence mode="wait">
+          {drivers ? (
+            <motion.div
+              key="drivers"
+              className="flex flex-col gap-1.5"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.3 }}
+            >
+              {drivers.map(({ label, color, tint }, i) => {
+                const signal = driverSignals?.[i];
+                return (
                 <motion.div
-                  key={key}
+                  key={label}
                   className="flex items-center gap-2 rounded-md border px-2 py-1.5"
-                  initial={{ x: 120, opacity: 0, scale: 1.15 }}
+                  initial={{ x: 80, opacity: 0, scale: 0.85 }}
                   animate={{
                     x: 0,
                     opacity: 1,
                     scale: 1,
-                    backgroundColor: active ? tint : "#f3f4f6",
-                    borderColor: active ? color : "transparent",
+                    backgroundColor: tint,
+                    borderColor: color,
                   }}
                   transition={{
-                    x: { duration: 0.45, delay: 0.35 + i * 0.09, ease: [0.22, 1, 0.36, 1] },
-                    opacity: { duration: 0.3, delay: 0.35 + i * 0.09 },
-                    scale: { duration: 0.4, delay: 0.35 + i * 0.09, ease: [0.22, 1, 0.36, 1] },
+                    x: { duration: 0.5, delay: 0.3 + i * 0.08, ease: [0.22, 1, 0.36, 1] },
+                    opacity: { duration: 0.35, delay: 0.3 + i * 0.08 },
+                    scale: { duration: 0.45, delay: 0.3 + i * 0.08, ease: [0.22, 1, 0.36, 1] },
                     backgroundColor: { duration: 0.2 },
                     borderColor: { duration: 0.2 },
                   }}
@@ -295,31 +265,85 @@ function FactorCategoryRail({
                     className="size-2 shrink-0 rounded"
                     style={{ backgroundColor: color }}
                   />
-                  <motion.span
-                    className="text-[11px] leading-tight"
-                    animate={{
-                      color: active ? "#374151" : "#9CA3AF",
-                      fontWeight: active ? 700 : 500,
-                    }}
-                    transition={{ duration: 0.2 }}
+                  <span
+                    className="flex-1 text-[11px] font-bold leading-tight"
+                    style={{ color: "#374151" }}
                   >
                     {label}
-                  </motion.span>
+                  </span>
+                  {signal && (
+                    <motion.div
+                      className="size-[6px] shrink-0 rounded-full"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1, backgroundColor: SIGNAL_COLORS[signal] }}
+                      transition={{ scale: { delay: 0.5 + i * 0.1, type: "spring", stiffness: 400 }, backgroundColor: { duration: 0.3 } }}
+                    />
+                  )}
                 </motion.div>
-              );
-            })}
-          </motion.div>
-        )}
-      </AnimatePresence>
+                );
+              })}
+            </motion.div>
+          ) : (
+            <motion.div
+              key="categories"
+              className="flex flex-col gap-1.5"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.3 }}
+            >
+              {FACTOR_CATEGORIES.map(({ key, label, color, tint }, i) => {
+                const active = activeSet.has(key);
+                return (
+                  <motion.div
+                    key={key}
+                    className="flex items-center gap-2 rounded-md border px-2 py-1.5"
+                    initial={{ x: 120, opacity: 0, scale: 1.15 }}
+                    animate={{
+                      x: 0,
+                      opacity: 1,
+                      scale: 1,
+                      backgroundColor: active ? tint : "#f3f4f6",
+                      borderColor: active ? color : "transparent",
+                    }}
+                    transition={{
+                      x: { duration: 0.45, delay: 0.35 + i * 0.09, ease: [0.22, 1, 0.36, 1] },
+                      opacity: { duration: 0.3, delay: 0.35 + i * 0.09 },
+                      scale: { duration: 0.4, delay: 0.35 + i * 0.09, ease: [0.22, 1, 0.36, 1] },
+                      backgroundColor: { duration: 0.2 },
+                      borderColor: { duration: 0.2 },
+                    }}
+                  >
+                    <div
+                      className="size-2 shrink-0 rounded"
+                      style={{ backgroundColor: color }}
+                    />
+                    <motion.span
+                      className="text-[11px] leading-tight"
+                      animate={{
+                        color: active ? "#374151" : "#9CA3AF",
+                        fontWeight: active ? 700 : 500,
+                      }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      {label}
+                    </motion.span>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      <motion.span
-        className="mt-1 text-[8px] leading-tight text-gray-400"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.3, delay: 0.72 }}
-      >
-        {drivers ? `${drivers.length} factors selected` : "31 factors tuned to your business"}
-      </motion.span>
+        <motion.span
+          className="mt-0.5 text-[8px] leading-tight text-gray-400"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.72 }}
+        >
+          {drivers ? `${drivers.length} factors selected` : "31 factors tuned to your business"}
+        </motion.span>
+      </div>
     </motion.div>
   );
 }
@@ -366,6 +390,7 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
       { index: REFINE_INDEX, label: "Medsupply curve adjustment", subStep: 5 },
       { index: REFINE_INDEX, label: "Every price optimized to the curve", subStep: 6 },
       { index: REFINE_INDEX, label: "The market moves the curve", subStep: 7 },
+      { index: REFINE_INDEX, label: "Across your entire portfolio", subStep: 8 },
     ],
   },
   {
@@ -411,6 +436,8 @@ export function Home() {
   const [railEntering, setRailEntering] = useState(false);
   const [dynamicActiveCategories, setDynamicActiveCategories] = useState<CategoryKey[] | null>(null);
   const handleActiveCategoryChange = useCallback((cats: string[]) => setDynamicActiveCategories(cats as CategoryKey[]), []);
+  const [executeCustomer, setExecuteCustomer] = useState("Acme");
+  const handleExecuteCustomerChange = useCallback((c: string) => setExecuteCustomer(c), []);
   const prevRailVisibleRef = useRef(false);
   const [presentElapsed, setPresentElapsed] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
@@ -434,6 +461,7 @@ export function Home() {
   const notes = getPresenterNotes(config?.kind ?? "", subStep);
   const engineFocus = ENGINE_FOCUS_MAP[`${slide}-${subStep}`] ?? null;
   const railVisible = ENGINE_INDICATOR_SLIDES.has(slide) && (slide !== POWER_INDEX || subStep >= 2);
+  const showDrivers = (slide === POWER_INDEX && subStep >= 3) || slide === EXECUTE_INDEX || slide === REFINE_INDEX;
   const staticActiveCategories = ACTIVE_CATEGORIES_MAP[`${slide}-${subStep}`] ?? [];
   const activeCategories = (slide === POWER_INDEX && dynamicActiveCategories && dynamicActiveCategories.length > 0)
     ? dynamicActiveCategories
@@ -784,7 +812,7 @@ export function Home() {
               onCurveModeChange={setRefineCurveMode}
             />
           )}
-          {config.kind === "execute" && <ExecuteSlide step={subStep} skipAnimation={skipAnimation} />}
+          {config.kind === "execute" && <ExecuteSlide step={subStep} skipAnimation={skipAnimation} onCustomerChange={handleExecuteCustomerChange} />}
           {config.kind === "closing-summary" && <ClosingSummarySlide />}
           {config.kind === "end" && <EndSlide onRestart={() => navigate(0)} />}
           </motion.div>
@@ -793,12 +821,13 @@ export function Home() {
         </MotionConfig>
       </main>
 
-      <EngineIndicator focus={engineFocus} visible={ENGINE_INDICATOR_SLIDES.has(slide)} />
-
       {railVisible && (
-        <FactorCategoryRail
+        <ModelStatusRail
           activeCategories={activeCategories}
-          drivers={slide === POWER_INDEX && subStep >= 3 ? DRIVER_RAIL_ITEMS : undefined}
+          drivers={showDrivers ? DRIVER_RAIL_ITEMS : undefined}
+          engineFocus={engineFocus}
+          showEngine={slide === POWER_INDEX}
+          driverSignals={slide === EXECUTE_INDEX ? CUSTOMER_DRIVER_SIGNALS[executeCustomer] : undefined}
         />
       )}
 
