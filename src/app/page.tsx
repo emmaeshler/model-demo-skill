@@ -423,13 +423,12 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
     slides: [
       { index: REFINE_INDEX, label: "Refine section intro", subStep: 0 },
       { index: REFINE_INDEX, label: "Your optimal demand curve", subStep: 1 },
-      { index: REFINE_INDEX, label: "Each customer gets their own curve", subStep: 2 },
-      { index: REFINE_INDEX, label: "Quickparts curve adjustment", subStep: 3 },
-      { index: REFINE_INDEX, label: "Acme curve adjustment", subStep: 4 },
-      { index: REFINE_INDEX, label: "Medsupply curve adjustment", subStep: 5 },
-      { index: REFINE_INDEX, label: "Every price optimized to the curve", subStep: 6 },
-      { index: REFINE_INDEX, label: "The market moves the curve", subStep: 7 },
-      { index: REFINE_INDEX, label: "Across your entire portfolio", subStep: 8 },
+      { index: REFINE_INDEX, label: "Quickparts curve adjustment", subStep: 2 },
+      { index: REFINE_INDEX, label: "Acme curve adjustment", subStep: 3 },
+      { index: REFINE_INDEX, label: "Medsupply curve adjustment", subStep: 4 },
+      { index: REFINE_INDEX, label: "Every price optimized to the curve", subStep: 5 },
+      { index: REFINE_INDEX, label: "The market moves the curve", subStep: 6 },
+      { index: REFINE_INDEX, label: "Across your entire portfolio", subStep: 7 },
     ],
   },
   {
@@ -464,7 +463,6 @@ export function Home() {
   const [slideSorterOpen, setSlideSorterOpen] = useState(false);
   const [sorterCols, setSorterCols] = useState(4);
   const [navGroups, setNavGroups] = useState(DEFAULT_NAV_GROUPS);
-  const [refineCurveMode, setRefineCurveMode] = useState<"one" | "three">("one");
   const [darkMode, setDarkMode] = useState(false);
   const [glossaryOpen, setGlossaryOpen] = useState(false);
   const [presenterNavOpen, setPresenterNavOpen] = useState(false);
@@ -563,20 +561,6 @@ export function Home() {
     });
   }, []);
 
-  useEffect(() => {
-    setNavGroups((prev) =>
-      prev.map((g) => {
-        if (g.label !== "4 | Refine") return g;
-        const allSlides = DEFAULT_NAV_GROUPS.find((dg) => dg.label === "4 | Refine")!.slides;
-        return {
-          ...g,
-          slides: refineCurveMode === "one"
-            ? allSlides.filter((s) => s.subStep !== 2)
-            : allSlides,
-        };
-      }),
-    );
-  }, [refineCurveMode]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode);
@@ -848,7 +832,6 @@ export function Home() {
               step={subStep}
               onAutoAdvance={skipAnimation ? undefined : () => navigate(slide + 1)}
               skipAnimation={skipAnimation}
-              onCurveModeChange={setRefineCurveMode}
             />
           )}
           {config.kind === "execute" && <ExecuteSlide step={subStep} skipAnimation={skipAnimation} onCustomerChange={handleExecuteCustomerChange} />}

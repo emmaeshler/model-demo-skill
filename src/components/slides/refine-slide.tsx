@@ -12,7 +12,7 @@ const STRAT_BLUE = "#21A5D5";
 const GREEN = "#4A8A5C";
 const RED = "#A65A52";
 
-export const REFINE_TOTAL_STEPS = 9;
+export const REFINE_TOTAL_STEPS = 8;
 
 const CURVE_SLOT = { x: 50, y: 20, w: 460, h: 140 };
 const BASE_Y = CURVE_SLOT.y + CURVE_SLOT.h;
@@ -217,30 +217,26 @@ const STEP_CONTEXT: Record<number, { title: string; body: string }> = {
     body: "The model builds a price–volume relationship from your historical win/loss data.",
   },
   2: {
-    title: "Your optimal demand curve",
-    body: "Each customer gets its own curve.",
-  },
-  3: {
     title: "QuickParts",
     body: "The model detects a pricing gap and adjusts to the optimal curve.",
   },
-  4: {
+  3: {
     title: "Acme",
     body: "The model detects a pricing gap and adjusts to the optimal curve.",
   },
-  5: {
+  4: {
     title: "MedSupply",
     body: "The model detects a pricing gap and adjusts to the optimal curve.",
   },
-  6: {
+  5: {
     title: "Every price, optimized",
     body: "Every transaction is now aligned to the demand curve — lifting underpriced deals while protecting wins.",
   },
-  7: {
+  6: {
     title: "The market moves. The curve moves with it.",
     body: "Price indices — published benchmarks for costs like steel, freight, or labor — feed the model continuously. When the market shifts, the curve shifts, and every price stays current.",
   },
-  8: {
+  7: {
     title: "We do this across your entire portfolio",
     body: "Every product segment gets its own demand curve — continuously recalibrated as the market shifts.",
   },
@@ -317,12 +313,7 @@ const PORTFOLIO_REVEAL_ORDER = (() => {
   return order;
 })();
 
-export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeChange }: { step: number; onAutoAdvance?: () => void; skipAnimation?: boolean; onCurveModeChange?: (mode: "one" | "three") => void }) {
-  const [curveMode, setCurveMode] = useState<"one" | "three">("one");
-
-  useEffect(() => {
-    onCurveModeChange?.(curveMode);
-  }, [curveMode, onCurveModeChange]);
+export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: number; onAutoAdvance?: () => void; skipAnimation?: boolean }) {
 
   const curve = useMemo(() => {
     const raw = makeCurve(CURVE_SLOT, 5);
@@ -401,8 +392,8 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
   }, [chartStep, skipAnimation]);
 
   /* ── Spotlight auto-animation (steps 3-5) ────────────── */
-  const isSpotlight = chartStep >= 3 && chartStep <= 5;
-  const spotlightIdx = isSpotlight ? chartStep - 3 : -1;
+  const isSpotlight = chartStep >= 2 && chartStep <= 4;
+  const spotlightIdx = isSpotlight ? chartStep - 2 : -1;
 
   const [spotPhase, setSpotPhase] = useState(0);
   useEffect(() => {
@@ -424,7 +415,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
   /* ── Timeline click-to-advance (step 7) ────────────── */
   const [indexPhase, setIndexPhase] = useState(0);
   useEffect(() => {
-    if (chartStep !== 7) { setIndexPhase(0); return; }
+    if (chartStep !== 6) { setIndexPhase(0); return; }
     if (skipAnimation) { setIndexPhase(TIMELINE_EVENTS.length); return; }
   }, [chartStep, skipAnimation]);
 
@@ -465,71 +456,10 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
     return () => { clearTimeout(delayTimer); clearTimeout(kpiTimer); cancelAnimationFrame(frame); };
   }, [indexPhase, skipAnimation]);
 
-  /* ── Collapse animation (step 6, three-curves mode) ── */
-  const isCollapseStep = chartStep === 6 && curveMode === "three";
-  const [collapsePhase, setCollapsePhase] = useState(0);
-  const [morphProgress, setMorphProgress] = useState(0);
-  const [showFinalSubtitle, setShowFinalSubtitle] = useState(false);
-
-  useEffect(() => {
-    if (!isCollapseStep) {
-      setCollapsePhase(0);
-      setMorphProgress(0);
-      setShowFinalSubtitle(false);
-      return;
-    }
-    if (skipAnimation) {
-      setCollapsePhase(4);
-      setMorphProgress(1);
-      setShowFinalSubtitle(true);
-      return;
-    }
-    setCollapsePhase(0);
-    const t1 = setTimeout(() => setCollapsePhase(1), 200);
-    const t2 = setTimeout(() => setCollapsePhase(2), 2200);
-    const t3 = setTimeout(() => setCollapsePhase(3), 3200);
-    const t4 = setTimeout(() => setCollapsePhase(4), 4700);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
-  }, [chartStep, curveMode, skipAnimation, isCollapseStep]);
-
-  useEffect(() => {
-    if (collapsePhase < 3) { setMorphProgress(0); return; }
-    if (collapsePhase > 3) { setMorphProgress(1); return; }
-    const startTime = performance.now();
-    const duration = 1500;
-    let frame: number;
-    const tick = (now: number) => {
-      const elapsed = now - startTime;
-      const raw = Math.min(1, elapsed / duration);
-      setMorphProgress(1 - Math.pow(1 - raw, 3));
-      if (raw < 1) frame = requestAnimationFrame(tick);
-    };
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, [collapsePhase]);
-
-  useEffect(() => {
-    if (collapsePhase === 4) {
-      const t = setTimeout(() => setShowFinalSubtitle(true), 300);
-      return () => clearTimeout(t);
-    }
-    setShowFinalSubtitle(false);
-  }, [collapsePhase]);
-
-  const morphedGhostPaths = useMemo(() => {
-    if (morphProgress <= 0) return null;
-    return curve.ghostCurvePts.map((ghostPts) =>
-      "M " + ghostPts.map((gp, i) => {
-        const np = curve.navyPts[i];
-        return `${gp.x},${gp.y + (np.y - gp.y) * morphProgress}`;
-      }).join(" L ")
-    );
-  }, [morphProgress, curve]);
-
-  /* ── Portfolio headline phases (step 8) ──────────────── */
+  /* ── Portfolio headline phases (step 7) ──────────────── */
   const [portfolioPhase, setPortfolioPhase] = useState(0);
   useEffect(() => {
-    if (chartStep !== 8) { setPortfolioPhase(0); return; }
+    if (chartStep !== 7) { setPortfolioPhase(0); return; }
     if (skipAnimation) { setPortfolioPhase(4); return; }
     setPortfolioPhase(0);
     const t1 = setTimeout(() => setPortfolioPhase(1), 200);
@@ -542,10 +472,9 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
   /* ── Chart animation ────────────────────────────────── */
 
   const showCurve = chartStep >= 1;
-  const showGhostCurves = chartStep === 2 && curveMode === "three";
-  const isAllToCurve = chartStep >= 6;
-  const isIndexShift = chartStep === 7;
-  const isPortfolio = chartStep === 8;
+  const isAllToCurve = chartStep >= 5;
+  const isIndexShift = chartStep === 6;
+  const isPortfolio = chartStep === 7;
   const activeIndexCurve = isIndexShift && indexPhase > 0 ? curve.indexCurves[indexPhase - 1] : null;
   const currentEvent = indexPhase > 0 ? TIMELINE_EVENTS[indexPhase - 1] : null;
 
@@ -602,15 +531,15 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
     };
   }, [isIndexShift, indexPhase]);
 
-  const dotOpacityBase = (chartStep >= 1 && chartStep <= 2) ? 0.15 : isSpotlight ? 0 : isIndexShift ? 0.35 : 1;
+  const dotOpacityBase = chartStep === 1 ? 0.15 : isSpotlight ? 0 : isIndexShift ? 0.35 : 1;
 
   const heading = isPortfolio
     ? "We do this across your entire portfolio"
     : isIndexShift
     ? "The market moves. The curve moves with it."
     : isAllToCurve
-      ? (curveMode === "three" ? "Every price, on its curve." : "Every price, aligned to the curve")
-      : (chartStep >= 1 && chartStep <= 2)
+      ? "Every price, aligned to the curve"
+      : chartStep === 1
         ? "Your optimal demand curve"
         : chartStep === 0
           ? "Now the model looks at all of them at once"
@@ -622,15 +551,9 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
       ? "Every product segment gets its own demand curve — continuously recalibrated as the market shifts."
       : isIndexShift
       ? null
-      : isCollapseStep
-        ? (showFinalSubtitle
-          ? "The model manages the complexity — you see one answer."
-          : "Each transaction moves to the optimal point for that customer — underpriced deals lifted, wins protected.")
       : isSpotlight
         ? (spotPhase >= 2 ? SEGMENT_HIGHLIGHTS[spotlightIdx].afterBody : SEGMENT_HIGHLIGHTS[spotlightIdx].beforeBody)
-        : chartStep === 2 && curveMode === "one"
-          ? STEP_CONTEXT[1]?.body
-          : STEP_CONTEXT[chartStep]?.body || null;
+        : STEP_CONTEXT[chartStep]?.body || null;
 
   const activeHighlight = isSpotlight ? SEGMENT_HIGHLIGHTS[spotlightIdx] : null;
   const isLifted = spotPhase >= 1;
@@ -768,7 +691,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
           )}
           {chartStep > 0 && !isPortfolio && (
             <motion.div
-              key={`step-title-${chartStep >= 1 && chartStep <= 2 ? 'curve-intro' : `step-${chartStep}`}`}
+              key={`step-title-${chartStep === 1 ? 'curve-intro' : `step-${chartStep}`}`}
               className="absolute inset-0 flex flex-col items-center justify-start"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
@@ -784,7 +707,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
               {subtitle && (
                 <AnimatePresence mode="wait">
                   <motion.p
-                    key={(chartStep >= 1 && chartStep <= 5) ? 'curve-subtitle' : isCollapseStep ? `collapse-${showFinalSubtitle ? 'final' : 'snap'}` : `step-${chartStep}`}
+                    key={(chartStep >= 1 && chartStep <= 4) ? 'curve-subtitle' : `step-${chartStep}`}
                     className="mx-auto mt-1 max-w-2xl text-center text-[1.05rem] leading-relaxed"
                     style={{ color: MUTED }}
                     initial={{ opacity: 0, y: 6 }}
@@ -792,27 +715,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
                     exit={{ opacity: 0, y: -4 }}
                     transition={{ duration: 0.4, delay: 0.15 }}
                   >
-                    {chartStep === 2 && curveMode === "three" ? (
-                      <>Each{" "}
-                        <span className="relative inline" style={{ whiteSpace: "nowrap" }}>
-                          <span style={{ fontWeight: 700, color: NAVY }}>customer</span>
-                          <motion.span
-                            className="absolute bottom-0 left-0 h-[2px] rounded-full"
-                            style={{ backgroundColor: STRAT_BLUE }}
-                            initial={{ width: "0%" }}
-                            animate={{ width: "100%" }}
-                            transition={{ duration: 0.6, delay: 0.4, ease: "easeOut" }}
-                          />
-                        </span>{" "}
-                        gets its own curve.
-                      </>
-                    ) : isCollapseStep && showFinalSubtitle ? (
-                      <span style={{ fontWeight: 700, color: NAVY, textDecoration: "underline", textDecorationColor: STRAT_BLUE, textUnderlineOffset: "4px", textDecorationThickness: "2px" }}>
-                        {subtitle}
-                      </span>
-                    ) : (
-                      subtitle
-                    )}
+                    {subtitle}
                   </motion.p>
                 </AnimatePresence>
               )}
@@ -1027,69 +930,6 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
       >
         {/* Chart */}
         <div className="relative min-w-0 flex-1 flex items-center justify-center" style={isIndexShift ? { paddingRight: 175 } : undefined}>
-          {/* Curve mode toggle — internal review tool */}
-          {!isIndexShift && <div className="absolute right-3 bottom-3 z-20 flex items-center gap-1 rounded-lg bg-white/90 px-2.5 py-1.5 shadow-sm backdrop-blur-sm border border-gray-200/60">
-            <button
-              onClick={() => setCurveMode("one")}
-              className="rounded-md px-2 py-0.5 text-[11px] font-medium transition-colors"
-              style={{
-                backgroundColor: curveMode === "one" ? NAVY : "transparent",
-                color: curveMode === "one" ? "white" : MUTED,
-              }}
-            >
-              1 Curve
-            </button>
-            <button
-              onClick={() => setCurveMode("three")}
-              className="rounded-md px-2 py-0.5 text-[11px] font-medium transition-colors"
-              style={{
-                backgroundColor: curveMode === "three" ? NAVY : "transparent",
-                color: curveMode === "three" ? "white" : MUTED,
-              }}
-            >
-              3 Curves
-            </button>
-          </div>}
-
-          {/* Product–customer legend card (step 2) */}
-          <AnimatePresence>
-            {showGhostCurves && (
-              <motion.div
-                key="curve-legend"
-                className="absolute z-10 rounded-xl bg-white/95 px-4 py-3 shadow-md backdrop-blur-sm"
-                style={{ right: "3%", top: "5%" }}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.4, delay: 0.5 }}
-              >
-                <div className="space-y-2.5">
-                  <div>
-                    <div className="flex items-center gap-2.5">
-                      <svg width="20" height="4" className="shrink-0"><line x1="0" y1="2" x2="20" y2="2" stroke={ORANGE} strokeWidth={2} strokeDasharray="3 2" strokeLinecap="round" /></svg>
-                      <span className="text-[13px] font-semibold" style={{ color: ORANGE }}>QuickParts</span>
-                    </div>
-                    <p className="ml-[28px] mt-0.5 text-[11px] leading-snug" style={{ color: MUTED }}>Niche buyer, low competition</p>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2.5">
-                      <svg width="20" height="4" className="shrink-0"><line x1="0" y1="2" x2="20" y2="2" stroke={NAVY} strokeWidth={2} strokeLinecap="round" /></svg>
-                      <span className="text-[13px] font-semibold" style={{ color: NAVY }}>Acme</span>
-                    </div>
-                    <p className="ml-[28px] mt-0.5 text-[11px] leading-snug" style={{ color: MUTED }}>Loyal, high-volume buyer</p>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2.5">
-                      <svg width="20" height="4" className="shrink-0"><line x1="0" y1="2" x2="20" y2="2" stroke={TEAL} strokeWidth={2} strokeDasharray="3 2" strokeLinecap="round" /></svg>
-                      <span className="text-[13px] font-semibold" style={{ color: TEAL }}>MedSupply</span>
-                    </div>
-                    <p className="ml-[28px] mt-0.5 text-[11px] leading-snug" style={{ color: MUTED }}>Price-sensitive, competitive market</p>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
             <svg
               viewBox={`0 -6 ${CURVE_SLOT.x + CURVE_SLOT.w + 40} ${BASE_Y + 30}`}
               className="w-full h-full"
@@ -1180,47 +1020,13 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
                   initial={{ pathLength: 0, opacity: 0 }}
                   animate={{
                     pathLength: 1,
-                    opacity: showGhostCurves ? 0.6 : isSpotlight ? (spotlightIdx === 1 ? 1 : 0.15) : 1,
+                    opacity: isSpotlight ? (spotlightIdx === 1 ? 1 : 0.15) : 1,
                     strokeWidth: isSpotlight && spotlightIdx === 1 ? 3 : 2,
                   }}
                   transition={{ duration: 1, ease: "easeOut" }}
                 />
               )}
 
-              {/* Ghost curves — all shown at step 2, then progressively during spotlights */}
-              {curve.ghostCurves.map((ghost, gi) => {
-                if (curveMode === "one") return null;
-                const revealStep = ghost.customer === "QuickParts" ? 2 : ghost.customer === "MedSupply" ? 2 : -1;
-                if (revealStep < 0 || chartStep < revealStep) return null;
-                const isActiveGhost = isSpotlight && SEGMENT_HIGHLIGHTS[spotlightIdx]?.label === ghost.customer;
-                const collapseD = isCollapseStep && morphedGhostPaths ? morphedGhostPaths[gi] : ghost.d;
-                return (
-                  <motion.path
-                    key={`ghost-curve-${gi}`}
-                    d={isCollapseStep ? collapseD : ghost.d}
-                    fill="none"
-                    stroke={ghost.color}
-                    strokeWidth={isCollapseStep && collapsePhase >= 1 ? 2 : isActiveGhost ? 2.5 : 1.5}
-                    strokeDasharray={isCollapseStep && collapsePhase >= 1 ? "6 4" : "4 3"}
-                    strokeLinecap="round"
-                    initial={{ opacity: 0, pathLength: 0 }}
-                    animate={{
-                      opacity: isCollapseStep
-                        ? (collapsePhase >= 3 ? 0 : collapsePhase >= 1 ? 0.6 : 0)
-                        : isAllToCurve ? 0 : showGhostCurves ? 0.45 : isActiveGhost ? 0.55 : 0.08,
-                      pathLength: 1,
-                    }}
-                    transition={{
-                      pathLength: { duration: 1, delay: showGhostCurves ? 0.3 + gi * 0.2 : 0, ease: "easeOut" },
-                      opacity: isCollapseStep && collapsePhase >= 3
-                        ? { duration: 1.5, ease: [0.22, 1, 0.36, 1] }
-                        : isCollapseStep && collapsePhase >= 1
-                          ? { duration: 0.5 }
-                          : { duration: 0.6, delay: showGhostCurves ? 0.3 + gi * 0.2 : 0 },
-                    }}
-                  />
-                );
-              })}
 
 
               {/* Optimal demand curve label */}
@@ -1250,17 +1056,6 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
                 const scatterY = Math.max(CURVE_SLOT.y + 4, Math.min(BASE_Y - 4, pt.y + dot.offsetY));
                 const isBelowCurve = scatterY > pt.y;
 
-                const customerSampleAt = dot.customer === "QuickParts"
-                  ? curve.ghostCurves[1].sampleAt
-                  : dot.customer === "MedSupply"
-                    ? curve.ghostCurves[0].sampleAt
-                    : curve.sampleAt;
-                const customerPt = customerSampleAt(dot.t);
-                const isBelowCustomer = scatterY > customerPt.y;
-                const customerTargetY = isBelowCustomer
-                  ? customerPt.y + dot.residualY
-                  : scatterY + (customerPt.y - scatterY) * 0.15;
-
                 const rawTargetY = isAllToCurve ? (isBelowCurve ? pt.y + dot.residualY : scatterY) : scatterY;
                 const toShift = activeIndexCurve ? activeIndexCurve.sampleAt(dot.t).y - pt.y : 0;
                 const fromShift = indexMorphFrom > 0 ? curve.indexCurves[indexMorphFrom - 1].sampleAt(dot.t).y - pt.y : 0;
@@ -1278,18 +1073,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
                 let animCy: number | number[] = dot.chaosY;
 
                 if (!inChaos) {
-                  if (isCollapseStep) {
-                    if (collapsePhase < 1) {
-                      animCx = [baseCx, baseCx + dot.driftDx, baseCx - dot.driftDx * 0.6, baseCx];
-                      animCy = [scatterY, scatterY + dot.driftDy, scatterY - dot.driftDy * 0.6, scatterY];
-                    } else if (collapsePhase < 3) {
-                      animCx = baseCx;
-                      animCy = customerTargetY;
-                    } else {
-                      animCx = baseCx;
-                      animCy = isBelowCurve ? pt.y + dot.residualY : scatterY;
-                    }
-                  } else if (isAllToCurve) {
+                  if (isAllToCurve) {
                     animCx = baseCx;
                     animCy = targetY;
                   } else if (settling) {
@@ -1318,12 +1102,6 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
                         ? { duration: 0 }
                         : settling
                           ? { duration: 1.2, delay: settleDelay, ease: [0.22, 1, 0.36, 1] }
-                          : isCollapseStep
-                            ? collapsePhase >= 3
-                              ? { duration: 1.5, delay: i * 0.003, ease: [0.22, 1, 0.36, 1] }
-                              : collapsePhase >= 1
-                                ? { duration: 0.8, delay: i * 0.008, ease: [0, 0, 0.2, 1] }
-                                : { duration: dot.driftDuration, delay: dot.driftDelay, repeat: Infinity, ease: "easeInOut" }
                           : isAllToCurve
                             ? { duration: 0.7, delay: i * 0.01, ease: "easeInOut" }
                             : { duration: dot.driftDuration, delay: dot.driftDelay, repeat: Infinity, ease: "easeInOut" },
@@ -1331,12 +1109,6 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
                         ? { duration: 0 }
                         : settling
                           ? { duration: 1.2, delay: settleDelay, ease: [0.22, 1, 0.36, 1] }
-                          : isCollapseStep
-                            ? collapsePhase >= 3
-                              ? { duration: 1.5, delay: i * 0.003, ease: [0.22, 1, 0.36, 1] }
-                              : collapsePhase >= 1
-                                ? { duration: 0.8, delay: i * 0.008, ease: [0, 0, 0.2, 1] }
-                                : { duration: dot.driftDuration, delay: dot.driftDelay, repeat: Infinity, ease: "easeInOut" }
                           : isAllToCurve
                             ? { duration: 0.6 + (Math.abs(dot.offsetY) / 36) * 0.3, delay: i * 0.01, ease: "easeInOut" }
                             : { duration: dot.driftDuration, delay: dot.driftDelay, repeat: Infinity, ease: "easeInOut" },
@@ -1356,19 +1128,10 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
 
               {/* Highlight product dots — start below curve, auto-animate to curve */}
               {SEGMENT_HIGHLIGHTS.map((seg, si) => {
-                const visible = isCollapseStep
-                  ? collapsePhase >= 1
-                  : isAllToCurve || (isSpotlight && si <= spotlightIdx);
+                const visible = isAllToCurve || (isSpotlight && si <= spotlightIdx);
                 if (!visible) return null;
 
-                const ghost = curveMode === "three" ? curve.ghostCurves.find(g => g.customer === seg.label) : null;
-                const segCustomerSample = ghost ? ghost.sampleAt : curve.sampleAt;
-                let rawPt;
-                if (isCollapseStep) {
-                  rawPt = collapsePhase >= 3 ? curve.sampleAt(seg.t) : segCustomerSample(seg.t);
-                } else {
-                  rawPt = isAllToCurve ? curve.sampleAt(seg.t) : segCustomerSample(seg.t);
-                }
+                const rawPt = curve.sampleAt(seg.t);
                 const segToShift = activeIndexCurve ? activeIndexCurve.sampleAt(seg.t).y - curve.sampleAt(seg.t).y : 0;
                 const segFromShift = indexMorphFrom > 0 ? curve.indexCurves[indexMorphFrom - 1].sampleAt(seg.t).y - curve.sampleAt(seg.t).y : 0;
                 const segShiftOffset = isIndexShift ? segFromShift + (segToShift - segFromShift) * indexMorphProgress : 0;
@@ -1376,7 +1139,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
                 const belowY = pt.y + seg.offsetY;
                 const isActive = isSpotlight && si === spotlightIdx;
                 const isPast = isSpotlight && si < spotlightIdx;
-                const dotLifted = isCollapseStep ? collapsePhase >= 1 : (isAllToCurve || isPast || (isActive && isLifted));
+                const dotLifted = isAllToCurve || isPast || (isActive && isLifted);
                 const targetCy = dotLifted ? pt.y : belowY;
 
                 return (
@@ -1420,16 +1183,14 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, onCurveModeCha
                     {/* Main dot — starts at belowY, auto-lifts to curve */}
                     <motion.circle
                       cx={pt.x}
-                      r={isCollapseStep ? (collapsePhase >= 3 ? 2.5 : 4) : isAllToCurve ? 2.5 : 6}
-                      fill={isCollapseStep ? seg.dotColor : isAllToCurve ? seg.dotColor : "white"}
+                      r={isAllToCurve ? 2.5 : 6}
+                      fill={isAllToCurve ? seg.dotColor : "white"}
                       stroke={seg.dotColor}
-                      strokeWidth={isCollapseStep ? (collapsePhase >= 3 ? 0.8 : 1.2) : isAllToCurve ? 0.8 : 2.5}
+                      strokeWidth={isAllToCurve ? 0.8 : 2.5}
                       initial={{ cy: belowY, opacity: 0 }}
                       animate={{ cy: targetCy, opacity: 1 }}
                       transition={{
-                        cy: isCollapseStep && collapsePhase >= 3
-                          ? { duration: 1.5, ease: [0.22, 1, 0.36, 1] }
-                          : { duration: 1.0, ease: [0.22, 1, 0.36, 1] },
+                        cy: { duration: 1.0, ease: [0.22, 1, 0.36, 1] },
                         opacity: { duration: 0.3, delay: 0.1 },
                       }}
                       onClick={() => { if (isActive) { if (spotPhase < 2) setSpotPhase(2); else onAutoAdvance?.(); } }}
