@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, ChevronDown, Check, Download, MonitorPlay, RotateCcw, Maximize, Minimize, LayoutGrid, Sun, Moon, PlayCircle, BookOpen } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, Check, Download, MonitorPlay, RotateCcw, Maximize, Minimize, PlayCircle, BookOpen, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 export interface NavGroup {
@@ -83,55 +83,29 @@ function DownloadLink() {
 }
 
 export function TopBar({
-  groups,
-  current,
-  currentSubStep,
   onNavigate,
   presentationTitle = "Inside Your Dynamic Model",
   onStartPresenting,
-  onSlideSorter,
   onAnimationGlossary,
-  darkMode,
-  onToggleDark,
 }: SlideNavProps) {
-  const [open, setOpen] = useState(false);
-  const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set());
-  const panelRef = useRef<HTMLDivElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-
-  const currentGroup =
-    groups.find((g) =>
-      g.slides.some(
-        (s) =>
-          s.index === current &&
-          (s.subStep === undefined || s.subStep === currentSubStep),
-      ),
-    ) ?? groups.find((g) => g.slides.some((s) => s.index === current));
-
-  const currentGroupIndex = groups.indexOf(currentGroup!);
-
-  const handleNavigate = useCallback(
-    (index: number, subStep?: number) => {
-      onNavigate(index, subStep);
-      setOpen(false);
-    },
-    [onNavigate],
-  );
+  const [kebabOpen, setKebabOpen] = useState(false);
+  const kebabRef = useRef<HTMLDivElement>(null);
+  const kebabBtnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    if (!open) return;
+    if (!kebabOpen) return;
     function onClickOutside(e: MouseEvent) {
       if (
-        panelRef.current &&
-        !panelRef.current.contains(e.target as Node) &&
-        triggerRef.current &&
-        !triggerRef.current.contains(e.target as Node)
+        kebabRef.current &&
+        !kebabRef.current.contains(e.target as Node) &&
+        kebabBtnRef.current &&
+        !kebabBtnRef.current.contains(e.target as Node)
       ) {
-        setOpen(false);
+        setKebabOpen(false);
       }
     }
     function onEscape(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") setKebabOpen(false);
     }
     document.addEventListener("mousedown", onClickOutside);
     document.addEventListener("keydown", onEscape);
@@ -139,7 +113,7 @@ export function TopBar({
       document.removeEventListener("mousedown", onClickOutside);
       document.removeEventListener("keydown", onEscape);
     };
-  }, [open]);
+  }, [kebabOpen]);
 
   return (
     <>
@@ -159,156 +133,61 @@ export function TopBar({
             {presentationTitle}
           </button>
 
-          <button
-            ref={triggerRef}
-            onClick={() => setOpen(!open)}
-            className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-white/70 transition-colors hover:bg-white/10"
-          >
-            {currentGroup?.label ?? ""}
-            <ChevronDown
-              className={cn(
-                "size-3.5 text-white/40 transition-transform",
-                open && "rotate-180",
-              )}
-            />
-          </button>
-
           <div className="ml-auto flex items-center gap-3">
-{onStartPresenting && (
-              <>
-                <a
-                  href="/walkthrough"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 rounded-md border border-white/15 px-2.5 py-1 text-xs font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white"
-                >
-                  <PlayCircle className="size-3.5" />
-                  Walk Through
-                </a>
-                <button
-                  onClick={onStartPresenting}
-                  className="flex items-center gap-1.5 rounded-md border border-white/15 px-2.5 py-1 text-xs font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white"
-                >
-                  <MonitorPlay className="size-3.5" />
-                  Present
-                </button>
-              </>
-            )}
-            {onAnimationGlossary && (
+            {onStartPresenting && (
               <button
-                onClick={onAnimationGlossary}
+                onClick={onStartPresenting}
                 className="flex items-center gap-1.5 rounded-md border border-white/15 px-2.5 py-1 text-xs font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white"
               >
-                <BookOpen className="size-3.5" />
-                Animation Glossary
+                <MonitorPlay className="size-3.5" />
+                Present
               </button>
             )}
             <DownloadLink />
             <FullPageButton />
+            <div className="relative">
+              <button
+                ref={kebabBtnRef}
+                onClick={() => setKebabOpen(!kebabOpen)}
+                className="group relative flex items-center rounded-md border border-white/15 p-1.5 text-white/70 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white"
+                aria-label="wip/ design"
+              >
+                <MoreVertical className="size-3.5" />
+                <span className="pointer-events-none absolute right-0 top-full mt-2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-[10px] font-medium text-white/80 opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                  wip/ design
+                </span>
+              </button>
+              {kebabOpen && (
+                <div
+                  ref={kebabRef}
+                  className="absolute right-0 top-full mt-1.5 min-w-[180px] rounded-lg border border-white/10 bg-[#06283D]/95 py-1 shadow-xl backdrop-blur-md"
+                >
+                  <a
+                    href="/walkthrough"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setKebabOpen(false)}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                  >
+                    <PlayCircle className="size-3.5" />
+                    Walk Through
+                  </a>
+                  {onAnimationGlossary && (
+                    <button
+                      onClick={() => { onAnimationGlossary(); setKebabOpen(false); }}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                    >
+                      <BookOpen className="size-3.5" />
+                      Animation Glossary
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
 
-      {open && (
-        <div
-          ref={panelRef}
-          className="fixed top-[49px] left-1/2 z-50 w-full max-w-md -translate-x-1/2 rounded-b-xl border border-t-0 border-white/10 bg-[#06283D]/95 shadow-lg backdrop-blur-md"
-        >
-          <div className="max-h-[60vh] overflow-y-auto p-3">
-            {groups.map((group, gi) => {
-              const groupDone = group.slides.every(
-                (s) =>
-                  s.index < current ||
-                  (s.index === current &&
-                    s.subStep !== undefined &&
-                    currentSubStep !== undefined &&
-                    s.subStep < currentSubStep),
-              );
-              const groupActive = gi === currentGroupIndex;
-
-              const isExpanded = groupActive || expandedGroups.has(gi);
-
-              return (
-                <div key={gi} className="mb-1.5 last:mb-0">
-                  <button
-                    onClick={() => {
-                      if (groupActive) {
-                        handleNavigate(
-                          group.slides[0].index,
-                          group.slides[0].subStep ?? 0,
-                        );
-                      } else {
-                        setExpandedGroups((prev) => {
-                          const next = new Set(prev);
-                          if (next.has(gi)) {
-                            next.delete(gi);
-                          } else {
-                            next.add(gi);
-                          }
-                          return next;
-                        });
-                      }
-                    }}
-                    className={cn(
-                      "flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-sm font-medium transition-colors",
-                      groupActive
-                        ? "bg-white/15 text-white"
-                        : groupDone
-                          ? "text-white/50 hover:bg-white/10"
-                          : "text-white/70 hover:bg-white/10",
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold",
-                        groupActive
-                          ? "bg-white text-[#06283D]"
-                          : groupDone
-                            ? "bg-white/20 text-white/60"
-                            : "bg-white/10 text-white/40",
-                      )}
-                    >
-                      {groupDone ? <Check className="size-3" /> : gi + 1}
-                    </span>
-                    {group.label}
-                    {!groupActive && group.slides.length > 1 && (
-                      <ChevronDown
-                        className={cn(
-                          "ml-auto size-3 text-white/30 transition-transform",
-                          isExpanded && "rotate-180",
-                        )}
-                      />
-                    )}
-                  </button>
-                  {isExpanded && group.slides.length > 1 && (
-                    <div className="ml-7 mt-0.5 space-y-0.5">
-                      {group.slides.map((s, si) => {
-                        const isSlideActive =
-                          s.index === current &&
-                          (s.subStep === undefined || s.subStep === currentSubStep);
-                        return (
-                          <button
-                            key={si}
-                            onClick={() => handleNavigate(s.index, s.subStep)}
-                            className={cn(
-                              "w-full rounded px-2.5 py-1 text-left text-xs transition-colors",
-                              isSlideActive
-                                ? "bg-white/10 font-medium text-white"
-                                : "text-white/45 hover:bg-white/5 hover:text-white/70",
-                            )}
-                          >
-                            {s.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
     </>
   );
 }
