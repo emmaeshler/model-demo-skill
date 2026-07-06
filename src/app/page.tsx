@@ -796,51 +796,77 @@ export function Home() {
         )}
         style={{ "--rail-inset": railVisible ? "140px" : "0px" } as React.CSSProperties}
       >
-        <MotionConfig reducedMotion={skipAnimation ? "always" : "never"}>
-        <AnimatePresence mode="wait">
-        <motion.div
-          key={`${slide}-${replayKey}`}
-          initial={skipAnimation ? false : { opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -6 }}
-          transition={{ duration: skipAnimation ? 0 : 0.45, ease: [0.22, 1, 0.36, 1] }}
-          className="w-full"
-        >
-          <motion.div
-            animate={{ opacity: railEntering ? 0 : 1 }}
-            transition={{ duration: railEntering ? 0.1 : 0.4 }}
-          >
-          {config.kind === "intro" && <IntroSlide />}
-          {config.kind === "overview" && <OverviewSlide step={subStep} skipAnimation={skipAnimation} />}
-          {config.kind === "one-model" && (
-            <OneModelSlide
-              step={subStep}
-              skipAnimation={skipAnimation}
-              onAutoAdvance={skipAnimation ? undefined : () => navigate(slide + 1)}
-            />
-          )}
-          {config.kind === "power" && (
-            <PowerSlide
-              step={subStep}
-              onAutoAdvance={skipAnimation ? undefined : () => navigate(slide + 1)}
-              skipAnimation={skipAnimation}
-              onActiveCategoryChange={handleActiveCategoryChange}
-            />
-          )}
-          {config.kind === "refine" && (
-            <RefineSlide
-              step={subStep}
-              onAutoAdvance={skipAnimation ? undefined : () => navigate(slide + 1)}
-              skipAnimation={skipAnimation}
-            />
-          )}
-          {config.kind === "execute" && <ExecuteSlide step={subStep} skipAnimation={skipAnimation} onCustomerChange={handleExecuteCustomerChange} />}
-          {config.kind === "closing-summary" && <ClosingSummarySlide />}
-          {config.kind === "end" && <EndSlide onRestart={() => navigate(0)} />}
-          </motion.div>
-        </motion.div>
-        </AnimatePresence>
-        </MotionConfig>
+        <div className="relative w-full">
+        {SLIDES.map((sc, i) => {
+          const isActive = i === slide;
+          return (
+            <div
+              key={i}
+              className={cn("w-full", !isActive && "absolute inset-0 overflow-hidden")}
+              style={{
+                visibility: isActive ? "visible" : "hidden",
+                pointerEvents: isActive ? "auto" : "none",
+              }}
+            >
+              {isActive ? (
+                <MotionConfig reducedMotion={skipAnimation ? "always" : "never"}>
+                  <motion.div
+                    key={`${slide}-${replayKey}`}
+                    initial={skipAnimation ? false : { opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: skipAnimation ? 0 : 0.3, ease: [0.22, 1, 0.36, 1] }}
+                    className="w-full"
+                  >
+                    <motion.div
+                      animate={{ opacity: railEntering ? 0 : 1 }}
+                      transition={{ duration: railEntering ? 0.1 : 0.4 }}
+                    >
+                      {sc.kind === "intro" && <IntroSlide />}
+                      {sc.kind === "overview" && <OverviewSlide step={subStep} skipAnimation={skipAnimation} />}
+                      {sc.kind === "one-model" && (
+                        <OneModelSlide
+                          step={subStep}
+                          skipAnimation={skipAnimation}
+                          onAutoAdvance={skipAnimation ? undefined : () => navigate(slide + 1)}
+                        />
+                      )}
+                      {sc.kind === "power" && (
+                        <PowerSlide
+                          step={subStep}
+                          onAutoAdvance={skipAnimation ? undefined : () => navigate(slide + 1)}
+                          skipAnimation={skipAnimation}
+                          onActiveCategoryChange={handleActiveCategoryChange}
+                        />
+                      )}
+                      {sc.kind === "refine" && (
+                        <RefineSlide
+                          step={subStep}
+                          onAutoAdvance={skipAnimation ? undefined : () => navigate(slide + 1)}
+                          skipAnimation={skipAnimation}
+                        />
+                      )}
+                      {sc.kind === "execute" && <ExecuteSlide step={subStep} skipAnimation={skipAnimation} onCustomerChange={handleExecuteCustomerChange} />}
+                      {sc.kind === "closing-summary" && <ClosingSummarySlide />}
+                      {sc.kind === "end" && <EndSlide onRestart={() => navigate(0)} />}
+                    </motion.div>
+                  </motion.div>
+                </MotionConfig>
+              ) : (
+                <MotionConfig reducedMotion="always">
+                  {sc.kind === "intro" && <IntroSlide />}
+                  {sc.kind === "overview" && <OverviewSlide step={0} skipAnimation />}
+                  {sc.kind === "one-model" && <OneModelSlide step={0} skipAnimation />}
+                  {sc.kind === "power" && <PowerSlide step={0} skipAnimation />}
+                  {sc.kind === "refine" && <RefineSlide step={0} skipAnimation />}
+                  {sc.kind === "execute" && <ExecuteSlide step={0} skipAnimation />}
+                  {sc.kind === "closing-summary" && <ClosingSummarySlide />}
+                  {sc.kind === "end" && <EndSlide onRestart={() => {}} />}
+                </MotionConfig>
+              )}
+            </div>
+          );
+        })}
+        </div>
       </main>
 
       {railVisible && (

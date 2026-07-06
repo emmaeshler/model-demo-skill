@@ -110,7 +110,9 @@ function ModelVisualization({ step }: { step: number }) {
   const CX = 660;
   const CY = 180;
   const R = 105;
-  const SPLIT_Y = 2;
+  const R_OUTER = 125;
+  const R_INNER = 85;
+  const INNER_BLUE = "#3B7EAE";
 
   const showSplit = step >= 1;
 
@@ -127,8 +129,8 @@ function ModelVisualization({ step }: { step: number }) {
 
   const ML_OFFSET = 50;
   const STRAT_OFFSET = 50;
-  const EDGE_LEFT_ML = CX - Math.round(Math.sqrt(R * R - ML_OFFSET * ML_OFFSET));
-  const EDGE_LEFT_STRAT = CX - Math.round(Math.sqrt(R * R - STRAT_OFFSET * STRAT_OFFSET));
+  const EDGE_LEFT_ML = CX - Math.round(Math.sqrt(R_OUTER * R_OUTER - ML_OFFSET * ML_OFFSET));
+  const EDGE_LEFT_STRAT = CX - Math.round(Math.sqrt(R_OUTER * R_OUTER - STRAT_OFFSET * STRAT_OFFSET));
 
   const label1Y = START_Y + LABEL_H;
   const card0Y = label1Y + 4;
@@ -142,45 +144,37 @@ function ModelVisualization({ step }: { step: number }) {
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-full max-h-[420px]">
-      <defs>
-        <clipPath id="m-top-half"><rect x={0} y={0} width={W} height={CY} /></clipPath>
-        <clipPath id="m-bot-half"><rect x={0} y={CY} width={W} height={H} /></clipPath>
-      </defs>
-
-      {/* ── Semicircle halves (behind navy; split + colorize at step 1) ── */}
-      <motion.path
-        d={`M ${CX - R},${CY} A ${R},${R} 0 0,1 ${CX + R},${CY} Z`}
-        animate={{
-          y: showSplit ? -SPLIT_Y : 0,
-          fill: showSplit ? "#D5E6D0" : NAVY,
-        }}
+      {/* ── Outer navy circle (AI Execution Layer) ── */}
+      <motion.circle cx={CX} cy={CY} r={R_OUTER} fill={NAVY}
+        initial={{ scale: 0.7, opacity: 0 }}
+        animate={{ scale: showSplit ? 1 : R / R_OUTER, opacity: 1 }}
         transition={{
-          y: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
-          fill: { duration: 0.8, delay: 0.15 },
-        }}
-      />
-      <motion.path
-        d={`M ${CX - R},${CY} A ${R},${R} 0 0,0 ${CX + R},${CY} Z`}
-        animate={{
-          y: showSplit ? SPLIT_Y : 0,
-          fill: showSplit ? "#D4E8F0" : NAVY,
-        }}
-        transition={{
-          y: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
-          fill: { duration: 0.8, delay: 0.15 },
-        }}
-      />
-
-      {/* ── Navy circle overlay (step 0 only, fades to reveal halves) ── */}
-      <motion.circle cx={CX} cy={CY} r={R} fill={NAVY}
-        initial={{ opacity: 0, scale: 0.85 }}
-        animate={{ opacity: showSplit ? 0 : 1, scale: 1 }}
-        transition={{
-          opacity: { duration: showSplit ? 0.25 : 0.5 },
-          scale: { duration: 0.5 },
+          scale: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
+          opacity: { duration: 0.5 },
         }}
         style={{ transformOrigin: `${CX}px ${CY}px` }}
       />
+
+      {/* ── Inner blue circle (appears at step 1) ── */}
+      <motion.circle cx={CX} cy={CY} r={R_INNER} fill={INNER_BLUE}
+        animate={{ opacity: showSplit ? 1 : 0, scale: showSplit ? 1 : 0.85 }}
+        transition={{
+          opacity: { duration: 0.6, delay: showSplit ? 0.15 : 0 },
+          scale: { duration: 0.7, delay: showSplit ? 0.15 : 0, ease: [0.22, 1, 0.36, 1] },
+        }}
+        style={{ transformOrigin: `${CX}px ${CY}px` }}
+      />
+
+      {/* ── Dashed divider line between halves (step 1) ── */}
+      <motion.line
+        x1={CX - R_INNER + 15} y1={CY}
+        x2={CX + R_INNER - 15} y2={CY}
+        stroke="white" strokeWidth={1} strokeDasharray="6 4"
+        animate={{ opacity: showSplit ? 0.45 : 0 }}
+        transition={{ duration: 0.4, delay: showSplit ? 0.5 : 0 }}
+      />
+
+      {/* ── Step 0 labels (Pricing Model / One unified engine) ── */}
       <motion.text x={CX} y={CY - 4} fontSize="16" fontWeight="700" fill="white" textAnchor="middle"
         initial={{ opacity: 0 }}
         animate={{ opacity: showSplit ? 0 : 1 }}
@@ -194,119 +188,50 @@ function ModelVisualization({ step }: { step: number }) {
         One unified engine
       </motion.text>
 
-      {/* ── Pulsing glow on split halves ── */}
-      <motion.circle cx={CX} cy={CY} r={R + 4} fill="none" stroke={ML_GREEN} strokeWidth={1.5}
-        clipPath="url(#m-top-half)"
-        animate={{
-          y: showSplit ? -SPLIT_Y : 0,
-          opacity: showSplit ? [0, 0.15, 0.3, 0.15] : [0],
-        }}
-        transition={{
-          y: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
-          opacity: showSplit ? { duration: 3, repeat: Infinity, ease: "easeInOut", delay: 1 } : { duration: 0.3 },
-        }}
-      />
-      <motion.circle cx={CX} cy={CY} r={R + 4} fill="none" stroke={STRAT_BLUE} strokeWidth={1.5}
-        clipPath="url(#m-bot-half)"
-        animate={{
-          y: showSplit ? SPLIT_Y : 0,
-          opacity: showSplit ? [0, 0.15, 0.3, 0.15] : [0],
-        }}
-        transition={{
-          y: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
-          opacity: showSplit ? { duration: 3, repeat: Infinity, ease: "easeInOut", delay: 1 } : { duration: 0.3 },
-        }}
-      />
-
-      {/* ── ML engine labels (inside top half) ── */}
+      {/* ── ML Prediction label + icon (step 1, top half of inner circle) ── */}
       <motion.g
-        animate={{ y: showSplit ? -SPLIT_Y : 0 }}
-        transition={{ y: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } }}
+        animate={{ opacity: showSplit ? 1 : 0 }}
+        transition={{ duration: 0.5, delay: showSplit ? 0.45 : 0 }}
       >
-        <motion.text x={CX} y={CY - 36} fontSize="14" fontWeight="700" fill={ML_GREEN} textAnchor="middle"
-          animate={{ opacity: showSplit ? 1 : 0 }}
-          transition={{ duration: 0.5, delay: showSplit ? 0.5 : 0 }}>
+        <g transform={`translate(${CX - 10}, ${CY - 72}) scale(1.0)`}>
+          <circle cx={10} cy={4} r={3} fill={ML_GREEN} />
+          <circle cx={3} cy={16} r={3} fill={ML_GREEN} />
+          <circle cx={17} cy={16} r={3} fill={ML_GREEN} />
+          <circle cx={10} cy={14} r={2.5} fill={ML_GREEN} opacity={0.6} />
+          <line x1={10} y1={4} x2={3} y2={16} stroke={ML_GREEN} strokeWidth={1.2} opacity={0.6} />
+          <line x1={10} y1={4} x2={17} y2={16} stroke={ML_GREEN} strokeWidth={1.2} opacity={0.6} />
+          <line x1={3} y1={16} x2={17} y2={16} stroke={ML_GREEN} strokeWidth={1.2} opacity={0.6} />
+          <line x1={10} y1={4} x2={10} y2={14} stroke={ML_GREEN} strokeWidth={1} opacity={0.5} />
+        </g>
+        <text x={CX} y={CY - 26} fontSize="17" fontWeight="700" fill="white" textAnchor="middle">
           ML Prediction
-        </motion.text>
-        <motion.text x={CX} y={CY - 20} fontSize="10.5" fontWeight="500" fill={ML_GREEN} textAnchor="middle"
-          animate={{ opacity: showSplit ? 0.85 : 0 }}
-          transition={{ duration: 0.5, delay: showSplit ? 0.6 : 0 }}>
-          Data-driven pattern recognition
-        </motion.text>
-        {/* ML icon */}
-        <motion.g
-          animate={{ opacity: showSplit ? 0.7 : 0 }}
-          transition={{ duration: 0.5, delay: showSplit ? 0.7 : 0 }}
-        >
-          <g transform={`translate(${CX - 10}, ${CY - 80}) scale(1.0)`}>
-            <circle cx={10} cy={4} r={3} fill={ML_GREEN} />
-            <circle cx={3} cy={16} r={3} fill={ML_GREEN} />
-            <circle cx={17} cy={16} r={3} fill={ML_GREEN} />
-            <circle cx={10} cy={14} r={2.5} fill={ML_GREEN} opacity={0.5} />
-            <line x1={10} y1={4} x2={3} y2={16} stroke={ML_GREEN} strokeWidth={1.2} opacity={0.5} />
-            <line x1={10} y1={4} x2={17} y2={16} stroke={ML_GREEN} strokeWidth={1.2} opacity={0.5} />
-            <line x1={3} y1={16} x2={17} y2={16} stroke={ML_GREEN} strokeWidth={1.2} opacity={0.5} />
-            <line x1={10} y1={4} x2={10} y2={14} stroke={ML_GREEN} strokeWidth={1} opacity={0.4} />
-          </g>
-        </motion.g>
+        </text>
       </motion.g>
 
-      {/* ── Strategic engine labels (inside bottom half) ── */}
+      {/* ── Strategic Guidance label + icon (step 1, bottom half of inner circle) ── */}
       <motion.g
-        animate={{ y: showSplit ? SPLIT_Y : 0 }}
-        transition={{ y: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } }}
+        animate={{ opacity: showSplit ? 1 : 0 }}
+        transition={{ duration: 0.5, delay: showSplit ? 0.45 : 0 }}
       >
-        <motion.text x={CX} y={CY + 30} fontSize="14" fontWeight="700" fill={STRAT_BLUE} textAnchor="middle"
-          animate={{ opacity: showSplit ? 1 : 0 }}
-          transition={{ duration: 0.5, delay: showSplit ? 0.5 : 0 }}>
+        <text x={CX} y={CY + 36} fontSize="17" fontWeight="700" fill="white" textAnchor="middle">
           Strategic Guidance
-        </motion.text>
-        <motion.text x={CX} y={CY + 46} fontSize="10.5" fontWeight="500" fill={STRAT_BLUE} textAnchor="middle"
-          animate={{ opacity: showSplit ? 0.85 : 0 }}
-          transition={{ duration: 0.5, delay: showSplit ? 0.6 : 0 }}>
-          Expert knowledge & market rules
-        </motion.text>
-        {/* Compass icon */}
-        <motion.g
-          animate={{ opacity: showSplit ? 0.7 : 0 }}
-          transition={{ duration: 0.5, delay: showSplit ? 0.7 : 0 }}
-        >
-          <g transform={`translate(${CX - 10}, ${CY + 52}) scale(1.0)`}>
-            <circle cx={10} cy={10} r={9} fill="none" stroke={STRAT_BLUE} strokeWidth={1.4} />
-            <polygon points="10,2 12,9 10,11 8,9" fill={STRAT_BLUE} />
-            <polygon points="10,18 8,11 10,9 12,11" fill={STRAT_BLUE} opacity={0.4} />
-            <circle cx={10} cy={10} r={1.5} fill={STRAT_BLUE} />
-          </g>
-        </motion.g>
+        </text>
+        <g transform={`translate(${CX - 10}, ${CY + 46}) scale(1.0)`}>
+          <circle cx={10} cy={10} r={9} fill="none" stroke={STRAT_BLUE} strokeWidth={1.4} />
+          <polygon points="10,2 12,9 10,11 8,9" fill={STRAT_BLUE} />
+          <polygon points="10,18 8,11 10,9 12,11" fill={STRAT_BLUE} opacity={0.4} />
+          <circle cx={10} cy={10} r={1.5} fill={STRAT_BLUE} />
+        </g>
       </motion.g>
 
-      {/* ── AI dashed orbit ring (visible when split) ── */}
-      <motion.g
-        animate={{ opacity: showSplit ? 1 : 0 }}
-        transition={{ duration: 0.6, delay: showSplit ? 0.9 : 0 }}
-      >
-        <circle
-          cx={CX} cy={CY} r={R + 16}
-          fill="none" stroke={NAVY} strokeWidth={1.2}
-          strokeDasharray="6 5"
-          opacity={0.25}
-        />
-        <motion.text
-          x={CX} y={CY - R - 22}
-          textAnchor="middle"
-          fontSize="8" fontWeight="700" letterSpacing="0.16em"
-          fill={NAVY} opacity={0.35}
-        >
-          AI
-        </motion.text>
-      </motion.g>
-
-      {/* ── "PRICING MODEL" label below circle (visible when split) ── */}
-      <motion.text x={CX} y={CY + R + 36} fontSize="11" fontWeight="700" letterSpacing="0.14em"
-        fill={NAVY} textAnchor="middle"
-        animate={{ opacity: showSplit ? 1 : 0 }}
-        transition={{ duration: 0.4, delay: showSplit ? 0.8 : 0 }}>
-        PRICING MODEL
+      {/* ── "AI Execution Layer" label (in navy ring at bottom, italic) ── */}
+      <motion.text
+        x={CX} y={CY + R_INNER + (R_OUTER - R_INNER) / 2 + 5}
+        fontSize="13" fontWeight="600" fill="white" textAnchor="middle"
+        fontStyle="italic" letterSpacing="0.05em"
+        animate={{ opacity: showSplit ? 0.9 : 0 }}
+        transition={{ duration: 0.5, delay: showSplit ? 0.7 : 0 }}>
+        AI Execution Layer
       </motion.text>
 
       {/* ── Input cards & connections ── */}
@@ -342,9 +267,8 @@ function ModelVisualization({ step }: { step: number }) {
 
         // Step 1: connections re-route to their engine half
         const splitTargetY = isML ? CY - ML_OFFSET : CY + STRAT_OFFSET;
-        const splitOffsetY = isML ? -SPLIT_Y : SPLIT_Y;
         const edgeX = isML ? EDGE_LEFT_ML : EDGE_LEFT_STRAT;
-        const splitEY = splitTargetY + splitOffsetY;
+        const splitEY = splitTargetY;
         const splitD = `M ${sx} ${sy} C ${sx + 80} ${sy}, ${edgeX - 60} ${splitEY}, ${edgeX} ${splitEY}`;
         const splitPath = { sx, sy, cp1x: sx + 80, cp1y: sy, cp2x: edgeX - 60, cp2y: splitEY, ex: edgeX, ey: splitEY };
 
