@@ -1,12 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, ChevronDown, Check, Download, MonitorPlay, RotateCcw, Maximize, Minimize, PlayCircle, BookOpen, MoreVertical, ScreenShare } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, Check, Download, MonitorPlay, RotateCcw, Maximize, Minimize, PlayCircle, BookOpen, MoreVertical, LayoutGrid } from "lucide-react";
 import { useShareMode } from "@/lib/share-context";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 export interface NavGroup {
   label: string;
+  subtitle?: string;
   slides: { index: number; label: string; subStep?: number }[];
 }
 
@@ -52,12 +53,12 @@ function FullPageButton() {
       {isFullscreen ? (
         <>
           <Minimize className="size-3.5" />
-          Exit Full Page
+          Exit Full Screen
         </>
       ) : (
         <>
           <Maximize className="size-3.5" />
-          Full Page
+          Enter Full Screen
         </>
       )}
     </button>
@@ -91,6 +92,7 @@ export function TopBar({
   presentationTitle = "Inside Your Dynamic Model",
   onStartPresenting,
   onAnimationGlossary,
+  onSlideSorter,
 }: SlideNavProps) {
   const { shareMode, toggleShareMode } = useShareMode();
   const [open, setOpen] = useState(false);
@@ -169,10 +171,10 @@ export function TopBar({
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-[#06283D]/90 backdrop-blur-md">
-        <div className="mx-auto flex max-w-5xl items-center px-4 py-2.5">
+        <div className="flex items-center px-4 py-2.5">
           <button
             onClick={() => onNavigate(0)}
-            className="flex items-center gap-2 rounded-md px-2 py-1 text-sm font-bold tracking-tight text-white/90 transition-colors hover:bg-white/10"
+            className="flex shrink-0 items-center gap-2 rounded-md px-2 py-1 text-sm font-bold tracking-tight text-white/90 transition-colors hover:bg-white/10"
             aria-label="Go to first slide"
           >
             <svg viewBox="0 0 36 36" className="size-5 shrink-0" aria-hidden="true">
@@ -198,30 +200,37 @@ export function TopBar({
             />
           </button>
 
-          <div className="ml-auto flex items-center gap-3">
+          <div className="ml-auto flex shrink-0 items-center gap-2">
             <button
               onClick={toggleShareMode}
-              className={cn(
-                "flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors",
-                shareMode
-                  ? "border-teal-400/40 bg-teal-500/20 text-teal-200"
-                  : "border-white/15 text-white/70 hover:border-white/30 hover:bg-white/10 hover:text-white",
-              )}
+              className="flex items-center gap-2 whitespace-nowrap rounded-md border border-white/15 px-2.5 py-1 text-xs font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/10"
             >
-              <ScreenShare className="size-3.5" />
-              {shareMode ? "Share ON" : "Share Mode"}
+              <span className={shareMode ? "text-teal-200" : ""}>I'm Sharing This On Teams</span>
+              <div
+                className={cn(
+                  "relative h-4 w-7 rounded-full transition-colors duration-200",
+                  shareMode ? "bg-teal-500" : "bg-white/20",
+                )}
+              >
+                <div
+                  className={cn(
+                    "absolute top-0.5 size-3 rounded-full bg-white shadow-sm transition-transform duration-200",
+                    shareMode ? "translate-x-3.5" : "translate-x-0.5",
+                  )}
+                />
+              </div>
             </button>
             {onStartPresenting && (
               <button
                 onClick={onStartPresenting}
-                className="flex items-center gap-1.5 rounded-md border border-white/15 px-2.5 py-1 text-xs font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white"
+                className="flex items-center gap-1.5 whitespace-nowrap rounded-md border border-white/15 px-2.5 py-1 text-xs font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white"
               >
                 <MonitorPlay className="size-3.5" />
-                Present
+                Open Presenter Mode
               </button>
             )}
-            <DownloadLink />
             <FullPageButton />
+            <DownloadLink />
             <div className="relative">
               <button
                 ref={kebabBtnRef}
@@ -236,6 +245,15 @@ export function TopBar({
                   ref={kebabRef}
                   className="absolute right-0 top-full mt-1.5 min-w-[180px] rounded-lg border border-white/10 bg-[#06283D]/95 py-1 shadow-xl backdrop-blur-md"
                 >
+                  {onSlideSorter && (
+                    <button
+                      onClick={() => { onSlideSorter(); setKebabOpen(false); }}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                    >
+                      <LayoutGrid className="size-3.5" />
+                      Slide Sorter
+                    </button>
+                  )}
                   <a
                     href="/walkthrough"
                     target="_blank"
@@ -303,7 +321,7 @@ export function TopBar({
                       }
                     }}
                     className={cn(
-                      "flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-sm font-medium transition-colors",
+                      "flex w-full items-center gap-2 rounded-md px-3 py-2 text-left transition-colors",
                       groupActive
                         ? "bg-white/15 text-white"
                         : groupDone
@@ -323,11 +341,21 @@ export function TopBar({
                     >
                       {groupDone ? <Check className="size-3" /> : gi + 1}
                     </span>
-                    {group.label}
+                    <div className="flex min-w-0 flex-1 flex-col">
+                      <span className="text-sm font-bold">{group.label}</span>
+                      {group.subtitle && (
+                        <span className={cn(
+                          "text-[11px] font-medium leading-tight",
+                          groupActive ? "text-white/60" : groupDone ? "text-white/30" : "text-white/40",
+                        )}>
+                          {group.subtitle}
+                        </span>
+                      )}
+                    </div>
                     {!groupActive && group.slides.length > 1 && (
                       <ChevronDown
                         className={cn(
-                          "ml-auto size-3 text-white/30 transition-transform",
+                          "ml-auto size-3 shrink-0 text-white/30 transition-transform",
                           isExpanded && "rotate-180",
                         )}
                       />

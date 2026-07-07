@@ -32,9 +32,22 @@ const NOTES: Record<string, string[]> = {
   ],
   "power:2": [
     "Every business is different — we tune each factor based on your data.",
-    "Add what matters, remove what doesn't, and adjust the balance.",
+    "Starting with customer factors: channel, region, size, tenure, and sales relationship.",
   ],
   "power:3": [
+    "Product factors: mix, family, specialization, cost, and price sensitivity.",
+  ],
+  "power:4": [
+    "Market factors: price points, share, commodities, and competitive dynamics.",
+  ],
+  "power:5": [
+    "Order factors: frequency, size, lead time, terms, and seasonality.",
+  ],
+  "power:6": [
+    "All four factor groups are now tuned to this client's data.",
+    "Add what matters, remove what doesn't, and adjust the balance.",
+  ],
+  "power:7": [
     "These four factors combine to produce a single SKU-level price.",
     "From here, that price gets customized to each customer — that's the next step.",
   ],

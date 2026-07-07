@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, ChevronDown, X, LayoutGrid, ZoomIn, ZoomOut, Sun, Moon, Pause, Play, RotateCcw, ScreenShare } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, X, LayoutGrid, ZoomIn, ZoomOut, Sun, Moon, Pause, Play, RotateCcw } from "lucide-react";
 import { AnimatePresence, motion, MotionConfig } from "framer-motion";
 import { type NavGroup, SlideNav, AudienceTopBar } from "@/components/slide-nav";
 import { useMode } from "@/lib/mode-context";
@@ -75,7 +75,11 @@ const ENGINE_FOCUS_MAP: Record<string, EngineFocus> = {
   // power
   [`${POWER_INDEX}-1`]: "ml",
   [`${POWER_INDEX}-2`]: "strat",
-  [`${POWER_INDEX}-3`]: "both",
+  [`${POWER_INDEX}-3`]: "strat",
+  [`${POWER_INDEX}-4`]: "strat",
+  [`${POWER_INDEX}-5`]: "strat",
+  [`${POWER_INDEX}-6`]: "strat",
+  [`${POWER_INDEX}-7`]: "both",
   // execute
   [`${EXECUTE_INDEX}-0`]: "both",
   [`${EXECUTE_INDEX}-1`]: "both",
@@ -114,8 +118,12 @@ const DRIVER_RAIL_ITEMS: { label: string; color: string; tint: string }[] = [
 
 
 const ACTIVE_CATEGORIES_MAP: Record<string, CategoryKey[]> = {
-  [`${POWER_INDEX}-2`]: ["customer", "product", "market", "order"],
-  [`${POWER_INDEX}-3`]: ["customer", "product", "market", "order"],
+  [`${POWER_INDEX}-2`]: ["customer"],
+  [`${POWER_INDEX}-3`]: ["product"],
+  [`${POWER_INDEX}-4`]: ["market"],
+  [`${POWER_INDEX}-5`]: ["order"],
+  [`${POWER_INDEX}-6`]: ["customer", "product", "market", "order"],
+  [`${POWER_INDEX}-7`]: ["customer", "product", "market", "order"],
   [`${EXECUTE_INDEX}-0`]: ["customer", "order"],
   [`${EXECUTE_INDEX}-1`]: ["customer"],
   [`${REFINE_INDEX}-1`]: ["customer", "market"],
@@ -398,6 +406,7 @@ function MiniExecuteConnector() {
 const DEFAULT_NAV_GROUPS: NavGroup[] = [
   {
     label: "Introduction",
+    subtitle: "Overview of the five core pillars",
     slides: [
       { index: 0, label: "Welcome" },
       { index: OVERVIEW_INDEX, label: "Five core pillars", subStep: 0 },
@@ -405,6 +414,7 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
   },
   {
     label: "1 | Design",
+    subtitle: "One model built around your business",
     slides: [
       { index: ONE_MODEL_INDEX, label: "Intro to pricing model", subStep: 0 },
       { index: ONE_MODEL_INDEX, label: "Pricing model with ML and strat. guidance", subStep: 1 },
@@ -412,15 +422,21 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
   },
   {
     label: "2 | Power",
+    subtitle: "How the ML model finds pricing patterns",
     slides: [
       { index: POWER_INDEX, label: "Too many prices to manually set", subStep: 0 },
       { index: POWER_INDEX, label: "The model scans for patterns", subStep: 1 },
-      { index: POWER_INDEX, label: "Customize factors for the model", subStep: 2 },
-      { index: POWER_INDEX, label: "A single SKU-level price", subStep: 3 },
+      { index: POWER_INDEX, label: "Customer factors", subStep: 2 },
+      { index: POWER_INDEX, label: "Product factors", subStep: 3 },
+      { index: POWER_INDEX, label: "Market factors", subStep: 4 },
+      { index: POWER_INDEX, label: "Order factors", subStep: 5 },
+      { index: POWER_INDEX, label: "Customized factors feed the model", subStep: 6 },
+      { index: POWER_INDEX, label: "A single SKU-level price", subStep: 7 },
     ],
   },
   {
     label: "3 | Execute",
+    subtitle: "SKU-level prices tailored to each customer",
     slides: [
       { index: EXECUTE_INDEX, label: "Acme walkthrough", subStep: 0 },
       { index: EXECUTE_INDEX, label: "Price adjusted for each customer", subStep: 1 },
@@ -428,6 +444,7 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
   },
   {
     label: "4 | Refine",
+    subtitle: "Optimizing prices along the demand curve",
     slides: [
       { index: REFINE_INDEX, label: "Refine section intro", subStep: 0 },
       { index: REFINE_INDEX, label: "Your optimal demand curve", subStep: 1 },
@@ -441,6 +458,7 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
   },
   {
     label: "Closing",
+    subtitle: "Summary and next steps",
     slides: [
       { index: 6, label: "Summary" },
       { index: 7, label: "Thank You" },
@@ -535,7 +553,7 @@ export function Home() {
     ) ?? displayNavGroups.find((g) => g.slides.some((s) => s.index === slide));
 
   const allClickSteps = useMemo(() => {
-    const steps: { slideIndex: number; stepIndex: number; kind: SlideKind; label: string; groupLabel: string; groupIndex: number; slideInGroupIndex: number }[] = [];
+    const steps: { slideIndex: number; stepIndex: number; kind: SlideKind; label: string; groupLabel: string; groupSubtitle: string; groupIndex: number; slideInGroupIndex: number }[] = [];
     for (let i = 0; i < SLIDES.length; i++) {
       if (presenterSkipped.has(i)) continue;
       const kind = SLIDES[i].kind;
@@ -543,16 +561,17 @@ export function Home() {
       const gi = displayNavGroups.findIndex((g) => g.slides.some((s) => s.index === i));
       const group = gi >= 0 ? displayNavGroups[gi] : undefined;
       const groupLabel = group?.label ?? "";
+      const groupSubtitle = group?.subtitle ?? "";
       if (stepsCount === 0) {
         const si = group?.slides.findIndex((s) => s.index === i) ?? -1;
         const navSlide = si >= 0 ? group!.slides[si] : undefined;
-        steps.push({ slideIndex: i, stepIndex: 0, kind, label: navSlide?.label ?? kind, groupLabel, groupIndex: gi, slideInGroupIndex: si });
+        steps.push({ slideIndex: i, stepIndex: 0, kind, label: navSlide?.label ?? kind, groupLabel, groupSubtitle, groupIndex: gi, slideInGroupIndex: si });
       } else {
         for (let s = 0; s < stepsCount; s++) {
           const si = group?.slides.findIndex((ns) => ns.index === i && ns.subStep === s) ?? -1;
           const navSlide = si >= 0 ? group!.slides[si] : undefined;
           const label = navSlide?.label ?? `Step ${s + 1}`;
-          steps.push({ slideIndex: i, stepIndex: s, kind, label, groupLabel, groupIndex: gi, slideInGroupIndex: si });
+          steps.push({ slideIndex: i, stepIndex: s, kind, label, groupLabel, groupSubtitle, groupIndex: gi, slideInGroupIndex: si });
         }
       }
     }
@@ -958,6 +977,7 @@ export function Home() {
           animationDone={animationDone}
           onStartPresenting={mode === "presenter" ? startPresenting : undefined}
           onAnimationGlossary={() => setGlossaryOpen(true)}
+          onSlideSorter={() => setSlideSorterOpen(true)}
           showReplay={skipAnimation}
           onReplay={handleReplay}
         />
@@ -1019,24 +1039,42 @@ export function Home() {
           <div className="flex-1 overflow-y-auto p-6">
             <div className="mx-auto space-y-6" style={{ maxWidth: sorterCols <= 3 ? "56rem" : "90rem" }}>
               {(() => {
-                const grouped: { groupLabel: string; steps: (typeof allClickSteps[number] & { globalIndex: number })[] }[] = [];
+                const grouped: { groupLabel: string; groupSubtitle: string; steps: (typeof allClickSteps[number] & { globalIndex: number })[] }[] = [];
                 let currentGroupLabel = "";
                 let globalIdx = 0;
                 for (const cs of allClickSteps) {
                   if (cs.groupLabel !== currentGroupLabel) {
                     currentGroupLabel = cs.groupLabel;
-                    grouped.push({ groupLabel: cs.groupLabel, steps: [] });
+                    grouped.push({ groupLabel: cs.groupLabel, groupSubtitle: cs.groupSubtitle, steps: [] });
                   }
                   grouped[grouped.length - 1].steps.push({ ...cs, globalIndex: globalIdx++ });
                 }
                 return grouped.map((g, gi) => (
                   <div key={gi}>
-                    <h3 className={cn(
-                      "mb-2 font-bold uppercase tracking-[0.12em] text-gray-400",
-                      sorterCols >= 6 ? "text-[9px]" : "text-[11px]",
-                    )}>
-                      {g.groupLabel}
-                    </h3>
+                    <div className="mb-3 flex items-center gap-3 rounded-lg bg-[#06283D] px-3 py-2">
+                      <div className="min-w-0 flex-1">
+                        <h3 className={cn(
+                          "font-bold uppercase tracking-[0.12em] text-white",
+                          sorterCols >= 6 ? "text-[10px]" : "text-xs",
+                        )}>
+                          {g.groupLabel}
+                        </h3>
+                        {g.groupSubtitle && (
+                          <p className={cn(
+                            "mt-0.5 font-medium text-white/50",
+                            sorterCols >= 6 ? "text-[9px]" : "text-[11px]",
+                          )}>
+                            {g.groupSubtitle}
+                          </p>
+                        )}
+                      </div>
+                      <span className={cn(
+                        "shrink-0 rounded-full bg-white/10 px-2 py-0.5 font-medium text-white/50",
+                        sorterCols >= 6 ? "text-[9px]" : "text-[10px]",
+                      )}>
+                        {g.steps.length} {g.steps.length === 1 ? "step" : "steps"}
+                      </span>
+                    </div>
                     <div
                       className="grid"
                       style={{
@@ -1160,16 +1198,26 @@ export function Home() {
               <button
                 onClick={toggleShareMode}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors",
-                  shareMode
-                    ? "border-teal-400/40 bg-teal-500/20 text-teal-200"
-                    : darkMode
-                      ? "border-white/15 bg-white/5 text-white/70 hover:border-white/30 hover:bg-white/10 hover:text-white"
-                      : "border-black/15 bg-black/5 text-gray-600 hover:border-black/30 hover:bg-black/10 hover:text-gray-900",
+                  "flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors",
+                  darkMode
+                    ? "border-white/15 bg-white/5 text-white/70 hover:border-white/30 hover:bg-white/10"
+                    : "border-black/15 bg-black/5 text-gray-600 hover:border-black/30 hover:bg-black/10",
                 )}
               >
-                <ScreenShare className="size-3.5" />
-                {shareMode ? "Share ON" : "Share"}
+                <span className={shareMode ? "text-teal-400" : ""}>I'm Sharing This On Teams</span>
+                <div
+                  className={cn(
+                    "relative h-4 w-7 rounded-full transition-colors duration-200",
+                    shareMode ? "bg-teal-500" : darkMode ? "bg-white/20" : "bg-black/15",
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "absolute top-0.5 size-3 rounded-full bg-white shadow-sm transition-transform duration-200",
+                      shareMode ? "translate-x-3.5" : "translate-x-0.5",
+                    )}
+                  />
+                </div>
               </button>
               <button
                 onClick={() => setDarkMode((d) => !d)}

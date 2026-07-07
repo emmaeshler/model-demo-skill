@@ -733,7 +733,7 @@ export function ExecuteSlide({
                 transition={{ duration: 0.4 }}
               >
                 {revealPhase <= 1
-                  ? "The pricing model, ready for each customer"
+                  ? "Applying the optimized price at the customer level"
                   : revealPhase === 2
                     ? "Acme’s drivers feed the pricing model"
                     : revealPhase === 3
@@ -762,7 +762,7 @@ export function ExecuteSlide({
                 transition={{ duration: 0.3 }}
               >
                 {revealPhase <= 1
-                  ? "Built from your data — now it applies what it learned to individual accounts."
+                  ? "The model starts with one optimized price per SKU — then adjusts for each customer's unique factors."
                   : revealPhase === 2
                     ? "The model weighs each factor to calculate Acme’s optimal price."
                     : revealPhase === 3
@@ -808,15 +808,15 @@ export function ExecuteSlide({
                       >
                         <text x={MODEL_CX} y={MODEL_CY - 38} textAnchor="middle"
                           style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.18em", fill: "#5A6A78" }}>
-                          RECOMMENDED
+                          OPTIMIZED
                         </text>
                         <text x={MODEL_CX} y={MODEL_CY + 22} textAnchor="middle"
-                          style={{ fontSize: 76, fontWeight: 800, fill: NAVY }}>
-                          $17.50
+                          style={{ fontSize: 54, fontWeight: 800, fill: NAVY }}>
+                          PRICE
                         </text>
                         <text x={MODEL_CX} y={MODEL_CY + 52} textAnchor="middle"
                           style={{ fontSize: 16, fontWeight: 500, fill: "#5A6A78" }}>
-                          SKU #A-7200
+                          per SKU
                         </text>
                       </motion.g>
                     )}

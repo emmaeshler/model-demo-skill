@@ -11,7 +11,7 @@ const GREEN = "#2e7d32";
 const PURPLE = "#7B5EA7";
 const MUTED = "#5A6A78";
 
-export const POWER_TOTAL_STEPS = 4;
+export const POWER_TOTAL_STEPS = 8;
 
 
 const SOLID_TINTS: Record<string, string> = {
@@ -232,14 +232,14 @@ const TITLES = [
   "2,400 accounts × 15,000 SKUs",
   "The model scans for patterns",
   "Your customized factors now feed the model",
-  "These factors combine into a single SKU-level price",
+  "The goal: one optimized price per SKU",
 ];
 
 const SUBTITLES = [
   "That's 36 million unique price points — far too many for any team to set manually. The model finds the patterns hiding inside.",
   "Examining 36 million price points across four dimensions.",
   "Every business is different. We weigh each factor based on your data — adding what matters, removing what doesn't, and tuning the balance.",
-  "Cost, competition, volume, and demand produce one price per SKU — then it gets customized to each customer.",
+  "Cost, competition, volume, and demand come together — the model weighs each factor to arrive at the right price.",
 ];
 
 /* ─── Pre-compute dot positions ─── */
@@ -430,11 +430,12 @@ function CategoryIcon({ type, color, size = 18 }: { type: string; color: string;
 
 export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCategoryChange, isActive = true }: { step: number; onAutoAdvance?: () => void; skipAnimation?: boolean; onActiveCategoryChange?: (categories: string[]) => void; isActive?: boolean }) {
   const { shareMode } = useShareMode();
-  const chartStep = step;
+  const chartStep = step <= 1 ? step : step <= 6 ? 2 : 3;
 
+  const stepSelectionPhase = step < 2 ? -1 : step <= 5 ? step - 2 : 5;
 
   const [introPhase, setIntroPhase] = useState(skipAnimation ? 5 : chartStep === 0 ? 0 : 4);
-  const [selectionPhase, setSelectionPhase] = useState(chartStep > 2 || (skipAnimation && chartStep >= 2) ? 5 : -1);
+  const [selectionPhase, setSelectionPhase] = useState(chartStep > 2 || (skipAnimation && chartStep >= 2) ? 5 : stepSelectionPhase);
   const [factorsPhase, setFactorsPhase] = useState(chartStep >= 2 ? 7 : 0);
   const [morphPhase, setMorphPhase] = useState(chartStep >= 2 ? 4 : -1);
   useEffect(() => {
@@ -471,15 +472,8 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
     if (!isActive) { setSelectionPhase(-1); return; }
     if (chartStep < 2) { setSelectionPhase(-1); return; }
     if (chartStep > 2 || skipAnimation) { setSelectionPhase(5); return; }
-    setSelectionPhase(-1);
-    const t0 = setTimeout(() => setSelectionPhase(0), 1500);
-    const t1 = setTimeout(() => setSelectionPhase(1), 5500);
-    const t2 = setTimeout(() => setSelectionPhase(2), 9500);
-    const t3 = setTimeout(() => setSelectionPhase(3), 13500);
-    const t4 = setTimeout(() => setSelectionPhase(4), 17500);
-    const t5 = setTimeout(() => setSelectionPhase(5), 20000);
-    return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); clearTimeout(t5); };
-  }, [isActive, chartStep, skipAnimation]);
+    setSelectionPhase(stepSelectionPhase);
+  }, [isActive, chartStep, skipAnimation, stepSelectionPhase]);
 
   const [actionRevealed, setActionRevealed] = useState(skipAnimation || chartStep > 2);
   useEffect(() => {
@@ -487,7 +481,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
     if (selectionPhase < 0 || selectionPhase > 3) { setActionRevealed(false); return; }
     if (skipAnimation) { setActionRevealed(true); return; }
     setActionRevealed(false);
-    const t = setTimeout(() => setActionRevealed(true), 1200);
+    const t = setTimeout(() => setActionRevealed(true), 600);
     return () => clearTimeout(t);
   }, [isActive, selectionPhase, skipAnimation]);
 
@@ -748,16 +742,16 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: skipAnimation ? 0.15 : 0.7 }}
                   >
-                    Cost, competition, volume, and demand produce{" "}
+                    Cost, competition, volume, and demand come together — the model weighs each factor to arrive at{" "}
                     <motion.span
                       style={{ fontWeight: 600 }}
                       initial={skipAnimation ? { color: TEAL } : { color: MUTED }}
                       animate={{ color: TEAL }}
                       transition={{ duration: 0.6, delay: skipAnimation ? 0 : 1.2 }}
                     >
-                      one price per SKU
+                      the right price
                     </motion.span>
-                    {" "}— then it gets customized to each customer.
+                    .
                   </motion.p>
                 </>
               ) : (
@@ -1271,8 +1265,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                         {selectionPhase < 4 && CATEGORY_LAYOUT.map((cat, catIdx) => {
                           const catFactors = SQUARE_FACTORS.filter(f => f.category === cat.key);
                           const isActive = selectionPhase === catIdx;
-                          const isRemoved = selectionPhase > catIdx;
-                          if (isRemoved) return null;
+                          const isPast = selectionPhase > catIdx;
                           const catActions = CATEGORY_ACTIONS[cat.key] ?? [];
                           return (
                             <motion.div
@@ -1287,7 +1280,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                               }}
                               initial={false}
                               animate={{
-                                opacity: 1,
+                                opacity: isActive ? 1 : isPast ? 0.3 : 0.2,
                                 backgroundColor: isActive ? `${cat.color}08` : "transparent",
                               }}
                               exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } }}
@@ -1343,7 +1336,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                                         scale: isElevated ? [1, 1.15, 1.05]
                                           : isLowered ? [1, 1.08, 0.93]
                                           : isRemoving ? [1, 1.02, 0.95] : 1,
-                                        opacity: noAction ? 0.35 : isActive ? 1 : 0.5,
+                                        opacity: noAction ? 0.35 : 1,
                                         boxShadow: isElevated
                                           ? ["0 0 0px transparent", `0 0 20px ${TEAL}50`, `0 0 8px ${TEAL}25`]
                                           : isLowered
@@ -1655,13 +1648,12 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                       animate={{ opacity: allAbsorbed ? 1 : 0 }}
                       transition={{ duration: 0.4, delay: allAbsorbed ? 0.15 : 0 }}
                     >
-                      RECOMMENDED
+                      OPTIMIZED
                     </motion.text>
-                    {/* Price — grey & flickering while calculating, snaps to bold TEAL when finalized */}
                     <motion.text
                       x={PLOT_CX} y={PLOT_CY + 18}
                       textAnchor="middle"
-                      style={{ fontSize: 72, fontWeight: 800, fontFamily: "inherit" }}
+                      style={{ fontSize: 54, fontWeight: 800, fontFamily: "inherit" }}
                       initial={{ opacity: 0, scale: 1, fill: "#9EAAB4" }}
                       animate={allAbsorbed ? {
                         opacity: 1,
@@ -1680,7 +1672,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                         opacity: { duration: 1.4, repeat: shareMode ? 0 : Infinity, ease: "easeInOut" },
                       }}
                     >
-                      {convergingPrice}
+                      PRICE
                     </motion.text>
                     <motion.text
                       x={PLOT_CX} y={PLOT_CY + 50}
@@ -1690,7 +1682,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                       animate={{ opacity: allAbsorbed ? 0.85 : 0.35 }}
                       transition={{ duration: 0.4, delay: skipAnimation ? 0 : 0.9 }}
                     >
-                      SKU #A-7200
+                      per SKU
                     </motion.text>
                   </g>
                 )}
