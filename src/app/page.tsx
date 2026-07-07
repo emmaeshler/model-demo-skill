@@ -467,7 +467,7 @@ export function Home() {
   const [presenting, setPresenting] = useState(false);
   const [skipAnimation, setSkipAnimation] = useState(false);
   const [slideReplayKeys, setSlideReplayKeys] = useState<number[]>(() => SLIDES.map(() => 0));
-  const [preloadCount, setPreloadCount] = useState(1);
+  const [ready, setReady] = useState(false);
   const [slideSorterOpen, setSlideSorterOpen] = useState(false);
   const [sorterCols, setSorterCols] = useState(4);
   const [navGroups, setNavGroups] = useState(DEFAULT_NAV_GROUPS);
@@ -571,10 +571,11 @@ export function Home() {
 
 
   useEffect(() => {
-    if (preloadCount >= SLIDES.length) return;
-    const id = requestIdleCallback(() => setPreloadCount(c => c + 1));
-    return () => cancelIdleCallback(id);
-  }, [preloadCount]);
+    const frame = requestAnimationFrame(() => {
+      requestAnimationFrame(() => setReady(true));
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode);
@@ -802,6 +803,33 @@ export function Home() {
 
   return (
     <>
+      <AnimatePresence>
+        {!ready && (
+          <motion.div
+            key="loader"
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-[var(--i2p-navy)]"
+          >
+            <div className="flex flex-col items-center gap-6">
+              <div className="flex gap-1.5">
+                {[0, 1, 2, 3].map(i => (
+                  <motion.div
+                    key={i}
+                    className="h-2 w-2 rounded-full bg-white/70"
+                    animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1.1, 0.8] }}
+                    transition={{ duration: 1, repeat: Infinity, delay: i * 0.15, ease: "easeInOut" }}
+                  />
+                ))}
+              </div>
+              <p className="text-xs font-medium tracking-[0.15em] text-white/40 uppercase">
+                Preparing presentation
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <main
         className={cn(
           "flex min-h-[var(--slide-h,100vh)] flex-col items-center justify-start overflow-x-hidden pt-14 transition-[padding-left] duration-300",
@@ -813,7 +841,6 @@ export function Home() {
         <div className="relative w-full">
         {SLIDES.map((sc, i) => {
           const isActive = i === slide;
-          if (!isActive && i >= preloadCount) return null;
           const effectiveSkip = !isActive || skipAnimation;
           return (
             <div

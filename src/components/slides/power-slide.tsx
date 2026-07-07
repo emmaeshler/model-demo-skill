@@ -177,7 +177,7 @@ const FEED_NUDGE_Y = [130, 35, -75, -170];
 const dissolveSeed = mulberry32(456);
 const DISSOLVE_COLORS = [NAVY, ORANGE, GREEN, PURPLE];
 const DISSOLVE_ROW_Y = [60, 170, 280, 390];
-const DISSOLVE_DOTS = Array.from({ length: 48 }, (_, i) => {
+const DISSOLVE_DOTS = Array.from({ length: 16 }, (_, i) => {
   const catIdx = i % 4;
   const x = 120 + dissolveSeed() * 760;
   const y = DISSOLVE_ROW_Y[catIdx] + (dissolveSeed() - 0.5) * 70;
@@ -243,7 +243,7 @@ const SUBTITLES = [
 
 /* ─── Pre-compute dot positions ─── */
 
-const DOT_COUNT = 420;
+const DOT_COUNT = 120;
 const rand = mulberry32(42);
 
 const DOTS = Array.from({ length: DOT_COUNT }, (_, i) => {
@@ -295,7 +295,7 @@ const DOTS = Array.from({ length: DOT_COUNT }, (_, i) => {
   sx = Math.max(PLOT.left + 4, Math.min(PLOT.right - 4, sx));
   sy = Math.max(PLOT.top + 4, Math.min(PLOT.bottom - 4, sy));
 
-  const r = 1.8;
+  const r = 2.8;
 
   const driftAngle = rand() * Math.PI * 2;
   const driftRadius = rand() * 3 + 1.5;
@@ -378,7 +378,7 @@ function highlightDotsForCluster(cluster: number) {
       normalizedY: (dot.sy - PLOT.top) / PLOT_H,
     }))
     .filter((d) => d.cluster === cluster)
-    .filter((_, i) => i % 3 === 0)
+    .filter((_, i) => i % 5 === 0)
     .sort((a, b) => a.normalizedY - b.normalizedY);
 }
 
