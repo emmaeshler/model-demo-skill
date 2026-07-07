@@ -571,58 +571,63 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
             >
-              <div className="flex flex-col items-center gap-1">
-                <motion.h2
-                  className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
-                  style={{ color: NAVY }}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{
+              <div className="relative flex flex-col items-center" style={{ minHeight: 80 }}>
+                {/* Counts — always rendered, crossfades via CSS */}
+                <div
+                  className="flex flex-col items-center gap-1 transition-all duration-400 ease-in-out"
+                  style={{
                     opacity: introPhase >= 3 ? 0 : 1,
-                    y: introPhase >= 3 ? -12 : 0,
-                    height: introPhase >= 3 ? 0 : "auto",
-                    marginBottom: introPhase >= 3 ? 0 : 4,
+                    transform: introPhase >= 3 ? "translateY(-12px)" : introPhase >= 1 ? "translateY(0)" : "translateY(8px)",
+                    position: introPhase >= 3 ? "absolute" : "relative",
+                    pointerEvents: introPhase >= 3 ? "none" : "auto",
                   }}
-                  transition={{ duration: 0.5 }}
                 >
-                  You have 2,400 accounts
-                </motion.h2>
-                <motion.h2
-                  className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
-                  style={{ color: NAVY }}
-                  initial={{ opacity: 0 }}
-                  animate={{
-                    opacity: introPhase >= 1 && introPhase < 3 ? 1 : 0,
-                    y: introPhase >= 1 && introPhase < 3 ? 0 : introPhase >= 3 ? -12 : 8,
-                    height: introPhase >= 3 ? 0 : "auto",
-                    marginBottom: introPhase >= 3 ? 0 : 4,
+                  <h2
+                    className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
+                    style={{ color: NAVY }}
+                  >
+                    You have 2,400 accounts
+                  </h2>
+                  <h2
+                    className="text-center text-2xl font-bold tracking-tight transition-all duration-500 sm:text-3xl"
+                    style={{
+                      color: NAVY,
+                      opacity: introPhase >= 1 ? 1 : 0,
+                      transform: introPhase >= 1 ? "translateY(0)" : "translateY(8px)",
+                    }}
+                  >
+                    each with up to 15,000 SKUs
+                  </h2>
+                </div>
+                {/* Price points — always rendered, crossfades via CSS */}
+                <div
+                  className="flex flex-col items-center gap-2 transition-all duration-500 ease-out"
+                  style={{
+                    opacity: introPhase >= 3 ? 1 : 0,
+                    transform: introPhase >= 3 ? "translateY(0)" : "translateY(12px)",
+                    position: introPhase >= 3 ? "relative" : "absolute",
+                    pointerEvents: introPhase >= 3 ? "auto" : "none",
                   }}
-                  transition={{ duration: 0.5 }}
                 >
-                  each with up to 15,000 SKUs
-                </motion.h2>
-                <AnimatePresence>
-                  {introPhase >= 2 && (
-                    <motion.h2
-                      className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
-                      style={{ color: TEAL }}
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.6, ease: "easeOut" }}
-                    >
-                      36 million unique price points
-                    </motion.h2>
-                  )}
-                </AnimatePresence>
+                  <h2
+                    className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
+                    style={{ color: TEAL }}
+                  >
+                    36 million unique price points
+                  </h2>
+                  <p
+                    className="mx-auto max-w-lg text-center text-[1.05rem] leading-relaxed transition-all duration-400"
+                    style={{
+                      color: MUTED,
+                      opacity: introPhase >= 3 ? 1 : 0,
+                      transform: introPhase >= 3 ? "translateY(0)" : "translateY(6px)",
+                      transitionDelay: introPhase >= 3 ? "150ms" : "0ms",
+                    }}
+                  >
+                    Far too many for any team to set manually&nbsp;— the&nbsp;model finds&nbsp;the&nbsp;patterns.
+                  </p>
+                </div>
               </div>
-              <motion.p
-                className="mx-auto mt-2 max-w-lg text-center text-[1.05rem] leading-relaxed"
-                style={{ color: MUTED }}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: introPhase >= 3 ? 1 : 0, y: introPhase >= 3 ? 0 : 6 }}
-                transition={{ duration: 0.4 }}
-              >
-                Far too many for any team to set manually&nbsp;— the&nbsp;model finds&nbsp;the&nbsp;patterns.
-              </motion.p>
             </motion.div>
           )}
           {chartStep > 0 && (
@@ -1023,13 +1028,13 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
               cxTransition = { duration: 1.2, delay: dot.delay * 0.3, ease: [0.22, 1, 0.36, 1] };
               cyTransition = { duration: 1.2, delay: dot.delay * 0.3, ease: [0.22, 1, 0.36, 1] };
               opacityDelay = dot.delay * 0.3;
-            } else if (chartStep === 0 && introPhase < 4) {
+            } else if (chartStep === 0 && introPhase < 5) {
               targetCx = dot.sx;
               targetCy = dot.sy - 18;
-              targetR = 0;
-              targetOpacity = 0;
-              cxTransition = { duration: 0.01 };
-              cyTransition = { duration: 0.01 };
+              targetR = introPhase >= 4 ? dot.r : 0;
+              targetOpacity = introPhase >= 4 ? dot.scatterOpacity : 0;
+              cxTransition = introPhase >= 4 ? { duration: 0.5, delay: dot.delay * 0.6, ease: [0.22, 1, 0.36, 1] } : { duration: 0.01 };
+              cyTransition = introPhase >= 4 ? { duration: 0.6, delay: dot.delay * 0.6, ease: [0.22, 1, 0.36, 1] } : { duration: 0.01 };
             } else if (introPhase >= 5 || chartStep > 0) {
               targetCx = chartStep > 0
                 ? dot.sx

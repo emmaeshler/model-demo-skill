@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, ChevronDown, X, LayoutGrid, ZoomIn, ZoomOut, Sun, Moon, Pause, Play, RotateCcw } from "lucide-react";
 import { AnimatePresence, motion, MotionConfig } from "framer-motion";
 import { type NavGroup, SlideNav, AudienceTopBar } from "@/components/slide-nav";
@@ -716,8 +716,10 @@ export function Home() {
   const markAnimationDone = useCallback(() => setAnimationDone(true), []);
 
   const handleReplay = useCallback(() => {
-    setSkipAnimation(false);
-    setSlideReplayKeys(prev => prev.map((k, i) => i === slide ? k + 1 : k));
+    startTransition(() => {
+      setSkipAnimation(false);
+      setSlideReplayKeys(prev => prev.map((k, i) => i === slide ? k + 1 : k));
+    });
   }, [slide]);
 
   const navigate = useCallback(
@@ -736,9 +738,11 @@ export function Home() {
         const goingBack =
           target < slide || (target === slide && targetSubStep < subStep);
         if (target >= 0 && target < total) {
-          setSkipAnimation(goingBack);
-          setSlide(target);
-          setSubStep(targetSubStep);
+          startTransition(() => {
+            setSkipAnimation(goingBack);
+            setSlide(target);
+            setSubStep(targetSubStep);
+          });
         }
         return;
       }
@@ -747,14 +751,18 @@ export function Home() {
 
       // Forward within sub-steps
       if (target === slide + 1 && currentMax > 0 && subStep < currentMax - 1) {
-        setSkipAnimation(false);
-        setSubStep((s) => s + 1);
+        startTransition(() => {
+          setSkipAnimation(false);
+          setSubStep((s) => s + 1);
+        });
         return;
       }
       // Back within sub-steps
       if (target === slide - 1 && currentMax > 0 && subStep > 0) {
-        setSkipAnimation(true);
-        setSubStep((s) => s - 1);
+        startTransition(() => {
+          setSkipAnimation(true);
+          setSubStep((s) => s - 1);
+        });
         return;
       }
 
@@ -764,15 +772,19 @@ export function Home() {
         // Going back into a sub-step slide from the next slide → land on last step
         const targetMax = subStepConfig[target] ?? 0;
         if (goingBack && targetMax > 0 && slide === target + 1) {
-          setSkipAnimation(true);
-          setSlide(target);
-          setSubStep(targetMax - 1);
+          startTransition(() => {
+            setSkipAnimation(true);
+            setSlide(target);
+            setSubStep(targetMax - 1);
+          });
           return;
         }
 
-        setSkipAnimation(goingBack);
-        setSlide(target);
-        setSubStep(0);
+        startTransition(() => {
+          setSkipAnimation(goingBack);
+          setSlide(target);
+          setSubStep(0);
+        });
       }
     },
     [total, slide, subStep, subStepConfig, presenterSkipped],

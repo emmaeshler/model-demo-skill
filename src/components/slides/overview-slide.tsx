@@ -168,6 +168,7 @@ export function OverviewSlide({ step, skipAnimation, isActive }: { step: number;
                   y2={LINE_Y}
                   stroke={m.color}
                   strokeWidth={2}
+                  initial={{ opacity: 0, pathLength: 0 }}
                   animate={{
                     opacity: (isActive && !collapsed) ? 0.5 : 0,
                     pathLength: (isActive && !collapsed) ? 1 : 0,
@@ -180,6 +181,7 @@ export function OverviewSlide({ step, skipAnimation, isActive }: { step: number;
                 <motion.polygon
                   points={`${x2},${LINE_Y} ${x2 - 8},${LINE_Y - 5} ${x2 - 8},${LINE_Y + 5}`}
                   fill={m.color}
+                  initial={{ opacity: 0 }}
                   animate={{ opacity: (isActive && !collapsed) ? 0.5 : 0 }}
                   transition={collapsed
                     ? { duration: 0.3 }
@@ -199,6 +201,7 @@ export function OverviewSlide({ step, skipAnimation, isActive }: { step: number;
                 <motion.circle
                   r={R}
                   fill={m.color}
+                  initial={{ cx: pos.x, cy: pos.y, opacity: 0, scale: 0 }}
                   animate={{
                     cx: collapsed ? CX : pos.x,
                     cy: collapsed ? LINE_Y : pos.y,
@@ -216,6 +219,7 @@ export function OverviewSlide({ step, skipAnimation, isActive }: { step: number;
                   fill="white"
                   textAnchor="middle"
                   dominantBaseline="central"
+                  initial={{ x: pos.x, y: pos.y, opacity: 0 }}
                   animate={{
                     x: collapsed ? CX : pos.x,
                     y: collapsed ? LINE_Y : pos.y,
@@ -236,6 +240,7 @@ export function OverviewSlide({ step, skipAnimation, isActive }: { step: number;
                   textAnchor="middle"
                   x={pos.x}
                   y={pos.y + R + 20}
+                  initial={{ opacity: 0 }}
                   animate={{ opacity: (isActive && !collapsed) ? 1 : 0 }}
                   transition={collapsed
                     ? { duration: 0.3 }
@@ -252,6 +257,7 @@ export function OverviewSlide({ step, skipAnimation, isActive }: { step: number;
                   textAnchor="middle"
                   x={pos.x}
                   y={pos.y + R + 38}
+                  initial={{ opacity: 0 }}
                   animate={{ opacity: (isActive && !collapsed) ? 0.75 : 0 }}
                   transition={collapsed
                     ? { duration: 0.3 }
@@ -267,6 +273,7 @@ export function OverviewSlide({ step, skipAnimation, isActive }: { step: number;
                   textAnchor="middle"
                   x={pos.x}
                   y={pos.y + R + 54}
+                  initial={{ opacity: 0 }}
                   animate={{ opacity: (isActive && !collapsed) ? 0.75 : 0 }}
                   transition={collapsed
                     ? { duration: 0.3 }
@@ -281,6 +288,7 @@ export function OverviewSlide({ step, skipAnimation, isActive }: { step: number;
 
           {/* Central card — appears after collapse */}
           <motion.g
+            initial={{ opacity: 0, scale: 0.5 }}
             animate={{
               opacity: (isActive && collapsed) ? 1 : 0,
               scale: (isActive && collapsed) ? 1 : 0.5,
@@ -324,6 +332,7 @@ export function OverviewSlide({ step, skipAnimation, isActive }: { step: number;
             return (
               <motion.g
                 key={`mini-${i}`}
+                initial={{ opacity: 0, y: 12 }}
                 animate={{
                   opacity: (isActive && collapsed) ? 1 : 0,
                   y: (isActive && collapsed) ? 0 : 12,
