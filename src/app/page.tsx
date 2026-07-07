@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, ChevronDown, X, LayoutGrid, ZoomIn, ZoomOut, Sun, Moon, Pause, Play, RotateCcw } from "lucide-react";
 import { AnimatePresence, motion, MotionConfig } from "framer-motion";
 import { type NavGroup, SlideNav, AudienceTopBar } from "@/components/slide-nav";
@@ -14,6 +14,13 @@ import { ExecuteSlide, EXECUTE_TOTAL_STEPS } from "@/components/slides/execute-s
 import { RefineSlide, REFINE_TOTAL_STEPS } from "@/components/slides/refine-slide";
 import { ClosingSummarySlide } from "@/components/slides/closing-summary";
 import { AnimationGlossary } from "@/components/animation-glossary";
+
+const MemoOverview = memo(OverviewSlide);
+const MemoOneModel = memo(OneModelSlide);
+const MemoPower = memo(PowerSlide);
+const MemoExecute = memo(ExecuteSlide);
+const MemoRefine = memo(RefineSlide);
+const MemoClosing = memo(ClosingSummarySlide);
 
 type SlideKind =
   | "intro"
@@ -459,7 +466,8 @@ export function Home() {
   const [isAudience, setIsAudience] = useState(false);
   const [presenting, setPresenting] = useState(false);
   const [skipAnimation, setSkipAnimation] = useState(false);
-  const [replayKey, setReplayKey] = useState(0);
+  const [slideReplayKeys, setSlideReplayKeys] = useState<number[]>(() => SLIDES.map(() => 0));
+  const [preloadCount, setPreloadCount] = useState(1);
   const [slideSorterOpen, setSlideSorterOpen] = useState(false);
   const [sorterCols, setSorterCols] = useState(4);
   const [navGroups, setNavGroups] = useState(DEFAULT_NAV_GROUPS);
@@ -561,6 +569,12 @@ export function Home() {
     });
   }, []);
 
+
+  useEffect(() => {
+    if (preloadCount >= SLIDES.length) return;
+    const id = requestIdleCallback(() => setPreloadCount(c => c + 1));
+    return () => cancelIdleCallback(id);
+  }, [preloadCount]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode);
@@ -702,8 +716,8 @@ export function Home() {
 
   const handleReplay = useCallback(() => {
     setSkipAnimation(false);
-    setReplayKey((k) => k + 1);
-  }, []);
+    setSlideReplayKeys(prev => prev.map((k, i) => i === slide ? k + 1 : k));
+  }, [slide]);
 
   const navigate = useCallback(
     (index: number, targetSubStep?: number) => {
@@ -799,6 +813,8 @@ export function Home() {
         <div className="relative w-full">
         {SLIDES.map((sc, i) => {
           const isActive = i === slide;
+          if (!isActive && i >= preloadCount) return null;
+          const effectiveSkip = !isActive || skipAnimation;
           return (
             <div
               key={i}
@@ -808,12 +824,11 @@ export function Home() {
                 pointerEvents: isActive ? "auto" : "none",
               }}
             >
-              {isActive ? (
-                <MotionConfig reducedMotion={skipAnimation ? "always" : "never"}>
+              <MotionConfig reducedMotion={isActive ? (skipAnimation ? "always" : "never") : "always"}>
+                <div key={slideReplayKeys[i]}>
                   <motion.div
-                    key={`${slide}-${replayKey}`}
-                    initial={skipAnimation ? false : { opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={isActive ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
                     transition={{ duration: skipAnimation ? 0 : 0.3, ease: [0.22, 1, 0.36, 1] }}
                     className="w-full"
                   >
@@ -821,48 +836,40 @@ export function Home() {
                       animate={{ opacity: railEntering ? 0 : 1 }}
                       transition={{ duration: railEntering ? 0.1 : 0.4 }}
                     >
-                      {sc.kind === "intro" && <IntroSlide />}
-                      {sc.kind === "overview" && <OverviewSlide step={subStep} skipAnimation={skipAnimation} />}
+                      {sc.kind === "intro" && <IntroSlide isActive={isActive} />}
+                      {sc.kind === "overview" && <MemoOverview step={isActive ? subStep : 0} skipAnimation={effectiveSkip} isActive={isActive} />}
                       {sc.kind === "one-model" && (
-                        <OneModelSlide
-                          step={subStep}
-                          skipAnimation={skipAnimation}
-                          onAutoAdvance={skipAnimation ? undefined : () => navigate(slide + 1)}
+                        <MemoOneModel
+                          step={isActive ? subStep : 0}
+                          skipAnimation={effectiveSkip}
+                          isActive={isActive}
+                          onAutoAdvance={isActive && !skipAnimation ? () => navigate(slide + 1) : undefined}
                         />
                       )}
                       {sc.kind === "power" && (
-                        <PowerSlide
-                          step={subStep}
-                          onAutoAdvance={skipAnimation ? undefined : () => navigate(slide + 1)}
-                          skipAnimation={skipAnimation}
-                          onActiveCategoryChange={handleActiveCategoryChange}
+                        <MemoPower
+                          step={isActive ? subStep : 0}
+                          onAutoAdvance={isActive && !skipAnimation ? () => navigate(slide + 1) : undefined}
+                          skipAnimation={effectiveSkip}
+                          isActive={isActive}
+                          onActiveCategoryChange={isActive ? handleActiveCategoryChange : undefined}
                         />
                       )}
                       {sc.kind === "refine" && (
-                        <RefineSlide
-                          step={subStep}
-                          onAutoAdvance={skipAnimation ? undefined : () => navigate(slide + 1)}
-                          skipAnimation={skipAnimation}
+                        <MemoRefine
+                          step={isActive ? subStep : 0}
+                          onAutoAdvance={isActive && !skipAnimation ? () => navigate(slide + 1) : undefined}
+                          skipAnimation={effectiveSkip}
+                          isActive={isActive}
                         />
                       )}
-                      {sc.kind === "execute" && <ExecuteSlide step={subStep} skipAnimation={skipAnimation} onCustomerChange={handleExecuteCustomerChange} />}
-                      {sc.kind === "closing-summary" && <ClosingSummarySlide />}
+                      {sc.kind === "execute" && <MemoExecute step={isActive ? subStep : 0} skipAnimation={effectiveSkip} isActive={isActive} onCustomerChange={isActive ? handleExecuteCustomerChange : undefined} />}
+                      {sc.kind === "closing-summary" && <MemoClosing isActive={isActive} />}
                       {sc.kind === "end" && <EndSlide onRestart={() => navigate(0)} />}
                     </motion.div>
                   </motion.div>
-                </MotionConfig>
-              ) : (
-                <MotionConfig reducedMotion="always">
-                  {sc.kind === "intro" && <IntroSlide />}
-                  {sc.kind === "overview" && <OverviewSlide step={0} skipAnimation />}
-                  {sc.kind === "one-model" && <OneModelSlide step={0} skipAnimation />}
-                  {sc.kind === "power" && <PowerSlide step={0} skipAnimation />}
-                  {sc.kind === "refine" && <RefineSlide step={0} skipAnimation />}
-                  {sc.kind === "execute" && <ExecuteSlide step={0} skipAnimation />}
-                  {sc.kind === "closing-summary" && <ClosingSummarySlide />}
-                  {sc.kind === "end" && <EndSlide onRestart={() => {}} />}
-                </MotionConfig>
-              )}
+                </div>
+              </MotionConfig>
             </div>
           );
         })}
@@ -1364,15 +1371,17 @@ function IntroBackdrop() {
 const MODEL_WORDS = ["Design", "Power", "Execute", "Refine"];
 
 
-function RotatingWord() {
+function RotatingWord({ isActive }: { isActive: boolean }) {
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
+    if (!isActive) return;
+    setIndex(0);
     const timer = setInterval(() => {
       setIndex((i) => (i + 1) % MODEL_WORDS.length);
     }, 2500);
     return () => clearInterval(timer);
-  }, []);
+  }, [isActive]);
 
   return (
     <span className="relative inline-flex flex-col items-start overflow-hidden align-bottom" style={{ height: "1.15em" }}>
@@ -1393,7 +1402,7 @@ function RotatingWord() {
   );
 }
 
-function IntroSlide() {
+function IntroSlide({ isActive }: { isActive: boolean }) {
   const { mode } = useMode();
 
   return (

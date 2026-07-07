@@ -42,30 +42,38 @@ const MINI_START = CX - (MODULES.length - 1) * MINI_SPACING / 2;
 
 export const OVERVIEW_TOTAL_STEPS = 1;
 
-export function OverviewSlide({ step, skipAnimation }: { step: number; skipAnimation?: boolean }) {
+export function OverviewSlide({ step, skipAnimation, isActive }: { step: number; skipAnimation?: boolean; isActive: boolean }) {
   const [collapsed, setCollapsed] = useState(!!skipAnimation);
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const [showWireframe, setShowWireframe] = useState(false);
 
   useEffect(() => {
-    if (skipAnimation) {
+    if (!isActive || skipAnimation) {
       setCollapsed(true);
       return;
     }
+    setCollapsed(false);
     timerRef.current = setTimeout(
       () => setCollapsed(true),
       COLLAPSE_DELAY * 1000,
     );
     return () => clearTimeout(timerRef.current);
-  }, [skipAnimation]);
+  }, [isActive, skipAnimation]);
+
+  useEffect(() => {
+    if (!isActive || skipAnimation) { setShowWireframe(false); return; }
+    setShowWireframe(true);
+    const t = setTimeout(() => setShowWireframe(false), 2000);
+    return () => clearTimeout(t);
+  }, [isActive, skipAnimation]);
 
   return (
     <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-5xl flex-col items-center justify-center px-6 pt-8">
       <motion.h2
         className="text-center text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl"
         style={{ color: NAVY }}
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.6, ease: "easeOut" }}
+        animate={isActive ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
+        transition={{ duration: 0.6, delay: (isActive && !skipAnimation) ? 0.6 : 0, ease: "easeOut" }}
       >
         Five core pillars of a dynamic pricing model
       </motion.h2>
@@ -75,10 +83,9 @@ export function OverviewSlide({ step, skipAnimation }: { step: number; skipAnima
           <motion.p
             key={collapsed ? "done" : "intro"}
             className="max-w-2xl text-center text-base text-muted-foreground"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
+            animate={isActive ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
             exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.5, delay: collapsed ? 0 : 1.1 }}
+            transition={{ duration: 0.5, delay: (isActive && !skipAnimation) ? (collapsed ? 0 : 1.1) : 0 }}
           >
             {collapsed
               ? "Each builds on the last — together they form our formula for a dynamic pricing model."
@@ -91,9 +98,8 @@ export function OverviewSlide({ step, skipAnimation }: { step: number; skipAnima
         {/* Wireframe skeleton — visible while real SVG fades in */}
         <motion.div
           className="absolute inset-0"
-          initial={{ opacity: skipAnimation ? 0 : 1 }}
-          animate={{ opacity: 0 }}
-          transition={{ duration: 0.6, delay: skipAnimation ? 0 : 2.0 }}
+          animate={{ opacity: showWireframe ? 1 : 0 }}
+          transition={{ duration: 0.6 }}
           style={{ pointerEvents: "none" }}
         >
           <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} className="w-full h-full">
@@ -144,9 +150,8 @@ export function OverviewSlide({ step, skipAnimation }: { step: number; skipAnima
         {/* Real content */}
         <motion.div
           className="absolute inset-0"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 2.2 }}
+          animate={{ opacity: isActive ? 1 : 0 }}
+          transition={{ duration: 0.8, delay: (isActive && !skipAnimation) ? 2.2 : 0 }}
         >
         <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} className="w-full h-full">
           {/* Connecting arrows between adjacent steps */}
@@ -163,10 +168,9 @@ export function OverviewSlide({ step, skipAnimation }: { step: number; skipAnima
                   y2={LINE_Y}
                   stroke={m.color}
                   strokeWidth={2}
-                  initial={{ opacity: 0, pathLength: 0 }}
                   animate={{
-                    opacity: collapsed ? 0 : 0.5,
-                    pathLength: collapsed ? 0 : 1,
+                    opacity: (isActive && !collapsed) ? 0.5 : 0,
+                    pathLength: (isActive && !collapsed) ? 1 : 0,
                   }}
                   transition={collapsed
                     ? { duration: 0.4 }
@@ -176,8 +180,7 @@ export function OverviewSlide({ step, skipAnimation }: { step: number; skipAnima
                 <motion.polygon
                   points={`${x2},${LINE_Y} ${x2 - 8},${LINE_Y - 5} ${x2 - 8},${LINE_Y + 5}`}
                   fill={m.color}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: collapsed ? 0 : 0.5 }}
+                  animate={{ opacity: (isActive && !collapsed) ? 0.5 : 0 }}
                   transition={collapsed
                     ? { duration: 0.3 }
                     : { duration: 0.3, delay: arrowDelay + 0.4 }
@@ -196,12 +199,11 @@ export function OverviewSlide({ step, skipAnimation }: { step: number; skipAnima
                 <motion.circle
                   r={R}
                   fill={m.color}
-                  initial={{ cx: pos.x, cy: pos.y, opacity: 0, scale: 0 }}
                   animate={{
                     cx: collapsed ? CX : pos.x,
                     cy: collapsed ? LINE_Y : pos.y,
-                    opacity: collapsed ? 0 : 1,
-                    scale: collapsed ? 0.3 : 1,
+                    opacity: (isActive && !collapsed) ? 1 : 0,
+                    scale: (isActive && !collapsed) ? 1 : (collapsed ? 0.3 : 0),
                   }}
                   transition={collapsed
                     ? { duration: 0.7, delay: i * 0.04, ease: "easeInOut" }
@@ -214,11 +216,10 @@ export function OverviewSlide({ step, skipAnimation }: { step: number; skipAnima
                   fill="white"
                   textAnchor="middle"
                   dominantBaseline="central"
-                  initial={{ x: pos.x, y: pos.y, opacity: 0 }}
                   animate={{
                     x: collapsed ? CX : pos.x,
                     y: collapsed ? LINE_Y : pos.y,
-                    opacity: collapsed ? 0 : 1,
+                    opacity: (isActive && !collapsed) ? 1 : 0,
                   }}
                   transition={collapsed
                     ? { duration: 0.5 }
@@ -235,8 +236,7 @@ export function OverviewSlide({ step, skipAnimation }: { step: number; skipAnima
                   textAnchor="middle"
                   x={pos.x}
                   y={pos.y + R + 20}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: collapsed ? 0 : 1 }}
+                  animate={{ opacity: (isActive && !collapsed) ? 1 : 0 }}
                   transition={collapsed
                     ? { duration: 0.3 }
                     : { duration: 0.4, delay: delay + 0.3 }
@@ -252,8 +252,7 @@ export function OverviewSlide({ step, skipAnimation }: { step: number; skipAnima
                   textAnchor="middle"
                   x={pos.x}
                   y={pos.y + R + 38}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: collapsed ? 0 : 0.75 }}
+                  animate={{ opacity: (isActive && !collapsed) ? 0.75 : 0 }}
                   transition={collapsed
                     ? { duration: 0.3 }
                     : { duration: 0.4, delay: delay + 0.5 }
@@ -268,8 +267,7 @@ export function OverviewSlide({ step, skipAnimation }: { step: number; skipAnima
                   textAnchor="middle"
                   x={pos.x}
                   y={pos.y + R + 54}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: collapsed ? 0 : 0.75 }}
+                  animate={{ opacity: (isActive && !collapsed) ? 0.75 : 0 }}
                   transition={collapsed
                     ? { duration: 0.3 }
                     : { duration: 0.4, delay: delay + 0.5 }
@@ -283,12 +281,11 @@ export function OverviewSlide({ step, skipAnimation }: { step: number; skipAnima
 
           {/* Central card — appears after collapse */}
           <motion.g
-            initial={{ opacity: 0, scale: 0.5 }}
             animate={{
-              opacity: collapsed ? 1 : 0,
-              scale: collapsed ? 1 : 0.5,
+              opacity: (isActive && collapsed) ? 1 : 0,
+              scale: (isActive && collapsed) ? 1 : 0.5,
             }}
-            transition={{ duration: 0.6, delay: collapsed ? 0.5 : 0, ease: "easeOut" }}
+            transition={{ duration: 0.6, delay: (isActive && collapsed) ? 0.5 : 0, ease: "easeOut" }}
             style={{ transformOrigin: `${CX}px ${LINE_Y}px` }}
           >
             <rect
@@ -327,12 +324,11 @@ export function OverviewSlide({ step, skipAnimation }: { step: number; skipAnima
             return (
               <motion.g
                 key={`mini-${i}`}
-                initial={{ opacity: 0, y: 12 }}
                 animate={{
-                  opacity: collapsed ? 1 : 0,
-                  y: collapsed ? 0 : 12,
+                  opacity: (isActive && collapsed) ? 1 : 0,
+                  y: (isActive && collapsed) ? 0 : 12,
                 }}
-                transition={{ duration: 0.4, delay: collapsed ? 0.8 + i * 0.08 : 0 }}
+                transition={{ duration: 0.4, delay: (isActive && collapsed) ? 0.8 + i * 0.08 : 0 }}
               >
                 <circle cx={mx} cy={MINI_Y} r={MINI_R} fill={m.color} />
                 <text

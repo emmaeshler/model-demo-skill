@@ -1173,7 +1173,7 @@ function ChipCustomizeComp() {
 function FlowToCenterComp() {
   return (
     <LiveSlidePreview label="one-model" steps={[0, 1, 2]} stepDurationMs={4000} restartDelayMs={3000}>
-      {(step) => <OneModelSlide step={step} />}
+      {(step) => <OneModelSlide step={step} isActive />}
     </LiveSlidePreview>
   );
 }
@@ -1189,7 +1189,7 @@ function ScanOptimizeComp() {
 function ScatterToCurveComp() {
   return (
     <LiveSlidePreview label="refine-slide" steps={[0, 1, 2, 3, 4, 5, 6, 7, 8]} stepDurationMs={3500} restartDelayMs={3000}>
-      {(step) => <RefineSlide step={step} />}
+      {(step) => <RefineSlide step={step} isActive />}
     </LiveSlidePreview>
   );
 }
@@ -1197,7 +1197,7 @@ function ScatterToCurveComp() {
 function ExecuteComp() {
   return (
     <LiveSlidePreview label="execute-slide" steps={[0, 1, 2]} stepDurationMs={4000} restartDelayMs={3000}>
-      {(step) => <ExecuteSlide step={step} />}
+      {(step) => <ExecuteSlide step={step} isActive />}
     </LiveSlidePreview>
   );
 }

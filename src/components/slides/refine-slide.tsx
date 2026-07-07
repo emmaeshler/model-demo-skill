@@ -19,11 +19,11 @@ const BASE_Y = CURVE_SLOT.y + CURVE_SLOT.h;
 const BASELINE_KPI = { winRate: 62, priceAdoption: 71, marginImpact: 1.8 };
 const TOTAL_MONTHS = 20;
 const TIMELINE_EVENTS = [
-  { month: 4, label: "Steel +8%", factor: "Steel cost surge reshapes demand", steepness: 7.5, kpi: { winRate: 65, priceAdoption: 74, marginImpact: 2.4 } },
-  { month: 8, label: "New Entrant", factor: "Competitor enters market", steepness: 7.5, kpi: { winRate: 59, priceAdoption: 66, marginImpact: 1.5 } },
-  { month: 12, label: "Demand Shift", factor: "Seasonal demand surge", steepness: 9, kpi: { winRate: 64, priceAdoption: 73, marginImpact: 2.6 } },
-  { month: 16, label: "Freight −5%", factor: "Freight costs drop", steepness: 4.5, kpi: { winRate: 69, priceAdoption: 79, marginImpact: 3.2 } },
-  { month: 20, label: "Resin +12%", factor: "Raw material spike", steepness: 6.5, kpi: { winRate: 72, priceAdoption: 83, marginImpact: 3.8 } },
+  { month: 4, label: "Steel +8%", factor: "Model passes cost increase through to prices", steepness: 5, kpi: { winRate: 60, priceAdoption: 74, marginImpact: 2.3 } },
+  { month: 8, label: "New Entrant", factor: "Competitor undercuts — model sharpens pricing", steepness: 7.5, kpi: { winRate: 57, priceAdoption: 68, marginImpact: 1.1 } },
+  { month: 12, label: "Demand Shift", factor: "Strong demand — model captures pricing upside", steepness: 4.5, kpi: { winRate: 68, priceAdoption: 78, marginImpact: 3.0 } },
+  { month: 16, label: "Freight −5%", factor: "Model splits savings between margin and share", steepness: 5, kpi: { winRate: 71, priceAdoption: 81, marginImpact: 3.4 } },
+  { month: 20, label: "Resin +12%", factor: "Major cost spike — model reprices within hours", steepness: 4, kpi: { winRate: 67, priceAdoption: 83, marginImpact: 2.9 } },
 ];
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -313,7 +313,7 @@ const PORTFOLIO_REVEAL_ORDER = (() => {
   return order;
 })();
 
-export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: number; onAutoAdvance?: () => void; skipAnimation?: boolean }) {
+export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { step: number; onAutoAdvance?: () => void; skipAnimation?: boolean; isActive: boolean }) {
 
   const curve = useMemo(() => {
     const raw = makeCurve(CURVE_SLOT, 5);
@@ -373,6 +373,10 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
   /* ── Intro phase for chartStep 0 animated title build ── */
   const [introPhase, setIntroPhase] = useState(skipAnimation ? 6 : chartStep === 0 ? 0 : 6);
   useEffect(() => {
+    if (!isActive) {
+      setIntroPhase(0);
+      return;
+    }
     if (skipAnimation) {
       const t0 = setTimeout(() => setIntroPhase(6));
       return () => clearTimeout(t0);
@@ -389,7 +393,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
     const t5 = setTimeout(() => setIntroPhase(5), 4700);
     const t6 = setTimeout(() => setIntroPhase(6), 5600);
     return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); clearTimeout(t5); clearTimeout(t6); };
-  }, [chartStep, skipAnimation]);
+  }, [chartStep, skipAnimation, isActive]);
 
   /* ── Spotlight auto-animation (steps 3-5) ────────────── */
   const isSpotlight = chartStep >= 2 && chartStep <= 4;
@@ -397,6 +401,10 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
 
   const [spotPhase, setSpotPhase] = useState(0);
   useEffect(() => {
+    if (!isActive) {
+      setSpotPhase(0);
+      return;
+    }
     if (!isSpotlight) {
       const t0 = setTimeout(() => setSpotPhase(0));
       return () => clearTimeout(t0);
@@ -410,14 +418,15 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
     const t2 = setTimeout(() => setSpotPhase(2), 3400);
     const t3 = setTimeout(() => setSpotPhase(3), 5200);
     return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
-  }, [chartStep, isSpotlight, skipAnimation, onAutoAdvance]);
+  }, [chartStep, isSpotlight, skipAnimation, onAutoAdvance, isActive]);
 
   /* ── Timeline click-to-advance (step 7) ────────────── */
   const [indexPhase, setIndexPhase] = useState(0);
   useEffect(() => {
+    if (!isActive) { setIndexPhase(0); return; }
     if (chartStep !== 6) { setIndexPhase(0); return; }
     if (skipAnimation) { setIndexPhase(TIMELINE_EVENTS.length); return; }
-  }, [chartStep, skipAnimation]);
+  }, [chartStep, skipAnimation, isActive]);
 
   const advanceTimeline = () => {
     if (indexPhase < TIMELINE_EVENTS.length) setIndexPhase(prev => prev + 1);
@@ -431,6 +440,11 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
   const [kpiRevealed, setKpiRevealed] = useState(false);
   const prevIndexPhaseRef = useRef(0);
   useLayoutEffect(() => {
+    if (!isActive) {
+      setIndexMorphProgress(0);
+      setKpiRevealed(false);
+      return;
+    }
     const prev = prevIndexPhaseRef.current;
     prevIndexPhaseRef.current = indexPhase;
     if (indexPhase === prev) { setIndexMorphProgress(1); return; }
@@ -454,11 +468,12 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
     }, CARD_DELAY);
     const kpiTimer = setTimeout(() => setKpiRevealed(true), CARD_DELAY + MORPH_DURATION + KPI_DELAY);
     return () => { clearTimeout(delayTimer); clearTimeout(kpiTimer); cancelAnimationFrame(frame); };
-  }, [indexPhase, skipAnimation]);
+  }, [indexPhase, skipAnimation, isActive]);
 
   /* ── Portfolio headline phases (step 7) ──────────────── */
   const [portfolioPhase, setPortfolioPhase] = useState(0);
   useEffect(() => {
+    if (!isActive) { setPortfolioPhase(0); return; }
     if (chartStep !== 7) { setPortfolioPhase(0); return; }
     if (skipAnimation) { setPortfolioPhase(4); return; }
     setPortfolioPhase(0);
@@ -467,7 +482,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
     const t3 = setTimeout(() => setPortfolioPhase(3), 2200);
     const t4 = setTimeout(() => setPortfolioPhase(4), 2800);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
-  }, [chartStep, skipAnimation]);
+  }, [chartStep, skipAnimation, isActive]);
 
   /* ── Chart animation ────────────────────────────────── */
 
@@ -1104,14 +1119,14 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
                           ? { duration: 1.2, delay: settleDelay, ease: [0.22, 1, 0.36, 1] }
                           : isAllToCurve
                             ? { duration: 0.7, delay: i * 0.01, ease: "easeInOut" }
-                            : { duration: dot.driftDuration, delay: dot.driftDelay, repeat: Infinity, ease: "easeInOut" },
+                            : { duration: dot.driftDuration, delay: dot.driftDelay, repeat: isActive ? Infinity : 0, ease: "easeInOut" },
                       cy: inChaos
                         ? { duration: 0 }
                         : settling
                           ? { duration: 1.2, delay: settleDelay, ease: [0.22, 1, 0.36, 1] }
                           : isAllToCurve
                             ? { duration: 0.6 + (Math.abs(dot.offsetY) / 36) * 0.3, delay: i * 0.01, ease: "easeInOut" }
-                            : { duration: dot.driftDuration, delay: dot.driftDelay, repeat: Infinity, ease: "easeInOut" },
+                            : { duration: dot.driftDuration, delay: dot.driftDelay, repeat: isActive ? Infinity : 0, ease: "easeInOut" },
                       opacity: {
                         delay: chartStep === 0 ? 0.1 + i * 0.007 : isIndexShift ? 0.15 + (i % 36) * 0.012 : 0.1,
                         duration: isSpotlight ? 0.5 : isIndexShift ? 0.5 : 0.3,
@@ -1510,8 +1525,8 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
                         <motion.div
                           className="rounded-full"
                           style={{ width: 4, height: 4, backgroundColor: GREEN }}
-                          animate={{ opacity: [1, 0.3, 1] }}
-                          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: curveDelay + 0.8 }}
+                          animate={{ opacity: isActive ? [1, 0.3, 1] : 1 }}
+                          transition={{ duration: 2, repeat: isActive ? Infinity : 0, ease: "easeInOut", delay: isActive ? curveDelay + 0.8 : 0 }}
                         />
                         <span style={{ fontSize: 6, fontWeight: 600, letterSpacing: "0.08em", color: GREEN, textTransform: "uppercase" as const }}>Live</span>
                       </motion.div>
@@ -1560,8 +1575,8 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation }: { step: numb
                             r={3.5}
                             fill={STRAT_BLUE}
                             initial={{ opacity: 0 }}
-                            animate={{ opacity: [0, 0.2, 0.08, 0.2] }}
-                            transition={{ delay: curveDelay + 0.5, duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                            animate={{ opacity: isActive ? [0, 0.2, 0.08, 0.2] : 0 }}
+                            transition={{ delay: isActive ? curveDelay + 0.5 : 0, duration: 3, repeat: isActive ? Infinity : 0, ease: "easeInOut" }}
                           />
                           <motion.circle
                             cx={seg.priceDotPt.x}

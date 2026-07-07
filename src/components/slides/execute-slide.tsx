@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMode } from "@/lib/mode-context";
 
@@ -603,40 +603,53 @@ export function ExecuteSlide({
   step,
   skipAnimation,
   onCustomerChange,
+  isActive,
 }: {
   step: number;
   onAnimationDone?: () => void;
   skipAnimation?: boolean;
   onCustomerChange?: (customer: string) => void;
+  isActive: boolean;
 }) {
   const { mode } = useMode();
   const isPresenter = mode === "presenter";
   const [selected, setSelected] = useState(0);
   const [revealPhase, setRevealPhase] = useState(skipAnimation ? 4 : 1);
+  const hasInteracted = useRef(false);
   const cust = CUSTOMERS[selected];
 
   useEffect(() => {
+    if (!isActive) return;
     onCustomerChange?.(cust.label.split(" ")[0]);
-  }, [selected, cust.label, onCustomerChange]);
+  }, [selected, cust.label, onCustomerChange, isActive]);
 
   const selfMaxPhase = step === 0 ? 3 : 4;
 
   useEffect(() => {
+    if (!isActive) {
+      setRevealPhase(1);
+      setSelected(0);
+      hasInteracted.current = false;
+      return;
+    }
     if (isPresenter) {
       setRevealPhase(skipAnimation ? 4 : step + 1);
     } else {
       setRevealPhase(skipAnimation ? selfMaxPhase : (step >= 1 ? 4 : 1));
     }
-  }, [step, skipAnimation, isPresenter, selfMaxPhase]);
+  }, [step, skipAnimation, isPresenter, selfMaxPhase, isActive]);
 
   useEffect(() => {
+    if (!isActive) return;
     if (revealPhase !== 4) return;
     if (selected !== 0) return;
+    if (hasInteracted.current) return;
     const t = setTimeout(() => setSelected(1), 800);
     return () => clearTimeout(t);
-  }, [revealPhase, selected]);
+  }, [revealPhase, selected, isActive]);
 
   useEffect(() => {
+    if (!isActive) return;
     if (isPresenter) return;
     if (revealPhase >= selfMaxPhase) return;
     function onKey(e: KeyboardEvent) {
@@ -653,7 +666,7 @@ export function ExecuteSlide({
     }
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [revealPhase, isPresenter]);
+  }, [revealPhase, isPresenter, isActive]);
 
   const inCurvePath = () => {
     const sy = MODEL_CY;
@@ -683,7 +696,7 @@ export function ExecuteSlide({
         <motion.div
           key="action"
           initial={skipAnimation ? false : { opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
+          animate={isActive ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           className={`mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-7xl flex-col items-center justify-start px-6 relative ${isPresenter ? "pt-2" : "pt-8"}`}
@@ -763,8 +776,8 @@ export function ExecuteSlide({
                       cx={MODEL_CX} cy={MODEL_CY}
                       fill="white" stroke={TEAL} strokeWidth={2.5}
                       initial={skipAnimation ? { r: BOX_H / 2 } : { r: 150 }}
-                      animate={{ r: BOX_H / 2 }}
-                      transition={{ duration: 0.8, delay: 0.05, ease: [0.22, 1, 0.36, 1] }}
+                      animate={isActive ? { r: BOX_H / 2 } : { r: skipAnimation ? BOX_H / 2 : 150 }}
+                      transition={{ duration: 0.8, delay: (isActive && !skipAnimation) ? 0.05 : 0, ease: [0.22, 1, 0.36, 1] }}
                     />
 
                     {/* Converge echo — shows the previous slide's content briefly */}
@@ -791,8 +804,8 @@ export function ExecuteSlide({
 
                     <motion.g
                       initial={skipAnimation ? false : { opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.4, delay: skipAnimation ? 0.15 : 0.65 }}
+                      animate={isActive ? { opacity: 1 } : { opacity: 0 }}
+                      transition={{ duration: 0.4, delay: isActive ? (skipAnimation ? 0.15 : 0.65) : 0 }}
                     >
                       {/* Title above circle */}
                       <text x={MODEL_CX} y={MODEL_CY - 68} fontSize="14" fontWeight="700" fill={NAVY} textAnchor="middle">
@@ -818,8 +831,8 @@ export function ExecuteSlide({
                       x={MODEL_CX} y={MODEL_CY + BOX_H / 2 + 18}
                       fontSize="10" fontWeight="500" fill={TEAL} textAnchor="middle"
                       initial={skipAnimation ? false : { opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.4, delay: skipAnimation ? 0.3 : 0.8 }}
+                      animate={isActive ? { opacity: 1 } : { opacity: 0 }}
+                      transition={{ duration: 0.4, delay: isActive ? (skipAnimation ? 0.3 : 0.8) : 0 }}
                     >
                       ML-powered optimization
                     </motion.text>
@@ -884,66 +897,52 @@ export function ExecuteSlide({
                       </>
                     )}
 
-                    {/* Connector line + chips — phase 4 */}
+                    {/* Connector line — phase 4 */}
                     {revealPhase >= 4 && (
-                      <>
-                        <motion.line
-                          x1={MODEL_CX} y1={MODEL_Y + BOX_H}
-                          x2={MODEL_CX} y2={MODEL_Y + BOX_H + 24}
-                          stroke={GREY} strokeWidth={1} strokeDasharray="3 3"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 0.4 }}
-                          transition={{ duration: 0.4 }}
-                        />
-                        {CUSTOMERS.map((c, ci) => {
-                          const isSelected = ci === selected;
-                          const chipW = 120;
-                          const chipH = 30;
-                          const chipGap = 12;
-                          const totalW = CUSTOMERS.length * chipW + (CUSTOMERS.length - 1) * chipGap;
-                          const chipX = MODEL_CX - totalW / 2 + ci * (chipW + chipGap);
-                          const chipY = MODEL_Y + BOX_H + 24;
-                          return (
-                            <motion.g
-                              key={c.label}
-                              style={{ cursor: "pointer" }}
-                              onClick={() => setSelected(ci)}
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ duration: 0.4, delay: 0.3 + ci * 0.08 }}
-                            >
-                              <motion.rect
-                                x={chipX} y={chipY}
-                                width={chipW} height={chipH}
-                                rx={chipH / 2}
-                                animate={{
-                                  fill: isSelected ? c.color : "white",
-                                  stroke: c.color,
-                                }}
-                                strokeWidth={isSelected ? 2 : 1.2}
-                                transition={{ duration: 0.25 }}
-                              />
-                              <text
-                                x={chipX + chipW / 2}
-                                y={chipY + chipH / 2 + 1}
-                                fontSize="10.5"
-                                fontWeight="600"
-                                fill={isSelected ? "white" : c.color}
-                                textAnchor="middle"
-                                dominantBaseline="central"
-                                style={{ pointerEvents: "none" }}
-                              >
-                                {c.label}
-                              </text>
-                            </motion.g>
-                          );
-                        })}
-                      </>
+                      <motion.line
+                        x1={MODEL_CX} y1={MODEL_Y + BOX_H}
+                        x2={MODEL_CX} y2={MODEL_Y + BOX_H + 24}
+                        stroke={GREY} strokeWidth={1} strokeDasharray="3 3"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 0.4 }}
+                        transition={{ duration: 0.4 }}
+                      />
                     )}
                   </>
 
             </svg>
           </div>
+
+          {/* Customer chips — HTML layer for reliable click handling */}
+          {revealPhase >= 4 && (
+            <motion.div
+              className="flex items-center justify-center gap-3 mt-1"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.3 }}
+            >
+              {CUSTOMERS.map((c, ci) => {
+                const isSelected = ci === selected;
+                return (
+                  <motion.button
+                    key={c.label}
+                    onClick={() => { hasInteracted.current = true; setSelected(ci); }}
+                    className="rounded-full px-5 py-1.5 text-[10.5px] font-semibold transition-colors cursor-pointer"
+                    style={{
+                      background: isSelected ? c.color : "white",
+                      border: `${isSelected ? 2 : 1.2}px solid ${c.color}`,
+                      color: isSelected ? "white" : c.color,
+                    }}
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.97 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    {c.label}
+                  </motion.button>
+                );
+              })}
+            </motion.div>
+          )}
 
           {/* Dot navigation (self mode only) */}
           {!isPresenter && revealPhase >= 1 && revealPhase < 4 && (

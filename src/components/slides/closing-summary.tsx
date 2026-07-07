@@ -41,13 +41,11 @@ const OUTCOMES = [
   { metric: "Override Rate", value: "−26pp", color: ORANGE },
 ];
 
-const fadeUp = (delay: number) => ({
-  initial: { opacity: 0, y: 14 } as const,
-  animate: { opacity: 1, y: 0 } as const,
-  transition: { delay, duration: 0.3 },
-});
-
-export function ClosingSummarySlide() {
+export function ClosingSummarySlide({ isActive }: { isActive: boolean }) {
+  const fadeUp = (delay: number) => ({
+    animate: isActive ? { opacity: 1, y: 0 } as const : { opacity: 0, y: 14 } as const,
+    transition: { delay: isActive ? delay : 0, duration: 0.3 },
+  });
   return (
     <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-6xl flex-col items-center justify-center gap-3 px-6">
       {/* Header */}
@@ -55,17 +53,15 @@ export function ClosingSummarySlide() {
         <motion.h2
           className="mt-1 text-xl font-bold tracking-tight sm:text-2xl"
           style={{ color: NAVY }}
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.15, ease: "easeOut" }}
+          animate={isActive ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
+          transition={{ duration: 0.4, delay: isActive ? 0.15 : 0, ease: "easeOut" }}
         >
           An evidence-based pricing model, end to end
         </motion.h2>
         <motion.p
           className="mx-auto mt-1.5 max-w-2xl text-sm text-muted-foreground"
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: 0.3 }}
+          animate={isActive ? { opacity: 1, y: 0 } : { opacity: 0, y: 6 }}
+          transition={{ duration: 0.35, delay: isActive ? 0.3 : 0 }}
         >
           Five interconnected stages turn raw data into measurable profit — and every cycle makes the next one sharper.
         </motion.p>
@@ -74,9 +70,8 @@ export function ClosingSummarySlide() {
       {/* Journey recap — 5 connected stages */}
       <motion.div
         className="w-full max-w-5xl"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.45 }}
+        animate={{ opacity: isActive ? 1 : 0 }}
+        transition={{ duration: 0.5, delay: isActive ? 0.45 : 0 }}
       >
         <div className="grid grid-cols-5 gap-0">
           {STAGES.map((stage, i) => (
@@ -95,9 +90,8 @@ export function ClosingSummarySlide() {
                     backgroundColor: stage.color,
                     opacity: 0.25,
                   }}
-                  initial={{ scaleX: 0 }}
-                  animate={{ scaleX: 1 }}
-                  transition={{ delay: 0.15 + i * 0.06, duration: 0.3 }}
+                  animate={{ scaleX: isActive ? 1 : 0 }}
+                  transition={{ delay: isActive ? 0.15 + i * 0.06 : 0, duration: 0.3 }}
                 />
               )}
 
@@ -105,10 +99,9 @@ export function ClosingSummarySlide() {
               <motion.div
                 className="relative z-10 flex size-9 items-center justify-center rounded-full text-sm font-bold text-white"
                 style={{ backgroundColor: stage.color }}
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
+                animate={{ scale: isActive ? 1 : 0 }}
                 transition={{
-                  delay: 0.1 + i * 0.06,
+                  delay: isActive ? 0.1 + i * 0.06 : 0,
                   duration: 0.3,
                   type: "spring",
                   damping: 14,
@@ -153,9 +146,8 @@ export function ClosingSummarySlide() {
               <motion.div
                 key={o.metric}
                 className="flex flex-col items-center gap-0.5"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 + i * 0.05, duration: 0.25 }}
+                animate={isActive ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
+                transition={{ delay: isActive ? 0.4 + i * 0.05 : 0, duration: 0.25 }}
               >
                 <span
                   className="text-xl font-bold"

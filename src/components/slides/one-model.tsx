@@ -31,7 +31,7 @@ const STEP_NARRATIVES: Record<number, NarrativeSegment[]> = {
   ],
 };
 
-function HighlightNarrative({ segments }: { segments: NarrativeSegment[] }) {
+function HighlightNarrative({ segments, isActive }: { segments: NarrativeSegment[]; isActive: boolean }) {
   return (
     <span>
       {segments.map((seg, si) => {
@@ -43,9 +43,9 @@ function HighlightNarrative({ segments }: { segments: NarrativeSegment[] }) {
               <motion.span
                 className="absolute bottom-0 left-0 h-[2px] rounded-full"
                 style={{ backgroundColor: seg.color || NAVY }}
-                initial={{ width: "0%" }}
-                animate={{ width: "100%" }}
-                transition={{ duration: 0.6, delay: 0.4, ease: "easeOut" }}
+                initial={false}
+                animate={isActive ? { width: "100%" } : { width: "0%" }}
+                transition={{ duration: 0.6, delay: isActive ? 0.4 : 0, ease: "easeOut" }}
               />
             )}
           </span>
@@ -72,17 +72,17 @@ function sampleCubicBezier(
   return { cxArr, cyArr };
 }
 
-function FlowDot({ path, color, delay }: {
+function FlowDot({ path, color, delay, isActive }: {
   path: { sx: number; sy: number; cp1x: number; cp1y: number; cp2x: number; cp2y: number; ex: number; ey: number };
-  color: string; delay: number;
+  color: string; delay: number; isActive: boolean;
 }) {
   const { cxArr, cyArr } = sampleCubicBezier(
     path.sx, path.sy, path.cp1x, path.cp1y, path.cp2x, path.cp2y, path.ex, path.ey, 50,
   );
   return (
-    <motion.circle r={3} fill={color} initial={{ opacity: 0 }}
-      animate={{ cx: cxArr, cy: cyArr, opacity: [0, 0.5, 0.5, 0.5, 0] }}
-      transition={{ duration: 4.5, delay, repeat: Infinity, ease: "linear" }}
+    <motion.circle r={3} fill={color} initial={false}
+      animate={isActive ? { cx: cxArr, cy: cyArr, opacity: [0, 0.5, 0.5, 0.5, 0] } : { opacity: 0 }}
+      transition={isActive ? { duration: 4.5, delay, repeat: Infinity, ease: "linear" } : { duration: 0 }}
     />
   );
 }
@@ -104,7 +104,7 @@ const INPUTS: InputCard[] = [
 
 /* ── Main visualization ── */
 
-function ModelVisualization({ step }: { step: number }) {
+function ModelVisualization({ step, isActive }: { step: number; isActive: boolean }) {
   const W = 920;
   const H = 360;
   const CX = 660;
@@ -112,8 +112,9 @@ function ModelVisualization({ step }: { step: number }) {
   const R = 105;
   const R_OUTER = 125;
   const R_INNER = 85;
-  const ML_BG = "#3A7D5E";
-  const STRAT_BG = "#2E6E96";
+  const ML_BG = "#4A9B6E";
+  const STRAT_BG = "#4A8DB8";
+  const R_ARC = R_INNER + (R_OUTER - R_INNER) * 0.75;
 
   const showSplit = step >= 1;
 
@@ -145,10 +146,14 @@ function ModelVisualization({ step }: { step: number }) {
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-full max-h-[420px]">
+      <defs>
+        <path id="ai-text-arc" d={`M ${CX - R_ARC},${CY} A ${R_ARC},${R_ARC} 0 0,0 ${CX + R_ARC},${CY}`} />
+      </defs>
+
       {/* ── Outer navy circle (AI Execution Layer) ── */}
       <motion.circle cx={CX} cy={CY} r={R_OUTER} fill={NAVY}
-        initial={{ scale: 0.7, opacity: 0 }}
-        animate={{ scale: showSplit ? 1 : R / R_OUTER, opacity: 1 }}
+        initial={false}
+        animate={isActive ? { scale: showSplit ? 1 : R / R_OUTER, opacity: 1 } : { scale: 0.7, opacity: 0 }}
         transition={{
           scale: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
           opacity: { duration: 0.5 },
@@ -190,15 +195,15 @@ function ModelVisualization({ step }: { step: number }) {
 
       {/* ── Step 0 labels (Pricing Model / One unified engine) ── */}
       <motion.text x={CX} y={CY - 4} fontSize="16" fontWeight="700" fill="white" textAnchor="middle"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: showSplit ? 0 : 1 }}
-        transition={{ duration: showSplit ? 0.15 : 0.4, delay: showSplit ? 0 : 0.3 }}>
+        initial={false}
+        animate={isActive ? { opacity: showSplit ? 0 : 1 } : { opacity: 0 }}
+        transition={{ duration: showSplit ? 0.15 : 0.4, delay: isActive && !showSplit ? 0.3 : 0 }}>
         Pricing Model
       </motion.text>
       <motion.text x={CX} y={CY + 16} fontSize="10.5" fill="rgba(255,255,255,0.7)" textAnchor="middle"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: showSplit ? 0 : 0.8 }}
-        transition={{ duration: showSplit ? 0.15 : 0.4, delay: showSplit ? 0 : 0.4 }}>
+        initial={false}
+        animate={isActive ? { opacity: showSplit ? 0 : 0.8 } : { opacity: 0 }}
+        transition={{ duration: showSplit ? 0.15 : 0.4, delay: isActive && !showSplit ? 0.4 : 0 }}>
         One unified engine
       </motion.text>
 
@@ -208,16 +213,16 @@ function ModelVisualization({ step }: { step: number }) {
         transition={{ duration: 0.5, delay: showSplit ? 0.45 : 0 }}
       >
         <g transform={`translate(${CX - 10}, ${CY - 72}) scale(1.0)`}>
-          <circle cx={10} cy={4} r={3} fill={ML_GREEN} />
-          <circle cx={3} cy={16} r={3} fill={ML_GREEN} />
-          <circle cx={17} cy={16} r={3} fill={ML_GREEN} />
-          <circle cx={10} cy={14} r={2.5} fill={ML_GREEN} opacity={0.6} />
-          <line x1={10} y1={4} x2={3} y2={16} stroke={ML_GREEN} strokeWidth={1.2} opacity={0.6} />
-          <line x1={10} y1={4} x2={17} y2={16} stroke={ML_GREEN} strokeWidth={1.2} opacity={0.6} />
-          <line x1={3} y1={16} x2={17} y2={16} stroke={ML_GREEN} strokeWidth={1.2} opacity={0.6} />
-          <line x1={10} y1={4} x2={10} y2={14} stroke={ML_GREEN} strokeWidth={1} opacity={0.5} />
+          <circle cx={10} cy={4} r={3} fill="white" />
+          <circle cx={3} cy={16} r={3} fill="white" />
+          <circle cx={17} cy={16} r={3} fill="white" />
+          <circle cx={10} cy={14} r={2.5} fill="white" opacity={0.7} />
+          <line x1={10} y1={4} x2={3} y2={16} stroke="white" strokeWidth={1.2} opacity={0.7} />
+          <line x1={10} y1={4} x2={17} y2={16} stroke="white" strokeWidth={1.2} opacity={0.7} />
+          <line x1={3} y1={16} x2={17} y2={16} stroke="white" strokeWidth={1.2} opacity={0.7} />
+          <line x1={10} y1={4} x2={10} y2={14} stroke="white" strokeWidth={1} opacity={0.6} />
         </g>
-        <text x={CX} y={CY - 26} fontSize="17" fontWeight="700" fill="white" textAnchor="middle">
+        <text x={CX} y={CY - 26} fontSize="15" fontWeight="700" fill="white" textAnchor="middle">
           ML Prediction
         </text>
       </motion.g>
@@ -227,39 +232,40 @@ function ModelVisualization({ step }: { step: number }) {
         animate={{ opacity: showSplit ? 1 : 0 }}
         transition={{ duration: 0.5, delay: showSplit ? 0.45 : 0 }}
       >
-        <text x={CX} y={CY + 36} fontSize="17" fontWeight="700" fill="white" textAnchor="middle">
+        <text x={CX} y={CY + 36} fontSize="15" fontWeight="700" fill="white" textAnchor="middle">
           Strategic Guidance
         </text>
         <g transform={`translate(${CX - 10}, ${CY + 46}) scale(1.0)`}>
-          <circle cx={10} cy={10} r={9} fill="none" stroke={STRAT_BLUE} strokeWidth={1.4} />
-          <polygon points="10,2 12,9 10,11 8,9" fill={STRAT_BLUE} />
-          <polygon points="10,18 8,11 10,9 12,11" fill={STRAT_BLUE} opacity={0.4} />
-          <circle cx={10} cy={10} r={1.5} fill={STRAT_BLUE} />
+          <circle cx={10} cy={10} r={9} fill="none" stroke="white" strokeWidth={1.4} opacity={0.85} />
+          <polygon points="10,2 12,9 10,11 8,9" fill="white" />
+          <polygon points="10,18 8,11 10,9 12,11" fill="white" opacity={0.5} />
+          <circle cx={10} cy={10} r={1.5} fill="white" />
         </g>
       </motion.g>
 
-      {/* ── "AI Execution Layer" label (in navy ring at bottom, italic) ── */}
+      {/* ── "AI Execution Layer" label (curved along bottom of navy ring) ── */}
       <motion.text
-        x={CX} y={CY + R_INNER + (R_OUTER - R_INNER) / 2 + 5}
-        fontSize="13" fontWeight="600" fill="white" textAnchor="middle"
-        fontStyle="italic" letterSpacing="0.05em"
+        fontSize="11.5" fontWeight="600" fill="white"
+        fontStyle="italic" letterSpacing="0.08em"
         animate={{ opacity: showSplit ? 0.9 : 0 }}
         transition={{ duration: 0.5, delay: showSplit ? 0.7 : 0 }}>
-        AI Execution Layer
+        <textPath href="#ai-text-arc" startOffset="50%" textAnchor="middle">
+          AI Execution Layer
+        </textPath>
       </motion.text>
 
       {/* ── Input cards & connections ── */}
       {/* Category labels */}
       <motion.text x={LEFT_X} y={label1Y} fontSize="10" fontWeight="600" letterSpacing="0.12em"
         fill={showSplit ? ML_GREEN : NAVY}
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-        transition={{ delay: 0.15, duration: 0.4 }}>
+        initial={false} animate={isActive ? { opacity: 1 } : { opacity: 0 }}
+        transition={{ delay: isActive ? 0.15 : 0, duration: 0.4 }}>
         DATA INPUTS
       </motion.text>
       <motion.text x={LEFT_X} y={label2Y} fontSize="10" fontWeight="600" letterSpacing="0.12em"
         fill={showSplit ? STRAT_BLUE : NAVY}
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-        transition={{ delay: 0.35, duration: 0.4 }}>
+        initial={false} animate={isActive ? { opacity: 1 } : { opacity: 0 }}
+        transition={{ delay: isActive ? 0.35 : 0, duration: 0.4 }}>
         EXPERTISE INPUTS
       </motion.text>
 
@@ -292,8 +298,8 @@ function ModelVisualization({ step }: { step: number }) {
         return (
           <Fragment key={inp.label}>
             {/* Card */}
-            <motion.g initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: cardDelay, ease: "easeOut" }}>
+            <motion.g initial={false} animate={isActive ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
+              transition={{ duration: 0.5, delay: isActive ? cardDelay : 0, ease: "easeOut" }}>
               <motion.rect x={LEFT_X} y={cardY} width={CARD_W} height={CARD_H} rx={10}
                 fill="white"
                 animate={{ stroke: cardColor }}
@@ -312,29 +318,29 @@ function ModelVisualization({ step }: { step: number }) {
 
             {/* Step 0 connection (fades out when split) */}
             <motion.path d={unifiedD} fill="none" stroke={NAVY} strokeWidth={1.5} strokeLinecap="round"
-              initial={{ pathLength: 0, opacity: 0 }}
-              animate={{ pathLength: 1, opacity: showSplit ? 0 : 0.35 }}
+              initial={false}
+              animate={isActive ? { pathLength: 1, opacity: showSplit ? 0 : 0.35 } : { pathLength: 0, opacity: 0 }}
               transition={{
-                pathLength: { duration: 0.7, delay: lineDelay, ease: "easeOut" },
-                opacity: { duration: showSplit ? 0.3 : 0.7, delay: showSplit ? 0 : lineDelay },
+                pathLength: { duration: 0.7, delay: isActive ? lineDelay : 0, ease: "easeOut" },
+                opacity: { duration: showSplit ? 0.3 : 0.7, delay: isActive && !showSplit ? lineDelay : 0 },
               }}
             />
             {!showSplit && (
-              <FlowDot path={unifiedPath} color={NAVY} delay={1.4 + i * 0.3} />
+              <FlowDot path={unifiedPath} color={NAVY} delay={1.4 + i * 0.3} isActive={isActive} />
             )}
 
             {/* Step 1 connection (draws in when split) */}
             <motion.path d={splitD} fill="none" strokeWidth={1.5} strokeLinecap="round"
               stroke={splitColor}
-              initial={{ pathLength: 0, opacity: 0 }}
-              animate={{ pathLength: showSplit ? 1 : 0, opacity: showSplit ? 0.45 : 0 }}
+              initial={false}
+              animate={isActive ? { pathLength: showSplit ? 1 : 0, opacity: showSplit ? 0.45 : 0 } : { pathLength: 0, opacity: 0 }}
               transition={{
-                pathLength: { duration: 0.8, delay: showSplit ? 0.4 + i * 0.1 : 0, ease: "easeOut" },
-                opacity: { duration: 0.4, delay: showSplit ? 0.3 : 0 },
+                pathLength: { duration: 0.8, delay: isActive && showSplit ? 0.4 + i * 0.1 : 0, ease: "easeOut" },
+                opacity: { duration: 0.4, delay: isActive && showSplit ? 0.3 : 0 },
               }}
             />
             {showSplit && (
-              <FlowDot path={splitPath} color={splitColor} delay={1.2 + i * 0.3} />
+              <FlowDot path={splitPath} color={splitColor} delay={1.2 + i * 0.3} isActive={isActive} />
             )}
           </Fragment>
         );
@@ -345,19 +351,20 @@ function ModelVisualization({ step }: { step: number }) {
 
 interface OneModelSlideProps {
   step: number;
+  isActive: boolean;
   skipAnimation?: boolean;
   onAutoAdvance?: () => void;
 }
 
 /* ── Slide shell ── */
 
-export function OneModelSlide({ step }: OneModelSlideProps) {
+export function OneModelSlide({ step, isActive }: OneModelSlideProps) {
   return (
     <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-6xl flex-col items-center justify-center px-6 pt-8 relative">
       <motion.h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: NAVY }}
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: step === 0 ? 0.6 : 0, ease: "easeOut" }}>
+        initial={false}
+        animate={isActive ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
+        transition={{ duration: 0.6, delay: isActive && step === 0 ? 0.6 : 0, ease: "easeOut" }}>
         Core components of the ideal pricing model
       </motion.h2>
 
@@ -365,21 +372,21 @@ export function OneModelSlide({ step }: OneModelSlideProps) {
         <AnimatePresence mode="wait">
           <motion.p key={step} className="max-w-2xl text-center leading-relaxed"
             style={{ color: NAVY, fontSize: "1.15rem" }}
-            initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 6 }} animate={isActive ? { opacity: 1, y: 0 } : { opacity: 0, y: 6 }}
             exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.5, delay: step === 0 ? 0.6 : 0 }}>
-            <HighlightNarrative segments={STEP_NARRATIVES[step]} />
+            transition={{ duration: 0.5, delay: isActive && step === 0 ? 0.6 : 0 }}>
+            <HighlightNarrative segments={STEP_NARRATIVES[step]} isActive={isActive} />
           </motion.p>
         </AnimatePresence>
       </div>
 
       <motion.div
         className="relative w-full max-w-5xl flex-1 min-h-0 flex items-center justify-center overflow-hidden"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ opacity: { duration: 0.8, delay: step === 0 ? 1.0 : 0 } }}
+        initial={false}
+        animate={isActive ? { opacity: 1 } : { opacity: 0 }}
+        transition={{ opacity: { duration: 0.8, delay: isActive && step === 0 ? 1.0 : 0 } }}
       >
-        <ModelVisualization step={step} />
+        <ModelVisualization step={step} isActive={isActive} />
       </motion.div>
     </div>
   );

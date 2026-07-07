@@ -427,7 +427,7 @@ function CategoryIcon({ type, color, size = 18 }: { type: string; color: string;
 
 /* ─── Main slide ─── */
 
-export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCategoryChange }: { step: number; onAutoAdvance?: () => void; skipAnimation?: boolean; onActiveCategoryChange?: (categories: string[]) => void }) {
+export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCategoryChange, isActive = true }: { step: number; onAutoAdvance?: () => void; skipAnimation?: boolean; onActiveCategoryChange?: (categories: string[]) => void; isActive?: boolean }) {
   const chartStep = step;
 
 
@@ -436,6 +436,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
   const [factorsPhase, setFactorsPhase] = useState(chartStep >= 2 ? 7 : 0);
   const [morphPhase, setMorphPhase] = useState(chartStep >= 2 ? 4 : -1);
   useEffect(() => {
+    if (!isActive) { setIntroPhase(0); return; }
     if (skipAnimation) { setIntroPhase(5); return; }
     if (chartStep !== 0) {
       const t0 = setTimeout(() => setIntroPhase(5));
@@ -449,20 +450,23 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
     const t4 = setTimeout(() => setIntroPhase(4), settle + 2600);
     const t5 = setTimeout(() => setIntroPhase(5), settle + 3200);
     return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); clearTimeout(t5); };
-  }, [chartStep, skipAnimation]);
+  }, [isActive, chartStep, skipAnimation]);
 
 
   useEffect(() => {
+    if (!isActive) { setFactorsPhase(0); return; }
     if (chartStep < 2) { setFactorsPhase(0); return; }
     setFactorsPhase(7);
-  }, [chartStep, skipAnimation]);
+  }, [isActive, chartStep, skipAnimation]);
 
   useEffect(() => {
+    if (!isActive) { setMorphPhase(-1); return; }
     setMorphPhase(4);
-  }, [factorsPhase, chartStep, skipAnimation]);
+  }, [isActive, factorsPhase, chartStep, skipAnimation]);
 
   // selectionPhase: -1=waiting, 0=customer, 1=product, 2=market, 3=order, 4=show picks, 5=done
   useEffect(() => {
+    if (!isActive) { setSelectionPhase(-1); return; }
     if (chartStep < 2) { setSelectionPhase(-1); return; }
     if (chartStep > 2 || skipAnimation) { setSelectionPhase(5); return; }
     setSelectionPhase(-1);
@@ -473,19 +477,21 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
     const t4 = setTimeout(() => setSelectionPhase(4), 17500);
     const t5 = setTimeout(() => setSelectionPhase(5), 20000);
     return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); clearTimeout(t5); };
-  }, [chartStep, skipAnimation]);
+  }, [isActive, chartStep, skipAnimation]);
 
   const [actionRevealed, setActionRevealed] = useState(skipAnimation || chartStep > 2);
   useEffect(() => {
+    if (!isActive) { setActionRevealed(false); return; }
     if (selectionPhase < 0 || selectionPhase > 3) { setActionRevealed(false); return; }
     if (skipAnimation) { setActionRevealed(true); return; }
     setActionRevealed(false);
     const t = setTimeout(() => setActionRevealed(true), 1200);
     return () => clearTimeout(t);
-  }, [selectionPhase, skipAnimation]);
+  }, [isActive, selectionPhase, skipAnimation]);
 
   useEffect(() => {
     if (!onActiveCategoryChange) return;
+    if (!isActive) { onActiveCategoryChange([]); return; }
     if (chartStep !== 2) { onActiveCategoryChange([]); return; }
     const cats = ["customer", "product", "market", "order"] as const;
     if (selectionPhase >= 0 && selectionPhase <= 3) {
@@ -493,7 +499,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
     } else {
       onActiveCategoryChange([...cats]);
     }
-  }, [chartStep, selectionPhase, onActiveCategoryChange]);
+  }, [isActive, chartStep, selectionPhase, onActiveCategoryChange]);
 
   const convergeReady = chartStep >= 3;
 
@@ -511,6 +517,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
   const [scanCardCount, setScanCardCount] = useState(chartStep > 1 || skipAnimation ? 4 : 0);
   const [driversRevealed, setDriversRevealed] = useState(chartStep > 1 || skipAnimation);
   useEffect(() => {
+    if (!isActive) { setScanCardCount(0); setDriversRevealed(false); return; }
     if (chartStep !== 1) { setScanCardCount(chartStep > 1 ? 4 : 0); setDriversRevealed(chartStep > 1); return; }
     if (skipAnimation) { setScanCardCount(4); setDriversRevealed(true); return; }
     setScanCardCount(0);
@@ -521,7 +528,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
     const s3 = setTimeout(() => setScanCardCount(3), cardInterval * 2);
     const s4 = setTimeout(() => setScanCardCount(4), cardInterval * 3);
     return () => { clearTimeout(s1); clearTimeout(s2); clearTimeout(s3); clearTimeout(s4); };
-  }, [chartStep, skipAnimation, onAutoAdvance]);
+  }, [isActive, chartStep, skipAnimation, onAutoAdvance]);
 
   /* ── Chart flow ─────────────────────────────────────── */
   const clustered = chartStep >= 2;
