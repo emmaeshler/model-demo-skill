@@ -112,7 +112,8 @@ function ModelVisualization({ step }: { step: number }) {
   const R = 105;
   const R_OUTER = 125;
   const R_INNER = 85;
-  const INNER_BLUE = "#3B7EAE";
+  const ML_BG = "#3A7D5E";
+  const STRAT_BG = "#2E6E96";
 
   const showSplit = step >= 1;
 
@@ -155,8 +156,21 @@ function ModelVisualization({ step }: { step: number }) {
         style={{ transformOrigin: `${CX}px ${CY}px` }}
       />
 
-      {/* ── Inner blue circle (appears at step 1) ── */}
-      <motion.circle cx={CX} cy={CY} r={R_INNER} fill={INNER_BLUE}
+      {/* ── Inner circle — ML half (top, green-tinted) ── */}
+      <motion.path
+        d={`M ${CX - R_INNER},${CY} A ${R_INNER},${R_INNER} 0 0,1 ${CX + R_INNER},${CY} Z`}
+        fill={ML_BG}
+        animate={{ opacity: showSplit ? 1 : 0, scale: showSplit ? 1 : 0.85 }}
+        transition={{
+          opacity: { duration: 0.6, delay: showSplit ? 0.15 : 0 },
+          scale: { duration: 0.7, delay: showSplit ? 0.15 : 0, ease: [0.22, 1, 0.36, 1] },
+        }}
+        style={{ transformOrigin: `${CX}px ${CY}px` }}
+      />
+      {/* ── Inner circle — Strategic half (bottom, blue-tinted) ── */}
+      <motion.path
+        d={`M ${CX - R_INNER},${CY} A ${R_INNER},${R_INNER} 0 0,0 ${CX + R_INNER},${CY} Z`}
+        fill={STRAT_BG}
         animate={{ opacity: showSplit ? 1 : 0, scale: showSplit ? 1 : 0.85 }}
         transition={{
           opacity: { duration: 0.6, delay: showSplit ? 0.15 : 0 },
