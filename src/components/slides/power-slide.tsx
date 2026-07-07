@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
+import { useShareMode } from "@/lib/share-context";
 
 const NAVY = "#00446A";
 const TEAL = "#21A5D5";
@@ -428,6 +429,7 @@ function CategoryIcon({ type, color, size = 18 }: { type: string; color: string;
 /* ─── Main slide ─── */
 
 export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCategoryChange, isActive = true }: { step: number; onAutoAdvance?: () => void; skipAnimation?: boolean; onActiveCategoryChange?: (categories: string[]) => void; isActive?: boolean }) {
+  const { shareMode } = useShareMode();
   const chartStep = step;
 
 
@@ -571,14 +573,14 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
             >
-              <div className="relative flex flex-col items-center" style={{ minHeight: 80 }}>
-                {/* Counts — always rendered, crossfades via CSS */}
+              <div className="relative w-full" style={{ height: 80 }}>
+                {/* Counts — absolute, crossfades via CSS */}
                 <div
-                  className="flex flex-col items-center gap-1 transition-all duration-400 ease-in-out"
+                  className="absolute inset-x-0 top-0 flex flex-col items-center gap-1"
                   style={{
                     opacity: introPhase >= 3 ? 0 : 1,
-                    transform: introPhase >= 3 ? "translateY(-12px)" : introPhase >= 1 ? "translateY(0)" : "translateY(8px)",
-                    position: introPhase >= 3 ? "absolute" : "relative",
+                    transform: introPhase >= 3 ? "translateY(-12px)" : "translateY(0)",
+                    transition: "opacity 0.4s ease-in-out, transform 0.4s ease-in-out",
                     pointerEvents: introPhase >= 3 ? "none" : "auto",
                   }}
                 >
@@ -589,23 +591,24 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                     You have 2,400 accounts
                   </h2>
                   <h2
-                    className="text-center text-2xl font-bold tracking-tight transition-all duration-500 sm:text-3xl"
+                    className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
                     style={{
                       color: NAVY,
                       opacity: introPhase >= 1 ? 1 : 0,
                       transform: introPhase >= 1 ? "translateY(0)" : "translateY(8px)",
+                      transition: "opacity 0.5s, transform 0.5s",
                     }}
                   >
                     each with up to 15,000 SKUs
                   </h2>
                 </div>
-                {/* Price points — always rendered, crossfades via CSS */}
+                {/* Price points — absolute, crossfades via CSS */}
                 <div
-                  className="flex flex-col items-center gap-2 transition-all duration-500 ease-out"
+                  className="absolute inset-x-0 top-0 flex flex-col items-center gap-2"
                   style={{
                     opacity: introPhase >= 3 ? 1 : 0,
                     transform: introPhase >= 3 ? "translateY(0)" : "translateY(12px)",
-                    position: introPhase >= 3 ? "relative" : "absolute",
+                    transition: "opacity 0.5s ease-out, transform 0.5s ease-out",
                     pointerEvents: introPhase >= 3 ? "auto" : "none",
                   }}
                 >
@@ -616,12 +619,12 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                     36 million unique price points
                   </h2>
                   <p
-                    className="mx-auto max-w-lg text-center text-[1.05rem] leading-relaxed transition-all duration-400"
+                    className="mx-auto max-w-lg text-center text-[1.05rem] leading-relaxed"
                     style={{
                       color: MUTED,
                       opacity: introPhase >= 3 ? 1 : 0,
                       transform: introPhase >= 3 ? "translateY(0)" : "translateY(6px)",
-                      transitionDelay: introPhase >= 3 ? "150ms" : "0ms",
+                      transition: introPhase >= 3 ? "opacity 0.4s 0.15s, transform 0.4s 0.15s" : "opacity 0.3s, transform 0.3s",
                     }}
                   >
                     Far too many for any team to set manually&nbsp;— the&nbsp;model finds&nbsp;the&nbsp;patterns.
@@ -954,7 +957,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                 y={PLOT.top} width={60} height={PLOT_H}
                 fill="url(#sweep-glow)"
                 animate={{ x: [PLOT.left - 60, PLOT.right, PLOT.left - 60] }}
-                transition={{ duration: SWEEP_DURATION, repeat: Infinity, ease: "linear" }}
+                transition={{ duration: SWEEP_DURATION, repeat: shareMode ? 0 : Infinity, ease: "linear" }}
               />
               {/* The sweep line itself */}
               <motion.line
@@ -964,13 +967,14 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                 strokeWidth={1.2}
                 opacity={0.25}
                 animate={{ x1: [PLOT.left, PLOT.right, PLOT.left], x2: [PLOT.left, PLOT.right, PLOT.left] }}
-                transition={{ duration: SWEEP_DURATION, repeat: Infinity, ease: "linear" }}
+                transition={{ duration: SWEEP_DURATION, repeat: shareMode ? 0 : Infinity, ease: "linear" }}
               />
             </motion.g>
           )}
 
           {/* ── Data dots ── */}
           {DOTS.map((dot, i) => {
+            if (shareMode && i % 4 !== 0) return null;
             const convAngle = (i / DOT_COUNT) * Math.PI * 2;
             const convDist = 4 + (i % 7) * 1.5;
             const dotEntranceDelay = chartStep === 0 ? dot.delay * 1.6 + (i % 40) * 0.012 : 0;
@@ -1049,8 +1053,8 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                 cxTransition = { duration: 0.9, delay: dotEntranceDelay, ease: [0.22, 1, 0.36, 1] };
                 cyTransition = { duration: 0.9, delay: dotEntranceDelay, ease: [0.22, 1, 0.36, 1] };
               } else {
-                cxTransition = { duration: dot.driftDuration, delay: dot.driftDelay, repeat: Infinity, ease: "easeInOut" };
-                cyTransition = { duration: dot.driftDuration, delay: dot.driftDelay, repeat: Infinity, ease: "easeInOut" };
+                cxTransition = { duration: dot.driftDuration, delay: dot.driftDelay, repeat: shareMode ? 0 : Infinity, ease: "easeInOut" };
+                cyTransition = { duration: dot.driftDuration, delay: dot.driftDelay, repeat: shareMode ? 0 : Infinity, ease: "easeInOut" };
               }
               opacityDelay = chartStep === 1 ? dot.delay * 0.3 : dotEntranceDelay + 0.2;
             } else {
@@ -1106,7 +1110,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                 transition={{
                   duration: 1.2,
                   delay: sweepDelay + 0.3,
-                  repeat: Infinity,
+                  repeat: shareMode ? 0 : Infinity,
                   repeatDelay: SWEEP_DURATION - 1.2,
                   ease: "easeOut",
                 }}
@@ -1238,8 +1242,8 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                                     }}
                                     transition={{
                                       opacity: { duration: 0.6, delay: fi * 0.15 },
-                                      scale: { type: "spring", stiffness: 260, damping: 26, delay: fi * 0.15 },
-                                      y: { type: "spring", stiffness: 260, damping: 26, delay: fi * 0.15 },
+                                      scale: shareMode ? { duration: 0.25, delay: fi * 0.15 } : { type: "spring", stiffness: 260, damping: 26, delay: fi * 0.15 },
+                                      y: shareMode ? { duration: 0.25, delay: fi * 0.15 } : { type: "spring", stiffness: 260, damping: 26, delay: fi * 0.15 },
                                       layout: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
                                     }}
                                   >
@@ -1370,7 +1374,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                                           style={{ fontSize: 14, fontWeight: 800, color: TEAL, marginLeft: 3, lineHeight: 1 }}
                                           initial={{ opacity: 0, scale: 0 }}
                                           animate={{ opacity: 1, scale: 1 }}
-                                          transition={{ delay: 0.3, duration: 0.3, type: "spring", stiffness: 300 }}
+                                          transition={shareMode ? { delay: 0.3, duration: 0.25 } : { delay: 0.3, duration: 0.3, type: "spring", stiffness: 300 }}
                                         >
                                           ↑
                                         </motion.sup>
@@ -1380,7 +1384,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                                           style={{ fontSize: 12, fontWeight: 700, color: PURPLE, marginLeft: 2, lineHeight: 1 }}
                                           initial={{ opacity: 0, scale: 0 }}
                                           animate={{ opacity: 1, scale: 1 }}
-                                          transition={{ delay: 0.3, duration: 0.3, type: "spring", stiffness: 300 }}
+                                          transition={shareMode ? { delay: 0.3, duration: 0.25 } : { delay: 0.3, duration: 0.3, type: "spring", stiffness: 300 }}
                                         >
                                           ↓
                                         </motion.sup>
@@ -1516,7 +1520,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                           transition={{
                             duration: 2.0,
                             delay: 0.8 + si * 0.2 + extraDelay,
-                            repeat: Infinity,
+                            repeat: shareMode ? 0 : Infinity,
                             ease: "linear",
                           }}
                         />
@@ -1580,7 +1584,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                     cx={PLOT_CX} cy={PLOT_CY} r={MODEL_R + 3}
                     fill="none" stroke={TEAL} strokeWidth={1.5}
                     animate={{ opacity: [0, 0.2, 0], scale: [1, 1.12, 1] }}
-                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+                    transition={{ duration: 3, repeat: shareMode ? 0 : Infinity, ease: "easeInOut", delay: 1.5 }}
                     style={{ transformOrigin: `${PLOT_CX}px ${PLOT_CY}px` }}
                   />
                 )}
@@ -1638,7 +1642,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                       animate={{ opacity: allAbsorbed ? 0 : 0.8, rotate: 360 }}
                       transition={{
                         opacity: { duration: 0.3 },
-                        rotate: { duration: 1.2, repeat: Infinity, ease: "linear" },
+                        rotate: { duration: 1.2, repeat: shareMode ? 0 : Infinity, ease: "linear" },
                       }}
                       style={{ transformOrigin: `${PLOT_CX}px ${PLOT_CY - 55}px` }}
                     />
@@ -1673,7 +1677,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                         scale: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
                         fill: { duration: 0.4 },
                       } : {
-                        opacity: { duration: 1.4, repeat: Infinity, ease: "easeInOut" },
+                        opacity: { duration: 1.4, repeat: shareMode ? 0 : Infinity, ease: "easeInOut" },
                       }}
                     >
                       {convergingPrice}
@@ -1816,7 +1820,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                         backgroundSize: "200% 100%",
                       }}
                       animate={{ backgroundPosition: ["200% 0%", "-200% 0%"] }}
-                      transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                      transition={{ duration: 3, repeat: shareMode ? 0 : Infinity, ease: "linear" }}
                     />
                   )}
                   <div className="px-2.5 py-1.5">
@@ -1827,7 +1831,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                             className="absolute inset-0 rounded-full"
                             style={{ backgroundColor: d.color }}
                             animate={{ scale: [1, 1.8, 1], opacity: [0.3, 0, 0.3] }}
-                            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                            transition={{ duration: 2, repeat: shareMode ? 0 : Infinity, ease: "easeInOut" }}
                           />
                         )}
                         <div className="relative">

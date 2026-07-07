@@ -1,10 +1,11 @@
 "use client";
 
 import { memo, startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, ChevronDown, X, LayoutGrid, ZoomIn, ZoomOut, Sun, Moon, Pause, Play, RotateCcw } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, X, LayoutGrid, ZoomIn, ZoomOut, Sun, Moon, Pause, Play, RotateCcw, ScreenShare } from "lucide-react";
 import { AnimatePresence, motion, MotionConfig } from "framer-motion";
 import { type NavGroup, SlideNav, AudienceTopBar } from "@/components/slide-nav";
 import { useMode } from "@/lib/mode-context";
+import { useShareMode } from "@/lib/share-context";
 import { getPresenterNotes } from "@/lib/presenter-notes";
 import { cn } from "@/lib/utils";
 import { OverviewSlide, OVERVIEW_TOTAL_STEPS } from "@/components/slides/overview-slide";
@@ -460,6 +461,7 @@ const AUTO_ANIM_SLIDES = new Set<SlideKind>([]);
 const DEFAULT_DONE_MS = 2000;
 
 export function Home() {
+  const { shareMode, toggleShareMode } = useShareMode();
   const [slide, setSlide] = useState(0);
   const [subStep, setSubStep] = useState(0);
   const [animationDone, setAnimationDone] = useState(false);
@@ -468,6 +470,7 @@ export function Home() {
   const [skipAnimation, setSkipAnimation] = useState(false);
   const [slideReplayKeys, setSlideReplayKeys] = useState<number[]>(() => SLIDES.map(() => 0));
   const [ready, setReady] = useState(false);
+  const [visited, setVisited] = useState<Set<number>>(() => new Set([0]));
   const [slideSorterOpen, setSlideSorterOpen] = useState(false);
   const [sorterCols, setSorterCols] = useState(4);
   const [navGroups, setNavGroups] = useState(DEFAULT_NAV_GROUPS);
@@ -576,6 +579,15 @@ export function Home() {
     });
     return () => cancelAnimationFrame(frame);
   }, []);
+
+  useEffect(() => {
+    setVisited(prev => {
+      if (prev.has(slide)) return prev;
+      const next = new Set(prev);
+      next.add(slide);
+      return next;
+    });
+  }, [slide]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode);
@@ -853,6 +865,7 @@ export function Home() {
         <div className="relative w-full">
         {SLIDES.map((sc, i) => {
           const isActive = i === slide;
+          if (!isActive && !visited.has(i)) return null;
           const effectiveSkip = !isActive || skipAnimation;
           return (
             <div
@@ -1144,6 +1157,20 @@ export function Home() {
               <span className={cn("text-lg font-medium", darkMode ? "text-white/60" : "text-gray-500")}>
                 {clockTime}
               </span>
+              <button
+                onClick={toggleShareMode}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors",
+                  shareMode
+                    ? "border-teal-400/40 bg-teal-500/20 text-teal-200"
+                    : darkMode
+                      ? "border-white/15 bg-white/5 text-white/70 hover:border-white/30 hover:bg-white/10 hover:text-white"
+                      : "border-black/15 bg-black/5 text-gray-600 hover:border-black/30 hover:bg-black/10 hover:text-gray-900",
+                )}
+              >
+                <ScreenShare className="size-3.5" />
+                {shareMode ? "Share ON" : "Share"}
+              </button>
               <button
                 onClick={() => setDarkMode((d) => !d)}
                 className={cn("flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors", darkMode ? "border-white/15 bg-white/5 text-white/70 hover:border-white/30 hover:bg-white/10 hover:text-white" : "border-black/15 bg-black/5 text-gray-600 hover:border-black/30 hover:bg-black/10 hover:text-gray-900")}

@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect, useLayoutEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useShareMode } from "@/lib/share-context";
 import { makeCurve } from "../visuals/demand-curve";
 
 const NAVY = "#00446A";
@@ -314,6 +315,7 @@ const PORTFOLIO_REVEAL_ORDER = (() => {
 })();
 
 export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { step: number; onAutoAdvance?: () => void; skipAnimation?: boolean; isActive: boolean }) {
+  const { shareMode } = useShareMode();
 
   const curve = useMemo(() => {
     const raw = makeCurve(CURVE_SLOT, 5);
@@ -451,7 +453,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
     setIndexMorphFrom(prev);
     setIndexMorphProgress(0);
     setKpiRevealed(false);
-    if (skipAnimation) { setIndexMorphProgress(1); setKpiRevealed(true); return; }
+    if (skipAnimation || shareMode) { setIndexMorphProgress(1); setKpiRevealed(true); return; }
     const CARD_DELAY = 600;
     const MORPH_DURATION = 1400;
     const KPI_DELAY = 400;
@@ -1066,6 +1068,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
 
               {/* Scatter dots */}
               {SCATTER_DOTS.map((dot, i) => {
+                if (shareMode && i % 6 !== 0) return null;
                 const pt = curve.sampleAt(dot.t);
                 const baseCx = Math.max(CURVE_SLOT.x + 4, Math.min(CURVE_SLOT.x + CURVE_SLOT.w - 4, pt.x + dot.jitterX));
                 const scatterY = Math.max(CURVE_SLOT.y + 4, Math.min(BASE_Y - 4, pt.y + dot.offsetY));
@@ -1119,23 +1122,21 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
                           ? { duration: 1.2, delay: settleDelay, ease: [0.22, 1, 0.36, 1] }
                           : isAllToCurve
                             ? { duration: 0.7, delay: i * 0.01, ease: "easeInOut" }
-                            : { duration: dot.driftDuration, delay: dot.driftDelay, repeat: isActive ? Infinity : 0, ease: "easeInOut" },
+                            : { duration: dot.driftDuration, delay: dot.driftDelay, repeat: isActive && !shareMode ? Infinity : 0, ease: "easeInOut" },
                       cy: inChaos
                         ? { duration: 0 }
                         : settling
                           ? { duration: 1.2, delay: settleDelay, ease: [0.22, 1, 0.36, 1] }
                           : isAllToCurve
                             ? { duration: 0.6 + (Math.abs(dot.offsetY) / 36) * 0.3, delay: i * 0.01, ease: "easeInOut" }
-                            : { duration: dot.driftDuration, delay: dot.driftDelay, repeat: isActive ? Infinity : 0, ease: "easeInOut" },
+                            : { duration: dot.driftDuration, delay: dot.driftDelay, repeat: isActive && !shareMode ? Infinity : 0, ease: "easeInOut" },
                       opacity: {
                         delay: chartStep === 0 ? 0.1 + i * 0.007 : isIndexShift ? 0.15 + (i % 36) * 0.012 : 0.1,
                         duration: isSpotlight ? 0.5 : isIndexShift ? 0.5 : 0.3,
                       },
-                      scale: {
-                        delay: chartStep === 0 ? 0.1 + i * 0.007 : isIndexShift ? 0.15 + (i % 36) * 0.012 : 0.1,
-                        type: "spring",
-                        stiffness: 300,
-                      },
+                      scale: shareMode
+                        ? { delay: chartStep === 0 ? 0.1 + i * 0.007 : isIndexShift ? 0.15 + (i % 36) * 0.012 : 0.1, duration: 0.25 }
+                        : { delay: chartStep === 0 ? 0.1 + i * 0.007 : isIndexShift ? 0.15 + (i % 36) * 0.012 : 0.1, type: "spring", stiffness: 300 },
                     }}
                   />
                 );
@@ -1526,7 +1527,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
                           className="rounded-full"
                           style={{ width: 4, height: 4, backgroundColor: GREEN }}
                           animate={{ opacity: isActive ? [1, 0.3, 1] : 1 }}
-                          transition={{ duration: 2, repeat: isActive ? Infinity : 0, ease: "easeInOut", delay: isActive ? curveDelay + 0.8 : 0 }}
+                          transition={{ duration: 2, repeat: isActive && !shareMode ? Infinity : 0, ease: "easeInOut", delay: isActive ? curveDelay + 0.8 : 0 }}
                         />
                         <span style={{ fontSize: 6, fontWeight: 600, letterSpacing: "0.08em", color: GREEN, textTransform: "uppercase" as const }}>Live</span>
                       </motion.div>
@@ -1576,7 +1577,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
                             fill={STRAT_BLUE}
                             initial={{ opacity: 0 }}
                             animate={{ opacity: isActive ? [0, 0.2, 0.08, 0.2] : 0 }}
-                            transition={{ delay: isActive ? curveDelay + 0.5 : 0, duration: 3, repeat: isActive ? Infinity : 0, ease: "easeInOut" }}
+                            transition={{ delay: isActive ? curveDelay + 0.5 : 0, duration: 3, repeat: isActive && !shareMode ? Infinity : 0, ease: "easeInOut" }}
                           />
                           <motion.circle
                             cx={seg.priceDotPt.x}

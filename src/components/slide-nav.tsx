@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, ChevronDown, Check, Download, MonitorPlay, RotateCcw, Maximize, Minimize, PlayCircle, BookOpen, MoreVertical } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, Check, Download, MonitorPlay, RotateCcw, Maximize, Minimize, PlayCircle, BookOpen, MoreVertical, ScreenShare } from "lucide-react";
+import { useShareMode } from "@/lib/share-context";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 export interface NavGroup {
@@ -91,6 +92,7 @@ export function TopBar({
   onStartPresenting,
   onAnimationGlossary,
 }: SlideNavProps) {
+  const { shareMode, toggleShareMode } = useShareMode();
   const [open, setOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set());
   const panelRef = useRef<HTMLDivElement>(null);
@@ -197,6 +199,18 @@ export function TopBar({
           </button>
 
           <div className="ml-auto flex items-center gap-3">
+            <button
+              onClick={toggleShareMode}
+              className={cn(
+                "flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors",
+                shareMode
+                  ? "border-teal-400/40 bg-teal-500/20 text-teal-200"
+                  : "border-white/15 text-white/70 hover:border-white/30 hover:bg-white/10 hover:text-white",
+              )}
+            >
+              <ScreenShare className="size-3.5" />
+              {shareMode ? "Share ON" : "Share Mode"}
+            </button>
             {onStartPresenting && (
               <button
                 onClick={onStartPresenting}

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Raleway, Geist_Mono } from "next/font/google";
 import { DepthProvider } from "@/lib/depth-context";
 import { ModeProvider } from "@/lib/mode-context";
+import { ShareProvider } from "@/lib/share-context";
 import { ViewportAutoZoom } from "@/components/viewport-auto-zoom";
 import "./globals.css";
 
@@ -34,10 +35,12 @@ export default function RootLayout({
     >
       <body className="flex min-h-full flex-col">
         <ModeProvider>
-          <div id="preview-frame" className="flex flex-1 flex-col">
-            <DepthProvider>{children}</DepthProvider>
-          </div>
-          <ViewportAutoZoom />
+          <ShareProvider>
+            <div id="preview-frame" className="flex flex-1 flex-col">
+              <DepthProvider>{children}</DepthProvider>
+            </div>
+            <ViewportAutoZoom />
+          </ShareProvider>
         </ModeProvider>
       </body>
     </html>

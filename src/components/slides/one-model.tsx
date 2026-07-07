@@ -2,6 +2,7 @@
 
 import { Fragment } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useShareMode } from "@/lib/share-context";
 
 const NAVY = "#00446A";
 const ML_GREEN = "#3A7D44";
@@ -76,9 +77,16 @@ function FlowDot({ path, color, delay, isActive }: {
   path: { sx: number; sy: number; cp1x: number; cp1y: number; cp2x: number; cp2y: number; ex: number; ey: number };
   color: string; delay: number; isActive: boolean;
 }) {
+  const { shareMode } = useShareMode();
   const { cxArr, cyArr } = sampleCubicBezier(
     path.sx, path.sy, path.cp1x, path.cp1y, path.cp2x, path.cp2y, path.ex, path.ey, 50,
   );
+
+  if (shareMode) {
+    const mid = Math.floor(cxArr.length / 2);
+    return <circle r={3} fill={color} cx={cxArr[mid]} cy={cyArr[mid]} opacity={isActive ? 0.4 : 0} />;
+  }
+
   return (
     <motion.circle r={3} fill={color} initial={false}
       animate={isActive ? { cx: cxArr, cy: cyArr, opacity: [0, 0.5, 0.5, 0.5, 0] } : { opacity: 0 }}

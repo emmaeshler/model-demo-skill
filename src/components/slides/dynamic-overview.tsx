@@ -2,6 +2,7 @@
 
 import { Fragment } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useShareMode } from "@/lib/share-context";
 
 const NAVY = "#00446A";
 const ORANGE = "#E56910";
@@ -77,6 +78,14 @@ const OUTPUT_ARROWS = OUTPUTS.map((out) => ({
 function FlowDot({ x1, y1, x2, y2, delay, color }: {
   x1: number; y1: number; x2: number; y2: number; delay: number; color: string;
 }) {
+  const { shareMode } = useShareMode();
+
+  if (shareMode) {
+    const midX = (x1 + x2) / 2;
+    const midY = (y1 + y2) / 2;
+    return <circle r={2.5} fill={color} cx={midX} cy={midY} opacity={0.4} />;
+  }
+
   return (
     <motion.circle
       r={2.5}
@@ -93,6 +102,7 @@ interface DynamicOverviewSlideProps {
 }
 
 export function DynamicOverviewSlide({ step }: DynamicOverviewSlideProps) {
+  const { shareMode } = useShareMode();
   const showInputs = step >= 1;
   const showOutputs = step >= 2;
   const showFeedback = step >= 3;
@@ -222,7 +232,7 @@ export function DynamicOverviewSlide({ step }: DynamicOverviewSlideProps) {
                   width={INPUT_W + 6} height={INPUT_H + 6}
                   rx={11} fill="none" stroke={inp.color} strokeWidth={2}
                   animate={{ opacity: [0.2, 0.5, 0.2] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                  transition={{ duration: 2, repeat: shareMode ? 0 : Infinity, ease: "easeInOut" }}
                 />
               )}
               <rect
@@ -263,12 +273,12 @@ export function DynamicOverviewSlide({ step }: DynamicOverviewSlideProps) {
           <motion.rect
             x={MODEL_CX - 30} y={MODEL_CY + 34} height={2.5} rx={1.5} fill="rgba(255,255,255,0.18)"
             animate={{ width: [40, 55, 30, 50, 40] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            transition={{ duration: 4, repeat: shareMode ? 0 : Infinity, ease: "easeInOut" }}
           />
           <motion.rect
             x={MODEL_CX - 30} y={MODEL_CY + 40} height={2.5} rx={1.5} fill="rgba(255,255,255,0.12)"
             animate={{ width: [55, 30, 45, 35, 55] }}
-            transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+            transition={{ duration: 3.5, repeat: shareMode ? 0 : Infinity, ease: "easeInOut" }}
           />
         </motion.g>
 
@@ -287,7 +297,7 @@ export function DynamicOverviewSlide({ step }: DynamicOverviewSlideProps) {
                   width={OUTPUT_W + 6} height={OUTPUT_H + 6}
                   rx={11} fill="none" stroke={NAVY} strokeWidth={2}
                   animate={{ opacity: [0.2, 0.5, 0.2] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                  transition={{ duration: 2, repeat: shareMode ? 0 : Infinity, ease: "easeInOut" }}
                 />
               )}
               <rect

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useShareMode } from "@/lib/share-context";
 import { useMode } from "@/lib/mode-context";
 
 const NAVY = "#00446A";
@@ -136,9 +137,15 @@ function FlowDot({
   color: string;
   delay: number;
 }) {
+  const { shareMode } = useShareMode();
   const { cxArr, cyArr } = sampleCubicBezier(
     path.sx, path.sy, path.cp1x, path.cp1y, path.cp2x, path.cp2y, path.ex, path.ey, 50,
   );
+
+  if (shareMode) {
+    const mid = Math.floor(cxArr.length / 2);
+    return <circle r={4} fill={color} cx={cxArr[mid]} cy={cyArr[mid]} opacity={0.5} />;
+  }
 
   return (
     <motion.circle
@@ -174,10 +181,20 @@ function FlowLabel({
   duration: number;
   repeatDelay: number;
 }) {
+  const { shareMode } = useShareMode();
   const lifted = { ...path, sy: path.sy - 18, cp1y: path.cp1y - 18, cp2y: path.cp2y - 18, ey: path.ey - 18 };
   const { cxArr, cyArr } = sampleCubicBezier(
     lifted.sx, lifted.sy, lifted.cp1x, lifted.cp1y, lifted.cp2x, lifted.cp2y, lifted.ex, lifted.ey, 40,
   );
+
+  if (shareMode) {
+    const mid = Math.floor(cxArr.length / 2);
+    return (
+      <text fontSize="8.5" fontWeight="500" fontStyle="italic" fill={STEEL} textAnchor="middle" dominantBaseline="auto" x={cxArr[mid]} y={cyArr[mid]} opacity={0.4}>
+        {text}
+      </text>
+    );
+  }
 
   return (
     <motion.text
@@ -191,7 +208,6 @@ function FlowLabel({
       animate={{
         x: cxArr,
         y: cyArr,
-        // fade in over first 15%, hold, then fade out over last 30% as it hits the model
         opacity: [0, 0, 0.5, 0.5, 0.5, 0.3, 0.1, 0],
       }}
       transition={{ duration, delay, repeat: Infinity, repeatDelay, ease: "linear" }}
@@ -295,6 +311,7 @@ function ProfileCard({ cust }: { cust: CustomerScenario }) {
 /* ── Result card ─────────────────────────────────────── */
 
 function ResultCard({ cust }: { cust: CustomerScenario }) {
+  const { shareMode } = useShareMode();
   const y = MODEL_CY - BOX_H / 2;
   const cx = RESULT_CARD_X + RESULT_CARD_W / 2;
   return (
@@ -315,7 +332,7 @@ function ResultCard({ cust }: { cust: CustomerScenario }) {
         x={cx} y={y + 68} fontSize="34" fontWeight="800" fill={ORANGE} textAnchor="middle"
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.4, delay: 0.35, type: "spring", stiffness: 200 }}
+        transition={shareMode ? { duration: 0.25, delay: 0.35 } : { duration: 0.4, delay: 0.35, type: "spring", stiffness: 200 }}
       >
         {cust.price}
       </motion.text>
@@ -401,6 +418,7 @@ const OV_OUT_POS = [
 const GHOST_OPACITY = 0.1;
 
 export function ModelOutputsOverview({ step }: { step: number }) {
+  const { shareMode } = useShareMode();
   const showOutputs = step >= 1;
 
   return (
@@ -532,7 +550,7 @@ export function ModelOutputsOverview({ step }: { step: number }) {
             fill="none" stroke="rgba(0,0,0,0.08)" strokeWidth={2}
             initial={{ opacity: 0 }}
             animate={{ opacity: [0.3, 0.8, 0.3] }}
-            transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
+            transition={{ duration: 3.5, repeat: shareMode ? 0 : Infinity, ease: "easeInOut", delay: 0.8 }}
           />
 
           <motion.g
@@ -612,6 +630,7 @@ export function ExecuteSlide({
   isActive: boolean;
 }) {
   const { mode } = useMode();
+  const { shareMode } = useShareMode();
   const isPresenter = mode === "presenter";
   const [selected, setSelected] = useState(0);
   const [revealPhase, setRevealPhase] = useState(skipAnimation ? 4 : 1);
@@ -870,7 +889,7 @@ export function ExecuteSlide({
                             r={BOX_H / 2}
                             fill="none" stroke={ORANGE} strokeWidth={3}
                             animate={{ r: [BOX_H / 2, BOX_H / 2 - 4, BOX_H / 2], opacity: [0.15, 0.4, 0.15] }}
-                            transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+                            transition={{ duration: 1.8, repeat: shareMode ? 0 : Infinity, ease: "easeInOut" }}
                           />
                         )}
                       </>

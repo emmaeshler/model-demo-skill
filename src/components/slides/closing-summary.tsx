@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useShareMode } from "@/lib/share-context";
 
 const NAVY = "#00446A";
 const ORANGE = "#E56910";
@@ -42,6 +43,7 @@ const OUTCOMES = [
 ];
 
 export function ClosingSummarySlide({ isActive }: { isActive: boolean }) {
+  const { shareMode } = useShareMode();
   const fadeUp = (delay: number) => ({
     animate: isActive ? { opacity: 1, y: 0 } as const : { opacity: 0, y: 14 } as const,
     transition: { delay: isActive ? delay : 0, duration: 0.3 },
@@ -100,12 +102,10 @@ export function ClosingSummarySlide({ isActive }: { isActive: boolean }) {
                 className="relative z-10 flex size-9 items-center justify-center rounded-full text-sm font-bold text-white"
                 style={{ backgroundColor: stage.color }}
                 animate={{ scale: isActive ? 1 : 0 }}
-                transition={{
-                  delay: isActive ? 0.1 + i * 0.06 : 0,
-                  duration: 0.3,
-                  type: "spring",
-                  damping: 14,
-                }}
+                transition={shareMode
+                  ? { delay: isActive ? 0.1 + i * 0.06 : 0, duration: 0.25 }
+                  : { delay: isActive ? 0.1 + i * 0.06 : 0, duration: 0.3, type: "spring", damping: 14 }
+                }
               >
                 {stage.number}
               </motion.div>

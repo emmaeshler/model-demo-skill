@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { useShareMode } from "@/lib/share-context";
 
 const NAVY = "#00446A";
 const ORANGE = "#E56910";
@@ -45,6 +46,7 @@ interface ModuleIntroProps {
 }
 
 export function ModuleIntroSlide({ number, label, headline, description }: ModuleIntroProps) {
+  const { shareMode } = useShareMode();
   const accent = MODULES.find((m) => m.number === number)?.color ?? NAVY;
   const [showText, setShowText] = useState(false);
 
@@ -217,7 +219,7 @@ export function ModuleIntroSlide({ number, label, headline, description }: Modul
                           }}
                           transition={{
                             duration: 2,
-                            repeat: Infinity,
+                            repeat: shareMode ? 0 : Infinity,
                             ease: "easeInOut",
                             delay: 0.6,
                           }}
@@ -315,7 +317,7 @@ export function ModuleIntroSlide({ number, label, headline, description }: Modul
                       transition={{
                         duration: 2.5,
                         delay: 0.8,
-                        repeat: Infinity,
+                        repeat: shareMode ? 0 : Infinity,
                         ease: "linear",
                       }}
                     />
