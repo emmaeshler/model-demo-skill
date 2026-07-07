@@ -55,10 +55,112 @@ function Spinner() {
   );
 }
 
+function RequestAccessModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [notes, setNotes] = useState("");
+  const [urgency, setUrgency] = useState("normal");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+
+  if (!open) return null;
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!firstName.trim() || !lastName.trim() || !email.trim()) {
+      setError("First name, last name, and email are required.");
+      return;
+    }
+    setError("");
+    setSubmitting(true);
+    try {
+      const res = await fetch("https://password-admin.vercel.app/api/access-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ firstName: firstName.trim(), lastName: lastName.trim(), email: email.trim(), notes: notes.trim(), urgency, source: "ml-explainer" }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Something went wrong.");
+      } else {
+        setSuccess(true);
+      }
+    } catch {
+      setError("Unable to reach the server. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (success) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
+        <div className="mx-4 w-full max-w-sm rounded-xl border border-[#e0e0e0] bg-white p-8 text-center shadow-lg" onClick={e => e.stopPropagation()}>
+          <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-green-100 text-green-600 text-xl font-bold">✓</div>
+          <h3 className="text-lg font-semibold text-[#1a1a2e]">Request Submitted</h3>
+          <p className="mt-2 text-sm text-[#666]">An administrator has been notified and will review your request. You&apos;ll receive an email once a decision has been made.</p>
+          <button onClick={onClose} className="mt-5 text-sm text-[#666] hover:text-[#333]">Close</button>
+        </div>
+      </div>
+    );
+  }
+
+  const inputClasses = "w-full rounded-lg border border-[#d0d0d0] px-3 py-2.5 text-sm text-[#1a1a2e] outline-none transition-colors placeholder:text-[#aaa] focus:border-[#00446a] focus:ring-1 focus:ring-[#00446a]";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
+      <div className="mx-4 w-full max-w-sm rounded-xl border border-[#e0e0e0] bg-white shadow-lg" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between border-b px-5 py-3">
+          <h3 className="text-base font-semibold text-[#1a1a2e]">Request Access</h3>
+          <button onClick={onClose} className="text-[#999] hover:text-[#333] text-lg leading-none">&times;</button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-5">
+          <p className="mb-4 text-sm text-[#666]">Fill out the form below and an admin will review your request.</p>
+          {error && <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+          <div className="mb-3 flex gap-3">
+            <input placeholder="First Name" required value={firstName} onChange={e => setFirstName(e.target.value)} className={inputClasses} />
+            <input placeholder="Last Name" required value={lastName} onChange={e => setLastName(e.target.value)} className={inputClasses} />
+          </div>
+          <input type="email" placeholder="Email" required value={email} onChange={e => setEmail(e.target.value)} className={`${inputClasses} mb-3`} />
+          <textarea
+            placeholder="Reason for access (e.g. I need to demo for a client meeting)"
+            value={notes}
+            onChange={e => setNotes(e.target.value)}
+            rows={3}
+            className={`${inputClasses} mb-4 resize-none`}
+          />
+          <p className="mb-2 text-sm font-semibold text-[#1a1a2e]">Priority</p>
+          <div className="mb-5 flex rounded-lg border border-[#d0d0d0] overflow-hidden">
+            {(["urgent", "normal", "low"] as const).map((val) => (
+              <button
+                key={val}
+                type="button"
+                onClick={() => setUrgency(val)}
+                className={`flex-1 py-2 text-sm font-medium transition-colors ${urgency === val ? (val === "urgent" ? "bg-red-50 text-red-600" : "bg-[#00446a]/5 text-[#00446a]") : "text-[#666] hover:bg-gray-50"} ${val !== "urgent" ? "border-l border-[#d0d0d0]" : ""}`}
+              >
+                {val === "urgent" ? "Urgent" : val === "normal" ? "Normal" : "Low Priority"}
+              </button>
+            ))}
+          </div>
+          <div className="flex justify-end gap-2">
+            <button type="button" onClick={onClose} className="rounded-lg px-4 py-2 text-sm text-[#666] hover:text-[#333]">Cancel</button>
+            <button type="submit" disabled={submitting} className="rounded-lg bg-[#00446a] px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#003555] disabled:opacity-60">
+              {submitting ? <Spinner /> : "Submit Request"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 type Step = "username" | "password" | "setup";
 
 export default function LoginPage() {
   const router = useRouter();
+  const [requestOpen, setRequestOpen] = useState(false);
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
   const [step, setStep] = useState<Step>("username");
@@ -359,7 +461,20 @@ export default function LoginPage() {
             </div>
           </form>
         )}
+
+        <div className="mt-5 border-t border-[#eee] pt-5">
+          <p className="mb-2 text-center text-[13px] text-[#666]">Don&apos;t have an account?</p>
+          <button
+            type="button"
+            onClick={() => setRequestOpen(true)}
+            className="w-full rounded-lg border border-[#ccc] py-2.5 text-sm font-semibold text-[#333] transition-colors hover:border-[#999] hover:bg-[#fafafa]"
+          >
+            Request Access
+          </button>
+        </div>
       </div>
+
+      <RequestAccessModal open={requestOpen} onClose={() => setRequestOpen(false)} />
     </div>
   );
 }
