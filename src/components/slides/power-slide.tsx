@@ -435,7 +435,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
   const stepSelectionPhase = step < 2 ? -1 : step <= 5 ? step - 2 : 5;
 
   const [introPhase, setIntroPhase] = useState(skipAnimation ? 5 : chartStep === 0 ? 0 : 4);
-  const [selectionPhase, setSelectionPhase] = useState(chartStep > 2 || (skipAnimation && chartStep >= 2) ? 5 : stepSelectionPhase);
+  const [selectionPhase, setSelectionPhase] = useState(chartStep > 5 || (skipAnimation && chartStep > 5) ? 5 : stepSelectionPhase);
   const [factorsPhase, setFactorsPhase] = useState(chartStep >= 2 ? 7 : 0);
   const [morphPhase, setMorphPhase] = useState(chartStep >= 2 ? 4 : -1);
   useEffect(() => {
@@ -471,7 +471,8 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
   useEffect(() => {
     if (!isActive) { setSelectionPhase(-1); return; }
     if (chartStep < 2) { setSelectionPhase(-1); return; }
-    if (chartStep > 2 || skipAnimation) { setSelectionPhase(5); return; }
+    if (chartStep > 5) { setSelectionPhase(5); return; }
+    if (skipAnimation) { setSelectionPhase(stepSelectionPhase); return; }
     setSelectionPhase(stepSelectionPhase);
   }, [isActive, chartStep, skipAnimation, stepSelectionPhase]);
 

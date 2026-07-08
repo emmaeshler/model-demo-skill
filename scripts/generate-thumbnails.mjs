@@ -2,12 +2,12 @@ import puppeteer from "puppeteer";
 
 const SLIDES = [
   { index: 0, steps: 1 },  // intro
-  { index: 1, steps: 1 },  // overview (OVERVIEW_TOTAL_STEPS = 1... but let's check)
-  { index: 2, steps: 5 },  // one-model
-  { index: 3, steps: 9 },  // power
-  { index: 4, steps: 1 },  // execute
-  { index: 5, steps: 10 }, // refine
-  { index: 6, steps: 5 },  // profit-growth
+  { index: 1, steps: 1 },  // overview
+  { index: 2, steps: 5 },  // one-model (ONE_MODEL_TOTAL_STEPS = 2, but 5 nav entries)
+  { index: 3, steps: 9 },  // power (POWER_TOTAL_STEPS = 8, 9 nav entries)
+  { index: 4, steps: 2 },  // execute (EXECUTE_TOTAL_STEPS = 2)
+  { index: 5, steps: 10 }, // refine (REFINE_TOTAL_STEPS = 8, 10 nav entries)
+  { index: 6, steps: 5 },  // profit-growth (PROFIT_GROWTH_TOTAL_STEPS = 5)
   { index: 7, steps: 1 },  // closing-summary
   { index: 8, steps: 1 },  // end
 ];
@@ -15,12 +15,6 @@ const SLIDES = [
 const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
 const WIDTH = 1280;
 const HEIGHT = 800;
-
-const WAIT_OVERRIDES = {
-  "3-0": 5000,  // power slide scatter dots animate over ~4s
-  "3-1": 5000,
-  "5-0": 4000,  // refine slide intro animation
-};
 
 async function main() {
   const browser = await puppeteer.launch({ headless: true });
@@ -50,12 +44,11 @@ async function main() {
   console.log(`Capturing ${pairs.length} thumbnails...`);
 
   for (const { slideIndex, stepIndex } of pairs) {
-    const url = `${BASE_URL}?audience=true&mode=self&slide=${slideIndex}&subStep=${stepIndex}`;
+    const url = `${BASE_URL}?audience=true&mode=self&slide=${slideIndex}&subStep=${stepIndex}&skipAnimation=true`;
     const filename = `slide-${slideIndex}-${stepIndex}.jpg`;
 
     await page.goto(url, { waitUntil: "networkidle0", timeout: 15000 });
-    const waitMs = WAIT_OVERRIDES[`${slideIndex}-${stepIndex}`] ?? 800;
-    await new Promise((r) => setTimeout(r, waitMs));
+    await new Promise((r) => setTimeout(r, 800));
 
     await page.screenshot({
       path: `public/slide-thumbnails/${filename}`,

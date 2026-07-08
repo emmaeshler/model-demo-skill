@@ -557,7 +557,7 @@ export function Home() {
     for (let i = 0; i < SLIDES.length; i++) {
       if (presenterSkipped.has(i)) continue;
       const kind = SLIDES[i].kind;
-      const stepsCount = subStepConfig[i] ?? 0;
+      const stepsCount = SUB_STEP_CONFIG[i] ?? 0;
       const gi = displayNavGroups.findIndex((g) => g.slides.some((s) => s.index === i));
       const group = gi >= 0 ? displayNavGroups[gi] : undefined;
       const groupLabel = group?.label ?? "";
@@ -576,7 +576,7 @@ export function Home() {
       }
     }
     return steps;
-  }, [displayNavGroups, subStepConfig, presenterSkipped]);
+  }, [displayNavGroups, presenterSkipped]);
 
   const updateSlideLabel = useCallback((groupIndex: number, slideInGroupIndex: number, newLabel: string) => {
     setNavGroups((prev) => {
@@ -625,6 +625,9 @@ export function Home() {
       const ss = parseInt(params.get("subStep") || "0", 10);
       setSlide(s);
       setSubStep(ss);
+    }
+    if (params.get("skipAnimation") === "true") {
+      setSkipAnimation(true);
     }
   }, []);
 
@@ -1109,24 +1112,24 @@ export function Home() {
                               />
                             </div>
                             <div className={cn(
-                              "flex items-center gap-1.5 rounded-b-lg px-2 py-1.5",
+                              "flex items-start gap-1.5 rounded-b-lg px-2 py-2",
                               isActive ? "bg-[#E56910]/10" : "bg-white",
                             )}>
                               <span className={cn(
-                                "flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold",
+                                "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold",
                                 isActive
                                   ? "bg-[#E56910] text-white"
                                   : "bg-gray-100 text-gray-400",
                               )}>
                                 {cs.globalIndex + 1}
                               </span>
-                              <input
-                                type="text"
+                              <textarea
+                                rows={2}
                                 value={cs.label}
                                 onChange={(e) => updateSlideLabel(cs.groupIndex, cs.slideInGroupIndex, e.target.value)}
                                 onClick={(e) => e.stopPropagation()}
                                 className={cn(
-                                  "min-w-0 flex-1 truncate border-0 bg-transparent font-medium outline-none focus:ring-1 focus:ring-[#00446A]/30 rounded px-1 -mx-1",
+                                  "min-w-0 flex-1 resize-none border-0 bg-transparent font-medium leading-snug outline-none focus:ring-1 focus:ring-[#00446A]/30 rounded px-1 -mx-1",
                                   sorterCols >= 6 ? "text-[10px]" : "text-xs",
                                   isActive ? "text-gray-900" : "text-gray-600",
                                 )}
