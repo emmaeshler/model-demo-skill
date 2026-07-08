@@ -555,6 +555,8 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
 
   const heading = isPortfolio
     ? "We do this across your entire portfolio"
+    : isIndexShift && indexPhase > 0
+    ? "The market moves. The curve moves with it."
     : isIndexShift
     ? "The market moves. The curve moves with it."
     : isAllToCurve
@@ -565,8 +567,10 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
 
   const subtitle = isPortfolio
       ? "Every product segment gets its own demand curve — continuously recalibrated as the market shifts."
-      : isIndexShift
+      : isIndexShift && indexPhase > 0
       ? null
+      : isIndexShift
+      ? "Each dot is a real transaction. The curve is where the model says price should be. When costs or demand shift, the curve moves — and every price adjusts with it."
       : isSpotlight
         ? SEGMENT_HIGHLIGHTS[spotlightIdx].beforeBody
         : STEP_CONTEXT[chartStep]?.body || null;
@@ -760,9 +764,33 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
       {/* Unified chart region */}
       <div className="relative w-full flex-1 min-h-0 flex flex-col rounded-2xl mt-2 overflow-hidden" style={{ border: `1px solid ${NAVY}0F` }}>
 
-      {/* Timeline strip (step 7) — date/card + scrubber */}
+      {/* Start timeline prompt (before any events) */}
       <AnimatePresence>
-        {isIndexShift && (
+        {isIndexShift && indexPhase === 0 && (
+          <motion.div
+            key="start-prompt"
+            className="w-full flex-shrink-0 flex items-center justify-center px-6 py-3"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.4 }}
+          >
+            <motion.button
+              onClick={advanceTimeline}
+              className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-[13px] font-semibold"
+              style={{ backgroundColor: `${STRAT_BLUE}0A`, color: STRAT_BLUE, border: `1.5px solid ${STRAT_BLUE}20` }}
+              whileHover={{ backgroundColor: `${STRAT_BLUE}18` }}
+              transition={{ duration: 0.2 }}
+            >
+              Start timeline &#8250;
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Timeline strip — date/card + scrubber (visible after first event) */}
+      <AnimatePresence>
+        {isIndexShift && indexPhase > 0 && (
           <motion.div
             key="timeline-strip"
             className="w-full flex-shrink-0 px-6 pt-3 pb-2"
@@ -773,35 +801,19 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
           >
             {/* Date display / Event card */}
             <div className="relative flex items-center justify-center" style={{ height: 70, marginBottom: 4 }}>
-              {indexPhase > 0 && (
-                <motion.button
-                  className="absolute left-0 z-10 flex h-8 w-8 items-center justify-center rounded-full"
-                  style={{ backgroundColor: `${NAVY}08`, color: MUTED }}
-                  onClick={retreatTimeline}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 0.7 }}
-                  whileHover={{ opacity: 1, scale: 1.1 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 3L4.5 7L8.5 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                </motion.button>
-              )}
+              <motion.button
+                className="absolute left-0 z-10 flex h-8 w-8 items-center justify-center rounded-full"
+                style={{ backgroundColor: `${NAVY}08`, color: MUTED }}
+                onClick={retreatTimeline}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.7 }}
+                whileHover={{ opacity: 1, scale: 1.1 }}
+                transition={{ duration: 0.2 }}
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 3L4.5 7L8.5 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </motion.button>
               <AnimatePresence mode="wait">
-                {indexPhase === 0 ? (
-                  <motion.button
-                    key="start-prompt"
-                    onClick={advanceTimeline}
-                    className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-[13px] font-semibold"
-                    style={{ backgroundColor: `${STRAT_BLUE}0A`, color: STRAT_BLUE, border: `1.5px solid ${STRAT_BLUE}20` }}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    whileHover={{ backgroundColor: `${STRAT_BLUE}18` }}
-                    transition={{ duration: 0.3, delay: 0.2 }}
-                  >
-                    Start timeline &#8250;
-                  </motion.button>
-                ) : currentEvent ? (
+                {currentEvent ? (
                   <motion.div
                     key={`event-${indexPhase}`}
                     className="flex flex-col items-center cursor-pointer"
@@ -1417,9 +1429,9 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
 
       </motion.div>
 
-      {/* KPI sidebar (step 7) — skeleton until kpiRevealed */}
+      {/* KPI sidebar — visible after first timeline event */}
       <AnimatePresence>
-        {isIndexShift && (
+        {isIndexShift && indexPhase > 0 && (
           <motion.div
             key="kpi-sidebar"
             className="absolute right-0 top-0 bottom-0 z-20 flex flex-col justify-center gap-3 px-3 pb-16"

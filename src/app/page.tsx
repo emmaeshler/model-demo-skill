@@ -358,20 +358,40 @@ const CUSTOMER_DOT_COLORS: Record<string, string> = {
   QuickParts: "#C27A3A",
 };
 
-function MiniExecuteConnector() {
-  const NAVY = "#00446A";
-  const MUTED = "#8A9AAA";
+const RAIL_CUSTOMERS = [
+  { label: "Acme Industrial", price: "$19.24", newPrice: "$19.80", change: "+$0.56", dot: CUSTOMER_DOT_COLORS.Acme, reason: "margin capture" },
+  { label: "MedSupply Co", price: "$14.89", newPrice: "$14.50", change: "−$0.39", dot: CUSTOMER_DOT_COLORS.MedSupply, reason: "competitive defense" },
+  { label: "QuickParts LLC", price: "$22.10", newPrice: "$24.20", change: "+$2.10", dot: CUSTOMER_DOT_COLORS.QuickParts, reason: "market adjusted" },
+];
 
-  const customers = [
-    { label: "Acme Industrial", price: "$19.24", dot: CUSTOMER_DOT_COLORS.Acme },
-    { label: "MedSupply Co", price: "$14.89", dot: CUSTOMER_DOT_COLORS.MedSupply },
-    { label: "QuickParts LLC", price: "$22.10", dot: CUSTOMER_DOT_COLORS.QuickParts },
-  ];
+const REFINE_STEP_TO_RAIL: Record<number, number> = { 2: 2, 3: 0, 4: 1 };
+
+function MiniExecuteConnector({ refineStep, flyIn = false }: { refineStep?: number; flyIn?: boolean }) {
+  const NAVY = "#00446A";
+  const [flyX] = useState(() => typeof window !== "undefined" ? window.innerWidth * 0.52 : 700);
+
+  const activeIdx = refineStep !== undefined ? REFINE_STEP_TO_RAIL[refineStep] ?? -1 : -1;
+  const adjustedSet = useMemo(() => {
+    const s = new Set<number>();
+    if (refineStep === undefined) return s;
+    if (refineStep >= 2) s.add(2);
+    if (refineStep >= 3) s.add(0);
+    if (refineStep >= 4) s.add(1);
+    return s;
+  }, [refineStep]);
+
+  const [showChange, setShowChange] = useState(false);
+  useEffect(() => {
+    if (activeIdx < 0) { setShowChange(false); return; }
+    setShowChange(false);
+    const t = setTimeout(() => setShowChange(true), 3200);
+    return () => clearTimeout(t);
+  }, [activeIdx]);
 
   return (
     <motion.div
       className="fixed left-0 top-1/2 z-40 flex w-[130px] -translate-y-1/2 flex-col rounded-r-xl bg-white/95 px-3 py-4 shadow-md ring-1 ring-black/[0.06] backdrop-blur-sm"
-      initial={{ x: -140 }}
+      initial={{ x: flyIn ? 0 : -140 }}
       animate={{ x: 0 }}
       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
     >
@@ -379,32 +399,68 @@ function MiniExecuteConnector() {
         className="mb-2.5 text-[8px] font-semibold uppercase tracking-[0.12em] text-gray-400"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.3, delay: 0.2 }}
+        transition={{ duration: 0.3, delay: flyIn ? 0.6 : 0.2 }}
       >
-        Customer Prices
+        Customer Order Price
       </motion.span>
 
       <div className="flex flex-col gap-1.5">
-        {customers.map((c, i) => (
-          <motion.div
-            key={c.label}
-            className="flex items-center gap-2 rounded-md px-2 py-1.5"
-            style={{ backgroundColor: `${NAVY}05` }}
-            initial={{ opacity: 0, x: -8 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 + i * 0.08, duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <div className="size-[5px] shrink-0 rounded-full" style={{ backgroundColor: c.dot }} />
-            <div className="flex-1 min-w-0">
-              <span className="text-[10px] font-semibold leading-none block" style={{ color: NAVY }}>
-                {c.label}
-              </span>
-              <span className="text-[13px] font-bold tabular-nums leading-tight block mt-0.5" style={{ color: NAVY }}>
-                {c.price}
-              </span>
-            </div>
-          </motion.div>
-        ))}
+        {RAIL_CUSTOMERS.map((c, i) => {
+          const isActive = i === activeIdx;
+          const isAdjusted = adjustedSet.has(i);
+          const displayPrice = (isAdjusted && (showChange || !isActive)) ? c.newPrice : c.price;
+
+          return (
+            <motion.div
+              key={c.label}
+              className="rounded-md px-2 py-1.5"
+              initial={flyIn
+                ? { opacity: 0, x: flyX, scale: 1.15 }
+                : { opacity: 0, x: -8 }
+              }
+              animate={{
+                opacity: activeIdx >= 0 && !isActive ? 0.45 : 1,
+                x: 0,
+                backgroundColor: isActive ? `${c.dot}14` : `${NAVY}05`,
+              }}
+              transition={flyIn
+                ? { delay: 0.15 + i * 0.18, duration: 0.75, ease: [0.22, 1, 0.36, 1], scale: { duration: 0.5, delay: 0.15 + i * 0.18 } }
+                : { delay: 0.3 + i * 0.08, duration: 0.3, ease: [0.22, 1, 0.36, 1] }
+              }
+              style={isActive ? { border: `1.5px solid ${c.dot}40` } : { border: "1.5px solid transparent" }}
+            >
+              <div className="flex items-center gap-2">
+                <div className="size-[5px] shrink-0 rounded-full" style={{ backgroundColor: c.dot }} />
+                <div className="flex-1 min-w-0">
+                  <span className="text-[10px] font-semibold leading-none block" style={{ color: NAVY }}>
+                    {c.label}
+                  </span>
+                  <span className="text-[13px] font-bold tabular-nums leading-tight block mt-0.5" style={{ color: NAVY }}>
+                    {displayPrice}
+                  </span>
+                </div>
+              </div>
+              <AnimatePresence>
+                {isActive && showChange && (
+                  <motion.div
+                    className="mt-1 flex flex-col gap-0.5 pl-[13px]"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    <span className="text-[9px] font-bold tabular-nums" style={{ color: c.dot }}>
+                      {c.price} → {c.newPrice}
+                    </span>
+                    <span className="text-[8px] font-medium text-gray-400">
+                      {c.reason}
+                    </span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          );
+        })}
       </div>
     </motion.div>
   );
@@ -1180,7 +1236,9 @@ export function Home() {
 
       {railVisible && (
         slide === REFINE_INDEX ? (
-          <MiniExecuteConnector />
+          <MiniExecuteConnector refineStep={subStep} />
+        ) : (slide === EXECUTE_INDEX && subStep >= 2) ? (
+          <MiniExecuteConnector flyIn />
         ) : (
           <ModelStatusRail
             activeCategories={activeCategories}
