@@ -120,8 +120,6 @@ const DRIVER_RAIL_ITEMS: { label: string; color: string; tint: string }[] = [
 
 
 const ACTIVE_CATEGORIES_MAP: Record<string, CategoryKey[]> = {
-  [`${POWER_INDEX}-0`]: ["customer", "product", "market", "order"],
-  [`${POWER_INDEX}-1`]: ["customer", "product", "market", "order"],
   [`${POWER_INDEX}-2`]: ["customer", "product", "market", "order"],
   [`${POWER_INDEX}-3`]: ["customer"],
   [`${POWER_INDEX}-4`]: ["product"],
@@ -153,14 +151,17 @@ function ModelStatusRail({
   engineFocus,
   showEngine = true,
   customerDotColor,
+  driversFlyIn = false,
 }: {
   activeCategories: CategoryKey[];
   drivers?: { label: string; color: string; tint: string }[];
   engineFocus: EngineFocus;
   showEngine?: boolean;
   customerDotColor?: string;
+  driversFlyIn?: boolean;
 }) {
   const activeSet = useMemo(() => new Set(activeCategories), [activeCategories]);
+  const [flyX] = useState(() => typeof window !== "undefined" ? window.innerWidth * 0.52 : 700);
 
   const mlActive = engineFocus === "both" || engineFocus === "ml";
   const stratActive = engineFocus === "both" || engineFocus === "strat";
@@ -174,6 +175,7 @@ function ModelStatusRail({
       className="fixed left-0 top-1/2 z-40 flex w-[130px] -translate-y-1/2 flex-col gap-3 rounded-r-xl bg-white/95 px-3 py-4 shadow-md ring-1 ring-black/[0.06] backdrop-blur-sm"
       initial={{ x: -140 }}
       animate={{ x: 0 }}
+      exit={{ x: -140, transition: { duration: 0.3, ease: [0.4, 0, 1, 1] } }}
       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
     >
       {/* Engine section */}
@@ -265,14 +267,25 @@ function ModelStatusRail({
                 <motion.div
                   key={label}
                   className="flex items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-2 py-1.5"
-                  initial={{ x: 60, opacity: 0, scale: 0.4, rotate: -20 }}
+                  initial={driversFlyIn
+                    ? { opacity: 0, x: flyX, scale: 1.15 }
+                    : { x: 60, opacity: 0, scale: 0.4, rotate: -20 }
+                  }
                   animate={{ x: 0, opacity: 1, scale: 1, rotate: 0 }}
-                  transition={{
-                    x: { duration: 0.5, delay: 0.1 + i * 0.1, ease: [0.22, 1, 0.36, 1] },
-                    opacity: { duration: 0.3, delay: 0.1 + i * 0.1 },
-                    scale: { duration: 0.5, delay: 0.1 + i * 0.1, ease: [0.22, 1, 0.36, 1] },
-                    rotate: { duration: 0.5, delay: 0.1 + i * 0.1, ease: [0.22, 1, 0.36, 1] },
-                  }}
+                  transition={driversFlyIn
+                    ? {
+                        delay: 0.15 + i * 0.18,
+                        duration: 0.75,
+                        ease: [0.22, 1, 0.36, 1],
+                        scale: { duration: 0.5, delay: 0.15 + i * 0.18 },
+                      }
+                    : {
+                        x: { duration: 0.5, delay: 0.1 + i * 0.1, ease: [0.22, 1, 0.36, 1] },
+                        opacity: { duration: 0.3, delay: 0.1 + i * 0.1 },
+                        scale: { duration: 0.5, delay: 0.1 + i * 0.1, ease: [0.22, 1, 0.36, 1] },
+                        rotate: { duration: 0.5, delay: 0.1 + i * 0.1, ease: [0.22, 1, 0.36, 1] },
+                      }
+                  }
                 >
                   <div
                     className="size-2 shrink-0 rounded-full"
@@ -395,6 +408,7 @@ function MiniExecuteConnector({ refineStep, flyIn = false, onSelectCustomer }: {
       className="fixed left-0 top-1/2 z-40 flex w-[130px] -translate-y-1/2 flex-col rounded-r-xl bg-white/95 px-3 py-4 shadow-md ring-1 ring-black/[0.06] backdrop-blur-sm"
       initial={{ x: flyIn ? 0 : -140 }}
       animate={{ x: 0 }}
+      exit={{ x: -140, transition: { duration: 0.3, ease: [0.4, 0, 1, 1] } }}
       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
     >
       <motion.span
@@ -466,21 +480,25 @@ function MiniExecuteConnector({ refineStep, flyIn = false, onSelectCustomer }: {
   );
 }
 
-function ExecuteTransitionOverlay({ onAdvance }: { onAdvance: () => void }) {
-  useEffect(() => {
-    const t = setTimeout(onAdvance, 1200);
-    return () => clearTimeout(t);
-  }, [onAdvance]);
-
+function ExecuteTransitionOverlay({ onAdvance, appearDelay = 0 }: { onAdvance: () => void; appearDelay?: number }) {
   return (
     <motion.div
-      className="absolute inset-0 z-30 flex items-center justify-center"
+      className="absolute inset-0 z-30 flex items-center justify-center cursor-pointer"
       initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.35 }}
+      animate={{ opacity: 1, transition: { duration: 0.35, delay: appearDelay } }}
+      exit={{ opacity: 0, transition: { duration: 0.15, delay: 0 } }}
+      onClick={onAdvance}
     >
-      <div className="absolute inset-0 bg-white/70" />
+      <div className="absolute inset-0 bg-[var(--i2p-bg,#EEF2F6)]/80 backdrop-blur-sm" />
+      <motion.span
+        className="relative z-10 rounded-xl px-6 py-3 text-sm font-semibold"
+        style={{ backgroundColor: "#21A5D50A", color: "#21A5D5", border: "1.5px solid #21A5D520" }}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0, transition: { delay: appearDelay + 0.5, duration: 0.4 } }}
+        exit={{ opacity: 0, transition: { duration: 0.1, delay: 0 } }}
+      >
+        Click to continue &#8250;
+      </motion.span>
     </motion.div>
   );
 }
@@ -1253,27 +1271,34 @@ export function Home() {
         </div>
 
         <AnimatePresence>
-          {slide === EXECUTE_INDEX && subStep >= 2 && (
-            <ExecuteTransitionOverlay onAdvance={() => navigate(slide + 1)} />
+          {slide === EXECUTE_INDEX && subStep >= 3 && (
+            <ExecuteTransitionOverlay key="execute-overlay" onAdvance={() => navigate(slide + 1)} />
+          )}
+          {slide === POWER_INDEX && subStep === 8 && vortexDone && (
+            <ExecuteTransitionOverlay key="power-overlay" onAdvance={() => navigate(slide + 1)} appearDelay={1.2} />
           )}
         </AnimatePresence>
       </main>
 
+      <AnimatePresence mode="wait">
       {railVisible && (
         (slide === REFINE_INDEX && subStep >= 5) ? (
-          <MiniExecuteConnector refineStep={subStep} onSelectCustomer={(step) => setSubStep(step)} />
-        ) : (slide === EXECUTE_INDEX && subStep >= 2) ? (
-          <MiniExecuteConnector flyIn />
+          <MiniExecuteConnector key="mini-exec" refineStep={subStep} onSelectCustomer={(step) => setSubStep(step)} />
+        ) : (slide === EXECUTE_INDEX && subStep >= 4) ? (
+          <MiniExecuteConnector key="mini-exec-fly" flyIn />
         ) : (
           <ModelStatusRail
+            key="model-rail"
             activeCategories={activeCategories}
             drivers={showDrivers ? DRIVER_RAIL_ITEMS : undefined}
             engineFocus={engineFocus}
             showEngine={slide === POWER_INDEX}
             customerDotColor={slide === EXECUTE_INDEX ? CUSTOMER_DOT_COLORS[executeCustomer] : undefined}
+            driversFlyIn={slide === POWER_INDEX}
           />
         )
       )}
+      </AnimatePresence>
 
 
       {isAudience ? (

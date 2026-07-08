@@ -12,7 +12,7 @@ const STEEL = "#4A7DAA";
 const GREY = "#B8BFC6";
 const ORANGE = "#E56910";
 
-export const EXECUTE_TOTAL_STEPS = 3;
+export const EXECUTE_TOTAL_STEPS = 4;
 
 /* ── Layout ──────────────────────────────────────────── */
 
@@ -663,9 +663,10 @@ export function ExecuteSlide({
     if (revealPhase !== 4) return;
     if (selected !== 0) return;
     if (hasInteracted.current) return;
+    if (step >= 3) return;
     const t = setTimeout(() => setSelected(1), 800);
     return () => clearTimeout(t);
-  }, [revealPhase, selected, isActive]);
+  }, [revealPhase, selected, isActive, step]);
 
   useEffect(() => {
     if (!isActive) return;

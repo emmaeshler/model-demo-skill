@@ -157,6 +157,7 @@ const SEGMENT_HIGHLIGHTS = [
     beforeBody: "No competition in this niche, but cost increases aren’t reflected in the price.",
     afterTitle: "Adjusted +$2.10",
     afterBody: "Cost pressure passes through — price moves to the calibrated curve.",
+    marketSignal: "Cost pressure, no competition",
   },
   {
     t: 0.35,
@@ -171,6 +172,7 @@ const SEGMENT_HIGHLIGHTS = [
     beforeBody: "Win rate is climbing — a pattern, not noise. There’s room to price higher.",
     afterTitle: "Adjusted +$0.56",
     afterBody: "Price rises to capture margin the data says is available.",
+    marketSignal: "Win rate climbing, margin available",
   },
   {
     t: 0.72,
@@ -185,6 +187,7 @@ const SEGMENT_HIGHLIGHTS = [
     beforeBody: "A new entrant is undercutting — willingness to pay is dropping in this region.",
     afterTitle: "Adjusted −$0.39",
     afterBody: "Price drops to defend the deal against the competitive threat.",
+    marketSignal: "New entrant undercutting",
   },
 ];
 
@@ -1330,9 +1333,8 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
                     {/* Info card — to the right of the dot */}
                     <AnimatePresence>
                       {isActive && (() => {
-                        const CARD_W = 125;
-                        const cardAfterH = 48;
-                        const CARD_H = spotPhase >= 2 ? cardAfterH : 28;
+                        const CARD_W = 135;
+                        const CARD_H = spotPhase >= 2 ? 42 : 28;
                         const cardX = pt.x + 28;
                         return (
                           <motion.g
@@ -1400,9 +1402,9 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
                                   <motion.g key="after" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.35 }}>
                                     <text
                                       x={cardX + 6}
-                                      y={-cardAfterH - 4 + 11}
+                                      y={-CARD_H - 4 + 12}
                                       fontSize="5.5"
-                                      fontWeight="500"
+                                      fontWeight="600"
                                       fill={MUTED}
                                       style={{ fontFamily: "inherit" }}
                                     >
@@ -1410,33 +1412,23 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
                                     </text>
                                     <text
                                       x={cardX + 6}
-                                      y={-cardAfterH - 4 + 22}
+                                      y={-CARD_H - 4 + 23}
+                                      fontSize="5"
+                                      fontWeight="500"
+                                      fill={`${MUTED}BB`}
+                                      style={{ fontFamily: "inherit" }}
+                                    >
+                                      {seg.marketSignal}
+                                    </text>
+                                    <text
+                                      x={cardX + 6}
+                                      y={-CARD_H - 4 + 36}
                                       fontSize="7"
                                       fontWeight="700"
                                       fill={GREEN}
                                       style={{ fontFamily: "inherit" }}
                                     >
-                                      Adjusted {seg.change} to {seg.newPrice}
-                                    </text>
-                                    <text
-                                      x={cardX + 6}
-                                      y={-cardAfterH - 4 + 33}
-                                      fontSize="5.5"
-                                      fontWeight="500"
-                                      fill={MUTED}
-                                      style={{ fontFamily: "inherit" }}
-                                    >
-                                      {seg.oldPrice} → {seg.newPrice}
-                                    </text>
-                                    <text
-                                      x={cardX + 6}
-                                      y={-cardAfterH - 4 + 43}
-                                      fontSize="5"
-                                      fontWeight="500"
-                                      fill={`${MUTED}99`}
-                                      style={{ fontFamily: "inherit" }}
-                                    >
-                                      {seg.shortReason}
+                                      Price is now {seg.newPrice}
                                     </text>
                                   </motion.g>
                                 )}
