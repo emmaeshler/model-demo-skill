@@ -20,12 +20,7 @@ const ShareContext = createContext<ShareContextValue | null>(null);
 const CHANNEL_NAME = "ml-explainer-share";
 
 export function ShareProvider({ children }: { children: ReactNode }) {
-  const [shareMode, setShareModeState] = useState(() => {
-    if (typeof window !== "undefined") {
-      return new URLSearchParams(window.location.search).get("share") === "true";
-    }
-    return false;
-  });
+  const [shareMode, setShareModeState] = useState(false);
 
   useEffect(() => {
     const param = new URLSearchParams(window.location.search).get("share");

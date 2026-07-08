@@ -79,7 +79,9 @@ const ENGINE_FOCUS_MAP: Record<string, EngineFocus> = {
   [`${POWER_INDEX}-4`]: "strat",
   [`${POWER_INDEX}-5`]: "strat",
   [`${POWER_INDEX}-6`]: "strat",
-  [`${POWER_INDEX}-7`]: "both",
+  [`${POWER_INDEX}-7`]: "strat",
+  [`${POWER_INDEX}-8`]: "strat",
+  [`${POWER_INDEX}-9`]: "both",
   // execute
   [`${EXECUTE_INDEX}-0`]: "both",
   [`${EXECUTE_INDEX}-1`]: "both",
@@ -118,12 +120,14 @@ const DRIVER_RAIL_ITEMS: { label: string; color: string; tint: string }[] = [
 
 
 const ACTIVE_CATEGORIES_MAP: Record<string, CategoryKey[]> = {
-  [`${POWER_INDEX}-2`]: ["customer"],
-  [`${POWER_INDEX}-3`]: ["product"],
-  [`${POWER_INDEX}-4`]: ["market"],
-  [`${POWER_INDEX}-5`]: ["order"],
-  [`${POWER_INDEX}-6`]: ["customer", "product", "market", "order"],
+  [`${POWER_INDEX}-2`]: ["customer", "product", "market", "order"],
+  [`${POWER_INDEX}-3`]: ["customer"],
+  [`${POWER_INDEX}-4`]: ["product"],
+  [`${POWER_INDEX}-5`]: ["market"],
+  [`${POWER_INDEX}-6`]: ["order"],
   [`${POWER_INDEX}-7`]: ["customer", "product", "market", "order"],
+  [`${POWER_INDEX}-8`]: ["customer", "product", "market", "order"],
+  [`${POWER_INDEX}-9`]: ["customer", "product", "market", "order"],
   [`${EXECUTE_INDEX}-0`]: ["customer", "order"],
   [`${EXECUTE_INDEX}-1`]: ["customer"],
   [`${REFINE_INDEX}-1`]: ["customer", "market"],
@@ -333,12 +337,12 @@ function ModelStatusRail({
         </AnimatePresence>
 
         <motion.span
-          className="mt-0.5 text-[8px] leading-tight text-gray-400"
+          className="mt-0.5 text-[8px] leading-tight text-gray-600"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3, delay: 0.72 }}
         >
-          {drivers ? `${drivers.length} factors selected` : "31 factors made into 5"}
+          {drivers ? "31 factors made into 5" : "31 factors made into 5"}
         </motion.span>
       </div>}
     </motion.div>
@@ -426,12 +430,14 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
     slides: [
       { index: POWER_INDEX, label: "The problem", subStep: 0 },
       { index: POWER_INDEX, label: "Pattern scanning", subStep: 1 },
-      { index: POWER_INDEX, label: "Customer factors", subStep: 2 },
-      { index: POWER_INDEX, label: "Product factors", subStep: 3 },
-      { index: POWER_INDEX, label: "Market factors", subStep: 4 },
-      { index: POWER_INDEX, label: "Order factors", subStep: 5 },
-      { index: POWER_INDEX, label: "Final factors", subStep: 6 },
-      { index: POWER_INDEX, label: "SKU-level price", subStep: 7 },
+      { index: POWER_INDEX, label: "All factors", subStep: 2 },
+      { index: POWER_INDEX, label: "Customer factors", subStep: 3 },
+      { index: POWER_INDEX, label: "Product factors", subStep: 4 },
+      { index: POWER_INDEX, label: "Market factors", subStep: 5 },
+      { index: POWER_INDEX, label: "Order factors", subStep: 6 },
+      { index: POWER_INDEX, label: "Final factors", subStep: 7 },
+      { index: POWER_INDEX, label: "Model drivers", subStep: 8 },
+      { index: POWER_INDEX, label: "SKU-level price", subStep: 9 },
     ],
   },
   {
@@ -491,21 +497,7 @@ export function Home() {
   const [visited, setVisited] = useState<Set<number>>(() => new Set([0]));
   const [slideSorterOpen, setSlideSorterOpen] = useState(false);
   const [sorterCols, setSorterCols] = useState(4);
-  const [navGroups, setNavGroups] = useState(() => {
-    if (typeof window === "undefined") return DEFAULT_NAV_GROUPS;
-    try {
-      const saved = localStorage.getItem("ml-explainer-slide-labels");
-      if (!saved) return DEFAULT_NAV_GROUPS;
-      const labels: Record<string, string> = JSON.parse(saved);
-      return DEFAULT_NAV_GROUPS.map((g, gi) => ({
-        ...g,
-        slides: g.slides.map((s, si) => {
-          const key = `${gi}-${si}`;
-          return key in labels ? { ...s, label: labels[key] } : s;
-        }),
-      }));
-    } catch { return DEFAULT_NAV_GROUPS; }
-  });
+  const [navGroups, setNavGroups] = useState(DEFAULT_NAV_GROUPS);
   const [darkMode, setDarkMode] = useState(false);
   const [glossaryOpen, setGlossaryOpen] = useState(false);
   const [presenterNavOpen, setPresenterNavOpen] = useState(false);
@@ -541,7 +533,7 @@ export function Home() {
   const notes = getPresenterNotes(config?.kind ?? "", subStep);
   const engineFocus = ENGINE_FOCUS_MAP[`${slide}-${subStep}`] ?? null;
   const railVisible = ENGINE_INDICATOR_SLIDES.has(slide) && !(slide === REFINE_INDEX && subStep === (REFINE_TOTAL_STEPS - 1));
-  const showDrivers = (slide === POWER_INDEX && subStep >= 3) || slide === EXECUTE_INDEX || slide === REFINE_INDEX;
+  const showDrivers = (slide === POWER_INDEX && subStep >= 8) || slide === EXECUTE_INDEX || slide === REFINE_INDEX;
   const staticActiveCategories = ACTIVE_CATEGORIES_MAP[`${slide}-${subStep}`] ?? [];
   const activeCategories = (slide === POWER_INDEX && dynamicActiveCategories && dynamicActiveCategories.length > 0)
     ? dynamicActiveCategories

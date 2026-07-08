@@ -773,7 +773,8 @@ export function ExecuteSlide({
             </motion.div>
           </div>
 
-          {/* Diagram */}
+          {/* Diagram + chips wrapper */}
+          <div className="flex w-full flex-1 min-h-0 flex-col items-center" style={{ transform: "translateX(calc(var(--rail-inset, 0px) * -0.5))" }}>
           <div className="relative w-full flex-1 min-h-0 overflow-hidden">
             <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} className="w-full h-full">
 
@@ -1005,6 +1006,7 @@ export function ExecuteSlide({
               </button>
             </motion.div>
           )}
+          </div>
         </motion.div>
   );
 }
