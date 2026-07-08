@@ -232,14 +232,14 @@ const TITLES = [
   "2,400 accounts × 15,000 SKUs",
   "The model scans for patterns",
   "Your customized factors now feed the model",
-  "The goal: one optimized price per SKU",
+  "Your model drivers produce one optimized price per SKU",
 ];
 
 const SUBTITLES = [
   "That's 36 million unique price points — far too many for any team to set manually. The model finds the patterns hiding inside.",
   "Examining 36 million price points across four dimensions.",
   "Every business is different. We weigh each factor based on your data — adding what matters, removing what doesn't, and tuning the balance.",
-  "Cost, competition, volume, and demand come together — the model weighs each factor to arrive at the right price.",
+  "Five tailored drivers — drawn from 31 factors across your data — feed the model to arrive at the right price for every SKU.",
 ];
 
 /* ─── Pre-compute dot positions ─── */
@@ -770,7 +770,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: skipAnimation ? 0.15 : 0.7 }}
                   >
-                    Cost, competition, volume, and demand come together — the model weighs each factor to arrive at{" "}
+                    Five tailored drivers — drawn from 31 factors across your data — feed the model to arrive at{" "}
                     <motion.span
                       style={{ fontWeight: 600 }}
                       initial={skipAnimation ? { color: TEAL } : { color: MUTED }}
@@ -1824,6 +1824,61 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                     >
                       per SKU
                     </motion.text>
+                    {allAbsorbed && SELECTED_FACTORS.map((sf, si) => {
+                      const angle = -Math.PI / 2 + (si / SELECTED_FACTORS.length) * Math.PI * 2;
+                      const orbitR = CONVERGE_MODEL_R + 38;
+                      const px = PLOT_CX + Math.cos(angle) * orbitR;
+                      const py = PLOT_CY + Math.sin(angle) * orbitR;
+                      return (
+                        <motion.foreignObject
+                          key={`driver-pill-${si}`}
+                          x={px - 85}
+                          y={py - 14}
+                          width={170}
+                          height={28}
+                          initial={{ opacity: 0, scale: 0.7 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ duration: 0.45, delay: skipAnimation ? 0 : 0.6 + si * 0.1, ease: [0.22, 1, 0.36, 1] }}
+                        >
+                          <div style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 6,
+                            padding: "4px 12px",
+                            borderRadius: 14,
+                            backgroundColor: "white",
+                            border: `1.5px solid ${sf.color}30`,
+                            boxShadow: `0 1px 4px ${sf.color}15`,
+                            whiteSpace: "nowrap",
+                          }}>
+                            <div style={{ width: 7, height: 7, borderRadius: "50%", backgroundColor: sf.color, flexShrink: 0 }} />
+                            <span style={{ fontSize: 11, fontWeight: 600, color: sf.color, fontFamily: "inherit" }}>{sf.label}</span>
+                          </div>
+                        </motion.foreignObject>
+                      );
+                    })}
+                    {allAbsorbed && SELECTED_FACTORS.map((sf, si) => {
+                      const angle = -Math.PI / 2 + (si / SELECTED_FACTORS.length) * Math.PI * 2;
+                      const orbitR = CONVERGE_MODEL_R + 38;
+                      const px = PLOT_CX + Math.cos(angle) * orbitR;
+                      const py = PLOT_CY + Math.sin(angle) * orbitR;
+                      const edgeX = PLOT_CX + Math.cos(angle) * (CONVERGE_MODEL_R + 6);
+                      const edgeY = PLOT_CY + Math.sin(angle) * (CONVERGE_MODEL_R + 6);
+                      return (
+                        <motion.line
+                          key={`driver-line-${si}`}
+                          x1={edgeX} y1={edgeY}
+                          x2={px} y2={py}
+                          stroke={`${sf.color}25`}
+                          strokeWidth={1.5}
+                          strokeDasharray="3 3"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ duration: 0.4, delay: skipAnimation ? 0 : 0.5 + si * 0.1 }}
+                        />
+                      );
+                    })}
                   </g>
                 )}
                 {!convergeReady && (

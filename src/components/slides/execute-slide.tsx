@@ -733,7 +733,7 @@ export function ExecuteSlide({
                 transition={{ duration: 0.4 }}
               >
                 {revealPhase <= 1
-                  ? "Applying the optimized price at the customer level"
+                  ? "Applying the optimized price at the customer order level"
                   : revealPhase === 2
                     ? "Acme’s drivers feed the pricing model"
                     : revealPhase === 3
@@ -762,7 +762,7 @@ export function ExecuteSlide({
                 transition={{ duration: 0.3 }}
               >
                 {revealPhase <= 1
-                  ? "The model starts with one optimized price per SKU — then adjusts for each customer's unique factors."
+                  ? "The model starts with one optimized price per SKU — then adjusts for each customer order's unique factors."
                   : revealPhase === 2
                     ? "The model weighs each factor to calculate Acme’s optimal price."
                     : revealPhase === 3
@@ -840,8 +840,8 @@ export function ExecuteSlide({
                       <text x={MODEL_CX} y={MODEL_CY + 12} fontSize="24" fontWeight="800" fill="white" textAnchor="middle">
                         {LIST_PRICE}
                       </text>
-                      <text x={MODEL_CX} y={MODEL_CY + 28} fontSize="10" fontWeight="500" fill="rgba(255,255,255,0.65)" textAnchor="middle">
-                        list price
+                      <text x={MODEL_CX} y={MODEL_CY + 28} fontSize="7.5" fontWeight="500" fill="rgba(255,255,255,0.65)" textAnchor="middle">
+                        customer order list price
                       </text>
 
                     </motion.g>

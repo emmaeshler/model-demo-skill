@@ -263,12 +263,13 @@ function ModelStatusRail({
                 <motion.div
                   key={label}
                   className="flex items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-2 py-1.5"
-                  initial={{ x: 80, opacity: 0, scale: 0.85 }}
-                  animate={{ x: 0, opacity: 1, scale: 1 }}
+                  initial={{ x: 60, opacity: 0, scale: 0.4, rotate: -20 }}
+                  animate={{ x: 0, opacity: 1, scale: 1, rotate: 0 }}
                   transition={{
-                    x: { duration: 0.5, delay: 0.3 + i * 0.08, ease: [0.22, 1, 0.36, 1] },
-                    opacity: { duration: 0.35, delay: 0.3 + i * 0.08 },
-                    scale: { duration: 0.45, delay: 0.3 + i * 0.08, ease: [0.22, 1, 0.36, 1] },
+                    x: { duration: 0.5, delay: 0.1 + i * 0.1, ease: [0.22, 1, 0.36, 1] },
+                    opacity: { duration: 0.3, delay: 0.1 + i * 0.1 },
+                    scale: { duration: 0.5, delay: 0.1 + i * 0.1, ease: [0.22, 1, 0.36, 1] },
+                    rotate: { duration: 0.5, delay: 0.1 + i * 0.1, ease: [0.22, 1, 0.36, 1] },
                   }}
                 >
                   <div
@@ -290,8 +291,8 @@ function ModelStatusRail({
               className="flex flex-col gap-1.5"
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.3 }}
+              exit={{ opacity: 0, scale: 0.5, x: 40, rotate: 12, filter: "blur(4px)" }}
+              transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
             >
               {FACTOR_CATEGORIES.map(({ key, label, color, tint }, i) => {
                 const active = activeSet.has(key);
@@ -510,6 +511,14 @@ export function Home() {
   const handleActiveCategoryChange = useCallback((cats: string[]) => setDynamicActiveCategories(cats as CategoryKey[]), []);
   const [executeCustomer, setExecuteCustomer] = useState("Acme");
   const handleExecuteCustomerChange = useCallback((c: string) => setExecuteCustomer(c), []);
+  const [vortexDone, setVortexDone] = useState(false);
+  const vortexTriggered = slide === POWER_INDEX && subStep === 8;
+
+  useEffect(() => {
+    if (!vortexTriggered) { setVortexDone(false); return; }
+    const t = setTimeout(() => setVortexDone(true), 600);
+    return () => clearTimeout(t);
+  }, [vortexTriggered]);
   const prevRailVisibleRef = useRef(false);
   const [presentElapsed, setPresentElapsed] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
@@ -533,7 +542,7 @@ export function Home() {
   const notes = getPresenterNotes(config?.kind ?? "", subStep);
   const engineFocus = ENGINE_FOCUS_MAP[`${slide}-${subStep}`] ?? null;
   const railVisible = ENGINE_INDICATOR_SLIDES.has(slide) && !(slide === REFINE_INDEX && subStep === (REFINE_TOTAL_STEPS - 1));
-  const showDrivers = (slide === POWER_INDEX && subStep >= 8) || slide === EXECUTE_INDEX || slide === REFINE_INDEX;
+  const showDrivers = (slide === POWER_INDEX && subStep >= 8 && (subStep > 8 || vortexDone)) || slide === EXECUTE_INDEX || slide === REFINE_INDEX;
   const staticActiveCategories = ACTIVE_CATEGORIES_MAP[`${slide}-${subStep}`] ?? [];
   const activeCategories = (slide === POWER_INDEX && dynamicActiveCategories && dynamicActiveCategories.length > 0)
     ? dynamicActiveCategories
@@ -1180,6 +1189,7 @@ export function Home() {
           />
         )
       )}
+
 
       {isAudience ? (
         <AudienceTopBar
