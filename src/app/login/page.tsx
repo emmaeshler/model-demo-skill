@@ -305,9 +305,9 @@ export default function LoginPage() {
       <div className="w-full max-w-[400px] rounded-xl border border-[#e0e0e0] bg-white p-8 text-center sm:p-10">
         <I2PLogo />
 
-        <div className="mt-4 flex items-center justify-center gap-3">
+        <div className="mt-4 flex items-center justify-center gap-2">
           <AnalyticsIcon />
-          <h1 className="text-[22px] font-bold text-[#1a1a2e]">
+          <h1 className="text-lg font-bold text-[#1a1a2e] whitespace-nowrap">
             Inside Your Dynamic Model
           </h1>
         </div>
