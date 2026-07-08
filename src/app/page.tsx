@@ -359,14 +359,16 @@ const CUSTOMER_DOT_COLORS: Record<string, string> = {
 };
 
 const RAIL_CUSTOMERS = [
-  { label: "Acme Industrial", price: "$19.24", newPrice: "$19.80", change: "+$0.56", dot: CUSTOMER_DOT_COLORS.Acme, reason: "margin capture" },
-  { label: "MedSupply Co", price: "$14.89", newPrice: "$14.50", change: "−$0.39", dot: CUSTOMER_DOT_COLORS.MedSupply, reason: "competitive defense" },
-  { label: "QuickParts LLC", price: "$22.10", newPrice: "$24.20", change: "+$2.10", dot: CUSTOMER_DOT_COLORS.QuickParts, reason: "market adjusted" },
+  { label: "Acme Industrial", price: "$19.24", newPrice: "$19.80", change: "+$0.56", dot: CUSTOMER_DOT_COLORS.Acme, reason: "Win rate climbing — margin available" },
+  { label: "MedSupply Co", price: "$14.89", newPrice: "$14.50", change: "−$0.39", dot: CUSTOMER_DOT_COLORS.MedSupply, reason: "New entrant undercutting — defend deal" },
+  { label: "QuickParts LLC", price: "$22.10", newPrice: "$24.20", change: "+$2.10", dot: CUSTOMER_DOT_COLORS.QuickParts, reason: "No competition — cost pass-through" },
 ];
 
 const REFINE_STEP_TO_RAIL: Record<number, number> = { 2: 2, 3: 0, 4: 1 };
 
-function MiniExecuteConnector({ refineStep, flyIn = false }: { refineStep?: number; flyIn?: boolean }) {
+const RAIL_INDEX_TO_REFINE_STEP: Record<number, number> = { 0: 3, 1: 4, 2: 2 };
+
+function MiniExecuteConnector({ refineStep, flyIn = false, onSelectCustomer }: { refineStep?: number; flyIn?: boolean; onSelectCustomer?: (step: number) => void }) {
   const NAVY = "#00446A";
   const [flyX] = useState(() => typeof window !== "undefined" ? window.innerWidth * 0.52 : 700);
 
@@ -427,7 +429,8 @@ function MiniExecuteConnector({ refineStep, flyIn = false }: { refineStep?: numb
                 ? { delay: 0.15 + i * 0.18, duration: 0.75, ease: [0.22, 1, 0.36, 1], scale: { duration: 0.5, delay: 0.15 + i * 0.18 } }
                 : { delay: 0.3 + i * 0.08, duration: 0.3, ease: [0.22, 1, 0.36, 1] }
               }
-              style={isActive ? { border: `1.5px solid ${c.dot}40` } : { border: "1.5px solid transparent" }}
+              style={{ ...(isActive ? { border: `1.5px solid ${c.dot}40` } : { border: "1.5px solid transparent" }), cursor: onSelectCustomer ? "pointer" : undefined }}
+              onClick={() => { if (onSelectCustomer && RAIL_INDEX_TO_REFINE_STEP[i] !== undefined) onSelectCustomer(RAIL_INDEX_TO_REFINE_STEP[i]); }}
             >
               <div className="flex items-center gap-2">
                 <div className="size-[5px] shrink-0 rounded-full" style={{ backgroundColor: c.dot }} />
@@ -449,11 +452,8 @@ function MiniExecuteConnector({ refineStep, flyIn = false }: { refineStep?: numb
                     exit={{ opacity: 0, height: 0 }}
                     transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
                   >
-                    <span className="text-[9px] font-bold tabular-nums" style={{ color: c.dot }}>
+                    <span className="text-[9px] font-bold tabular-nums" style={{ color: "#2e7d32" }}>
                       {c.price} → {c.newPrice}
-                    </span>
-                    <span className="text-[8px] font-medium text-gray-400">
-                      {c.reason}
                     </span>
                   </motion.div>
                 )}
@@ -462,6 +462,25 @@ function MiniExecuteConnector({ refineStep, flyIn = false }: { refineStep?: numb
           );
         })}
       </div>
+    </motion.div>
+  );
+}
+
+function ExecuteTransitionOverlay({ onAdvance }: { onAdvance: () => void }) {
+  useEffect(() => {
+    const t = setTimeout(onAdvance, 1200);
+    return () => clearTimeout(t);
+  }, [onAdvance]);
+
+  return (
+    <motion.div
+      className="absolute inset-0 z-30 flex items-center justify-center"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.35 }}
+    >
+      <div className="absolute inset-0 bg-white/70" />
     </motion.div>
   );
 }
@@ -1232,11 +1251,17 @@ export function Home() {
           );
         })}
         </div>
+
+        <AnimatePresence>
+          {slide === EXECUTE_INDEX && subStep >= 2 && (
+            <ExecuteTransitionOverlay onAdvance={() => navigate(slide + 1)} />
+          )}
+        </AnimatePresence>
       </main>
 
       {railVisible && (
-        slide === REFINE_INDEX ? (
-          <MiniExecuteConnector refineStep={subStep} />
+        (slide === REFINE_INDEX && subStep >= 5) ? (
+          <MiniExecuteConnector refineStep={subStep} onSelectCustomer={(step) => setSubStep(step)} />
         ) : (slide === EXECUTE_INDEX && subStep >= 2) ? (
           <MiniExecuteConnector flyIn />
         ) : (

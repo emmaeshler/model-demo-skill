@@ -807,7 +807,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
       </div>
 
       {/* Chart area wrapper */}
-      <div className="relative w-full flex-1 min-h-0 mt-0">
+      <div className="relative w-full flex-1 min-h-0 mt-0" style={{ transform: "translateX(calc(var(--rail-inset, 0px) * -0.5))" }}>
         {/* Wireframe skeleton — visible while chart fades in */}
         <motion.div
           className="absolute inset-0 flex items-center justify-center"
@@ -860,7 +860,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
         initial={{ opacity: 0, y: 20 }}
         animate={{
           opacity: chartStep === 0 && introPhase < 4 ? 0 : 1,
-          y: chartStep === 0 && introPhase < 4 ? 20 : 0,
+          y: chartStep === 0 && introPhase < 4 ? 20 : convergeReady ? 25 : 0,
         }}
         transition={{ duration: 1.0, ease: [0.22, 1, 0.36, 1] }}
       >
@@ -1212,7 +1212,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                justifyContent: customized ? "flex-start" : "center",
+                justifyContent: customized && selectionPhase < 4 ? "flex-start" : "center",
                 fontFamily: "inherit",
                 position: "relative",
               }}>
@@ -1489,8 +1489,8 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                             style={{
                               display: "flex",
                               flexDirection: "column",
-                              gap: 20,
-                              padding: "16px 12px",
+                              gap: 32,
+                              padding: "24px 12px",
                               width: "100%",
                               maxWidth: 960,
                             }}
@@ -1499,16 +1499,16 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                           >
                             {/* Finalized 5 drivers */}
-                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
                               <motion.span
-                                style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", color: TEAL, fontFamily: "inherit", textTransform: "uppercase" }}
+                                style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", color: TEAL, fontFamily: "inherit", textTransform: "uppercase" }}
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 transition={{ duration: 0.3, delay: 0.2 }}
                               >
                                 5 Model Drivers
                               </motion.span>
-                              <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center" }}>
+                              <div style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "center" }}>
                                 {SELECTED_FACTORS.map((sf, si) => (
                                   <motion.span
                                     key={sf.label}
@@ -1518,8 +1518,8 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                                       justifyContent: "center",
                                       borderRadius: 8,
                                       border: `2px solid ${TEAL}`,
-                                      padding: "10px 18px",
-                                      fontSize: 15,
+                                      padding: "14px 24px",
+                                      fontSize: 17,
                                       fontWeight: 700,
                                       fontFamily: "inherit",
                                       whiteSpace: "nowrap",
@@ -1552,7 +1552,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
 
                             {/* All factors grid — selected ones highlighted */}
                             <motion.div
-                              style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center", padding: "0 20px" }}
+                              style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", padding: "0 20px" }}
                               initial={{ opacity: 0 }}
                               animate={{ opacity: 1 }}
                               transition={{ duration: 0.5, delay: 0.5 }}

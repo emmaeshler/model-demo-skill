@@ -282,9 +282,9 @@ const PORTFOLIO_SEGMENTS = (() => {
     });
     const d = "M " + pts.map(p => `${p.x},${p.y}`).join(" L ");
     const feature = features[i];
-    const col = i % 6;
-    const row = Math.floor(i / 6);
-    const dist = Math.sqrt(Math.pow(col - 2.5, 2) + Math.pow(row - 2, 2));
+    const col = i % 10;
+    const row = Math.floor(i / 10);
+    const dist = Math.sqrt(Math.pow(col - 4.5, 2) + Math.pow(row - 1, 2));
 
     const scatterDots = feature === "scatter" ? Array.from({ length: 5 }, () => {
       const t = 0.05 + pRng() * 0.9;
@@ -421,12 +421,14 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
     return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, [chartStep, isSpotlight, skipAnimation, onAutoAdvance, isActive]);
 
-  /* ── Timeline click-to-advance (step 6) ────────────── */
+  /* ── Timeline intro + click-to-advance (step 6) ────── */
+  const [indexIntroPhase, setIndexIntroPhase] = useState(0);
   const [indexPhase, setIndexPhase] = useState(0);
   useEffect(() => {
-    if (!isActive) { setIndexPhase(0); return; }
-    if (chartStep !== 6) { setIndexPhase(0); return; }
-    if (skipAnimation) { setIndexPhase(TIMELINE_EVENTS.length); return; }
+    if (!isActive) { setIndexPhase(0); setIndexIntroPhase(0); return; }
+    if (chartStep !== 6) { setIndexPhase(0); setIndexIntroPhase(0); return; }
+    if (skipAnimation) { setIndexPhase(TIMELINE_EVENTS.length); setIndexIntroPhase(2); return; }
+    setIndexIntroPhase(2);
   }, [chartStep, skipAnimation, isActive]);
 
   const advanceTimeline = () => {
@@ -570,7 +572,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
       : isIndexShift && indexPhase > 0
       ? null
       : isIndexShift
-      ? "Each dot is a real transaction. The curve is where the model says price should be. When costs or demand shift, the curve moves — and every price adjusts with it."
+      ? "When costs or demand shift, the curve moves — and every price adjusts with it."
       : isSpotlight
         ? SEGMENT_HIGHLIGHTS[spotlightIdx].beforeBody
         : STEP_CONTEXT[chartStep]?.body || null;
@@ -762,11 +764,11 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
       </div>
 
       {/* Unified chart region */}
-      <div className="relative w-full flex-1 min-h-0 flex flex-col rounded-2xl mt-2 overflow-hidden" style={{ border: `1px solid ${NAVY}0F` }}>
+      <div className={`relative w-full flex-1 min-h-0 flex flex-col overflow-hidden${isIndexShift ? ' rounded-2xl mt-2' : ''}`} style={isIndexShift ? { border: `1px solid ${NAVY}0F` } : undefined}>
 
-      {/* Start timeline prompt (before any events) */}
+      {/* Start timeline prompt (after intro finishes) */}
       <AnimatePresence>
-        {isIndexShift && indexPhase === 0 && (
+        {isIndexShift && indexPhase === 0 && indexIntroPhase >= 2 && (
           <motion.div
             key="start-prompt"
             className="w-full flex-shrink-0 flex items-center justify-center px-6 py-3"
@@ -1328,8 +1330,9 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
                     {/* Info card — to the right of the dot */}
                     <AnimatePresence>
                       {isActive && (() => {
-                        const CARD_W = 108;
-                        const CARD_H = 28;
+                        const CARD_W = 125;
+                        const cardAfterH = 48;
+                        const CARD_H = spotPhase >= 2 ? cardAfterH : 28;
                         const cardX = pt.x + 28;
                         return (
                           <motion.g
@@ -1346,11 +1349,12 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
                               animate={{ y: dotLifted ? pt.y : belowY }}
                               transition={{ y: { duration: 1.0, ease: [0.22, 1, 0.36, 1] } }}
                             >
-                              <rect
+                              <motion.rect
                                 x={cardX}
                                 y={-CARD_H - 4}
                                 width={CARD_W}
-                                height={CARD_H}
+                                animate={{ height: CARD_H }}
+                                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
                                 rx={3}
                                 ry={3}
                                 fill="white"
@@ -1359,11 +1363,12 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
                                 strokeOpacity={0.2}
                                 strokeWidth={0.5}
                               />
-                              <rect
+                              <motion.rect
                                 x={cardX}
                                 y={-CARD_H - 4}
                                 width={1.5}
-                                height={CARD_H}
+                                animate={{ height: CARD_H }}
+                                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
                                 rx={0.75}
                                 fill={seg.dotColor}
                               />
@@ -1395,22 +1400,43 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
                                   <motion.g key="after" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.35 }}>
                                     <text
                                       x={cardX + 6}
-                                      y={-CARD_H - 4 + 12}
+                                      y={-cardAfterH - 4 + 11}
+                                      fontSize="5.5"
+                                      fontWeight="500"
+                                      fill={MUTED}
+                                      style={{ fontFamily: "inherit" }}
+                                    >
+                                      Order price {seg.oldPrice}
+                                    </text>
+                                    <text
+                                      x={cardX + 6}
+                                      y={-cardAfterH - 4 + 22}
                                       fontSize="7"
                                       fontWeight="700"
                                       fill={GREEN}
                                       style={{ fontFamily: "inherit" }}
                                     >
-                                      Adjusted {seg.change}
+                                      Adjusted {seg.change} to {seg.newPrice}
                                     </text>
                                     <text
                                       x={cardX + 6}
-                                      y={-CARD_H - 4 + 22}
-                                      fontSize="6"
+                                      y={-cardAfterH - 4 + 33}
+                                      fontSize="5.5"
+                                      fontWeight="500"
                                       fill={MUTED}
                                       style={{ fontFamily: "inherit" }}
                                     >
                                       {seg.oldPrice} → {seg.newPrice}
+                                    </text>
+                                    <text
+                                      x={cardX + 6}
+                                      y={-cardAfterH - 4 + 43}
+                                      fontSize="5"
+                                      fontWeight="500"
+                                      fill={`${MUTED}99`}
+                                      style={{ fontFamily: "inherit" }}
+                                    >
+                                      {seg.shortReason}
                                     </text>
                                   </motion.g>
                                 )}
@@ -1532,7 +1558,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
           >
-            <div className="grid grid-cols-6 gap-2.5 px-6" style={{ maxWidth: 900, width: "100%" }}>
+            <div className="grid grid-cols-10 gap-2 px-4" style={{ maxWidth: 1100, width: "100%" }}>
               {PORTFOLIO_SEGMENTS.map((seg, i) => {
                 const revealIdx = PORTFOLIO_REVEAL_ORDER[i];
                 const enterDelay = revealIdx === 0 ? 0.15 : 0.5 + Math.sqrt(revealIdx - 1) * 0.38;
