@@ -46,6 +46,18 @@ function I2PLogo() {
   );
 }
 
+function AnalyticsIcon() {
+  return (
+    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#d4712a]">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="18" y1="20" x2="18" y2="10" />
+        <line x1="12" y1="20" x2="12" y2="4" />
+        <line x1="6" y1="20" x2="6" y2="14" />
+      </svg>
+    </div>
+  );
+}
+
 function Spinner() {
   return (
     <svg className="size-4 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -293,9 +305,12 @@ export default function LoginPage() {
       <div className="w-full max-w-[400px] rounded-xl border border-[#e0e0e0] bg-white p-8 text-center sm:p-10">
         <I2PLogo />
 
-        <h1 className="mt-4 text-[22px] font-bold text-[#1a1a2e]">
-          Inside Your Dynamic Model
-        </h1>
+        <div className="mt-4 flex items-center justify-center gap-3">
+          <AnalyticsIcon />
+          <h1 className="text-[22px] font-bold text-[#1a1a2e]">
+            Inside Your Dynamic Model
+          </h1>
+        </div>
         <p className="mb-6 mt-1 text-sm text-[#666]">
           Sign in to view this presentation
         </p>

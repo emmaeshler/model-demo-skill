@@ -16,6 +16,12 @@ const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
 const WIDTH = 1280;
 const HEIGHT = 800;
 
+const WAIT_OVERRIDES = {
+  "3-0": 5000,  // power slide scatter dots animate over ~4s
+  "3-1": 5000,
+  "5-0": 4000,  // refine slide intro animation
+};
+
 async function main() {
   const browser = await puppeteer.launch({ headless: true });
   const page = await browser.newPage();
@@ -48,8 +54,8 @@ async function main() {
     const filename = `slide-${slideIndex}-${stepIndex}.jpg`;
 
     await page.goto(url, { waitUntil: "networkidle0", timeout: 15000 });
-    // Wait a bit for any CSS transitions to settle
-    await new Promise((r) => setTimeout(r, 800));
+    const waitMs = WAIT_OVERRIDES[`${slideIndex}-${stepIndex}`] ?? 800;
+    await new Promise((r) => setTimeout(r, waitMs));
 
     await page.screenshot({
       path: `public/slide-thumbnails/${filename}`,
