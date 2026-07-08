@@ -72,7 +72,7 @@ export function OneModelMedium() {
         Each significant driver becomes a control knob. Four drivers create 16 interaction surfaces.
         A human can&apos;t tune hundreds of interacting variables across thousands of SKU-customer
         pairs. ML tunes every knob, for every deal, simultaneously. Knobs settle. Prices land back
-        on the optimal curve.
+        on the calibrated curve.
       </p>
     </div>
   );

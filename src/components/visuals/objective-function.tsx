@@ -237,7 +237,7 @@ export function ObjectiveFunctionVisual() {
                   fill={ORANGE}
                   textAnchor="middle"
                 >
-                  OPTIMAL
+                  CALIBRATED
                 </text>
               </motion.g>
             )}

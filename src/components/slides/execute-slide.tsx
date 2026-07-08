@@ -395,7 +395,7 @@ const OV_INPUTS = [
 ];
 
 const OV_OUTPUTS = [
-  { label: "Optimal Price", sub: "Scenario-specific guidance" },
+  { label: "Calibrated Price", sub: "Scenario-specific guidance" },
   { label: "Win Probability", sub: "Likelihood at recommended price" },
   { label: "Margin Impact", sub: "Projected uplift vs. current" },
   { label: "Confidence Score", sub: "Statistical certainty range" },
@@ -764,7 +764,7 @@ export function ExecuteSlide({
                 {revealPhase <= 1
                   ? "The model starts with one optimized price per SKU — then adjusts for each customer order's unique factors."
                   : revealPhase === 2
-                    ? "The model weighs each factor to calculate Acme’s optimal price."
+                    ? "The model weighs each factor to calculate Acme’s calibrated price."
                     : revealPhase === 3
                       ? <>{cust.price} — volume commitment and relationship depth push the price <span style={{ fontWeight: 700, color: "#2e7d32" }}>{cust.delta}</span>.</>
                       : cust.narrative}
@@ -928,41 +928,49 @@ export function ExecuteSlide({
                         transition={{ duration: 0.4 }}
                       />
                     )}
+
+                    {/* Customer chips inside SVG */}
+                    {revealPhase >= 4 && (
+                      <foreignObject x={MODEL_CX - 200} y={MODEL_Y + BOX_H + 26} width={400} height={40}>
+                        <motion.div
+                          className="flex items-center justify-center gap-3"
+                          initial={{ opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.4, delay: 0.3 }}
+                          style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
+                        >
+                          {CUSTOMERS.map((c, ci) => {
+                            const isSelected = ci === selected;
+                            return (
+                              <motion.button
+                                key={c.label}
+                                onClick={() => { hasInteracted.current = true; setSelected(ci); }}
+                                style={{
+                                  borderRadius: 9999,
+                                  padding: "4px 14px",
+                                  fontSize: 10,
+                                  fontWeight: 600,
+                                  cursor: "pointer",
+                                  background: isSelected ? c.color : "white",
+                                  border: `${isSelected ? 2 : 1.2}px solid ${c.color}`,
+                                  color: isSelected ? "white" : c.color,
+                                }}
+                                whileHover={{ scale: 1.04 }}
+                                whileTap={{ scale: 0.97 }}
+                                transition={{ duration: 0.15 }}
+                              >
+                                {c.label}
+                              </motion.button>
+                            );
+                          })}
+                        </motion.div>
+                      </foreignObject>
+                    )}
                   </>
 
             </svg>
           </div>
 
-          {/* Customer chips — HTML layer for reliable click handling */}
-          {revealPhase >= 4 && (
-            <motion.div
-              className="flex items-center justify-center gap-3 mt-1"
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.3 }}
-            >
-              {CUSTOMERS.map((c, ci) => {
-                const isSelected = ci === selected;
-                return (
-                  <motion.button
-                    key={c.label}
-                    onClick={() => { hasInteracted.current = true; setSelected(ci); }}
-                    className="rounded-full px-5 py-1.5 text-[10.5px] font-semibold transition-colors cursor-pointer"
-                    style={{
-                      background: isSelected ? c.color : "white",
-                      border: `${isSelected ? 2 : 1.2}px solid ${c.color}`,
-                      color: isSelected ? "white" : c.color,
-                    }}
-                    whileHover={{ scale: 1.04 }}
-                    whileTap={{ scale: 0.97 }}
-                    transition={{ duration: 0.15 }}
-                  >
-                    {c.label}
-                  </motion.button>
-                );
-              })}
-            </motion.div>
-          )}
 
           {/* Dot navigation (self mode only) */}
           {!isPresenter && revealPhase >= 1 && revealPhase < 4 && (

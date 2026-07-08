@@ -118,7 +118,7 @@ export function DDIHigh() {
         <p>
           <strong className="font-semibold text-foreground">Auto-tune.</strong>{" "}
           ML tunes every knob, for every deal, simultaneously. Knobs settle. Prices land back on
-          the optimal curve. The combination of driver values — California + Large Order + Tier 1 +
+          the calibrated curve. The combination of driver values — California + Large Order + Tier 1 +
           Direct Channel — identifies a micro-segment with its own price distribution. The model
           learns the optimal price for each micro-segment, not one price for the whole product.
           Each deal gets its own price, fitted to the curve, not approximated by a step.

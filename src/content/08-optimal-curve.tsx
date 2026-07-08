@@ -57,7 +57,7 @@ export function OptimalCurveLow() {
   );
 }
 
-/* ── Medium depth: Demo v9 optimal-curve + capture narrative ── */
+/* ── Medium depth: Demo v9 calibrated-curve + capture narrative ── */
 export function OptimalCurveMedium() {
   return (
     <div className="space-y-6">
@@ -93,7 +93,7 @@ export function OptimalCurveMedium() {
 
       <p className="text-sm leading-relaxed text-muted-foreground">
         The model finds the price that maximizes expected margin dollars. For each deal, it estimates
-        a margin parabola and a win-probability sigmoid. The optimal price sits where
+        a margin parabola and a win-probability sigmoid. The calibrated price sits where
         price × P(win) × margin rate peaks. As deals close, predicted meets actual — and the model adjusts.
       </p>
     </div>
@@ -110,7 +110,7 @@ export function OptimalCurveHigh() {
           <strong className="font-semibold text-foreground">The objective function.</strong>{" "}
           The model finds the price that maximizes expected margin dollars — not revenue, not
           volume, but profit. For each deal, it estimates a margin parabola (margin $ as a function
-          of price) and a win-probability sigmoid (P(win) as a function of price). The optimal price
+          of price) and a win-probability sigmoid (P(win) as a function of price). The calibrated price
           sits at the peak of the margin parabola weighted by the probability of winning — the point
           where price × P(win) × margin rate is maximized.
         </p>
@@ -119,7 +119,7 @@ export function OptimalCurveHigh() {
           Using historical win/loss outcomes, deal attributes, and experiment results, the model
           estimates how sensitive each customer or product segment is to price changes — the price
           elasticity. It estimates P(win) at each price point and finds the price that maximizes
-          expected profit (win probability × margin). Output: optimal price per segment with floor,
+          expected profit (win probability × margin). Output: calibrated price per segment with floor,
           target, and stretch guidance.
         </p>
         <p>

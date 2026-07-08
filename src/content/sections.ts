@@ -109,7 +109,7 @@ export const sections: SectionDefinition[] = [
   {
     slug: "optimal-curve",
     order: 8,
-    title: "The Optimal Curve",
+    title: "The Calibrated Curve",
     caption: "More transactions, better curve fit.",
     low: OptimalCurveLow,
     medium: OptimalCurveMedium,

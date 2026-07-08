@@ -66,7 +66,7 @@ export function AutoTuneVisual() {
         viewBox="0 0 420 175"
         className="w-full"
         role="img"
-        aria-label="Scattered dots converge onto the optimal demand curve as ML tunes every knob"
+        aria-label="Scattered dots converge onto the calibrated demand curve as ML tunes every knob"
       >
         <line
           x1={SLOT.x}
@@ -138,7 +138,7 @@ export function AutoTuneVisual() {
 
       <p className="text-center text-xs text-muted-foreground">
         {converged
-          ? "Knobs settle. Prices land on the optimal curve."
+          ? "Knobs settle. Prices land on the calibrated curve."
           : "ML tunes every knob, for every deal..."}
       </p>
     </div>

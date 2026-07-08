@@ -73,7 +73,7 @@ const NOTES: Record<string, string[]> = {
     "This is where your business expertise gets encoded into the model.",
   ],
   "refine:1": [
-    "The optimal pricing curve shows where the most profit opportunity lives.",
+    "The calibrated pricing curve shows where the most profit opportunity lives.",
     "It's built from your historical win/loss data — price versus volume.",
   ],
   "refine:2": [
@@ -90,7 +90,7 @@ const NOTES: Record<string, string[]> = {
   ],
   "refine:5": [
     "MedSupply is at risk from a competitor — the model lowers price to defend the deal.",
-    "Different segments, different optimal prices — that's the power of dynamic pricing.",
+    "Different segments, different calibrated prices — that's the power of dynamic pricing.",
   ],
   "refine:6": [
     "When all customers are optimized together, the portfolio effect is powerful.",

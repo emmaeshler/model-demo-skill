@@ -120,6 +120,8 @@ const DRIVER_RAIL_ITEMS: { label: string; color: string; tint: string }[] = [
 
 
 const ACTIVE_CATEGORIES_MAP: Record<string, CategoryKey[]> = {
+  [`${POWER_INDEX}-0`]: ["customer", "product", "market", "order"],
+  [`${POWER_INDEX}-1`]: ["customer", "product", "market", "order"],
   [`${POWER_INDEX}-2`]: ["customer", "product", "market", "order"],
   [`${POWER_INDEX}-3`]: ["customer"],
   [`${POWER_INDEX}-4`]: ["product"],
@@ -343,7 +345,7 @@ function ModelStatusRail({
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3, delay: 0.72 }}
         >
-          {drivers ? "31 factors made into 5" : "31 factors made into 5"}
+          {drivers ? "Tailored to your business" : "Tailored to your business"}
         </motion.span>
       </div>}
     </motion.div>

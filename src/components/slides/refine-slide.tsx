@@ -20,11 +20,9 @@ const BASE_Y = CURVE_SLOT.y + CURVE_SLOT.h;
 const BASELINE_KPI = { winRate: 62, priceAdoption: 71, marginImpact: 1.8 };
 const TOTAL_MONTHS = 20;
 const TIMELINE_EVENTS = [
-  { month: 4, label: "Steel +8%", factor: "Model passes cost increase through to prices", steepness: 5, kpi: { winRate: 60, priceAdoption: 74, marginImpact: 2.3 } },
-  { month: 8, label: "New Entrant", factor: "Competitor undercuts — model sharpens pricing", steepness: 7.5, kpi: { winRate: 57, priceAdoption: 68, marginImpact: 1.1 } },
-  { month: 12, label: "Demand Shift", factor: "Strong demand — model captures pricing upside", steepness: 4.5, kpi: { winRate: 68, priceAdoption: 78, marginImpact: 3.0 } },
-  { month: 16, label: "Freight −5%", factor: "Model splits savings between margin and share", steepness: 5, kpi: { winRate: 71, priceAdoption: 81, marginImpact: 3.4 } },
-  { month: 20, label: "Resin +12%", factor: "Major cost spike — model reprices within hours", steepness: 4, kpi: { winRate: 67, priceAdoption: 83, marginImpact: 2.9 } },
+  { month: 5, label: "Steel +8%", factor: "Model passes cost increase through to prices", steepness: 5, kpi: { winRate: 60, priceAdoption: 74, marginImpact: 2.3 } },
+  { month: 10, label: "Demand Shift", factor: "Strong demand — model captures pricing upside", steepness: 4.5, kpi: { winRate: 68, priceAdoption: 78, marginImpact: 3.0 } },
+  { month: 15, label: "Resin +12%", factor: "Major cost spike — model reprices within hours", steepness: 4, kpi: { winRate: 67, priceAdoption: 83, marginImpact: 2.9 } },
 ];
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -132,7 +130,7 @@ const SCATTER_DOTS: ScatterDot[] = Array.from({ length: DOT_COUNT }, () => {
     offsetY,
     jitterX: (rng() - 0.5) * 14,
     status: pickStatus(),
-    r: (() => { const s = rng(); return s < 0.4 ? 0.8 + rng() * 0.6 : s < 0.75 ? 1.2 + rng() * 0.8 : 1.8 + rng() * 1.0; })(),
+    r: (() => { rng(); rng(); return 1.4; })(),
     driftDx: (rng() - 0.5) * 4,
     driftDy: (rng() - 0.5) * 3,
     driftDuration: 4 + rng() * 4,
@@ -158,7 +156,7 @@ const SEGMENT_HIGHLIGHTS = [
     shortReason: "No competition",
     beforeBody: "No competition in this niche, but cost increases aren’t reflected in the price.",
     afterTitle: "Adjusted +$2.10",
-    afterBody: "Cost pressure passes through — price moves to the optimal curve.",
+    afterBody: "Cost pressure passes through — price moves to the calibrated curve.",
   },
   {
     t: 0.35,
@@ -177,7 +175,7 @@ const SEGMENT_HIGHLIGHTS = [
   {
     t: 0.72,
     label: "MedSupply",
-    offsetY: 22,
+    offsetY: -22,
     oldPrice: "$14.89",
     newPrice: "$14.50",
     change: "−$0.39",
@@ -195,7 +193,6 @@ const LEGEND_ITEMS = (() => {
     { label: "Won", color: GREEN },
     { label: "Lost", color: RED },
     { label: "Overridden", color: ORANGE },
-    { label: "Adjusted", color: TEAL },
   ];
   const CHAR_W = 2.6;
   const DOT_PLUS_GAP = 5;
@@ -214,20 +211,20 @@ const STEP_CONTEXT: Record<number, { title: string; body: string }> = {
     body: "Thousands of transactions, seen together, reveal the shape of your market — and every price gets refined against it.",
   },
   1: {
-    title: "Your optimal demand curve",
+    title: "Your calibrated demand curve",
     body: "The model builds a price–volume relationship from your historical win/loss data.",
   },
   2: {
     title: "QuickParts",
-    body: "The model detects a pricing gap and adjusts to the optimal curve.",
+    body: "The model detects a pricing gap and adjusts to the calibrated curve.",
   },
   3: {
     title: "Acme",
-    body: "The model detects a pricing gap and adjusts to the optimal curve.",
+    body: "The model detects a pricing gap and adjusts to the calibrated curve.",
   },
   4: {
     title: "MedSupply",
-    body: "The model detects a pricing gap and adjusts to the optimal curve.",
+    body: "The model detects a pricing gap and adjusts to the calibrated curve.",
   },
   5: {
     title: "Every price, optimized",
@@ -293,7 +290,8 @@ const PORTFOLIO_SEGMENTS = (() => {
       const t = 0.05 + pRng() * 0.9;
       const curvePt = raw.sampleAt(t);
       const cy = curvePt.y + (pRng() - 0.5) * 12;
-      return { cx: curvePt.x, cy: Math.max(3, Math.min(25, cy)), r: 0.7 + pRng() * 0.6 };
+      pRng();
+      return { cx: curvePt.x, cy: Math.max(3, Math.min(25, cy)), r: 1.0 };
     }) : undefined;
 
     const priceDotPt = feature === "price-dot" ? (() => {
@@ -556,21 +554,19 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
     ? "The market moves. The curve moves with it."
     : isAllToCurve
       ? "Every price, aligned to the curve"
-      : chartStep === 1
-        ? "Your optimal demand curve"
-        : chartStep === 0
-          ? "Now the model looks at all of them at once"
-          : isSpotlight
-            ? "Your optimal demand curve"
-            : "Detect patterns, refine pricing guidance";
+      : isSpotlight
+        ? SEGMENT_HIGHLIGHTS[spotlightIdx].label
+        : STEP_CONTEXT[chartStep]?.title || "Detect patterns, refine pricing guidance";
 
   const subtitle = isPortfolio
       ? "Every product segment gets its own demand curve — continuously recalibrated as the market shifts."
       : isIndexShift
       ? null
       : isSpotlight
-        ? (spotPhase >= 2 ? SEGMENT_HIGHLIGHTS[spotlightIdx].afterBody : SEGMENT_HIGHLIGHTS[spotlightIdx].beforeBody)
+        ? SEGMENT_HIGHLIGHTS[spotlightIdx].beforeBody
         : STEP_CONTEXT[chartStep]?.body || null;
+
+  const spotlightAfterLine = isSpotlight && spotPhase >= 1 ? SEGMENT_HIGHLIGHTS[spotlightIdx].afterBody : null;
 
   const activeHighlight = isSpotlight ? SEGMENT_HIGHLIGHTS[spotlightIdx] : null;
   const isLifted = spotPhase >= 1;
@@ -632,7 +628,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
                 </AnimatePresence>
               </div>
               <motion.p
-                className="mx-auto mt-2 max-w-xl text-center text-[1.05rem] leading-relaxed"
+                className="mx-auto mt-2 max-w-xl text-center text-[1.05rem] font-medium leading-relaxed"
                 style={{ color: MUTED }}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: introPhase >= 4 ? 1 : 0, y: introPhase >= 4 ? 0 : 6 }}
@@ -695,7 +691,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
                 </AnimatePresence>
               </div>
               <motion.p
-                className="mx-auto mt-2 max-w-xl text-center text-[1.05rem] leading-relaxed"
+                className="mx-auto mt-2 max-w-xl text-center text-[1.05rem] font-medium leading-relaxed"
                 style={{ color: MUTED }}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: portfolioPhase >= 4 ? 1 : 0, y: portfolioPhase >= 4 ? 0 : 6 }}
@@ -724,8 +720,8 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
               {subtitle && (
                 <AnimatePresence mode="wait">
                   <motion.p
-                    key={(chartStep >= 1 && chartStep <= 4) ? 'curve-subtitle' : `step-${chartStep}`}
-                    className="mx-auto mt-1 max-w-2xl text-center text-[1.05rem] leading-relaxed"
+                    key={chartStep === 1 ? 'curve-subtitle' : `step-${chartStep}`}
+                    className="mx-auto mt-1 max-w-2xl text-center text-[1.05rem] font-medium leading-relaxed"
                     style={{ color: MUTED }}
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -736,18 +732,35 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
                   </motion.p>
                 </AnimatePresence>
               )}
+              <AnimatePresence>
+                {spotlightAfterLine && (
+                  <motion.p
+                    key={`after-${spotlightIdx}`}
+                    className="mx-auto mt-1 max-w-2xl text-center text-[1.05rem] font-medium leading-relaxed"
+                    style={{ color: MUTED }}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.4, delay: 0.1 }}
+                  >
+                    {spotlightAfterLine}
+                  </motion.p>
+                )}
+              </AnimatePresence>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
+
+      {/* Unified chart region */}
+      <div className="relative w-full flex-1 min-h-0 flex flex-col rounded-2xl mt-2 overflow-hidden" style={{ border: `1px solid ${NAVY}0F` }}>
 
       {/* Timeline strip (step 7) — date/card + scrubber */}
       <AnimatePresence>
         {isIndexShift && (
           <motion.div
             key="timeline-strip"
-            className="w-full flex-shrink-0 rounded-t-2xl bg-white/80 px-6 pt-3 pb-2 backdrop-blur-sm"
-            style={{ border: `1px solid ${NAVY}0A`, borderBottom: 'none' }}
+            className="w-full flex-shrink-0 px-6 pt-3 pb-2"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
@@ -876,16 +889,17 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
                 transition={{ duration: 0.6, ease: "easeOut" }}
               />
               {/* Month labels below track */}
-              <div className="absolute w-full" style={{ top: "50%", marginTop: 14 }}>
-                <span className="absolute text-[10px] font-medium" style={{ left: 0, transform: "translateX(-50%)", color: MUTED }}>{getMonthLabel(0)}</span>
+              <div className="absolute" style={{ top: "50%", marginTop: 14, left: 0, right: 0 }}>
+                <span className="absolute text-[10px] font-medium" style={{ left: 0, color: MUTED }}>{getMonthLabel(0)}</span>
                 {TIMELINE_EVENTS.map((event, i) => {
                   const pos = (event.month / TOTAL_MONTHS) * 100;
                   const isActive = indexPhase === i + 1 && indexMorphProgress >= 1;
+                  const isLast = i === TIMELINE_EVENTS.length - 1;
                   return (
                     <span
                       key={event.month}
                       className="absolute text-[10px] font-medium transition-colors duration-300 cursor-pointer"
-                      style={{ left: `${pos}%`, transform: "translateX(-50%)", color: isActive ? STRAT_BLUE : MUTED }}
+                      style={{ left: `${pos}%`, transform: isLast ? "translateX(-100%)" : "translateX(-50%)", color: isActive ? STRAT_BLUE : MUTED }}
                       onClick={(e) => { e.stopPropagation(); setIndexPhase(i + 1); }}
                     >
                       {getMonthLabel(event.month)}
@@ -899,7 +913,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
       </AnimatePresence>
 
       {/* Chart area */}
-      <div className={`relative w-full flex-1 min-h-0 mt-0${isIndexShift ? ' rounded-b-2xl bg-white/80 backdrop-blur-sm shadow-sm' : ''}`} style={{ maxHeight: "calc(100% - 80px)", ...(isIndexShift ? { border: `1px solid ${NAVY}0A`, borderTop: 'none' } : {}) }}>
+      <div className="relative w-full flex-1 min-h-0 mt-0">
         {/* Wireframe skeleton — visible while chart fades in */}
         <motion.div
           className="absolute inset-0 flex items-center justify-center"
@@ -1046,7 +1060,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
 
 
 
-              {/* Optimal demand curve label */}
+              {/* Calibrated demand curve label */}
               {showCurve && (
                 <motion.text
                   x={curve.sampleAt(0.5).x}
@@ -1062,7 +1076,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
                   }}
                   transition={{ delay: 0.8, duration: 0.5 }}
                 >
-                  Optimal demand curve
+                  Calibrated demand curve
                 </motion.text>
               )}
 
@@ -1079,7 +1093,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
                 const fromShift = indexMorphFrom > 0 ? curve.indexCurves[indexMorphFrom - 1].sampleAt(dot.t).y - pt.y : 0;
                 const shiftOffset = isIndexShift ? fromShift + (toShift - fromShift) * indexMorphProgress : 0;
                 const targetY = rawTargetY + shiftOffset;
-                const dotColor = isIndexShift ? MUTED : STATUS_COLORS[dot.status];
+                const dotColor = isAllToCurve && !isIndexShift ? STATUS_COLORS[dot.status] : MUTED;
                 const dotVisible = !isIndexShift || dot.birthMonth <= timelineTargetMonth;
                 const dotOpacity = dotVisible ? dotOpacityBase : 0;
 
@@ -1121,14 +1135,14 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
                         : settling
                           ? { duration: 1.2, delay: settleDelay, ease: [0.22, 1, 0.36, 1] }
                           : isAllToCurve
-                            ? { duration: 0.7, delay: i * 0.01, ease: "easeInOut" }
+                            ? { duration: 0.7, delay: shareMode ? 0 : 0.5 + dot.t * 2.5, ease: [0.22, 1, 0.36, 1] }
                             : { duration: dot.driftDuration, delay: dot.driftDelay, repeat: isActive && !shareMode ? Infinity : 0, ease: "easeInOut" },
                       cy: inChaos
                         ? { duration: 0 }
                         : settling
                           ? { duration: 1.2, delay: settleDelay, ease: [0.22, 1, 0.36, 1] }
                           : isAllToCurve
-                            ? { duration: 0.6 + (Math.abs(dot.offsetY) / 36) * 0.3, delay: i * 0.01, ease: "easeInOut" }
+                            ? { duration: 0.6 + (Math.abs(dot.offsetY) / 36) * 0.3, delay: shareMode ? 0 : 0.5 + dot.t * 2.5, ease: [0.22, 1, 0.36, 1] }
                             : { duration: dot.driftDuration, delay: dot.driftDelay, repeat: isActive && !shareMode ? Infinity : 0, ease: "easeInOut" },
                       opacity: {
                         delay: chartStep === 0 ? 0.1 + i * 0.007 : isIndexShift ? 0.15 + (i % 36) * 0.012 : 0.1,
@@ -1141,6 +1155,20 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
                   />
                 );
               })}
+
+              {/* Scan line — sweeps left-to-right as dots converge */}
+              {isAllToCurve && !isIndexShift && !shareMode && (
+                <motion.rect
+                  y={CURVE_SLOT.y - 4}
+                  width={1.5}
+                  height={CURVE_SLOT.h + 8}
+                  fill={STRAT_BLUE}
+                  rx={0.75}
+                  initial={{ x: CURVE_SLOT.x, opacity: 0 }}
+                  animate={{ x: CURVE_SLOT.x + CURVE_SLOT.w, opacity: [0, 0.5, 0.5, 0.5, 0] }}
+                  transition={{ duration: 3, delay: 0.4, ease: "linear" }}
+                />
+              )}
 
               {/* Highlight product dots — start below curve, auto-animate to curve */}
               {SEGMENT_HIGHLIGHTS.map((seg, si) => {
@@ -1213,7 +1241,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
                       style={{ cursor: isActive ? "pointer" : "default" }}
                     />
 
-                    {/* Label below dot (before lift) */}
+                    {/* Label near dot (before lift) */}
                     {isActive && !dotLifted && (
                       <motion.g
                         initial={{ opacity: 0 }}
@@ -1222,7 +1250,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
                       >
                         <text
                           x={pt.x}
-                          y={belowY + 16}
+                          y={seg.offsetY < 0 ? belowY - 26 : belowY + 16}
                           fontSize="9"
                           fontWeight="600"
                           fill={seg.dotColor}
@@ -1233,7 +1261,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
                         </text>
                         <text
                           x={pt.x}
-                          y={belowY + 26}
+                          y={seg.offsetY < 0 ? belowY - 16 : belowY + 26}
                           fontSize="11"
                           fontWeight="800"
                           fill={seg.dotColor}
@@ -1386,7 +1414,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
         {isIndexShift && (
           <motion.div
             key="kpi-sidebar"
-            className="absolute right-0 top-0 bottom-0 z-20 flex flex-col justify-center gap-3 px-3"
+            className="absolute right-0 top-0 bottom-0 z-20 flex flex-col justify-center gap-3 px-3 pb-16"
             style={{ width: 175, borderLeft: `1px solid ${NAVY}0A` }}
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -1612,6 +1640,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
         )}
       </AnimatePresence>
       </div>
+      </div>{/* end unified chart region */}
     </div>
   );
 }

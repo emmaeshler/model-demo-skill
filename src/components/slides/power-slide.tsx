@@ -237,9 +237,9 @@ const TITLES = [
 
 const SUBTITLES = [
   "That's 36 million unique price points — far too many for any team to set manually. The model finds the patterns hiding inside.",
-  "Examining 36 million price points across four dimensions.",
-  "Every business is different. We weigh each factor based on your data — adding what matters, removing what doesn't, and tuning the balance.",
-  "Five tailored drivers — drawn from 31 factors across your data — feed the model to arrive at the right price for every SKU.",
+  "We look at pricing factors across four dimensions — tailored to what matters for your business.",
+  "Every business is different. We analyze what matters to you — adding key factors, removing what doesn't apply, and tuning the balance.",
+  "Five tailored drivers — drawn from the factors that matter most to you — feed the model to arrive at the right price for every SKU.",
 ];
 
 /* ─── Pre-compute dot positions ─── */
@@ -662,10 +662,10 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                           transition={{ duration: 0.4 }}
                         >
                           <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: NAVY }}>
-                            31 pricing factors across four dimensions
+                            Pricing factors across four dimensions
                           </h2>
                           <p className="mt-1 text-[1.05rem] leading-relaxed" style={{ color: MUTED }}>
-                            We&rsquo;ll walk through each category — elevating what matters, removing what doesn&rsquo;t, and tuning the balance.
+                            We analyze what matters most to you — elevating key factors, removing what doesn&rsquo;t apply, and tuning the balance.
                           </p>
                         </motion.div>
                       ) : selectionPhase >= 0 && selectionPhase <= 3 ? (
@@ -770,7 +770,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: skipAnimation ? 0.15 : 0.7 }}
                   >
-                    Five tailored drivers — drawn from 31 factors across your data — feed the model to arrive at{" "}
+                    Five tailored drivers — drawn from the factors that matter most to you — feed the model to arrive at{" "}
                     <motion.span
                       style={{ fontWeight: 600 }}
                       initial={skipAnimation ? { color: TEAL } : { color: MUTED }}
@@ -1037,8 +1037,8 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
               targetCx = cl.x;
               targetCy = cl.y;
               targetFill = CLUSTER_COLORS[cl.ci];
-              targetOpacity = 0.55;
-              targetR = dot.r * 0.8;
+              targetOpacity = customized ? 0 : 0.55;
+              targetR = customized ? 0 : dot.r * 0.8;
               cxTransition = { duration: 0.6, delay: dot.delay * 0.1, ease: [0.22, 1, 0.36, 1] };
               cyTransition = { duration: 0.6, delay: dot.delay * 0.1, ease: [0.22, 1, 0.36, 1] };
               opacityDelay = dot.delay * 0.1;
@@ -1328,6 +1328,24 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                                 layout: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
                               }}
                             >
+                              <motion.div
+                                layout
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 6,
+                                  minWidth: 90,
+                                  paddingTop: 11,
+                                  flexShrink: 0,
+                                }}
+                                animate={{ opacity: isActive ? 1 : isPast ? 0.5 : 0.4 }}
+                                transition={{ duration: 0.4 }}
+                              >
+                                <div style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: cat.color, flexShrink: 0 }} />
+                                <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.08em", color: cat.color, whiteSpace: "nowrap", fontFamily: "inherit" }}>
+                                  {cat.key}
+                                </span>
+                              </motion.div>
                               <div style={{ display: "flex", flexWrap: "wrap", gap: 10, flex: 1 }}>
                                 <AnimatePresence>
                                 {catFactors.map((f, fi) => {
@@ -1527,7 +1545,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                                 animate={{ opacity: 1 }}
                                 transition={{ duration: 0.3, delay: 0.6 }}
                               >
-                                selected from 31 factors analyzed
+                                selected from the factors we analyzed
                               </motion.span>
                               <div style={{ flex: 1, height: 1, backgroundColor: "#D1D5DB" }} />
                             </div>
