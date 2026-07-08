@@ -96,9 +96,13 @@ const NOTES: Record<string, string[]> = {
     "When all customers are optimized together, the portfolio effect is powerful.",
     "Some prices go up, some go down — but total margin improves significantly.",
   ],
+  "refine:7": [
+    "The market doesn't stand still — costs shift, competitors move, demand changes.",
+    "The model adapts in real time. Click through each event to see how the curve responds.",
+  ],
   "closing-summary": [
     "Let's recap what we've covered.",
-    "Design, Power, Execute, Refine — four phases working together as one dynamic pricing engine.",
+    "Design, Power, Refine, Execute — four phases working together as one dynamic pricing engine.",
     "The result: pricing that's smarter, faster, and more profitable.",
   ],
   "end": [

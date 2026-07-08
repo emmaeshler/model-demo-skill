@@ -12,7 +12,7 @@ const STEEL = "#4A7DAA";
 const GREY = "#B8BFC6";
 const ORANGE = "#E56910";
 
-export const EXECUTE_TOTAL_STEPS = 2;
+export const EXECUTE_TOTAL_STEPS = 3;
 
 /* ── Layout ──────────────────────────────────────────── */
 
@@ -652,7 +652,7 @@ export function ExecuteSlide({
       return;
     }
     if (isPresenter) {
-      setRevealPhase(skipAnimation ? 4 : step + 1);
+      setRevealPhase(skipAnimation ? 4 : Math.min(step + 1, 4));
     } else {
       setRevealPhase(skipAnimation ? selfMaxPhase : (step >= 1 ? 4 : 1));
     }

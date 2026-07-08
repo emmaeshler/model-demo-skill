@@ -20,9 +20,9 @@ const BASE_Y = CURVE_SLOT.y + CURVE_SLOT.h;
 const BASELINE_KPI = { winRate: 62, priceAdoption: 71, marginImpact: 1.8 };
 const TOTAL_MONTHS = 20;
 const TIMELINE_EVENTS = [
-  { month: 5, label: "Steel +8%", factor: "Model passes cost increase through to prices", steepness: 5, kpi: { winRate: 60, priceAdoption: 74, marginImpact: 2.3 } },
-  { month: 10, label: "Demand Shift", factor: "Strong demand — model captures pricing upside", steepness: 4.5, kpi: { winRate: 68, priceAdoption: 78, marginImpact: 3.0 } },
-  { month: 15, label: "Resin +12%", factor: "Major cost spike — model reprices within hours", steepness: 4, kpi: { winRate: 67, priceAdoption: 83, marginImpact: 2.9 } },
+  { month: 5, label: "Steel +8%", factor: "Prices adjust upward, protecting margin — some deals lost to higher prices", steepness: 5.5, shift: -12, kpi: { winRate: 59, priceAdoption: 76, marginImpact: 2.1 } },
+  { month: 10, label: "Freight −6%", factor: "Model splits the savings — lowers prices to win share, keeps the rest as margin", steepness: 4, shift: -6, kpi: { winRate: 66, priceAdoption: 80, marginImpact: 2.4 } },
+  { month: 15, label: "Resin +12%", factor: "Model reprices within hours — margin holds even as win rate dips", steepness: 5, shift: -30, kpi: { winRate: 63, priceAdoption: 84, marginImpact: 2.5 } },
 ];
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -342,16 +342,17 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
     });
     const indexCurves = TIMELINE_EVENTS.map(event => {
       const rawShifted = makeCurve(CURVE_SLOT, event.steepness);
+      const dy = event.shift ?? 0;
       const pts = Array.from({ length: n + 1 }, (_, i) => {
         const pt = rawShifted.sampleAt(i / n);
-        return { x: pt.x, y: pt.y };
+        return { x: pt.x, y: Math.max(CURVE_SLOT.y, pt.y + dy) };
       });
       return {
         d: "M " + pts.map(p => `${p.x},${p.y}`).join(" L "),
         pts,
         sampleAt: (t: number) => {
           const pt = rawShifted.sampleAt(t);
-          return { x: pt.x, y: pt.y };
+          return { x: pt.x, y: Math.max(CURVE_SLOT.y, pt.y + dy) };
         },
       };
     });
@@ -420,7 +421,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
     return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, [chartStep, isSpotlight, skipAnimation, onAutoAdvance, isActive]);
 
-  /* ── Timeline click-to-advance (step 7) ────────────── */
+  /* ── Timeline click-to-advance (step 6) ────────────── */
   const [indexPhase, setIndexPhase] = useState(0);
   useEffect(() => {
     if (!isActive) { setIndexPhase(0); return; }
@@ -452,17 +453,21 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
     setIndexMorphProgress(0);
     setKpiRevealed(false);
     if (skipAnimation || shareMode) { setIndexMorphProgress(1); setKpiRevealed(true); return; }
-    const CARD_DELAY = 600;
-    const MORPH_DURATION = 1400;
-    const KPI_DELAY = 400;
+    const CARD_DELAY = 200;
+    const MORPH_DURATION = 900;
+    const KPI_DELAY = 300;
+    const c1 = 1.70158;
+    const c3 = c1 + 1;
     let frame: number;
     const delayTimer = setTimeout(() => {
       let start = 0;
       const tick = (now: number) => {
         if (!start) start = now;
         const raw = Math.min(1, (now - start) / MORPH_DURATION);
-        setIndexMorphProgress(1 - Math.pow(1 - raw, 3));
+        const eased = 1 + c3 * Math.pow(raw - 1, 3) + c1 * Math.pow(raw - 1, 2);
+        setIndexMorphProgress(Math.max(0, eased));
         if (raw < 1) frame = requestAnimationFrame(tick);
+        else setIndexMorphProgress(1);
       };
       frame = requestAnimationFrame(tick);
     }, CARD_DELAY);
@@ -806,16 +811,18 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
                     exit={{ opacity: 0, y: -8 }}
                     transition={{ duration: 0.3, ease: "easeOut" }}
                   >
-                    <span
-                      className="rounded-full px-3.5 py-0.5 text-[11px] font-bold uppercase tracking-widest"
-                      style={{ backgroundColor: `${STRAT_BLUE}12`, color: STRAT_BLUE }}
-                    >
-                      {getMonthLabel(currentEvent.month)}
-                    </span>
-                    <span className="mt-1.5 text-[22px] font-bold leading-tight" style={{ color: NAVY }}>
-                      {currentEvent.label}
-                    </span>
-                    <span className="mt-0.5 text-[13px]" style={{ color: MUTED }}>
+                    <div className="flex items-center gap-2.5">
+                      <span
+                        className="rounded-full px-3 py-0.5 text-[11px] font-bold uppercase tracking-widest"
+                        style={{ backgroundColor: `${STRAT_BLUE}12`, color: STRAT_BLUE }}
+                      >
+                        {getMonthLabel(currentEvent.month)}
+                      </span>
+                      <span className="text-[22px] font-bold leading-tight" style={{ color: NAVY }}>
+                        {currentEvent.label}
+                      </span>
+                    </div>
+                    <span className="mt-1 text-[13px] font-medium" style={{ color: MUTED }}>
                       {currentEvent.factor}
                     </span>
                   </motion.div>
@@ -1029,15 +1036,16 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
               {/* Ghost "old" curve — shows previous shape during index shifts */}
               {isIndexShift && indexPhase > 0 && (
                 <motion.path
+                  key={`ghost-${indexPhase}`}
                   d={ghostIndexCurveD}
                   fill="none"
                   stroke={MUTED}
                   strokeWidth={1.5}
                   strokeDasharray="6 4"
                   strokeLinecap="round"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 0.25 }}
-                  transition={{ opacity: { duration: 0.6 } }}
+                  initial={{ opacity: 0.5 }}
+                  animate={{ opacity: 0.15 }}
+                  transition={{ opacity: { duration: 1.2, ease: "easeOut" } }}
                 />
               )}
 
