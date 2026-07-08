@@ -372,9 +372,9 @@ export function TopBar({
                             key={si}
                             onClick={() => handleNavigate(s.index, s.subStep)}
                             className={cn(
-                              "w-full rounded px-2.5 py-1 text-left text-xs transition-colors",
+                              "w-full rounded px-2.5 py-1 text-left text-xs font-medium transition-colors",
                               isSlideActive
-                                ? "bg-white/10 font-medium text-white"
+                                ? "bg-white/10 text-white"
                                 : "text-white/45 hover:bg-white/5 hover:text-white/70",
                             )}
                           >

@@ -19,7 +19,7 @@ const HEIGHT = 800;
 async function main() {
   const browser = await puppeteer.launch({ headless: true });
   const page = await browser.newPage();
-  await page.setViewport({ width: WIDTH, height: HEIGHT, deviceScaleFactor: 0.5 });
+  await page.setViewport({ width: WIDTH, height: HEIGHT, deviceScaleFactor: 2 });
 
   // Set session cookie to bypass auth
   await page.setCookie({

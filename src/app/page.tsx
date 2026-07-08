@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, ChevronDown, X, LayoutGrid, ZoomIn, ZoomOut, Sun, Moon, Pause, Play, RotateCcw } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, X, LayoutGrid, ZoomIn, ZoomOut, Sun, Moon, Pause, Play, RotateCcw, FileDown } from "lucide-react";
 import { AnimatePresence, motion, MotionConfig } from "framer-motion";
 import { type NavGroup, SlideNav, AudienceTopBar } from "@/components/slide-nav";
 import { useMode } from "@/lib/mode-context";
@@ -338,7 +338,7 @@ function ModelStatusRail({
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3, delay: 0.72 }}
         >
-          {drivers ? `${drivers.length} factors selected` : "31 factors tuned to your business"}
+          {drivers ? `${drivers.length} factors selected` : "31 factors made into 5"}
         </motion.span>
       </div>}
     </motion.div>
@@ -416,44 +416,44 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
     label: "1 | Design",
     subtitle: "One model built around your business",
     slides: [
-      { index: ONE_MODEL_INDEX, label: "Intro to pricing model", subStep: 0 },
-      { index: ONE_MODEL_INDEX, label: "Pricing model with ML and strat. guidance", subStep: 1 },
+      { index: ONE_MODEL_INDEX, label: "Model inputs", subStep: 0 },
+      { index: ONE_MODEL_INDEX, label: "ML & strategic guidance", subStep: 1 },
     ],
   },
   {
     label: "2 | Power",
     subtitle: "How the ML model finds pricing patterns",
     slides: [
-      { index: POWER_INDEX, label: "Too many prices to manually set", subStep: 0 },
-      { index: POWER_INDEX, label: "The model scans for patterns", subStep: 1 },
+      { index: POWER_INDEX, label: "The problem", subStep: 0 },
+      { index: POWER_INDEX, label: "Pattern scanning", subStep: 1 },
       { index: POWER_INDEX, label: "Customer factors", subStep: 2 },
       { index: POWER_INDEX, label: "Product factors", subStep: 3 },
       { index: POWER_INDEX, label: "Market factors", subStep: 4 },
       { index: POWER_INDEX, label: "Order factors", subStep: 5 },
-      { index: POWER_INDEX, label: "Customized factors feed the model", subStep: 6 },
-      { index: POWER_INDEX, label: "A single SKU-level price", subStep: 7 },
+      { index: POWER_INDEX, label: "Final factors", subStep: 6 },
+      { index: POWER_INDEX, label: "SKU-level price", subStep: 7 },
     ],
   },
   {
     label: "3 | Execute",
     subtitle: "SKU-level prices tailored to each customer",
     slides: [
-      { index: EXECUTE_INDEX, label: "Acme walkthrough", subStep: 0 },
-      { index: EXECUTE_INDEX, label: "Price adjusted for each customer", subStep: 1 },
+      { index: EXECUTE_INDEX, label: "Customer drivers", subStep: 0 },
+      { index: EXECUTE_INDEX, label: "Customer examples", subStep: 1 },
     ],
   },
   {
     label: "4 | Refine",
     subtitle: "Optimizing prices along the demand curve",
     slides: [
-      { index: REFINE_INDEX, label: "Refine section intro", subStep: 0 },
-      { index: REFINE_INDEX, label: "Your optimal demand curve", subStep: 1 },
-      { index: REFINE_INDEX, label: "Quickparts curve adjustment", subStep: 2 },
-      { index: REFINE_INDEX, label: "Acme curve adjustment", subStep: 3 },
-      { index: REFINE_INDEX, label: "Medsupply curve adjustment", subStep: 4 },
-      { index: REFINE_INDEX, label: "Every price optimized to the curve", subStep: 5 },
-      { index: REFINE_INDEX, label: "The market moves the curve", subStep: 6 },
-      { index: REFINE_INDEX, label: "Across your entire portfolio", subStep: 7 },
+      { index: REFINE_INDEX, label: "Market effects", subStep: 0 },
+      { index: REFINE_INDEX, label: "Demand curve", subStep: 1 },
+      { index: REFINE_INDEX, label: "Quickparts", subStep: 2 },
+      { index: REFINE_INDEX, label: "Acme", subStep: 3 },
+      { index: REFINE_INDEX, label: "Medsupply", subStep: 4 },
+      { index: REFINE_INDEX, label: "Price optimization", subStep: 5 },
+      { index: REFINE_INDEX, label: "Market changes", subStep: 6 },
+      { index: REFINE_INDEX, label: "Full portfolio", subStep: 7 },
     ],
   },
   {
@@ -461,7 +461,7 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
     subtitle: "Summary and next steps",
     slides: [
       { index: 6, label: "Summary" },
-      { index: 7, label: "Thank You" },
+      { index: 7, label: "Thank you" },
     ],
   },
 ];
@@ -491,7 +491,21 @@ export function Home() {
   const [visited, setVisited] = useState<Set<number>>(() => new Set([0]));
   const [slideSorterOpen, setSlideSorterOpen] = useState(false);
   const [sorterCols, setSorterCols] = useState(4);
-  const [navGroups, setNavGroups] = useState(DEFAULT_NAV_GROUPS);
+  const [navGroups, setNavGroups] = useState(() => {
+    if (typeof window === "undefined") return DEFAULT_NAV_GROUPS;
+    try {
+      const saved = localStorage.getItem("ml-explainer-slide-labels");
+      if (!saved) return DEFAULT_NAV_GROUPS;
+      const labels: Record<string, string> = JSON.parse(saved);
+      return DEFAULT_NAV_GROUPS.map((g, gi) => ({
+        ...g,
+        slides: g.slides.map((s, si) => {
+          const key = `${gi}-${si}`;
+          return key in labels ? { ...s, label: labels[key] } : s;
+        }),
+      }));
+    } catch { return DEFAULT_NAV_GROUPS; }
+  });
   const [darkMode, setDarkMode] = useState(false);
   const [glossaryOpen, setGlossaryOpen] = useState(false);
   const [presenterNavOpen, setPresenterNavOpen] = useState(false);
@@ -587,10 +601,221 @@ export function Home() {
           slides: g.slides.map((s, si) => (si === slideInGroupIndex ? { ...s, label: newLabel } : s)),
         };
       });
+      try {
+        const labels: Record<string, string> = {};
+        next.forEach((g, gi) => g.slides.forEach((s, si) => { labels[`${gi}-${si}`] = s.label; }));
+        localStorage.setItem("ml-explainer-slide-labels", JSON.stringify(labels));
+      } catch {}
       return next;
     });
   }, []);
 
+  const exportSorterPdf = useCallback(async () => {
+    const { jsPDF } = await import("jspdf");
+    const PAGE_W = 406.4;
+    const PAGE_H = 304.8;
+    const M = 16;
+    const contentW = PAGE_W - M * 2;
+
+    const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: [PAGE_H, PAGE_W] });
+
+    const grouped: { label: string; subtitle: string; steps: typeof allClickSteps }[] = [];
+    let curLabel = "";
+    for (const cs of allClickSteps) {
+      if (cs.groupLabel !== curLabel) {
+        curLabel = cs.groupLabel;
+        grouped.push({ label: cs.groupLabel, subtitle: cs.groupSubtitle, steps: [] });
+      }
+      grouped[grouped.length - 1].steps.push(cs);
+    }
+
+    const loadImage = (src: string): Promise<string> =>
+      new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+          const c = document.createElement("canvas");
+          c.width = img.naturalWidth;
+          c.height = img.naturalHeight;
+          c.getContext("2d")!.drawImage(img, 0, 0);
+          resolve(c.toDataURL("image/jpeg", 0.92));
+        };
+        img.onerror = () => resolve("");
+        img.src = src;
+      });
+
+    const SECTION_COLORS: Record<string, [number, number, number]> = {
+      "Introduction": [100, 116, 139],
+      "1 | Design": [0, 68, 106],
+      "2 | Power": [229, 105, 16],
+      "3 | Execute": [46, 125, 50],
+      "4 | Refine": [42, 123, 165],
+      "Closing": [100, 116, 139],
+    };
+
+    // ── Page 1: Bird's eye flowchart (white background) ──
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(22);
+    pdf.setTextColor(6, 40, 61);
+    pdf.text("Inside Your Dynamic Model", PAGE_W / 2, 22, { align: "center" });
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(11);
+    pdf.setTextColor(120, 130, 140);
+    pdf.text("Presentation Flow", PAGE_W / 2, 30, { align: "center" });
+
+    const BOX_GAP = 5;
+    const BOX_H = 10;
+    const SECTION_GAP = 10;
+    let flowY = 40;
+
+    for (let gi = 0; gi < grouped.length; gi++) {
+      const group = grouped[gi];
+      const rgb = SECTION_COLORS[group.label] ?? [100, 116, 139];
+
+      // Section header bar
+      pdf.setFillColor(rgb[0], rgb[1], rgb[2]);
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(11);
+      const headerW = pdf.getTextWidth(group.label.toUpperCase()) + 16;
+      pdf.roundedRect(M, flowY, headerW, 9, 1.5, 1.5, "F");
+      pdf.setTextColor(255, 255, 255);
+      pdf.text(group.label.toUpperCase(), M + 8, flowY + 6.2);
+
+      if (group.subtitle) {
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(9);
+        pdf.setTextColor(140, 150, 160);
+        pdf.text(group.subtitle, M + headerW + 5, flowY + 6.2);
+      }
+      flowY += 14;
+
+      // Step boxes in wrapping rows
+      const maxBoxW = 85;
+      const boxesPerRow = Math.floor((contentW + BOX_GAP) / (maxBoxW + BOX_GAP));
+      const boxW = (contentW - BOX_GAP * (boxesPerRow - 1)) / boxesPerRow;
+
+      for (let i = 0; i < group.steps.length; i++) {
+        const col = i % boxesPerRow;
+        const bx = M + col * (boxW + BOX_GAP);
+
+        if (col === 0 && i > 0) flowY += BOX_H + BOX_GAP;
+
+        pdf.setDrawColor(rgb[0], rgb[1], rgb[2]);
+        pdf.setLineWidth(0.4);
+        pdf.setFillColor(rgb[0], rgb[1], rgb[2]);
+        pdf.roundedRect(bx, flowY, boxW, BOX_H, 1.5, 1.5, "S");
+
+        // Number badge
+        pdf.roundedRect(bx + 1.5, flowY + 1.5, 5.5, BOX_H - 3, 1, 1, "F");
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(7);
+        pdf.setTextColor(255, 255, 255);
+        const numStr = String(i + 1);
+        const numW = pdf.getTextWidth(numStr);
+        pdf.text(numStr, bx + 1.5 + (5.5 - numW) / 2, flowY + BOX_H / 2 + 1.2);
+
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(7.5);
+        pdf.setTextColor(50, 50, 50);
+        const truncated = pdf.splitTextToSize(group.steps[i].label, boxW - 14)[0];
+        pdf.text(truncated, bx + 9, flowY + BOX_H / 2 + 1.2);
+
+        // Arrow between boxes
+        if (i < group.steps.length - 1 && col < boxesPerRow - 1) {
+          const ax = bx + boxW;
+          const ay = flowY + BOX_H / 2;
+          pdf.setDrawColor(rgb[0], rgb[1], rgb[2]);
+          pdf.setLineWidth(0.4);
+          pdf.line(ax + 0.8, ay, ax + BOX_GAP - 0.8, ay);
+          pdf.setFillColor(rgb[0], rgb[1], rgb[2]);
+          pdf.triangle(ax + BOX_GAP - 0.5, ay, ax + BOX_GAP - 2.5, ay - 1.2, ax + BOX_GAP - 2.5, ay + 1.2, "F");
+        }
+      }
+
+      flowY += BOX_H + SECTION_GAP;
+
+      // Arrow between sections
+      if (gi < grouped.length - 1) {
+        const ax = M + 10;
+        pdf.setDrawColor(180, 190, 200);
+        pdf.setLineWidth(0.4);
+        pdf.line(ax, flowY - SECTION_GAP + 2, ax, flowY - 2);
+        pdf.setFillColor(180, 190, 200);
+        pdf.triangle(ax, flowY - 1, ax - 1.5, flowY - 4, ax + 1.5, flowY - 4, "F");
+      }
+    }
+
+    // ── Slide detail pages ──
+    let globalNum = 0;
+    for (let gi = 0; gi < grouped.length; gi++) {
+      const group = grouped[gi];
+      const rgb = SECTION_COLORS[group.label] ?? [100, 116, 139];
+
+      // Dark section divider page
+      pdf.addPage();
+      pdf.setFillColor(6, 40, 61);
+      pdf.rect(0, 0, PAGE_W, PAGE_H, "F");
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(32);
+      pdf.setTextColor(255, 255, 255);
+      pdf.text(group.label.toUpperCase(), PAGE_W / 2, PAGE_H / 2 - 8, { align: "center" });
+      if (group.subtitle) {
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(14);
+        pdf.setTextColor(180, 200, 220);
+        pdf.text(group.subtitle, PAGE_W / 2, PAGE_H / 2 + 6, { align: "center" });
+      }
+      pdf.setFontSize(11);
+      pdf.setTextColor(130, 150, 170);
+      pdf.text(`${group.steps.length} ${group.steps.length === 1 ? "step" : "steps"}`, PAGE_W / 2, PAGE_H / 2 + 18, { align: "center" });
+
+      // One page per slide
+      for (let si = 0; si < group.steps.length; si++) {
+        const cs = group.steps[si];
+        globalNum++;
+        pdf.addPage();
+
+        // Slim colored title line
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(12);
+        pdf.setTextColor(rgb[0], rgb[1], rgb[2]);
+        pdf.text(`${group.label}`, M, M + 5);
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(10);
+        pdf.setTextColor(140, 140, 140);
+        pdf.text(`  Slide ${si + 1} / ${group.steps.length}`, M + pdf.getTextWidth(`${group.label}`) + 2, M + 5);
+
+        // Thin colored accent line
+        pdf.setDrawColor(rgb[0], rgb[1], rgb[2]);
+        pdf.setLineWidth(0.6);
+        pdf.line(M, M + 9, M + contentW, M + 9);
+
+        // Full-width slide image
+        const imgTop = M + 14;
+        const imgW = contentW;
+        const imgH = imgW * (10 / 16);
+        const thumbUrl = `/slide-thumbnails/slide-${cs.slideIndex}-${cs.stepIndex}.jpg`;
+        const imgData = await loadImage(thumbUrl);
+
+        pdf.setDrawColor(220, 220, 220);
+        pdf.setLineWidth(0.2);
+        pdf.roundedRect(M, imgTop, imgW, imgH, 1.5, 1.5, "S");
+        if (imgData) {
+          pdf.addImage(imgData, "JPEG", M + 0.3, imgTop + 0.3, imgW - 0.6, imgH - 0.6);
+        }
+
+        // Label below
+        const labelY = imgTop + imgH + 7;
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(13);
+        pdf.setTextColor(30, 30, 30);
+        const labelLines = pdf.splitTextToSize(cs.label, contentW);
+        pdf.text(labelLines.slice(0, 2), M, labelY);
+      }
+    }
+
+    pdf.save("Inside Your Dynamic Model — Slides.pdf");
+  }, [allClickSteps]);
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
@@ -998,6 +1223,9 @@ export function Home() {
               <span className="text-xs text-gray-400">
                 {allClickSteps.length} steps
               </span>
+              <span className="text-[10px] text-gray-300">
+                · Click any label to edit · Exports with your edits
+              </span>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
@@ -1029,6 +1257,13 @@ export function Home() {
                   {sorterCols} col
                 </span>
               </div>
+              <button
+                onClick={exportSorterPdf}
+                className="flex items-center gap-1.5 rounded-md border border-[#00446A]/20 bg-[#00446A]/5 px-3 py-1.5 text-xs font-medium text-[#00446A] transition-colors hover:bg-[#00446A]/10"
+              >
+                <FileDown className="size-3.5" />
+                Export PDF
+              </button>
               <button
                 onClick={() => setSlideSorterOpen(false)}
                 className="flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
@@ -1128,8 +1363,9 @@ export function Home() {
                                 value={cs.label}
                                 onChange={(e) => updateSlideLabel(cs.groupIndex, cs.slideInGroupIndex, e.target.value)}
                                 onClick={(e) => e.stopPropagation()}
+                                placeholder="Click to add label…"
                                 className={cn(
-                                  "min-w-0 flex-1 resize-none border-0 bg-transparent font-medium leading-snug outline-none focus:ring-1 focus:ring-[#00446A]/30 rounded px-1 -mx-1",
+                                  "min-w-0 flex-1 resize-none rounded border border-transparent bg-transparent px-1 -mx-1 font-medium leading-snug outline-none transition-colors hover:border-gray-200 hover:bg-gray-50 focus:border-[#00446A]/30 focus:bg-white focus:ring-1 focus:ring-[#00446A]/30",
                                   sorterCols >= 6 ? "text-[10px]" : "text-xs",
                                   isActive ? "text-gray-900" : "text-gray-600",
                                 )}
