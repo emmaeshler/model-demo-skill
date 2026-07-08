@@ -1282,9 +1282,7 @@ export function Home() {
 
       <AnimatePresence mode="wait">
       {railVisible && (
-        (slide === REFINE_INDEX && subStep >= 5) ? (
-          <MiniExecuteConnector key="mini-exec" refineStep={subStep} onSelectCustomer={(step) => setSubStep(step)} />
-        ) : (slide === EXECUTE_INDEX && subStep >= 4) ? (
+        (slide === EXECUTE_INDEX && subStep >= 3) ? (
           <MiniExecuteConnector key="mini-exec-fly" flyIn />
         ) : (
           <ModelStatusRail
