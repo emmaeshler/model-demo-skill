@@ -974,7 +974,7 @@ export function ExecuteSlide({
 
 
           {/* Dot navigation (self mode only) */}
-          {!isPresenter && revealPhase >= 1 && revealPhase < 4 && (
+          {!isPresenter && revealPhase >= 1 && revealPhase <= selfMaxPhase && (
             <motion.div
               className="flex items-center gap-3 mt-2 mb-1"
               initial={{ opacity: 0 }}
@@ -992,10 +992,11 @@ export function ExecuteSlide({
                 </svg>
               </button>
               <div className="flex items-center gap-1.5">
-                {[1, 2, 3, 4].map(p => (
-                  <div
+                {Array.from({ length: selfMaxPhase }, (_, i) => i + 1).map(p => (
+                  <button
                     key={p}
-                    className="rounded-full transition-all duration-300"
+                    onClick={() => setRevealPhase(p)}
+                    className="rounded-full transition-all duration-300 cursor-pointer"
                     style={{
                       width: p === revealPhase ? 8 : 6,
                       height: p === revealPhase ? 8 : 6,
@@ -1005,9 +1006,10 @@ export function ExecuteSlide({
                 ))}
               </div>
               <button
-                onClick={() => setRevealPhase(p => Math.min(p + 1, 4))}
+                onClick={() => setRevealPhase(p => Math.min(p + 1, selfMaxPhase))}
                 className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors hover:bg-black/5"
-                style={{ color: NAVY }}
+                style={{ color: NAVY, opacity: revealPhase >= selfMaxPhase ? 0.25 : 1 }}
+                disabled={revealPhase >= selfMaxPhase}
               >
                 <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
                   <path d="M7 4l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />

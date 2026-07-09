@@ -1521,57 +1521,37 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                               >
                                 5 Model Drivers
                               </motion.span>
-                              <div style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "center", maxWidth: 720, alignItems: "flex-end" }}>
-                                {SELECTED_FACTORS.slice().sort((a, b) => b.weight - a.weight).map((sf, si) => {
-                                  const scale = sf.weight === 4 ? 1.12 : sf.weight === 2 ? 0.9 : 1;
-                                  const barCount = sf.weight;
-                                  return (
-                                    <motion.div
-                                      key={sf.label}
-                                      style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}
-                                      initial={{ opacity: 0, scale: 0.7, y: 10 }}
-                                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                                      transition={{ duration: 0.5, delay: si * 0.1, ease: [0.22, 1, 0.36, 1] }}
-                                    >
-                                      <motion.span
-                                        style={{
-                                          display: "inline-flex",
-                                          alignItems: "center",
-                                          justifyContent: "center",
-                                          borderRadius: 8,
-                                          border: `2px solid ${TEAL}`,
-                                          padding: sf.weight >= 4 ? "16px 26px" : sf.weight <= 2 ? "10px 18px" : "14px 24px",
-                                          fontSize: sf.weight >= 4 ? 18 : sf.weight <= 2 ? 15 : 17,
-                                          fontWeight: 700,
-                                          fontFamily: "inherit",
-                                          whiteSpace: "nowrap",
-                                          color: TEAL,
-                                          backgroundColor: "#E5F5FA",
-                                          transform: `scale(${scale})`,
-                                        }}
-                                        animate={{ boxShadow: sf.weight >= 4 ? `0 0 18px ${TEAL}40` : `0 0 8px ${TEAL}20` }}
-                                      >
-                                        {sf.label}
-                                      </motion.span>
-                                      <div style={{ display: "flex", gap: 2, alignItems: "center" }}>
-                                        {Array.from({ length: 4 }, (_, bi) => (
-                                          <div
-                                            key={bi}
-                                            style={{
-                                              width: 12, height: 3, borderRadius: 1.5,
-                                              backgroundColor: bi < barCount ? TEAL : `${TEAL}25`,
-                                            }}
-                                          />
-                                        ))}
-                                      </div>
-                                      {sf.note && (
-                                        <span style={{ fontSize: 10, fontWeight: 600, color: TEAL, letterSpacing: "0.04em" }}>
-                                          {sf.note}
-                                        </span>
-                                      )}
-                                    </motion.div>
-                                  );
-                                })}
+                              <div style={{ display: "flex", flexWrap: "wrap", gap: 20, justifyContent: "center", maxWidth: 1000 }}>
+                                {SELECTED_FACTORS.map((sf, si) => (
+                                  <motion.span
+                                    key={sf.label}
+                                    style={{
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: 12,
+                                      borderRadius: 12,
+                                      border: `2.5px solid ${TEAL}`,
+                                      padding: "24px 38px",
+                                      fontSize: 26,
+                                      fontWeight: 700,
+                                      fontFamily: "inherit",
+                                      whiteSpace: "nowrap",
+                                      color: TEAL,
+                                      backgroundColor: "#E5F5FA",
+                                    }}
+                                    initial={{ opacity: 0, scale: 0.7, y: 10 }}
+                                    animate={{ opacity: 1, scale: 1, y: 0, boxShadow: `0 0 16px ${TEAL}30` }}
+                                    transition={{ duration: 0.5, delay: si * 0.1, ease: [0.22, 1, 0.36, 1] }}
+                                  >
+                                    {sf.label}
+                                    <span style={{
+                                      fontSize: 22, fontWeight: 600, color: `${TEAL}90`,
+                                      borderLeft: `1.5px solid ${TEAL}30`, paddingLeft: 12, marginLeft: 4,
+                                    }}>
+                                      {sf.weight}×
+                                    </span>
+                                  </motion.span>
+                                ))}
                               </div>
                             </div>
 

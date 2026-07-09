@@ -713,7 +713,7 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
                 animate={{ opacity: portfolioPhase >= 4 ? 1 : 0, y: portfolioPhase >= 4 ? 0 : 6 }}
                 transition={{ duration: 0.4 }}
               >
-                Every product segment gets its own demand curve — continuously{" "}
+                Every product segment gets its own model — continuously{" "}
                 <span className="font-bold" style={{ color: NAVY, whiteSpace: "nowrap", textDecoration: "underline", textDecorationColor: STRAT_BLUE, textUnderlineOffset: "4px", textDecorationThickness: "2px" }}>recalibrated as the market shifts</span>.
               </motion.p>
             </motion.div>
@@ -735,7 +735,7 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
                   <>
                     The market moves.{" "}
                     <span className="relative inline-block">
-                      The curve moves with it.
+                      The model moves with it.
                       <motion.span
                         className="absolute left-0 right-0 h-[2.5px] rounded-full"
                         style={{ backgroundColor: STRAT_BLUE, bottom: -3, transformOrigin: "left" }}
@@ -856,12 +856,12 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
                           >
                             {getMonthLabel(0)}
                           </span>
-                          <span className="text-[22px] font-bold leading-tight" style={{ color: NAVY }}>
+                          <span className="text-[22px] font-bold leading-tight" style={{ color: ORANGE }}>
                             Your market, day 1
                           </span>
                         </div>
                         <span className="mt-1 text-[13px] font-medium" style={{ color: MUTED }}>
-                          Every price aligned to the current demand curve
+                          Your day 1 baseline — and where the model prices from here.
                         </span>
                       </>
                     )}
@@ -1085,21 +1085,23 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
                   transition={{ duration: 0.8 }}
                 />
               )}
-              {isIndexShift && (
-                <motion.text
-                  x={curve.sampleAt(0.85).x}
-                  y={curve.sampleAt(0.85).y - 6}
-                  fontSize="5.5"
-                  fontWeight="600"
-                  fill={`${NAVY}35`}
-                  textAnchor="middle"
-                  style={{ fontFamily: "inherit" }}
+              {/* Timeline legend — top-right of chart */}
+              {isIndexShift && indexPhase > 0 && (
+                <motion.g
                   initial={{ opacity: 0 }}
-                  animate={{ opacity: indexPhase > 0 ? 1 : 0 }}
-                  transition={{ duration: 0.5, delay: 0.3 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 0.6 }}
                 >
-                  Market demand
-                </motion.text>
+                  {/* Recommended price */}
+                  <line x1={CURVE_SLOT.x + CURVE_SLOT.w - 90} y1={CURVE_SLOT.y + 8} x2={CURVE_SLOT.x + CURVE_SLOT.w - 76} y2={CURVE_SLOT.y + 8} stroke={NAVY} strokeWidth={2} strokeLinecap="round" />
+                  <text x={CURVE_SLOT.x + CURVE_SLOT.w - 72} y={CURVE_SLOT.y + 10.5} fontSize="5.5" fontWeight="700" fill={NAVY} style={{ fontFamily: "inherit" }}>Recommended price</text>
+                  {/* Prior price */}
+                  <line x1={CURVE_SLOT.x + CURVE_SLOT.w - 90} y1={CURVE_SLOT.y + 19} x2={CURVE_SLOT.x + CURVE_SLOT.w - 76} y2={CURVE_SLOT.y + 19} stroke={MUTED} strokeWidth={1.5} strokeDasharray="4 3" strokeLinecap="round" />
+                  <text x={CURVE_SLOT.x + CURVE_SLOT.w - 72} y={CURVE_SLOT.y + 21.5} fontSize="5.5" fontWeight="600" fill={MUTED} style={{ fontFamily: "inherit" }}>Prior price</text>
+                  {/* Day 1 baseline */}
+                  <line x1={CURVE_SLOT.x + CURVE_SLOT.w - 90} y1={CURVE_SLOT.y + 30} x2={CURVE_SLOT.x + CURVE_SLOT.w - 76} y2={CURVE_SLOT.y + 30} stroke={`${NAVY}30`} strokeWidth={1.8} strokeLinecap="round" />
+                  <text x={CURVE_SLOT.x + CURVE_SLOT.w - 72} y={CURVE_SLOT.y + 32.5} fontSize="5.5" fontWeight="600" fill={`${NAVY}40`} style={{ fontFamily: "inherit" }}>Day 1 baseline</text>
+                </motion.g>
               )}
 
               {/* Ghost "old" curve — shows previous price schedule during index shifts */}
@@ -1157,40 +1159,7 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
                 </motion.text>
               )}
 
-              {/* Timeline curve labels — "Recommended price" on the bold line, "Previous checkpoint" on dashed */}
-              {isIndexShift && indexPhase > 0 && activeIndexCurve && (
-                <>
-                  <motion.text
-                    x={activeIndexCurve.sampleAt(0.15).x}
-                    y={activeIndexCurve.sampleAt(0.15).y - 8}
-                    fontSize="5.5"
-                    fontWeight="700"
-                    fill={NAVY}
-                    textAnchor="middle"
-                    style={{ fontFamily: "inherit" }}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 0.7 }}
-                    transition={{ duration: 0.5, delay: 0.8 }}
-                  >
-                    Recommended price
-                  </motion.text>
-                  <motion.text
-                    key={`ghost-label-${indexPhase}`}
-                    x={(indexMorphFrom > 0 ? curve.indexCurves[indexMorphFrom - 1] : curve).sampleAt(0.15).x}
-                    y={(indexMorphFrom > 0 ? curve.indexCurves[indexMorphFrom - 1] : curve).sampleAt(0.15).y - 8}
-                    fontSize="5"
-                    fontWeight="600"
-                    fill={MUTED}
-                    textAnchor="middle"
-                    style={{ fontFamily: "inherit" }}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 0.4 }}
-                    transition={{ duration: 0.5, delay: 0.5 }}
-                  >
-                    Previous checkpoint
-                  </motion.text>
-                </>
-              )}
+              {/* Curve labels now handled by legend in top-right */}
 
               {/* Scatter dots */}
               {SCATTER_DOTS.map((dot, i) => {
@@ -1534,7 +1503,7 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
 
       {/* KPI sidebar — visible after first timeline event */}
       <AnimatePresence>
-        {isIndexShift && indexPhase > 0 && (
+        {isIndexShift && indexIntroPhase >= 2 && (
           <motion.div
             key="kpi-sidebar"
             className="absolute right-0 top-0 bottom-0 z-20 flex flex-col justify-center gap-3 px-3 pb-16"
@@ -1551,7 +1520,19 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
                 {Math.round(currentKpi.winRate)}%
               </div>
               <AnimatePresence mode="wait">
-                {kpiRevealed && indexPhase > 0 && kpiDelta.winRate !== 0 && (
+                {indexPhase === 0 ? (
+                  <motion.div
+                    key="wr-baseline"
+                    className="text-[11px] font-semibold mt-1"
+                    style={{ color: MUTED }}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.35, ease: "easeOut" }}
+                  >
+                    Baseline
+                  </motion.div>
+                ) : kpiRevealed && kpiDelta.winRate !== 0 ? (
                   <motion.div
                     key={`wr-${indexPhase}`}
                     className="text-[11px] font-semibold mt-1"
@@ -1561,9 +1542,9 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
                     exit={{ opacity: 0, y: -4 }}
                     transition={{ duration: 0.35, ease: "easeOut" }}
                   >
-                    {kpiDelta.winRate > 0 ? "↗" : "↘"} {kpiDelta.winRate > 0 ? "+" : ""}{kpiDelta.winRate} pts this month
+                    {kpiDelta.winRate > 0 ? "↗" : "↘"} {kpiDelta.winRate > 0 ? "+" : ""}{kpiDelta.winRate} pts vs. last checkpoint
                   </motion.div>
-                )}
+                ) : null}
               </AnimatePresence>
             </div>
 
@@ -1574,7 +1555,19 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
                 {Math.round(currentKpi.priceAdoption)}%
               </div>
               <AnimatePresence mode="wait">
-                {kpiRevealed && indexPhase > 0 && (
+                {indexPhase === 0 ? (
+                  <motion.div
+                    key="pa-baseline"
+                    className="text-[11px] font-semibold mt-1"
+                    style={{ color: MUTED }}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.35, ease: "easeOut" }}
+                  >
+                    Baseline
+                  </motion.div>
+                ) : kpiRevealed ? (
                   <motion.div
                     key={`pa-${indexPhase}`}
                     className="text-[11px] font-semibold mt-1"
@@ -1586,7 +1579,7 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
                   >
                     {kpiDelta.priceAdoption > 0 ? `↗ +${kpiDelta.priceAdoption} pts` : kpiDelta.priceAdoption < 0 ? `↘ ${kpiDelta.priceAdoption} pts` : "— No change"}
                   </motion.div>
-                )}
+                ) : null}
               </AnimatePresence>
             </div>
 
@@ -1600,12 +1593,27 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
               style={{ border: "1.5px solid transparent" }}
               transition={{ duration: 0.4 }}
             >
-              <div className="text-[11px] font-semibold tracking-wide" style={{ color: MUTED }}>Margin impact</div>
+              <div className="flex items-baseline gap-1.5">
+                <div className="text-[11px] font-semibold tracking-wide" style={{ color: MUTED }}>Margin impact</div>
+                <div className="text-[8px] font-medium" style={{ color: `${MUTED}90` }}>vs. no-model repricing</div>
+              </div>
               <div className="text-[26px] font-bold tabular-nums leading-tight mt-0.5" style={{ color: kpiRevealed && indexPhase > 0 ? (kpiDelta.marginImpact >= 0 ? GREEN : RED) : NAVY }}>
                 +{currentKpi.marginImpact.toFixed(1)}%
               </div>
               <AnimatePresence mode="wait">
-                {kpiRevealed && indexPhase > 0 && kpiDelta.marginImpact !== 0 && (
+                {indexPhase === 0 ? (
+                  <motion.div
+                    key="mi-baseline"
+                    className="text-[11px] font-semibold mt-1"
+                    style={{ color: MUTED }}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.35, ease: "easeOut" }}
+                  >
+                    Baseline
+                  </motion.div>
+                ) : kpiRevealed && kpiDelta.marginImpact !== 0 ? (
                   <motion.div
                     key={`mi-${indexPhase}`}
                     className="text-[11px] font-semibold mt-1"
@@ -1615,9 +1623,9 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
                     exit={{ opacity: 0, y: -4 }}
                     transition={{ duration: 0.35, ease: "easeOut" }}
                   >
-                    {kpiDelta.marginImpact > 0 ? "↗" : "↘"} {kpiDelta.marginImpact > 0 ? "+" : ""}{kpiDelta.marginImpact} after {kpiDelta.eventLabel.toLowerCase()}
+                    {kpiDelta.marginImpact > 0 ? "↗" : "↘"} {kpiDelta.marginImpact > 0 ? "+" : ""}{kpiDelta.marginImpact} vs. last checkpoint
                   </motion.div>
-                )}
+                ) : null}
               </AnimatePresence>
             </motion.div>
           </motion.div>

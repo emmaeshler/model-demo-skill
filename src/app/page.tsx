@@ -13,6 +13,7 @@ import { OneModelSlide, ONE_MODEL_TOTAL_STEPS } from "@/components/slides/one-mo
 import { PowerSlide, POWER_TOTAL_STEPS } from "@/components/slides/power-slide";
 import { ExecuteSlide, EXECUTE_TOTAL_STEPS } from "@/components/slides/execute-slide";
 import { RefineSlide, REFINE_TOTAL_STEPS } from "@/components/slides/refine-slide";
+import { RefineSlideV2, REFINE_V2_TOTAL_STEPS } from "@/components/slides/refine-slide-v2";
 import { ClosingSummarySlide } from "@/components/slides/closing-summary";
 import { AnimationGlossary } from "@/components/animation-glossary";
 
@@ -21,6 +22,7 @@ const MemoOneModel = memo(OneModelSlide);
 const MemoPower = memo(PowerSlide);
 const MemoExecute = memo(ExecuteSlide);
 const MemoRefine = memo(RefineSlide);
+const MemoRefineV2 = memo(RefineSlideV2);
 const MemoClosing = memo(ClosingSummarySlide);
 
 type SlideKind =
@@ -30,6 +32,7 @@ type SlideKind =
   | "power"
   | "execute"
   | "refine"
+  | "refine-v2"
   | "closing-summary"
   | "end";
 
@@ -49,6 +52,8 @@ const SLIDES: SlideConfig[] = [
   { kind: "execute" },
   // Section 4: Refine
   { kind: "refine" },
+  // Section 4b: Refine (v2 — two-curve model)
+  { kind: "refine-v2" },
   { kind: "closing-summary" },
   { kind: "end" },
 ];
@@ -58,6 +63,7 @@ const ONE_MODEL_INDEX = 2;
 const POWER_INDEX = 3;
 const EXECUTE_INDEX = 4;
 const REFINE_INDEX = 5;
+const REFINE_V2_INDEX = 6;
 
 const SUB_STEP_CONFIG: Record<number, number> = {
   [OVERVIEW_INDEX]: OVERVIEW_TOTAL_STEPS,
@@ -65,6 +71,7 @@ const SUB_STEP_CONFIG: Record<number, number> = {
   [POWER_INDEX]: POWER_TOTAL_STEPS,
   [EXECUTE_INDEX]: EXECUTE_TOTAL_STEPS,
   [REFINE_INDEX]: REFINE_TOTAL_STEPS,
+  [REFINE_V2_INDEX]: REFINE_V2_TOTAL_STEPS,
 };
 
 const EXECUTE_PRESENTER_STEPS = 4;
@@ -132,10 +139,10 @@ const RAIL_CONFIG: Record<string, RailStepConfig> = {
   [`${POWER_INDEX}-10`]: { rail: "model", engine: null,    categories: ALL_CATS,      drivers: false, showEngine: true, showFactors: true,  driversFlyIn: true },
 
   // ── Execute (slide 4) ── model rail for steps 0-2, mini-exec for 3 ──
-  [`${EXECUTE_INDEX}-0`]: { rail: "model",     engine: "both", categories: ["customer", "order"], drivers: true, showEngine: false, showFactors: false, driversFlyIn: false },
-  [`${EXECUTE_INDEX}-1`]: { rail: "model",     engine: "both", categories: ["customer"],          drivers: true, showEngine: false, showFactors: false, driversFlyIn: false },
-  [`${EXECUTE_INDEX}-2`]: { rail: "model",     engine: null,   categories: [],                    drivers: true, showEngine: false, showFactors: false, driversFlyIn: false },
-  [`${EXECUTE_INDEX}-3`]: { rail: "mini-exec", engine: null,   categories: [],                    drivers: true, showEngine: false, showFactors: false, driversFlyIn: false },
+  [`${EXECUTE_INDEX}-0`]: { rail: "model",     engine: null,   categories: ALL_CATS,             drivers: false, showEngine: true,  showFactors: true,  driversFlyIn: false },
+  [`${EXECUTE_INDEX}-1`]: { rail: "mini-exec", engine: null,   categories: [],                    drivers: true,  showEngine: false, showFactors: false, driversFlyIn: false },
+  [`${EXECUTE_INDEX}-2`]: { rail: "mini-exec", engine: null,   categories: [],                    drivers: true,  showEngine: false, showFactors: false, driversFlyIn: false },
+  [`${EXECUTE_INDEX}-3`]: { rail: "mini-exec", engine: null,   categories: [],                    drivers: true,  showEngine: false, showFactors: false, driversFlyIn: false },
 
   // ── Refine (slide 5) ── mini-exec rail, steps 0-6; no rail on step 7 ──
   [`${REFINE_INDEX}-0`]: { rail: "mini-exec", engine: null, categories: [],                    drivers: true, showEngine: false, showFactors: false, driversFlyIn: false },
@@ -145,6 +152,15 @@ const RAIL_CONFIG: Record<string, RailStepConfig> = {
   [`${REFINE_INDEX}-4`]: { rail: "mini-exec", engine: "ml", categories: ["customer"],           drivers: true, showEngine: false, showFactors: false, driversFlyIn: false, activeCustomer: 2, refineStepForCustomer: 4 },
   [`${REFINE_INDEX}-5`]: { rail: "mini-exec", engine: "ml", categories: ["customer"],           drivers: true, showEngine: false, showFactors: false, driversFlyIn: false },
   [`${REFINE_INDEX}-6`]: { rail: "mini-exec", engine: "ml", categories: ["customer", "market"], drivers: true, showEngine: false, showFactors: false, driversFlyIn: false },
+
+  // ── Refine v2 (slide 6) ── same rail config as original ──
+  [`${REFINE_V2_INDEX}-0`]: { rail: "mini-exec", engine: null, categories: [],                    drivers: true, showEngine: false, showFactors: false, driversFlyIn: false },
+  [`${REFINE_V2_INDEX}-1`]: { rail: "mini-exec", engine: "ml", categories: ["customer", "market"], drivers: true, showEngine: false, showFactors: false, driversFlyIn: false },
+  [`${REFINE_V2_INDEX}-2`]: { rail: "mini-exec", engine: "ml", categories: ["customer"],           drivers: true, showEngine: false, showFactors: false, driversFlyIn: false, activeCustomer: 1, refineStepForCustomer: 2 },
+  [`${REFINE_V2_INDEX}-3`]: { rail: "mini-exec", engine: "ml", categories: ["customer"],           drivers: true, showEngine: false, showFactors: false, driversFlyIn: false, activeCustomer: 0, refineStepForCustomer: 3 },
+  [`${REFINE_V2_INDEX}-4`]: { rail: "mini-exec", engine: "ml", categories: ["customer"],           drivers: true, showEngine: false, showFactors: false, driversFlyIn: false, activeCustomer: 2, refineStepForCustomer: 4 },
+  [`${REFINE_V2_INDEX}-5`]: { rail: "mini-exec", engine: "ml", categories: ["customer"],           drivers: true, showEngine: false, showFactors: false, driversFlyIn: false },
+  [`${REFINE_V2_INDEX}-6`]: { rail: "mini-exec", engine: "ml", categories: ["customer", "market"], drivers: true, showEngine: false, showFactors: false, driversFlyIn: false },
 };
 
 function ModelStatusRail({
@@ -395,7 +411,9 @@ function MiniExecuteConnector({ refineStep, flyIn = false, onSelectCustomer, tim
   const [flyX] = useState(() => typeof window !== "undefined" ? window.innerWidth * 0.45 : 640);
   const [flyY] = useState(() => typeof window !== "undefined" ? window.innerHeight * 0.22 : 200);
 
-  const railCfg = refineStep !== undefined ? RAIL_CONFIG[`${REFINE_INDEX}-${refineStep}`] : undefined;
+  const railCfg = refineStep !== undefined
+    ? (RAIL_CONFIG[`${REFINE_INDEX}-${refineStep}`] ?? RAIL_CONFIG[`${REFINE_V2_INDEX}-${refineStep}`])
+    : undefined;
   const activeIdx = railCfg?.activeCustomer ?? -1;
   const adjustedSet = useMemo(() => {
     const s = new Set<number>();
@@ -515,28 +533,7 @@ function MiniExecuteConnector({ refineStep, flyIn = false, onSelectCustomer, tim
   );
 }
 
-function ExecuteTransitionOverlay({ onAdvance, appearDelay = 0 }: { onAdvance: () => void; appearDelay?: number }) {
-  return (
-    <motion.div
-      className="absolute inset-0 z-30 flex items-center justify-center cursor-pointer"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1, transition: { duration: 0.35, delay: appearDelay } }}
-      exit={{ opacity: 0, transition: { duration: 0.15, delay: 0 } }}
-      onClick={onAdvance}
-    >
-      <div className="absolute inset-0 bg-[var(--i2p-bg,#EEF2F6)]/80 backdrop-blur-sm" />
-      <motion.span
-        className="relative z-10 rounded-xl px-6 py-3 text-sm font-semibold"
-        style={{ backgroundColor: "#21A5D50A", color: "#21A5D5", border: "1.5px solid #21A5D520" }}
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0, transition: { delay: appearDelay + 0.5, duration: 0.4 } }}
-        exit={{ opacity: 0, transition: { duration: 0.1, delay: 0 } }}
-      >
-        Click to continue &#8250;
-      </motion.span>
-    </motion.div>
-  );
-}
+
 
 const DEFAULT_NAV_GROUPS: NavGroup[] = [
   {
@@ -594,11 +591,25 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    label: "4b | Refine (v2)",
+    subtitle: "Two-curve model: demand curve + recommended price",
+    slides: [
+      { index: REFINE_V2_INDEX, label: "Market effects", subStep: 0 },
+      { index: REFINE_V2_INDEX, label: "Pricing curve", subStep: 1 },
+      { index: REFINE_V2_INDEX, label: "Quickparts", subStep: 2 },
+      { index: REFINE_V2_INDEX, label: "Acme", subStep: 3 },
+      { index: REFINE_V2_INDEX, label: "Medsupply", subStep: 4 },
+      { index: REFINE_V2_INDEX, label: "Price optimization", subStep: 5 },
+      { index: REFINE_V2_INDEX, label: "Market changes", subStep: 6 },
+      { index: REFINE_V2_INDEX, label: "Full portfolio", subStep: 7 },
+    ],
+  },
+  {
     label: "Closing",
     subtitle: "Summary and next steps",
     slides: [
-      { index: 6, label: "Summary" },
-      { index: 7, label: "Thank you" },
+      { index: 7, label: "Summary" },
+      { index: 8, label: "Thank you" },
     ],
   },
 ];
@@ -969,6 +980,28 @@ export function Home() {
   }, [slide]);
 
   useEffect(() => {
+    if (mode === "presenter") {
+      document.title = "Presenter Screen — Dynamic Model";
+      const presenterIcon =
+        '<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80" fill="none">' +
+        '<rect x="8" y="12" width="64" height="40" rx="4" fill="#003D5C"/>' +
+        '<rect x="14" y="18" width="52" height="28" rx="2" fill="#FF6B00"/>' +
+        '<polygon points="36,24 36,40 50,32" fill="white"/>' +
+        '<rect x="38" y="52" width="4" height="10" fill="#003D5C"/>' +
+        '<rect x="26" y="62" width="28" height="4" rx="2" fill="#003D5C"/>' +
+        '</svg>';
+      const link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+      if (link) {
+        link.href = "data:image/svg+xml," + encodeURIComponent(presenterIcon);
+      }
+    } else {
+      document.title = "Inside Your Dynamic Model | INSIGHT2PROFIT";
+      const link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+      if (link) link.href = "/icon.svg";
+    }
+  }, [mode]);
+
+  useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode);
   }, [darkMode]);
 
@@ -1068,15 +1101,11 @@ export function Home() {
   }, []);
 
   const nextPosition = useMemo(() => {
-    const currentMax = subStepConfig[slide] ?? 0;
-    if (currentMax > 0 && subStep < currentMax - 1) {
-      return { slideIndex: slide, stepIndex: subStep + 1 };
-    }
     let next = slide + 1;
     while (presenterSkipped.has(next) && next < total) next++;
     if (next >= total) return null;
     return { slideIndex: next, stepIndex: 0 };
-  }, [slide, subStep, subStepConfig, presenterSkipped, total]);
+  }, [slide, presenterSkipped, total]);
 
   const currentClickIndex = useMemo(
     () => allClickSteps.findIndex((s) => s.slideIndex === slide && s.stepIndex === subStep),
@@ -1299,6 +1328,15 @@ export function Home() {
                           onTimelinePhase={isActive ? handleRefineTimelinePhase : undefined}
                         />
                       )}
+                      {sc.kind === "refine-v2" && (
+                        <MemoRefineV2
+                          step={isActive ? subStep : 0}
+                          onAutoAdvance={isActive && !skipAnimation ? () => navigate(slide + 1) : undefined}
+                          skipAnimation={effectiveSkip}
+                          isActive={isActive}
+                          onTimelinePhase={isActive ? handleRefineTimelinePhase : undefined}
+                        />
+                      )}
                       {sc.kind === "execute" && <MemoExecute step={isActive ? subStep : 0} skipAnimation={effectiveSkip} isActive={isActive} onCustomerChange={isActive ? handleExecuteCustomerChange : undefined} />}
                       {sc.kind === "closing-summary" && <MemoClosing isActive={isActive} />}
                       {sc.kind === "end" && <EndSlide onRestart={() => navigate(0)} />}
@@ -1311,14 +1349,7 @@ export function Home() {
         })}
         </div>
 
-        <AnimatePresence>
-          {slide === EXECUTE_INDEX && subStep >= 3 && (
-            <ExecuteTransitionOverlay key="execute-overlay" onAdvance={() => navigate(slide + 1)} />
-          )}
-          {slide === POWER_INDEX && subStep === 10 && (
-            <ExecuteTransitionOverlay key="power-overlay" onAdvance={() => navigate(slide + 1)} appearDelay={2} />
-          )}
-        </AnimatePresence>
+
       </main>
 
       <AnimatePresence>
@@ -1327,10 +1358,10 @@ export function Home() {
         if (railCfg.rail === "mini-exec") return (
           <MiniExecuteConnector
             key="mini-exec"
-            refineStep={slide === REFINE_INDEX ? subStep : undefined}
+            refineStep={slide === REFINE_INDEX || slide === REFINE_V2_INDEX ? subStep : undefined}
             flyIn
-            onSelectCustomer={slide === REFINE_INDEX ? (step: number) => setSubStep(step) : undefined}
-            timelinePhase={slide === REFINE_INDEX ? refineTimelinePhase : 0}
+            onSelectCustomer={slide === REFINE_INDEX || slide === REFINE_V2_INDEX ? (step: number) => setSubStep(step) : undefined}
+            timelinePhase={slide === REFINE_INDEX || slide === REFINE_V2_INDEX ? refineTimelinePhase : 0}
           />
         );
         return (
