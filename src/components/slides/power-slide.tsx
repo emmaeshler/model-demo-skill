@@ -143,11 +143,11 @@ const CATEGORY_NARRATION = [
 ];
 
 const SELECTED_FACTORS = [
-  { label: "Sales rep", color: NAVY },
-  { label: "Price sensitivity", color: ORANGE },
-  { label: "Competitive price point", color: GREEN },
-  { label: "Order frequency", color: PURPLE },
-  { label: "Cost to serve", color: ORANGE },
+  { label: "Sales rep", color: NAVY, weight: 3, note: "" },
+  { label: "Price sensitivity", color: ORANGE, weight: 3, note: "" },
+  { label: "Competitive price point", color: GREEN, weight: 3, note: "Added" },
+  { label: "Order frequency", color: PURPLE, weight: 2, note: "" },
+  { label: "Cost to serve", color: ORANGE, weight: 4, note: "Weighted ↑" },
 ];
 
 const CATEGORY_ACTIONS: Record<string, { label: string; action: "elevate" | "remove" | "lower" | "add" }[]> = {
@@ -465,15 +465,8 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
   useEffect(() => {
     if (!isActive) { setMorphPhase(-1); return; }
     if (chartStep < 2) { setMorphPhase(-1); return; }
-    if (chartStep > 2 || skipAnimation) { setMorphPhase(4); return; }
-    if (selectionPhase >= 0) { setMorphPhase(4); return; }
-    const staggerMs = 800;
-    const t0 = setTimeout(() => setMorphPhase(0), 400);
-    const t1 = setTimeout(() => setMorphPhase(1), 400 + staggerMs);
-    const t2 = setTimeout(() => setMorphPhase(2), 400 + staggerMs * 2);
-    const t3 = setTimeout(() => setMorphPhase(3), 400 + staggerMs * 3);
-    const t4 = setTimeout(() => setMorphPhase(4), 400 + staggerMs * 4);
-    return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
+    const t0 = setTimeout(() => setMorphPhase(4), 400);
+    return () => clearTimeout(t0);
   }, [isActive, chartStep, skipAnimation, selectionPhase]);
 
   // selectionPhase: -1=waiting, 0=customer, 1=product, 2=market, 3=order, 4=show picks, 5=done
@@ -502,10 +495,8 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
     const cats = ["customer", "product", "market", "order"] as const;
     if (selectionPhase >= 0 && selectionPhase <= 3) {
       onActiveCategoryChange([cats[selectionPhase]]);
-    } else if (morphPhase >= 0 && morphPhase < 4) {
-      onActiveCategoryChange([cats[morphPhase]]);
     } else if (selectionPhase < 0) {
-      onActiveCategoryChange([]);
+      onActiveCategoryChange([...cats]);
     } else {
       onActiveCategoryChange([...cats]);
     }
@@ -1219,7 +1210,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                justifyContent: customized && selectionPhase < 4 ? "flex-start" : "center",
+                justifyContent: customized && selectionPhase < 4 ? "flex-start" : selectionPhase >= 4 ? "flex-start" : "center",
                 fontFamily: "inherit",
                 position: "relative",
               }}>
@@ -1245,7 +1236,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                         const dimmed = morphPhase >= 0 && morphPhase < 4 && morphPhase !== catIdx && morphPhase > catIdx;
                         return (
                           <div key={cat.key} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, opacity: chipsVisible ? 1 : 0, transition: "opacity 0.4s" }}>
-                            {chipsVisible && (
+                            {false && chipsVisible && (
                               <motion.span
                                 initial={{ opacity: 0, y: -4 }}
                                 animate={{ opacity: isHighlighted ? 1 : dimmed ? 0.4 : 0.7, y: 0 }}
@@ -1341,17 +1332,13 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                                   display: "flex",
                                   alignItems: "center",
                                   gap: 6,
-                                  minWidth: 90,
+                                  minWidth: 0,
                                   paddingTop: 11,
                                   flexShrink: 0,
                                 }}
-                                animate={{ opacity: isActive ? 1 : isPast ? 0.5 : 0.4 }}
+                                animate={{ opacity: 0 }}
                                 transition={{ duration: 0.4 }}
                               >
-                                <div style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: cat.color, flexShrink: 0 }} />
-                                <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.08em", color: cat.color, whiteSpace: "nowrap", fontFamily: "inherit" }}>
-                                  {cat.key}
-                                </span>
                               </motion.div>
                               <div style={{ display: "flex", flexWrap: "wrap", gap: 10, flex: 1 }}>
                                 <AnimatePresence>
@@ -1374,25 +1361,44 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                                       exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } }}
                                       style={{
                                         display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4, borderRadius: 8,
-                                        border: `2px solid ${MUTED}60`, padding: "10px 18px", fontSize: 16, fontWeight: 600,
+                                        padding: "12px 20px", fontSize: 17, fontWeight: 700,
                                         fontFamily: "inherit", whiteSpace: "nowrap" as const,
-                                        color: MUTED, backgroundColor: "#F3F4F6", textDecoration: "line-through",
+                                      }}
+                                      initial={{
+                                        border: `2px solid ${TEAL}`,
+                                        color: TEAL,
+                                        backgroundColor: "#E5F5FA",
+                                        textDecorationLine: "none",
                                       }}
                                       animate={feeding ? {
                                         x: ((catFactors.length - 1) / 2 - fi) * 40, y: FEED_NUDGE_Y[catIdx], scale: 0, opacity: 0,
+                                        border: `2px solid ${MUTED}60`, color: MUTED, backgroundColor: "#F3F4F6",
                                       } : {
-                                        x: [0, -4, 5, -3, 3, -1, 0], y: 0, scale: [1, 1.02, 0.95], opacity: 1,
-                                        boxShadow: ["0 0 0px transparent", `0 0 12px ${MUTED}30`, "0 0 0px transparent"],
+                                        x: [0, 0, -5, 6, -4, 3, -1, 0], y: 0,
+                                        scale: [1, 1.02, 1.02, 0.97, 0.97, 0.95],
+                                        opacity: 1,
+                                        border: [`2px solid ${TEAL}`, `2px solid ${TEAL}`, `2px solid ${MUTED}60`],
+                                        color: [TEAL, TEAL, MUTED],
+                                        backgroundColor: ["#E5F5FA", "#E5F5FA", "#F3F4F6"],
+                                        textDecorationLine: ["none", "none", "line-through"],
+                                        boxShadow: [`0 0 12px ${TEAL}30`, `0 0 12px ${TEAL}30`, "0 0 0px transparent"],
                                       }}
                                       transition={feeding ? {
                                         duration: 0.7, delay: catIdx * 0.04 + fi * 0.02, ease: [0.4, 0, 0.1, 1],
                                       } : {
-                                        x: { duration: 0.5, delay: 0.3 }, opacity: { duration: 0.4 },
-                                        scale: { duration: 0.5, times: [0, 0.4, 1], ease: [0.22, 1, 0.36, 1] },
-                                        boxShadow: { duration: 0.7 }, layout: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+                                        x: { duration: 0.6, delay: 0.4, times: [0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1] },
+                                        scale: { duration: 1.0, times: [0, 0.15, 0.4, 0.55, 0.7, 1], ease: [0.22, 1, 0.36, 1] },
+                                        border: { duration: 0.8, delay: 0.5, times: [0, 0.4, 1] },
+                                        color: { duration: 0.8, delay: 0.5, times: [0, 0.4, 1] },
+                                        backgroundColor: { duration: 0.8, delay: 0.5, times: [0, 0.4, 1] },
+                                        textDecorationLine: { duration: 0.8, delay: 0.5, times: [0, 0.4, 1] },
+                                        boxShadow: { duration: 1.0, delay: 0.2, times: [0, 0.3, 1] },
+                                        opacity: { duration: 0.3 },
+                                        layout: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
                                       }}
                                     >
                                       {f.label}
+                                      <span style={{ marginLeft: 4, fontSize: 13 }}>×</span>
                                     </motion.span>
                                   );
                                   return (
@@ -1515,31 +1521,57 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                               >
                                 5 Model Drivers
                               </motion.span>
-                              <div style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "center", maxWidth: 620 }}>
-                                {SELECTED_FACTORS.map((sf, si) => (
-                                  <motion.span
-                                    key={sf.label}
-                                    style={{
-                                      display: "inline-flex",
-                                      alignItems: "center",
-                                      justifyContent: "center",
-                                      borderRadius: 8,
-                                      border: `2px solid ${TEAL}`,
-                                      padding: "14px 24px",
-                                      fontSize: 17,
-                                      fontWeight: 700,
-                                      fontFamily: "inherit",
-                                      whiteSpace: "nowrap",
-                                      color: TEAL,
-                                      backgroundColor: "#E5F5FA",
-                                    }}
-                                    initial={{ opacity: 0, scale: 0.7, y: 10 }}
-                                    animate={{ opacity: 1, scale: 1, y: 0, boxShadow: `0 0 12px ${TEAL}30` }}
-                                    transition={{ duration: 0.5, delay: si * 0.1, ease: [0.22, 1, 0.36, 1] }}
-                                  >
-                                    {sf.label}
-                                  </motion.span>
-                                ))}
+                              <div style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "center", maxWidth: 720, alignItems: "flex-end" }}>
+                                {SELECTED_FACTORS.slice().sort((a, b) => b.weight - a.weight).map((sf, si) => {
+                                  const scale = sf.weight === 4 ? 1.12 : sf.weight === 2 ? 0.9 : 1;
+                                  const barCount = sf.weight;
+                                  return (
+                                    <motion.div
+                                      key={sf.label}
+                                      style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}
+                                      initial={{ opacity: 0, scale: 0.7, y: 10 }}
+                                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                                      transition={{ duration: 0.5, delay: si * 0.1, ease: [0.22, 1, 0.36, 1] }}
+                                    >
+                                      <motion.span
+                                        style={{
+                                          display: "inline-flex",
+                                          alignItems: "center",
+                                          justifyContent: "center",
+                                          borderRadius: 8,
+                                          border: `2px solid ${TEAL}`,
+                                          padding: sf.weight >= 4 ? "16px 26px" : sf.weight <= 2 ? "10px 18px" : "14px 24px",
+                                          fontSize: sf.weight >= 4 ? 18 : sf.weight <= 2 ? 15 : 17,
+                                          fontWeight: 700,
+                                          fontFamily: "inherit",
+                                          whiteSpace: "nowrap",
+                                          color: TEAL,
+                                          backgroundColor: "#E5F5FA",
+                                          transform: `scale(${scale})`,
+                                        }}
+                                        animate={{ boxShadow: sf.weight >= 4 ? `0 0 18px ${TEAL}40` : `0 0 8px ${TEAL}20` }}
+                                      >
+                                        {sf.label}
+                                      </motion.span>
+                                      <div style={{ display: "flex", gap: 2, alignItems: "center" }}>
+                                        {Array.from({ length: 4 }, (_, bi) => (
+                                          <div
+                                            key={bi}
+                                            style={{
+                                              width: 12, height: 3, borderRadius: 1.5,
+                                              backgroundColor: bi < barCount ? TEAL : `${TEAL}25`,
+                                            }}
+                                          />
+                                        ))}
+                                      </div>
+                                      {sf.note && (
+                                        <span style={{ fontSize: 10, fontWeight: 600, color: TEAL, letterSpacing: "0.04em" }}>
+                                          {sf.note}
+                                        </span>
+                                      )}
+                                    </motion.div>
+                                  );
+                                })}
                               </div>
                             </div>
 

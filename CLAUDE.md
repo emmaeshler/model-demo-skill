@@ -13,7 +13,7 @@ npm run lint         # ESLint (flat config, v9)
 
 There are no tests in this project.
 
-A PostToolUse hook automatically runs `npm run build:html` after any edit to files in `src/`. Do not run it manually after edits.
+A PreToolUse hook automatically runs `npm run build:html` before any `git push` to `main`. Do not run it manually before pushes.
 
 ## What This Is
 
@@ -55,6 +55,10 @@ If the export breaks, the issue is almost always in the esbuild bundle step — 
 
 - **ModeProvider** ([mode-context.tsx](src/lib/mode-context.tsx)) — `"self"` or `"presenter"`, drives BroadcastChannel sync
 - **DepthProvider** ([depth-context.tsx](src/lib/depth-context.tsx)) — per-section zoom depth (0/1/2), used by some slides for layered content
+
+### Rail System (RAIL_CONFIG in page.tsx)
+
+The left-side rail (Model Drivers / Customer Order Price) is configured by a single `RAIL_CONFIG` table in `page.tsx`, keyed by `"slideIndex-subStep"`. Each entry declares: rail type (`"model"` or `"mini-exec"`), engine focus, active categories, whether to show drivers/engine/factors, and which customer highlights. To change the rail for any step, edit that one row — no other lookups to update.
 
 ### Key Data Structures in power-slide.tsx
 

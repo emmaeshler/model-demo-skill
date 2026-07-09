@@ -71,35 +71,8 @@ const EXECUTE_PRESENTER_STEPS = 4;
 
 type EngineFocus = "ml" | "strat" | "both" | null;
 
-const ENGINE_FOCUS_MAP: Record<string, EngineFocus> = {
-  // power
-  [`${POWER_INDEX}-1`]: "ml",
-  [`${POWER_INDEX}-2`]: "strat",
-  [`${POWER_INDEX}-3`]: "strat",
-  [`${POWER_INDEX}-4`]: "strat",
-  [`${POWER_INDEX}-5`]: "strat",
-  [`${POWER_INDEX}-6`]: "strat",
-  [`${POWER_INDEX}-7`]: "strat",
-  [`${POWER_INDEX}-8`]: "strat",
-  [`${POWER_INDEX}-9`]: "both",
-  // execute
-  [`${EXECUTE_INDEX}-0`]: "both",
-  [`${EXECUTE_INDEX}-1`]: "both",
-  // refine
-  [`${REFINE_INDEX}-1`]: "ml",
-  [`${REFINE_INDEX}-2`]: "ml",
-  [`${REFINE_INDEX}-3`]: "ml",
-  [`${REFINE_INDEX}-4`]: "ml",
-  [`${REFINE_INDEX}-5`]: "ml",
-  [`${REFINE_INDEX}-6`]: "ml",
-  [`${REFINE_INDEX}-7`]: "strat",
-  [`${REFINE_INDEX}-8`]: "both",
-};
-
 const ML_GREEN = "#3A7D44";
 const STRAT_BLUE = "#2A7BA5";
-
-const ENGINE_INDICATOR_SLIDES = new Set([POWER_INDEX, EXECUTE_INDEX, REFINE_INDEX]);
 
 type CategoryKey = "customer" | "product" | "market" | "order";
 
@@ -118,32 +91,61 @@ const DRIVER_RAIL_ITEMS: { label: string; color: string; tint: string }[] = [
   { label: "Cost to serve", color: "#E56910", tint: "rgba(229,105,16,0.08)" },
 ];
 
-
-const ACTIVE_CATEGORIES_MAP: Record<string, CategoryKey[]> = {
-  [`${POWER_INDEX}-2`]: [],
-  [`${POWER_INDEX}-3`]: ["customer"],
-  [`${POWER_INDEX}-4`]: ["product"],
-  [`${POWER_INDEX}-5`]: ["market"],
-  [`${POWER_INDEX}-6`]: ["order"],
-  [`${POWER_INDEX}-7`]: ["customer", "product", "market", "order"],
-  [`${POWER_INDEX}-8`]: ["customer", "product", "market", "order"],
-  [`${POWER_INDEX}-9`]: ["customer", "product", "market", "order"],
-  [`${EXECUTE_INDEX}-0`]: ["customer", "order"],
-  [`${EXECUTE_INDEX}-1`]: ["customer"],
-  [`${REFINE_INDEX}-1`]: ["customer", "market"],
-  [`${REFINE_INDEX}-2`]: ["customer"],
-  [`${REFINE_INDEX}-3`]: ["customer"],
-  [`${REFINE_INDEX}-4`]: ["customer"],
-  [`${REFINE_INDEX}-5`]: ["customer"],
-  [`${REFINE_INDEX}-6`]: ["customer", "market"],
-  [`${REFINE_INDEX}-7`]: ["market"],
-  [`${REFINE_INDEX}-8`]: ["customer", "product", "market", "order"],
-};
-
 const ENGINE_ITEMS: { key: "ml" | "strat"; label: string; color: string; tint: string }[] = [
   { key: "ml", label: "ML Prediction", color: ML_GREEN, tint: "rgba(58,125,68,0.08)" },
   { key: "strat", label: "Strategic Guidance", color: STRAT_BLUE, tint: "rgba(42,123,165,0.08)" },
 ];
+
+type RailType = "model" | "mini-exec" | null;
+
+/* ── Unified rail config ─────────────────────────────────────
+   One row per slide-step that shows a rail.  Every prop the rail
+   needs is declared here — no scattered lookup tables.
+   Key format: "slideIndex-subStep"
+   ──────────────────────────────────────────────────────────── */
+interface RailStepConfig {
+  rail: "model" | "mini-exec";
+  engine: EngineFocus;
+  categories: CategoryKey[];
+  drivers: boolean;
+  showEngine: boolean;
+  showFactors: boolean;
+  driversFlyIn: boolean;
+  activeCustomer?: number;       // mini-exec: which customer card highlights (index into RAIL_CUSTOMERS)
+  refineStepForCustomer?: number; // mini-exec: the refine subStep this customer maps back to (for click nav)
+}
+
+const ALL_CATS: CategoryKey[] = ["customer", "product", "market", "order"];
+
+const RAIL_CONFIG: Record<string, RailStepConfig> = {
+  // ── Power (slide 3) ── model rail, engine visible, factors after step 2 ──
+  [`${POWER_INDEX}-0`]:  { rail: "model", engine: null,   categories: [],             drivers: false, showEngine: true, showFactors: false, driversFlyIn: true },
+  [`${POWER_INDEX}-1`]:  { rail: "model", engine: "ml",   categories: [],             drivers: false, showEngine: true, showFactors: false, driversFlyIn: true },
+  [`${POWER_INDEX}-2`]:  { rail: "model", engine: "strat", categories: [],            drivers: false, showEngine: true, showFactors: true,  driversFlyIn: true },
+  [`${POWER_INDEX}-3`]:  { rail: "model", engine: "strat", categories: ["customer"],  drivers: false, showEngine: true, showFactors: true,  driversFlyIn: true },
+  [`${POWER_INDEX}-4`]:  { rail: "model", engine: "strat", categories: ["product"],   drivers: false, showEngine: true, showFactors: true,  driversFlyIn: true },
+  [`${POWER_INDEX}-5`]:  { rail: "model", engine: "strat", categories: ["market"],    drivers: false, showEngine: true, showFactors: true,  driversFlyIn: true },
+  [`${POWER_INDEX}-6`]:  { rail: "model", engine: "strat", categories: ["order"],     drivers: false, showEngine: true, showFactors: true,  driversFlyIn: true },
+  [`${POWER_INDEX}-7`]:  { rail: "model", engine: "strat", categories: ALL_CATS,      drivers: false, showEngine: true, showFactors: true,  driversFlyIn: true },
+  [`${POWER_INDEX}-8`]:  { rail: "model", engine: "strat", categories: ALL_CATS,      drivers: false, showEngine: true, showFactors: true,  driversFlyIn: true },
+  [`${POWER_INDEX}-9`]:  { rail: "model", engine: "both",  categories: ALL_CATS,      drivers: false, showEngine: true, showFactors: true,  driversFlyIn: true },
+  [`${POWER_INDEX}-10`]: { rail: "model", engine: null,    categories: ALL_CATS,      drivers: false, showEngine: true, showFactors: true,  driversFlyIn: true },
+
+  // ── Execute (slide 4) ── model rail for steps 0-2, mini-exec for 3 ──
+  [`${EXECUTE_INDEX}-0`]: { rail: "model",     engine: "both", categories: ["customer", "order"], drivers: true, showEngine: false, showFactors: false, driversFlyIn: false },
+  [`${EXECUTE_INDEX}-1`]: { rail: "model",     engine: "both", categories: ["customer"],          drivers: true, showEngine: false, showFactors: false, driversFlyIn: false },
+  [`${EXECUTE_INDEX}-2`]: { rail: "model",     engine: null,   categories: [],                    drivers: true, showEngine: false, showFactors: false, driversFlyIn: false },
+  [`${EXECUTE_INDEX}-3`]: { rail: "mini-exec", engine: null,   categories: [],                    drivers: true, showEngine: false, showFactors: false, driversFlyIn: false },
+
+  // ── Refine (slide 5) ── mini-exec rail, steps 0-6; no rail on step 7 ──
+  [`${REFINE_INDEX}-0`]: { rail: "mini-exec", engine: null, categories: [],                    drivers: true, showEngine: false, showFactors: false, driversFlyIn: false },
+  [`${REFINE_INDEX}-1`]: { rail: "mini-exec", engine: "ml", categories: ["customer", "market"], drivers: true, showEngine: false, showFactors: false, driversFlyIn: false },
+  [`${REFINE_INDEX}-2`]: { rail: "mini-exec", engine: "ml", categories: ["customer"],           drivers: true, showEngine: false, showFactors: false, driversFlyIn: false, activeCustomer: 1, refineStepForCustomer: 2 },
+  [`${REFINE_INDEX}-3`]: { rail: "mini-exec", engine: "ml", categories: ["customer"],           drivers: true, showEngine: false, showFactors: false, driversFlyIn: false, activeCustomer: 0, refineStepForCustomer: 3 },
+  [`${REFINE_INDEX}-4`]: { rail: "mini-exec", engine: "ml", categories: ["customer"],           drivers: true, showEngine: false, showFactors: false, driversFlyIn: false, activeCustomer: 2, refineStepForCustomer: 4 },
+  [`${REFINE_INDEX}-5`]: { rail: "mini-exec", engine: "ml", categories: ["customer"],           drivers: true, showEngine: false, showFactors: false, driversFlyIn: false },
+  [`${REFINE_INDEX}-6`]: { rail: "mini-exec", engine: "ml", categories: ["customer", "market"], drivers: true, showEngine: false, showFactors: false, driversFlyIn: false },
+};
 
 function ModelStatusRail({
   activeCategories,
@@ -374,21 +376,27 @@ const CUSTOMER_DOT_COLORS: Record<string, string> = {
 };
 
 const RAIL_CUSTOMERS = [
-  { label: "Acme Industrial", price: "$19.24", newPrice: "$19.80", change: "+$0.56", dot: CUSTOMER_DOT_COLORS.Acme, reason: "Win rate climbing — margin available" },
-  { label: "QuickParts LLC", price: "$22.10", newPrice: "$24.20", change: "+$2.10", dot: CUSTOMER_DOT_COLORS.QuickParts, reason: "No competition — cost pass-through" },
-  { label: "MedSupply Co", price: "$14.89", newPrice: "$14.50", change: "−$0.39", dot: CUSTOMER_DOT_COLORS.MedSupply, reason: "New entrant undercutting — defend deal" },
+  { label: "Acme Industrial", price: "$19.24", newPrice: "$19.80", change: "+$0.56", dot: CUSTOMER_DOT_COLORS.Acme, reason: "Win rate climbing — margin available",
+    timelinePrices: ["$19.80", "$21.10", "$20.40", "$22.80"] },
+  { label: "QuickParts LLC", price: "$22.10", newPrice: "$24.20", change: "+$2.10", dot: CUSTOMER_DOT_COLORS.QuickParts, reason: "No competition — cost pass-through",
+    timelinePrices: ["$24.20", "$25.90", "$25.10", "$28.10"] },
+  { label: "MedSupply Co", price: "$14.89", newPrice: "$14.50", change: "−$0.39", dot: CUSTOMER_DOT_COLORS.MedSupply, reason: "New entrant undercutting — defend deal",
+    timelinePrices: ["$14.50", "$15.60", "$15.10", "$16.80"] },
 ];
 
-const REFINE_STEP_TO_RAIL: Record<number, number> = { 2: 1, 3: 0, 4: 2 };
+const RAIL_CUSTOMER_TO_REFINE_STEP: Record<number, number> = Object.fromEntries(
+  Object.entries(RAIL_CONFIG)
+    .filter(([, v]) => v.activeCustomer !== undefined && v.refineStepForCustomer !== undefined)
+    .map(([, v]) => [v.activeCustomer!, v.refineStepForCustomer!])
+);
 
-const RAIL_INDEX_TO_REFINE_STEP: Record<number, number> = { 0: 3, 1: 2, 2: 4 };
-
-function MiniExecuteConnector({ refineStep, flyIn = false, onSelectCustomer }: { refineStep?: number; flyIn?: boolean; onSelectCustomer?: (step: number) => void }) {
+function MiniExecuteConnector({ refineStep, flyIn = false, onSelectCustomer, timelinePhase = 0 }: { refineStep?: number; flyIn?: boolean; onSelectCustomer?: (step: number) => void; timelinePhase?: number }) {
   const NAVY = "#00446A";
   const [flyX] = useState(() => typeof window !== "undefined" ? window.innerWidth * 0.45 : 640);
   const [flyY] = useState(() => typeof window !== "undefined" ? window.innerHeight * 0.22 : 200);
 
-  const activeIdx = refineStep !== undefined ? REFINE_STEP_TO_RAIL[refineStep] ?? -1 : -1;
+  const railCfg = refineStep !== undefined ? RAIL_CONFIG[`${REFINE_INDEX}-${refineStep}`] : undefined;
+  const activeIdx = railCfg?.activeCustomer ?? -1;
   const adjustedSet = useMemo(() => {
     const s = new Set<number>();
     if (refineStep === undefined) return s;
@@ -438,7 +446,9 @@ function MiniExecuteConnector({ refineStep, flyIn = false, onSelectCustomer }: {
         {RAIL_CUSTOMERS.map((c, i) => {
           const isActive = i === activeIdx;
           const isAdjusted = adjustedSet.has(i);
-          const displayPrice = (isAdjusted && (showChange || !isActive)) ? c.newPrice : c.price;
+          const displayPrice = timelinePhase > 0
+            ? c.timelinePrices[timelinePhase]
+            : (isAdjusted && (showChange || !isActive)) ? c.newPrice : c.price;
 
           return (
             <motion.div
@@ -459,7 +469,7 @@ function MiniExecuteConnector({ refineStep, flyIn = false, onSelectCustomer }: {
                 : { delay: 0.3 + i * 0.08, duration: 0.3, ease: [0.22, 1, 0.36, 1] }
               }
               style={{ ...(isActive ? { border: `1.5px solid ${c.dot}40` } : { border: "1.5px solid transparent" }), cursor: onSelectCustomer ? "pointer" : undefined }}
-              onClick={() => { if (onSelectCustomer && RAIL_INDEX_TO_REFINE_STEP[i] !== undefined) onSelectCustomer(RAIL_INDEX_TO_REFINE_STEP[i]); }}
+              onClick={() => { if (onSelectCustomer && RAIL_CUSTOMER_TO_REFINE_STEP[i] !== undefined) onSelectCustomer(RAIL_CUSTOMER_TO_REFINE_STEP[i]); }}
             >
               <div className="flex items-center gap-2">
                 <div className="size-[5px] shrink-0 rounded-full" style={{ backgroundColor: c.dot }} />
@@ -467,9 +477,19 @@ function MiniExecuteConnector({ refineStep, flyIn = false, onSelectCustomer }: {
                   <span className="text-[10px] font-semibold leading-none block" style={{ color: NAVY }}>
                     {c.label}
                   </span>
-                  <span className="text-[13px] font-bold tabular-nums leading-tight block mt-0.5" style={{ color: NAVY }}>
-                    {displayPrice}
-                  </span>
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.span
+                      key={displayPrice}
+                      className="text-[13px] font-bold tabular-nums leading-tight block mt-0.5"
+                      style={{ color: NAVY }}
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      transition={{ duration: 0.25 }}
+                    >
+                      {displayPrice}
+                    </motion.span>
+                  </AnimatePresence>
                 </div>
               </div>
               <AnimatePresence>
@@ -621,6 +641,8 @@ export function Home() {
   const handleActiveCategoryChange = useCallback((cats: string[]) => setDynamicActiveCategories(cats as CategoryKey[]), []);
   const [executeCustomer, setExecuteCustomer] = useState("Acme");
   const handleExecuteCustomerChange = useCallback((c: string) => setExecuteCustomer(c), []);
+  const [refineTimelinePhase, setRefineTimelinePhase] = useState(0);
+  const handleRefineTimelinePhase = useCallback((phase: number) => setRefineTimelinePhase(phase), []);
   const [vortexDone, setVortexDone] = useState(false);
   const vortexTriggered = slide === POWER_INDEX && subStep === 8;
 
@@ -650,10 +672,12 @@ export function Home() {
   const hasSubSteps = maxSteps > 0;
   const config = SLIDES[slide];
   const notes = getPresenterNotes(config?.kind ?? "", subStep);
-  const engineFocus = ENGINE_FOCUS_MAP[`${slide}-${subStep}`] ?? null;
-  const railVisible = ENGINE_INDICATOR_SLIDES.has(slide) && !(slide === REFINE_INDEX && subStep === (REFINE_TOTAL_STEPS - 1));
-  const showDrivers = (slide === POWER_INDEX && subStep >= 10) || slide === EXECUTE_INDEX || slide === REFINE_INDEX;
-  const staticActiveCategories = ACTIVE_CATEGORIES_MAP[`${slide}-${subStep}`] ?? [];
+  const railCfg = RAIL_CONFIG[`${slide}-${subStep}`] ?? null;
+  const currentRailType: RailType = railCfg?.rail ?? null;
+  const railVisible = currentRailType !== null;
+  const engineFocus: EngineFocus = railCfg?.engine ?? null;
+  const showDrivers = railCfg?.drivers ?? false;
+  const staticActiveCategories = railCfg?.categories ?? [];
   const activeCategories = (slide === POWER_INDEX && dynamicActiveCategories && dynamicActiveCategories.length > 0)
     ? dynamicActiveCategories
     : staticActiveCategories;
@@ -1154,6 +1178,7 @@ export function Home() {
           setSkipAnimation(goingBack);
           setSlide(target);
           setSubStep(0);
+          setRefineTimelinePhase(0);
         });
       }
     },
@@ -1271,6 +1296,7 @@ export function Home() {
                           onAutoAdvance={isActive && !skipAnimation ? () => navigate(slide + 1) : undefined}
                           skipAnimation={effectiveSkip}
                           isActive={isActive}
+                          onTimelinePhase={isActive ? handleRefineTimelinePhase : undefined}
                         />
                       )}
                       {sc.kind === "execute" && <MemoExecute step={isActive ? subStep : 0} skipAnimation={effectiveSkip} isActive={isActive} onCustomerChange={isActive ? handleExecuteCustomerChange : undefined} />}
@@ -1296,22 +1322,30 @@ export function Home() {
       </main>
 
       <AnimatePresence>
-      {railVisible && (
-        slide === REFINE_INDEX ? (
-          <MiniExecuteConnector key="mini-exec" refineStep={subStep} flyIn onSelectCustomer={(step) => setSubStep(step)} />
-        ) : (
+      {(() => {
+        if (!railCfg) return null;
+        if (railCfg.rail === "mini-exec") return (
+          <MiniExecuteConnector
+            key="mini-exec"
+            refineStep={slide === REFINE_INDEX ? subStep : undefined}
+            flyIn
+            onSelectCustomer={slide === REFINE_INDEX ? (step: number) => setSubStep(step) : undefined}
+            timelinePhase={slide === REFINE_INDEX ? refineTimelinePhase : 0}
+          />
+        );
+        return (
           <ModelStatusRail
             key="model-rail"
             activeCategories={activeCategories}
-            drivers={showDrivers ? DRIVER_RAIL_ITEMS : undefined}
+            drivers={railCfg.drivers ? DRIVER_RAIL_ITEMS : undefined}
             engineFocus={engineFocus}
-            showEngine={slide === POWER_INDEX}
+            showEngine={railCfg.showEngine}
             customerDotColor={slide === EXECUTE_INDEX ? CUSTOMER_DOT_COLORS[executeCustomer] : undefined}
-            driversFlyIn={slide === POWER_INDEX}
-            showFactors={slide === POWER_INDEX && subStep >= 2}
+            driversFlyIn={railCfg.driversFlyIn}
+            showFactors={railCfg.showFactors}
           />
-        )
-      )}
+        );
+      })()}
       </AnimatePresence>
 
 

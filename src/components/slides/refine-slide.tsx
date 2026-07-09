@@ -315,7 +315,7 @@ const PORTFOLIO_REVEAL_ORDER = (() => {
   return order;
 })();
 
-export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { step: number; onAutoAdvance?: () => void; skipAnimation?: boolean; isActive: boolean }) {
+export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive, onTimelinePhase }: { step: number; onAutoAdvance?: () => void; skipAnimation?: boolean; isActive: boolean; onTimelinePhase?: (phase: number) => void }) {
   const { shareMode } = useShareMode();
 
   const curve = useMemo(() => {
@@ -439,6 +439,10 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
   const retreatTimeline = () => {
     if (indexPhase > 0) setIndexPhase(prev => prev - 1);
   };
+
+  useEffect(() => {
+    onTimelinePhase?.(indexPhase);
+  }, [indexPhase, onTimelinePhase]);
 
   const [indexMorphFrom, setIndexMorphFrom] = useState(0);
   const [indexMorphProgress, setIndexMorphProgress] = useState(1);
@@ -803,7 +807,7 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
             transition={{ duration: 0.5 }}
           >
             {/* Date display / Event card */}
-            <div className="relative flex items-center justify-center" style={{ height: 70, marginBottom: 4, transform: "translateX(calc(var(--rail-inset, 0px) * -0.5))" }}>
+            <div className="relative flex items-center justify-center" style={{ height: 70, marginBottom: 4 }}>
               <motion.button
                 className="absolute left-0 z-10 flex h-8 w-8 items-center justify-center rounded-full"
                 style={{ backgroundColor: `${NAVY}08`, color: MUTED, pointerEvents: indexPhase > 0 ? "auto" as const : "none" as const }}
@@ -815,53 +819,55 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
               >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 3L4.5 7L8.5 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </motion.button>
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={`event-${indexPhase}`}
-                  className="flex flex-col items-center cursor-pointer"
-                  onClick={advanceTimeline}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.3, ease: "easeOut" }}
-                >
-                  {currentEvent ? (
-                    <>
-                      <div className="flex items-center gap-2.5">
-                        <span
-                          className="rounded-full px-3 py-0.5 text-[11px] font-bold uppercase tracking-widest"
-                          style={{ backgroundColor: `${STRAT_BLUE}12`, color: STRAT_BLUE }}
-                        >
-                          {getMonthLabel(currentEvent.month)}
+              <div style={{ transform: "translateX(calc(var(--rail-inset, 0px) * -0.5))" }}>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={`event-${indexPhase}`}
+                    className="flex flex-col items-center cursor-pointer"
+                    onClick={advanceTimeline}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
+                  >
+                    {currentEvent ? (
+                      <>
+                        <div className="flex items-center gap-2.5">
+                          <span
+                            className="rounded-full px-3 py-0.5 text-[11px] font-bold uppercase tracking-widest"
+                            style={{ backgroundColor: `${STRAT_BLUE}12`, color: STRAT_BLUE }}
+                          >
+                            {getMonthLabel(currentEvent.month)}
+                          </span>
+                          <span className="text-[22px] font-bold leading-tight" style={{ color: NAVY }}>
+                            {currentEvent.label}
+                          </span>
+                        </div>
+                        <span className="mt-1 text-[13px] font-medium" style={{ color: MUTED }}>
+                          {currentEvent.factor}
                         </span>
-                        <span className="text-[22px] font-bold leading-tight" style={{ color: NAVY }}>
-                          {currentEvent.label}
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-2.5">
+                          <span
+                            className="rounded-full px-3 py-0.5 text-[11px] font-bold uppercase tracking-widest"
+                            style={{ backgroundColor: `${STRAT_BLUE}12`, color: STRAT_BLUE }}
+                          >
+                            {getMonthLabel(0)}
+                          </span>
+                          <span className="text-[22px] font-bold leading-tight" style={{ color: NAVY }}>
+                            Your market, day 1
+                          </span>
+                        </div>
+                        <span className="mt-1 text-[13px] font-medium" style={{ color: MUTED }}>
+                          Every price aligned to the current demand curve
                         </span>
-                      </div>
-                      <span className="mt-1 text-[13px] font-medium" style={{ color: MUTED }}>
-                        {currentEvent.factor}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <div className="flex items-center gap-2.5">
-                        <span
-                          className="rounded-full px-3 py-0.5 text-[11px] font-bold uppercase tracking-widest"
-                          style={{ backgroundColor: `${STRAT_BLUE}12`, color: STRAT_BLUE }}
-                        >
-                          {getMonthLabel(0)}
-                        </span>
-                        <span className="text-[22px] font-bold leading-tight" style={{ color: NAVY }}>
-                          Your market, day 1
-                        </span>
-                      </div>
-                      <span className="mt-1 text-[13px] font-medium" style={{ color: MUTED }}>
-                        Every price aligned to the current demand curve
-                      </span>
-                    </>
-                  )}
-                </motion.div>
-              </AnimatePresence>
+                      </>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
               <motion.button
                 className="absolute right-0 z-10 flex h-8 w-8 items-center justify-center rounded-full"
                 style={{ backgroundColor: `${STRAT_BLUE}10`, color: STRAT_BLUE, pointerEvents: indexPhase < TIMELINE_EVENTS.length ? "auto" as const : "none" as const }}
