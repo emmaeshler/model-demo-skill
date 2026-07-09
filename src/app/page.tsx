@@ -12,7 +12,6 @@ import { OverviewSlide, OVERVIEW_TOTAL_STEPS } from "@/components/slides/overvie
 import { OneModelSlide, ONE_MODEL_TOTAL_STEPS } from "@/components/slides/one-model";
 import { PowerSlide, POWER_TOTAL_STEPS } from "@/components/slides/power-slide";
 import { ExecuteSlide, EXECUTE_TOTAL_STEPS } from "@/components/slides/execute-slide";
-import { RefineSlide, REFINE_TOTAL_STEPS } from "@/components/slides/refine-slide";
 import { RefineSlideV2, REFINE_V2_TOTAL_STEPS } from "@/components/slides/refine-slide-v2";
 import { ClosingSummarySlide } from "@/components/slides/closing-summary";
 import { AnimationGlossary } from "@/components/animation-glossary";
@@ -21,8 +20,7 @@ const MemoOverview = memo(OverviewSlide);
 const MemoOneModel = memo(OneModelSlide);
 const MemoPower = memo(PowerSlide);
 const MemoExecute = memo(ExecuteSlide);
-const MemoRefine = memo(RefineSlide);
-const MemoRefineV2 = memo(RefineSlideV2);
+const MemoRefine = memo(RefineSlideV2);
 const MemoClosing = memo(ClosingSummarySlide);
 
 type SlideKind =
@@ -32,7 +30,6 @@ type SlideKind =
   | "power"
   | "execute"
   | "refine"
-  | "refine-v2"
   | "closing-summary"
   | "end";
 
@@ -52,8 +49,6 @@ const SLIDES: SlideConfig[] = [
   { kind: "execute" },
   // Section 4: Refine
   { kind: "refine" },
-  // Section 4b: Refine (v2 — two-curve model)
-  { kind: "refine-v2" },
   { kind: "closing-summary" },
   { kind: "end" },
 ];
@@ -63,15 +58,13 @@ const ONE_MODEL_INDEX = 2;
 const POWER_INDEX = 3;
 const EXECUTE_INDEX = 4;
 const REFINE_INDEX = 5;
-const REFINE_V2_INDEX = 6;
 
 const SUB_STEP_CONFIG: Record<number, number> = {
   [OVERVIEW_INDEX]: OVERVIEW_TOTAL_STEPS,
   [ONE_MODEL_INDEX]: ONE_MODEL_TOTAL_STEPS,
   [POWER_INDEX]: POWER_TOTAL_STEPS,
   [EXECUTE_INDEX]: EXECUTE_TOTAL_STEPS,
-  [REFINE_INDEX]: REFINE_TOTAL_STEPS,
-  [REFINE_V2_INDEX]: REFINE_V2_TOTAL_STEPS,
+  [REFINE_INDEX]: REFINE_V2_TOTAL_STEPS,
 };
 
 const EXECUTE_PRESENTER_STEPS = 4;
@@ -105,11 +98,7 @@ const ENGINE_ITEMS: { key: "ml" | "strat"; label: string; color: string; tint: s
 
 type RailType = "model" | "mini-exec" | null;
 
-/* ── Unified rail config ─────────────────────────────────────
-   One row per slide-step that shows a rail.  Every prop the rail
-   needs is declared here — no scattered lookup tables.
-   Key format: "slideIndex-subStep"
-   ──────────────────────────────────────────────────────────── */
+/* ── Rail config (compiled from timeline) ──────────────────── */
 interface RailStepConfig {
   rail: "model" | "mini-exec";
   engine: EngineFocus;
@@ -118,50 +107,84 @@ interface RailStepConfig {
   showEngine: boolean;
   showFactors: boolean;
   driversFlyIn: boolean;
-  activeCustomer?: number;       // mini-exec: which customer card highlights (index into RAIL_CUSTOMERS)
-  refineStepForCustomer?: number; // mini-exec: the refine subStep this customer maps back to (for click nav)
+  activeCustomer?: number;
+  refineStepForCustomer?: number;
 }
 
 const ALL_CATS: CategoryKey[] = ["customer", "product", "market", "order"];
 
-const RAIL_CONFIG: Record<string, RailStepConfig> = {
-  // ── Power (slide 3) ── model rail, engine visible, factors after step 2 ──
-  [`${POWER_INDEX}-0`]:  { rail: "model", engine: null,   categories: [],             drivers: false, showEngine: true, showFactors: false, driversFlyIn: true },
-  [`${POWER_INDEX}-1`]:  { rail: "model", engine: "ml",   categories: [],             drivers: false, showEngine: true, showFactors: false, driversFlyIn: true },
-  [`${POWER_INDEX}-2`]:  { rail: "model", engine: "strat", categories: [],            drivers: false, showEngine: true, showFactors: true,  driversFlyIn: true },
-  [`${POWER_INDEX}-3`]:  { rail: "model", engine: "strat", categories: ["customer"],  drivers: false, showEngine: true, showFactors: true,  driversFlyIn: true },
-  [`${POWER_INDEX}-4`]:  { rail: "model", engine: "strat", categories: ["product"],   drivers: false, showEngine: true, showFactors: true,  driversFlyIn: true },
-  [`${POWER_INDEX}-5`]:  { rail: "model", engine: "strat", categories: ["market"],    drivers: false, showEngine: true, showFactors: true,  driversFlyIn: true },
-  [`${POWER_INDEX}-6`]:  { rail: "model", engine: "strat", categories: ["order"],     drivers: false, showEngine: true, showFactors: true,  driversFlyIn: true },
-  [`${POWER_INDEX}-7`]:  { rail: "model", engine: "strat", categories: ALL_CATS,      drivers: false, showEngine: true, showFactors: true,  driversFlyIn: true },
-  [`${POWER_INDEX}-8`]:  { rail: "model", engine: "strat", categories: ALL_CATS,      drivers: false, showEngine: true, showFactors: true,  driversFlyIn: true },
-  [`${POWER_INDEX}-9`]:  { rail: "model", engine: "both",  categories: ALL_CATS,      drivers: false, showEngine: true, showFactors: true,  driversFlyIn: true },
-  [`${POWER_INDEX}-10`]: { rail: "model", engine: null,    categories: ALL_CATS,      drivers: false, showEngine: true, showFactors: true,  driversFlyIn: true },
+/* ── Rail timeline ──────────────────────────────────────────
+   Each slide maps to an ordered array of rail states (index = subStep).
+   The discriminated `show` field determines which rail renders and
+   which fields are relevant — impossible to set dead/contradictory fields.
+   ──────────────────────────────────────────────────────────── */
+type RailContent =
+  | { show: "engine-only"; engine: EngineFocus }
+  | { show: "factors"; engine: EngineFocus; active: CategoryKey[] }
+  | { show: "drivers"; flyIn: boolean }
+  | { show: "mini-exec"; activeCustomer?: number; refineStepForCustomer?: number }
 
-  // ── Execute (slide 4) ── model rail for steps 0-2, mini-exec for 3 ──
-  [`${EXECUTE_INDEX}-0`]: { rail: "model",     engine: null,   categories: ALL_CATS,             drivers: false, showEngine: true,  showFactors: true,  driversFlyIn: false },
-  [`${EXECUTE_INDEX}-1`]: { rail: "mini-exec", engine: null,   categories: [],                    drivers: true,  showEngine: false, showFactors: false, driversFlyIn: false },
-  [`${EXECUTE_INDEX}-2`]: { rail: "mini-exec", engine: null,   categories: [],                    drivers: true,  showEngine: false, showFactors: false, driversFlyIn: false },
-  [`${EXECUTE_INDEX}-3`]: { rail: "mini-exec", engine: null,   categories: [],                    drivers: true,  showEngine: false, showFactors: false, driversFlyIn: false },
-
-  // ── Refine (slide 5) ── mini-exec rail, steps 0-6; no rail on step 7 ──
-  [`${REFINE_INDEX}-0`]: { rail: "mini-exec", engine: null, categories: [],                    drivers: true, showEngine: false, showFactors: false, driversFlyIn: false },
-  [`${REFINE_INDEX}-1`]: { rail: "mini-exec", engine: "ml", categories: ["customer", "market"], drivers: true, showEngine: false, showFactors: false, driversFlyIn: false },
-  [`${REFINE_INDEX}-2`]: { rail: "mini-exec", engine: "ml", categories: ["customer"],           drivers: true, showEngine: false, showFactors: false, driversFlyIn: false, activeCustomer: 1, refineStepForCustomer: 2 },
-  [`${REFINE_INDEX}-3`]: { rail: "mini-exec", engine: "ml", categories: ["customer"],           drivers: true, showEngine: false, showFactors: false, driversFlyIn: false, activeCustomer: 0, refineStepForCustomer: 3 },
-  [`${REFINE_INDEX}-4`]: { rail: "mini-exec", engine: "ml", categories: ["customer"],           drivers: true, showEngine: false, showFactors: false, driversFlyIn: false, activeCustomer: 2, refineStepForCustomer: 4 },
-  [`${REFINE_INDEX}-5`]: { rail: "mini-exec", engine: "ml", categories: ["customer"],           drivers: true, showEngine: false, showFactors: false, driversFlyIn: false },
-  [`${REFINE_INDEX}-6`]: { rail: "mini-exec", engine: "ml", categories: ["customer", "market"], drivers: true, showEngine: false, showFactors: false, driversFlyIn: false },
-
-  // ── Refine v2 (slide 6) ── same rail config as original ──
-  [`${REFINE_V2_INDEX}-0`]: { rail: "mini-exec", engine: null, categories: [],                    drivers: true, showEngine: false, showFactors: false, driversFlyIn: false },
-  [`${REFINE_V2_INDEX}-1`]: { rail: "mini-exec", engine: "ml", categories: ["customer", "market"], drivers: true, showEngine: false, showFactors: false, driversFlyIn: false },
-  [`${REFINE_V2_INDEX}-2`]: { rail: "mini-exec", engine: "ml", categories: ["customer"],           drivers: true, showEngine: false, showFactors: false, driversFlyIn: false, activeCustomer: 1, refineStepForCustomer: 2 },
-  [`${REFINE_V2_INDEX}-3`]: { rail: "mini-exec", engine: "ml", categories: ["customer"],           drivers: true, showEngine: false, showFactors: false, driversFlyIn: false, activeCustomer: 0, refineStepForCustomer: 3 },
-  [`${REFINE_V2_INDEX}-4`]: { rail: "mini-exec", engine: "ml", categories: ["customer"],           drivers: true, showEngine: false, showFactors: false, driversFlyIn: false, activeCustomer: 2, refineStepForCustomer: 4 },
-  [`${REFINE_V2_INDEX}-5`]: { rail: "mini-exec", engine: "ml", categories: ["customer"],           drivers: true, showEngine: false, showFactors: false, driversFlyIn: false },
-  [`${REFINE_V2_INDEX}-6`]: { rail: "mini-exec", engine: "ml", categories: ["customer", "market"], drivers: true, showEngine: false, showFactors: false, driversFlyIn: false },
+const RAIL_TIMELINE: Partial<Record<number, (RailContent | null)[]>> = {
+  [POWER_INDEX]: [
+    /* 0  */ { show: "engine-only", engine: null },
+    /* 1  */ { show: "engine-only", engine: "ml" },
+    /* 2  */ { show: "factors", engine: "strat", active: [] },
+    /* 3  */ { show: "factors", engine: "strat", active: ["customer"] },
+    /* 4  */ { show: "factors", engine: "strat", active: ["product"] },
+    /* 5  */ { show: "factors", engine: "strat", active: ["market"] },
+    /* 6  */ { show: "factors", engine: "strat", active: ["order"] },
+    /* 7  */ { show: "factors", engine: "strat", active: ALL_CATS },
+    /* 8  */ { show: "factors", engine: "strat", active: ALL_CATS },
+    /* 9  */ { show: "factors", engine: "both",  active: ALL_CATS },
+    /* 10 */ { show: "factors", engine: null, active: ALL_CATS },
+  ],
+  [EXECUTE_INDEX]: [
+    /* 0  */ { show: "factors", engine: null, active: ALL_CATS },
+    /* 1  */ { show: "drivers", flyIn: true },
+    /* 2  */ { show: "mini-exec" },
+    /* 3  */ { show: "mini-exec" },
+  ],
+  [REFINE_INDEX]: [
+    /* 0  */ { show: "mini-exec" },
+    /* 1  */ { show: "mini-exec" },
+    /* 2  */ { show: "mini-exec", activeCustomer: 1, refineStepForCustomer: 2 },
+    /* 3  */ { show: "mini-exec", activeCustomer: 0, refineStepForCustomer: 3 },
+    /* 4  */ { show: "mini-exec", activeCustomer: 2, refineStepForCustomer: 4 },
+    /* 5  */ { show: "mini-exec" },
+    /* 6  */ { show: "mini-exec" },
+    null,
+  ],
 };
+
+function compileRailTimeline(timeline: Partial<Record<number, (RailContent | null)[]>>): Record<string, RailStepConfig> {
+  const out: Record<string, RailStepConfig> = {};
+  for (const [slideStr, steps] of Object.entries(timeline)) {
+    if (!steps) continue;
+    const si = Number(slideStr);
+    for (let sub = 0; sub < steps.length; sub++) {
+      const c = steps[sub];
+      if (!c) continue;
+      const key = `${si}-${sub}`;
+      switch (c.show) {
+        case "engine-only":
+          out[key] = { rail: "model", engine: c.engine, categories: [], drivers: false, showEngine: true, showFactors: false, driversFlyIn: false };
+          break;
+        case "factors":
+          out[key] = { rail: "model", engine: c.engine, categories: c.active, drivers: false, showEngine: true, showFactors: true, driversFlyIn: false };
+          break;
+        case "drivers":
+          out[key] = { rail: "model", engine: null, categories: [], drivers: true, showEngine: false, showFactors: true, driversFlyIn: c.flyIn };
+          break;
+        case "mini-exec":
+          out[key] = { rail: "mini-exec", engine: null, categories: [], drivers: false, showEngine: false, showFactors: false, driversFlyIn: false, activeCustomer: c.activeCustomer, refineStepForCustomer: c.refineStepForCustomer };
+          break;
+      }
+    }
+  }
+  return out;
+}
+
+const RAIL_CONFIG = compileRailTimeline(RAIL_TIMELINE);
 
 function ModelStatusRail({
   activeCategories,
@@ -182,6 +205,14 @@ function ModelStatusRail({
 }) {
   const activeSet = useMemo(() => new Set(activeCategories), [activeCategories]);
   const [flyX] = useState(() => typeof window !== "undefined" ? window.innerWidth * 0.52 : 700);
+  const [flyH] = useState(() => typeof window !== "undefined" ? window.innerHeight : 800);
+  const driverFlyOffsets: { x: number; y: number }[] = useMemo(() => [
+    { x: flyX * 0.9,  y: -flyH * 0.22 },  // Sales rep — top of circle
+    { x: flyX * 1.15, y: -flyH * 0.02 },   // Price sensitivity — right
+    { x: flyX * 1.1,  y:  flyH * 0.18 },   // Competitive price point — bottom-right
+    { x: flyX * 0.7,  y:  flyH * 0.18 },   // Order frequency — bottom-left
+    { x: flyX * 0.65, y: -flyH * 0.02 },   // Cost to serve — left
+  ], [flyX, flyH]);
 
   const mlActive = engineFocus === "both" || engineFocus === "ml";
   const stratActive = engineFocus === "both" || engineFocus === "strat";
@@ -288,16 +319,16 @@ function ModelStatusRail({
                   key={label}
                   className="flex items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-2 py-1.5"
                   initial={driversFlyIn
-                    ? { opacity: 0, x: flyX, scale: 1.15 }
+                    ? { opacity: 0, x: driverFlyOffsets[i]?.x ?? flyX, y: driverFlyOffsets[i]?.y ?? 0, scale: 0.3 }
                     : { x: 60, opacity: 0, scale: 0.4, rotate: -20 }
                   }
-                  animate={{ x: 0, opacity: 1, scale: 1, rotate: 0 }}
+                  animate={{ x: 0, y: 0, opacity: 1, scale: 1, rotate: 0 }}
                   transition={driversFlyIn
                     ? {
-                        delay: 0.15 + i * 0.18,
-                        duration: 0.75,
+                        delay: 0.15 + i * 0.14,
+                        duration: 0.8,
                         ease: [0.22, 1, 0.36, 1],
-                        scale: { duration: 0.5, delay: 0.15 + i * 0.18 },
+                        scale: { duration: 0.6, delay: 0.15 + i * 0.14 },
                       }
                     : {
                         x: { duration: 0.5, delay: 0.1 + i * 0.1, ease: [0.22, 1, 0.36, 1] },
@@ -408,12 +439,10 @@ const RAIL_CUSTOMER_TO_REFINE_STEP: Record<number, number> = Object.fromEntries(
 
 function MiniExecuteConnector({ refineStep, flyIn = false, onSelectCustomer, timelinePhase = 0 }: { refineStep?: number; flyIn?: boolean; onSelectCustomer?: (step: number) => void; timelinePhase?: number }) {
   const NAVY = "#00446A";
-  const [flyX] = useState(() => typeof window !== "undefined" ? window.innerWidth * 0.45 : 640);
-  const [flyY] = useState(() => typeof window !== "undefined" ? window.innerHeight * 0.22 : 200);
+  const [flyX] = useState(() => typeof window !== "undefined" ? window.innerWidth * 0.72 : 1000);
+  const [flyY] = useState(() => typeof window !== "undefined" ? -window.innerHeight * 0.04 : -30);
 
-  const railCfg = refineStep !== undefined
-    ? (RAIL_CONFIG[`${REFINE_INDEX}-${refineStep}`] ?? RAIL_CONFIG[`${REFINE_V2_INDEX}-${refineStep}`])
-    : undefined;
+  const railCfg = refineStep !== undefined ? RAIL_CONFIG[`${REFINE_INDEX}-${refineStep}`] : undefined;
   const activeIdx = railCfg?.activeCustomer ?? -1;
   const adjustedSet = useMemo(() => {
     const s = new Set<number>();
@@ -591,25 +620,11 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: "4b | Refine (v2)",
-    subtitle: "Two-curve model: demand curve + recommended price",
-    slides: [
-      { index: REFINE_V2_INDEX, label: "Market effects", subStep: 0 },
-      { index: REFINE_V2_INDEX, label: "Pricing curve", subStep: 1 },
-      { index: REFINE_V2_INDEX, label: "Quickparts", subStep: 2 },
-      { index: REFINE_V2_INDEX, label: "Acme", subStep: 3 },
-      { index: REFINE_V2_INDEX, label: "Medsupply", subStep: 4 },
-      { index: REFINE_V2_INDEX, label: "Price optimization", subStep: 5 },
-      { index: REFINE_V2_INDEX, label: "Market changes", subStep: 6 },
-      { index: REFINE_V2_INDEX, label: "Full portfolio", subStep: 7 },
-    ],
-  },
-  {
     label: "Closing",
     subtitle: "Summary and next steps",
     slides: [
-      { index: 7, label: "Summary" },
-      { index: 8, label: "Thank you" },
+      { index: 6, label: "Summary" },
+      { index: 7, label: "Thank you" },
     ],
   },
 ];
@@ -648,6 +663,9 @@ export function Home() {
   const audienceWindowRef = useRef<Window | null>(null);
   const iframeSrcRef = useRef("");
   const [railEntering, setRailEntering] = useState(false);
+  const spotlightRefinedRef = useRef(false);
+  const [spotlightAdvanceReq, setSpotlightAdvanceReq] = useState(0);
+  const handleSpotlightRefined = useCallback(() => { spotlightRefinedRef.current = true; }, []);
   const [dynamicActiveCategories, setDynamicActiveCategories] = useState<CategoryKey[] | null>(null);
   const handleActiveCategoryChange = useCallback((cats: string[]) => setDynamicActiveCategories(cats as CategoryKey[]), []);
   const [executeCustomer, setExecuteCustomer] = useState("Acme");
@@ -687,7 +705,6 @@ export function Home() {
   const currentRailType: RailType = railCfg?.rail ?? null;
   const railVisible = currentRailType !== null;
   const engineFocus: EngineFocus = railCfg?.engine ?? null;
-  const showDrivers = railCfg?.drivers ?? false;
   const staticActiveCategories = railCfg?.categories ?? [];
   const activeCategories = (slide === POWER_INDEX && dynamicActiveCategories && dynamicActiveCategories.length > 0)
     ? dynamicActiveCategories
@@ -1113,6 +1130,11 @@ export function Home() {
   );
 
   useEffect(() => {
+    spotlightRefinedRef.current = false;
+    setSpotlightAdvanceReq(0);
+  }, [subStep]);
+
+  useEffect(() => {
     if (skipAnimation || isAudience || mode === "presenter") {
       const t = setTimeout(() => setAnimationDone(true));
       return () => clearTimeout(t);
@@ -1172,11 +1194,24 @@ export function Home() {
 
       const currentMax = subStepConfig[slide] ?? 0;
 
+      // Timeline phase navigation within the refine slide's timeline step
+      if (slide === REFINE_INDEX && subStep === 6) {
+        if (target === slide + 1 && refineTimelinePhase < 3) {
+          setRefineTimelinePhase(prev => prev + 1);
+          return;
+        }
+        if (target === slide - 1 && refineTimelinePhase > 0) {
+          setRefineTimelinePhase(prev => prev - 1);
+          return;
+        }
+      }
+
       // Forward within sub-steps
       if (target === slide + 1 && currentMax > 0 && subStep < currentMax - 1) {
         startTransition(() => {
           setSkipAnimation(false);
           setSubStep((s) => s + 1);
+          if (slide === REFINE_INDEX && subStep === 5) setRefineTimelinePhase(0);
         });
         return;
       }
@@ -1185,6 +1220,7 @@ export function Home() {
         startTransition(() => {
           setSkipAnimation(true);
           setSubStep((s) => s - 1);
+          if (slide === REFINE_INDEX && subStep === 7) setRefineTimelinePhase(3);
         });
         return;
       }
@@ -1211,7 +1247,7 @@ export function Home() {
         });
       }
     },
-    [total, slide, subStep, subStepConfig, presenterSkipped],
+    [total, slide, subStep, subStepConfig, presenterSkipped, refineTimelinePhase],
   );
 
   useEffect(() => {
@@ -1219,7 +1255,12 @@ export function Home() {
     function onKey(e: KeyboardEvent) {
       if (e.key === "ArrowRight" || e.key === "ArrowDown") {
         e.preventDefault();
-        navigate(slide + 1);
+        const isRefineSpotlight = slide === REFINE_INDEX && subStep >= 2 && subStep <= 4;
+        if (isRefineSpotlight && !spotlightRefinedRef.current) {
+          setSpotlightAdvanceReq((r) => r + 1);
+        } else {
+          navigate(slide + 1);
+        }
       } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
         e.preventDefault();
         navigate(slide - 1);
@@ -1326,15 +1367,9 @@ export function Home() {
                           skipAnimation={effectiveSkip}
                           isActive={isActive}
                           onTimelinePhase={isActive ? handleRefineTimelinePhase : undefined}
-                        />
-                      )}
-                      {sc.kind === "refine-v2" && (
-                        <MemoRefineV2
-                          step={isActive ? subStep : 0}
-                          onAutoAdvance={isActive && !skipAnimation ? () => navigate(slide + 1) : undefined}
-                          skipAnimation={effectiveSkip}
-                          isActive={isActive}
-                          onTimelinePhase={isActive ? handleRefineTimelinePhase : undefined}
+                          requestedPhase={isActive && subStep === 6 ? refineTimelinePhase : undefined}
+                          advanceRequest={spotlightAdvanceReq}
+                          onSpotlightRefined={handleSpotlightRefined}
                         />
                       )}
                       {sc.kind === "execute" && <MemoExecute step={isActive ? subStep : 0} skipAnimation={effectiveSkip} isActive={isActive} onCustomerChange={isActive ? handleExecuteCustomerChange : undefined} />}
@@ -1358,10 +1393,10 @@ export function Home() {
         if (railCfg.rail === "mini-exec") return (
           <MiniExecuteConnector
             key="mini-exec"
-            refineStep={slide === REFINE_INDEX || slide === REFINE_V2_INDEX ? subStep : undefined}
+            refineStep={slide === REFINE_INDEX ? subStep : undefined}
             flyIn
-            onSelectCustomer={slide === REFINE_INDEX || slide === REFINE_V2_INDEX ? (step: number) => setSubStep(step) : undefined}
-            timelinePhase={slide === REFINE_INDEX || slide === REFINE_V2_INDEX ? refineTimelinePhase : 0}
+            onSelectCustomer={slide === REFINE_INDEX ? (step: number) => setSubStep(step) : undefined}
+            timelinePhase={slide === REFINE_INDEX ? refineTimelinePhase : 0}
           />
         );
         return (

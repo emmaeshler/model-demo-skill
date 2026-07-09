@@ -214,7 +214,7 @@ const STEP_CONTEXT: Record<number, { title: string; body: string }> = {
     body: "Thousands of transactions, seen together, reveal the shape of your market — and every price gets refined against it.",
   },
   1: {
-    title: "Your market's price–volume curve",
+    title: "Your calibrated curve",
     body: "The model builds a price–volume relationship from your historical win/loss data.",
   },
   2: {
@@ -315,7 +315,7 @@ const PORTFOLIO_REVEAL_ORDER = (() => {
   return order;
 })();
 
-export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, onTimelinePhase }: { step: number; onAutoAdvance?: () => void; skipAnimation?: boolean; isActive: boolean; onTimelinePhase?: (phase: number) => void }) {
+export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, onTimelinePhase, requestedPhase, advanceRequest, onSpotlightRefined }: { step: number; onAutoAdvance?: () => void; skipAnimation?: boolean; isActive: boolean; onTimelinePhase?: (phase: number) => void; requestedPhase?: number; advanceRequest?: number; onSpotlightRefined?: () => void }) {
   const { shareMode } = useShareMode();
 
   const curve = useMemo(() => {
@@ -404,6 +404,7 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
   const spotlightIdx = isSpotlight ? chartStep - 2 : -1;
 
   const [spotPhase, setSpotPhase] = useState(0);
+  const spotRefinedForStep = useRef(-1);
   useEffect(() => {
     if (!isActive) {
       setSpotPhase(0);
@@ -414,11 +415,25 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
       return () => clearTimeout(t0);
     }
     if (skipAnimation) {
+      spotRefinedForStep.current = chartStep;
+      onSpotlightRefined?.();
       const t0 = setTimeout(() => setSpotPhase(3));
       return () => clearTimeout(t0);
     }
+    spotRefinedForStep.current = -1;
     setSpotPhase(0);
   }, [chartStep, isSpotlight, skipAnimation, isActive]);
+
+  useEffect(() => {
+    if (!advanceRequest || !isSpotlight) return;
+    if (spotRefinedForStep.current !== chartStep) {
+      spotRefinedForStep.current = chartStep;
+      setSpotPhase(2);
+      onSpotlightRefined?.();
+    } else {
+      onAutoAdvance?.();
+    }
+  }, [advanceRequest]);
 
   /* ── Timeline intro + click-to-advance (step 6) ────── */
   const [indexIntroPhase, setIndexIntroPhase] = useState(0);
@@ -432,6 +447,12 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
     const t2 = setTimeout(() => setIndexIntroPhase(2), 1600);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [chartStep, skipAnimation, isActive]);
+
+  useEffect(() => {
+    if (requestedPhase !== undefined && requestedPhase !== indexPhase) {
+      setIndexPhase(requestedPhase);
+    }
+  }, [requestedPhase]);
 
   const advanceTimeline = () => {
     if (indexPhase < TIMELINE_EVENTS.length) setIndexPhase(prev => prev + 1);
@@ -1139,7 +1160,7 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
 
 
 
-              {/* Recommended price label */}
+              {/* Calibrated curve label (step 1 only) */}
               {showCurve && (
                 <motion.text
                   x={curve.sampleAt(0.5).x}
@@ -1155,7 +1176,7 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
                   }}
                   transition={{ delay: 0.8, duration: 0.5 }}
                 >
-                  Recommended price
+                  Calibrated curve
                 </motion.text>
               )}
 
@@ -1265,8 +1286,19 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
                 const dotLifted = isAllToCurve || isPast || (isActive && isLifted);
                 const targetCy = dotLifted ? pt.y : belowY;
 
+                const handleSpotClick = () => {
+                  if (!isActive) return;
+                  if (spotRefinedForStep.current !== chartStep) {
+                    spotRefinedForStep.current = chartStep;
+                    setSpotPhase(2);
+                    onSpotlightRefined?.();
+                  } else {
+                    onAutoAdvance?.();
+                  }
+                };
+
                 return (
-                  <g key={seg.label}>
+                  <g key={seg.label} onClick={handleSpotClick} style={{ cursor: isActive ? "pointer" : "default" }}>
                     {/* Dashed line from dot to curve position */}
                     {isActive && (
                       <motion.line
@@ -1316,7 +1348,6 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
                         cy: { duration: 1.0, ease: [0.22, 1, 0.36, 1] },
                         opacity: { duration: 0.3, delay: 0.1 },
                       }}
-                      onClick={() => { if (isActive) { if (spotPhase < 2) setSpotPhase(2); else onAutoAdvance?.(); } }}
                       style={{ cursor: isActive ? "pointer" : "default" }}
                     />
 
@@ -1397,7 +1428,6 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             transition={{ delay: 0.3, duration: 0.4 }}
-                            onClick={() => { if (spotPhase < 2) setSpotPhase(2); else onAutoAdvance?.(); }}
                             style={{ cursor: "pointer" }}
                           >
                             <motion.g

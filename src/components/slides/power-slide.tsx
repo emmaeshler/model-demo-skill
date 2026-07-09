@@ -1505,7 +1505,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                               gap: 20,
                               padding: "12px 12px",
                               width: "100%",
-                              maxWidth: 960,
+                              maxWidth: 1100,
                             }}
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -1521,18 +1521,18 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                               >
                                 5 Model Drivers
                               </motion.span>
-                              <div style={{ display: "flex", flexWrap: "wrap", gap: 20, justifyContent: "center", maxWidth: 1000 }}>
+                              <div style={{ display: "flex", flexWrap: "wrap", gap: 16, justifyContent: "center", maxWidth: 1100 }}>
                                 {SELECTED_FACTORS.map((sf, si) => (
                                   <motion.span
                                     key={sf.label}
                                     style={{
                                       display: "inline-flex",
                                       alignItems: "center",
-                                      gap: 12,
+                                      gap: 10,
                                       borderRadius: 12,
                                       border: `2.5px solid ${TEAL}`,
-                                      padding: "24px 38px",
-                                      fontSize: 26,
+                                      padding: "20px 28px",
+                                      fontSize: 22,
                                       fontWeight: 700,
                                       fontFamily: "inherit",
                                       whiteSpace: "nowrap",
@@ -1545,8 +1545,8 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                                   >
                                     {sf.label}
                                     <span style={{
-                                      fontSize: 22, fontWeight: 600, color: `${TEAL}90`,
-                                      borderLeft: `1.5px solid ${TEAL}30`, paddingLeft: 12, marginLeft: 4,
+                                      fontSize: 18, fontWeight: 600, color: `${TEAL}90`,
+                                      borderLeft: `1.5px solid ${TEAL}30`, paddingLeft: 10, marginLeft: 4,
                                     }}>
                                       {sf.weight}×
                                     </span>
