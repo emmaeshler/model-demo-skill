@@ -120,7 +120,7 @@ const DRIVER_RAIL_ITEMS: { label: string; color: string; tint: string }[] = [
 
 
 const ACTIVE_CATEGORIES_MAP: Record<string, CategoryKey[]> = {
-  [`${POWER_INDEX}-2`]: ["customer", "product", "market", "order"],
+  [`${POWER_INDEX}-2`]: [],
   [`${POWER_INDEX}-3`]: ["customer"],
   [`${POWER_INDEX}-4`]: ["product"],
   [`${POWER_INDEX}-5`]: ["market"],
@@ -152,6 +152,7 @@ function ModelStatusRail({
   showEngine = true,
   customerDotColor,
   driversFlyIn = false,
+  showFactors = false,
 }: {
   activeCategories: CategoryKey[];
   drivers?: { label: string; color: string; tint: string }[];
@@ -159,6 +160,7 @@ function ModelStatusRail({
   showEngine?: boolean;
   customerDotColor?: string;
   driversFlyIn?: boolean;
+  showFactors?: boolean;
 }) {
   const activeSet = useMemo(() => new Set(activeCategories), [activeCategories]);
   const [flyX] = useState(() => typeof window !== "undefined" ? window.innerWidth * 0.52 : 700);
@@ -232,7 +234,7 @@ function ModelStatusRail({
       </>)}
 
       {/* Factors section */}
-      {(drivers || activeSet.size > 0) && <div className="flex flex-col gap-1.5">
+      {(drivers || activeSet.size > 0 || showFactors) && <div className="flex flex-col gap-1.5">
         <motion.span
           className="text-[9px] font-semibold uppercase tracking-[0.12em] text-gray-400"
           initial={{ opacity: 0 }}
@@ -383,7 +385,8 @@ const RAIL_INDEX_TO_REFINE_STEP: Record<number, number> = { 0: 3, 1: 2, 2: 4 };
 
 function MiniExecuteConnector({ refineStep, flyIn = false, onSelectCustomer }: { refineStep?: number; flyIn?: boolean; onSelectCustomer?: (step: number) => void }) {
   const NAVY = "#00446A";
-  const [flyX] = useState(() => typeof window !== "undefined" ? window.innerWidth * 0.52 : 700);
+  const [flyX] = useState(() => typeof window !== "undefined" ? window.innerWidth * 0.45 : 640);
+  const [flyY] = useState(() => typeof window !== "undefined" ? window.innerHeight * 0.22 : 200);
 
   const activeIdx = refineStep !== undefined ? REFINE_STEP_TO_RAIL[refineStep] ?? -1 : -1;
   const adjustedSet = useMemo(() => {
@@ -405,22 +408,33 @@ function MiniExecuteConnector({ refineStep, flyIn = false, onSelectCustomer }: {
 
   return (
     <motion.div
-      className="fixed left-0 top-1/2 z-40 flex w-[130px] -translate-y-1/2 flex-col rounded-r-xl bg-white/95 px-3 py-4 shadow-md ring-1 ring-black/[0.06] backdrop-blur-sm"
+      className={cn(
+        "fixed left-0 top-1/2 z-40 flex w-[130px] -translate-y-1/2 flex-col rounded-r-xl px-3 py-4",
+        !flyIn && "bg-white/95 shadow-md ring-1 ring-black/[0.06] backdrop-blur-sm",
+      )}
       initial={{ x: flyIn ? 0 : -140 }}
       animate={{ x: 0 }}
       exit={{ x: -140, transition: { duration: 0.3, ease: [0.4, 0, 1, 1] } }}
       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
     >
+      {flyIn && (
+        <motion.div
+          className="absolute inset-0 rounded-r-xl bg-white/95 shadow-md ring-1 ring-black/[0.06] backdrop-blur-sm"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.35, delay: 0.5 }}
+        />
+      )}
       <motion.span
-        className="mb-2.5 text-[8px] font-semibold uppercase tracking-[0.12em] text-gray-400"
+        className="relative z-10 mb-2.5 text-[8px] font-semibold uppercase tracking-[0.12em] text-gray-400"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.3, delay: flyIn ? 0.6 : 0.2 }}
+        transition={{ duration: 0.3, delay: flyIn ? 0.7 : 0.2 }}
       >
-        Customer Order Price
+        Customer Order Price, Refined
       </motion.span>
 
-      <div className="flex flex-col gap-1.5">
+      <div className="relative z-10 flex flex-col gap-1.5">
         {RAIL_CUSTOMERS.map((c, i) => {
           const isActive = i === activeIdx;
           const isAdjusted = adjustedSet.has(i);
@@ -431,16 +445,17 @@ function MiniExecuteConnector({ refineStep, flyIn = false, onSelectCustomer }: {
               key={c.label}
               className="rounded-md px-2 py-1.5"
               initial={flyIn
-                ? { opacity: 0, x: flyX, scale: 1.15 }
+                ? { opacity: 0, x: flyX, y: flyY, scale: 1.15 }
                 : { opacity: 0, x: -8 }
               }
               animate={{
                 opacity: activeIdx >= 0 && !isActive ? 0.45 : 1,
                 x: 0,
+                y: 0,
                 backgroundColor: isActive ? `${c.dot}14` : `${NAVY}05`,
               }}
               transition={flyIn
-                ? { delay: 0.15 + i * 0.18, duration: 0.75, ease: [0.22, 1, 0.36, 1], scale: { duration: 0.5, delay: 0.15 + i * 0.18 } }
+                ? { delay: 0.15 + i * 0.22, duration: 0.85, ease: [0.22, 1, 0.36, 1], scale: { duration: 0.5, delay: 0.15 + i * 0.22 } }
                 : { delay: 0.3 + i * 0.08, duration: 0.3, ease: [0.22, 1, 0.36, 1] }
               }
               style={{ ...(isActive ? { border: `1.5px solid ${c.dot}40` } : { border: "1.5px solid transparent" }), cursor: onSelectCustomer ? "pointer" : undefined }}
@@ -1280,7 +1295,7 @@ export function Home() {
         </AnimatePresence>
       </main>
 
-      <AnimatePresence mode="wait">
+      <AnimatePresence>
       {railVisible && (
         slide === REFINE_INDEX ? (
           <MiniExecuteConnector key="mini-exec" refineStep={subStep} flyIn onSelectCustomer={(step) => setSubStep(step)} />
@@ -1293,6 +1308,7 @@ export function Home() {
             showEngine={slide === POWER_INDEX}
             customerDotColor={slide === EXECUTE_INDEX ? CUSTOMER_DOT_COLORS[executeCustomer] : undefined}
             driversFlyIn={slide === POWER_INDEX}
+            showFactors={slide === POWER_INDEX && subStep >= 2}
           />
         )
       )}

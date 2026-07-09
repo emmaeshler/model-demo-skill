@@ -101,7 +101,7 @@ const SQUARE_FACTORS: { label: string; category: "product" | "market" | "custome
   { label: "Competitor activity", category: "market" },
   { label: "Customer channel", category: "customer" },
   { label: "End market", category: "customer", emphasis: "crossoff" },
-  { label: "Sales rep", category: "customer", emphasis: "highlight" },
+  { label: "Sales rep", category: "customer" },
   { label: "Region", category: "customer" },
   { label: "Size of customer", category: "customer" },
   { label: "Customer tenure", category: "customer" },
@@ -152,7 +152,6 @@ const SELECTED_FACTORS = [
 
 const CATEGORY_ACTIONS: Record<string, { label: string; action: "elevate" | "remove" | "lower" | "add" }[]> = {
   customer: [
-    { label: "Sales rep", action: "elevate" },
     { label: "End market", action: "remove" },
   ],
   product: [
@@ -167,7 +166,7 @@ const CATEGORY_ACTIONS: Record<string, { label: string; action: "elevate" | "rem
 };
 
 const CATEGORY_ACTION_HINTS: { icon: string; color: string; headline: string; detail: string }[] = [
-  { icon: "×", color: MUTED, headline: "Remove a factor", detail: "End market isn't a meaningful driver for this client — take it out." },
+  { icon: "×", color: TEAL, headline: "Remove a factor", detail: "End market isn't a meaningful driver for this client — take it out." },
   { icon: "↑", color: TEAL, headline: "Weight it higher", detail: "Cost to serve is a key profitability driver — weight it higher." },
   { icon: "+", color: GREEN, headline: "Add a factor", detail: "Competitive intelligence is critical in this market — add it to the model." },
   { icon: "↓", color: PURPLE, headline: "Lower its weight", detail: "Seasonality has minimal impact for this customer — dial it down." },
@@ -505,6 +504,8 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
       onActiveCategoryChange([cats[selectionPhase]]);
     } else if (morphPhase >= 0 && morphPhase < 4) {
       onActiveCategoryChange([cats[morphPhase]]);
+    } else if (selectionPhase < 0) {
+      onActiveCategoryChange([]);
     } else {
       onActiveCategoryChange([...cats]);
     }
@@ -571,7 +572,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
   return (
     <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-7xl flex-col items-center justify-start px-6 pt-4">
       {/* Title — fixed-height container so chart never resizes */}
-      <div className="relative w-full" style={{ height: 100, flexShrink: 0, transform: "translateX(calc(var(--rail-inset, 0px) * -0.5))" }}>
+      <div className="relative w-full" style={{ height: 116, flexShrink: 0, transform: "translateX(calc(var(--rail-inset, 0px) * -0.5))" }}>
         <AnimatePresence mode="wait">
           {chartStep === 0 && (
             <motion.div
@@ -812,7 +813,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
         <motion.div
           className="absolute inset-0 flex items-center justify-center"
           initial={{ opacity: 1 }}
-          animate={{ opacity: chartStep === 0 && introPhase < 4 ? 1 : 0 }}
+          animate={{ opacity: 0 }}
           transition={{ duration: 0.6 }}
           style={{ pointerEvents: "none" }}
         >
@@ -857,10 +858,10 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
 
       <motion.div
         className="absolute inset-0 flex items-stretch gap-0"
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 1, y: 0 }}
         animate={{
-          opacity: chartStep === 0 && introPhase < 4 ? 0 : 1,
-          y: chartStep === 0 && introPhase < 4 ? 20 : convergeReady ? 25 : 0,
+          opacity: 1,
+          y: convergeReady ? 25 : 0,
         }}
         transition={{ duration: 1.0, ease: [0.22, 1, 0.36, 1] }}
       >
@@ -999,7 +1000,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
             if (shareMode && i % 4 !== 0) return null;
             const convAngle = (i / DOT_COUNT) * Math.PI * 2;
             const convDist = 4 + (i % 7) * 1.5;
-            const dotEntranceDelay = chartStep === 0 ? dot.delay * 1.6 + (i % 40) * 0.012 : 0;
+            let dotEntranceDelay = chartStep === 0 ? dot.delay * 1.6 + (i % 40) * 0.012 : 0;
 
             let targetCx: number | number[];
             let targetCy: number | number[];
@@ -1055,12 +1056,18 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
               cyTransition = { duration: 1.2, delay: dot.delay * 0.3, ease: [0.22, 1, 0.36, 1] };
               opacityDelay = dot.delay * 0.3;
             } else if (chartStep === 0 && introPhase < 5) {
+              const wavePhase = dot.delay < 0.14 ? 0 : dot.delay < 0.27 ? 1 : 3;
+              const waveActive = introPhase >= wavePhase;
+              const isPunch = introPhase >= 3;
+              const waveStagger = (dot.driftDelay / 5) * (isPunch && wavePhase === 3 ? 0.3 : 0.7);
+              dotEntranceDelay = waveActive ? waveStagger : 0;
               targetCx = dot.sx;
-              targetCy = dot.sy - 18;
-              targetR = introPhase >= 4 ? dot.r : 0;
-              targetOpacity = introPhase >= 4 ? dot.scatterOpacity : 0;
-              cxTransition = introPhase >= 4 ? { duration: 0.5, delay: dot.delay * 0.6, ease: [0.22, 1, 0.36, 1] } : { duration: 0.01 };
-              cyTransition = introPhase >= 4 ? { duration: 0.6, delay: dot.delay * 0.6, ease: [0.22, 1, 0.36, 1] } : { duration: 0.01 };
+              targetCy = waveActive ? dot.sy : dot.sy - 18;
+              targetR = waveActive ? dot.r : 0;
+              targetOpacity = waveActive ? (isPunch ? dot.scatterOpacity : dot.scatterOpacity * 0.5) : 0;
+              cxTransition = { duration: waveActive ? 0.8 : 0.01, delay: waveActive ? waveStagger : 0, ease: [0.22, 1, 0.36, 1] };
+              cyTransition = { duration: waveActive ? 0.8 : 0.01, delay: waveActive ? waveStagger : 0, ease: [0.22, 1, 0.36, 1] };
+              opacityDelay = waveActive ? (isPunch && wavePhase < 3 ? 0 : waveStagger) : 0;
             } else if (introPhase >= 5 || chartStep > 0) {
               targetCx = chartStep > 0
                 ? dot.sx
@@ -1199,7 +1206,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
           {factorsVisible && !convergeReady && (
             <motion.foreignObject
               key="factor-pills-fo"
-              x={10} y={-25} width={1000} height={560}
+              x={10} y={-40} width={1000} height={570}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ x: -350, scale: 0.6, opacity: 0, transition: { duration: 0.6, ease: [0.4, 0, 0.2, 1] } }}
@@ -1489,8 +1496,8 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                             style={{
                               display: "flex",
                               flexDirection: "column",
-                              gap: 32,
-                              padding: "24px 12px",
+                              gap: 20,
+                              padding: "12px 12px",
                               width: "100%",
                               maxWidth: 960,
                             }}
@@ -1508,7 +1515,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                               >
                                 5 Model Drivers
                               </motion.span>
-                              <div style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "center" }}>
+                              <div style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "center", maxWidth: 620 }}>
                                 {SELECTED_FACTORS.map((sf, si) => (
                                   <motion.span
                                     key={sf.label}
@@ -1986,13 +1993,23 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
         {chartStep === 1 && scanCardCount > 0 && !driversRevealed && (
           <motion.div
             key="scan-cards"
-            className="flex justify-center gap-2 w-full overflow-hidden -mt-10"
+            className="flex flex-col items-center gap-1.5 w-full overflow-hidden -mt-10"
             style={{ maxWidth: "calc(100% - 2rem)", paddingLeft: "5%", paddingRight: "10%" }}
             initial={{ opacity: 0, y: 16, height: 0 }}
             animate={{ opacity: 1, y: 0, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           >
+            <motion.div
+              className="text-[0.7rem] font-semibold tracking-[0.08em] uppercase"
+              style={{ color: MUTED }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4 }}
+            >
+              Dimensions identified
+            </motion.div>
+            <div className="flex justify-center gap-2 w-full">
             {SPOTLIGHTS.map((s, i) => {
               const d = DRIVERS[s.cluster];
               const isActive = i === scanCardCount - 1;
@@ -2056,6 +2073,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                 </motion.div>
               );
             })}
+            </div>
           </motion.div>
         )}
         {/* Step 1 drivers: reveal 5 model drivers */}

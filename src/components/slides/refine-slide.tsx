@@ -417,12 +417,8 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
       const t0 = setTimeout(() => setSpotPhase(3));
       return () => clearTimeout(t0);
     }
-    const t0 = setTimeout(() => setSpotPhase(0));
-    const t1 = setTimeout(() => setSpotPhase(1), 2200);
-    const t2 = setTimeout(() => setSpotPhase(2), 3400);
-    const t3 = setTimeout(() => setSpotPhase(3), 5200);
-    return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
-  }, [chartStep, isSpotlight, skipAnimation, onAutoAdvance, isActive]);
+    setSpotPhase(0);
+  }, [chartStep, isSpotlight, skipAnimation, isActive]);
 
   /* ── Timeline intro + click-to-advance (step 6) ────── */
   const [indexIntroPhase, setIndexIntroPhase] = useState(0);
@@ -431,7 +427,10 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
     if (!isActive) { setIndexPhase(0); setIndexIntroPhase(0); return; }
     if (chartStep !== 6) { setIndexPhase(0); setIndexIntroPhase(0); return; }
     if (skipAnimation) { setIndexPhase(TIMELINE_EVENTS.length); setIndexIntroPhase(2); return; }
-    setIndexIntroPhase(2);
+    setIndexIntroPhase(0);
+    const t1 = setTimeout(() => setIndexIntroPhase(1), 600);
+    const t2 = setTimeout(() => setIndexIntroPhase(2), 1600);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [chartStep, skipAnimation, isActive]);
 
   const advanceTimeline = () => {
@@ -458,9 +457,10 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
     setIndexMorphProgress(0);
     setKpiRevealed(false);
     if (skipAnimation || shareMode) { setIndexMorphProgress(1); setKpiRevealed(true); return; }
-    const CARD_DELAY = 200;
-    const MORPH_DURATION = 900;
-    const KPI_DELAY = 300;
+    const isFirstEvent = prev === 0;
+    const CARD_DELAY = isFirstEvent ? 400 : 200;
+    const MORPH_DURATION = isFirstEvent ? 1200 : 900;
+    const KPI_DELAY = isFirstEvent ? 500 : 300;
     const c1 = 1.70158;
     const c3 = c1 + 1;
     let frame: number;
@@ -469,7 +469,9 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
       const tick = (now: number) => {
         if (!start) start = now;
         const raw = Math.min(1, (now - start) / MORPH_DURATION);
-        const eased = 1 + c3 * Math.pow(raw - 1, 3) + c1 * Math.pow(raw - 1, 2);
+        const eased = isFirstEvent
+          ? 1 - Math.pow(1 - raw, 3)
+          : 1 + c3 * Math.pow(raw - 1, 3) + c1 * Math.pow(raw - 1, 2);
         setIndexMorphProgress(Math.max(0, eased));
         if (raw < 1) frame = requestAnimationFrame(tick);
         else setIndexMorphProgress(1);
@@ -560,8 +562,6 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
 
   const heading = isPortfolio
     ? "We do this across your entire portfolio"
-    : isIndexShift && indexPhase > 0
-    ? "The market moves. The curve moves with it."
     : isIndexShift
     ? "The market moves. The curve moves with it."
     : isAllToCurve
@@ -572,10 +572,8 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
 
   const subtitle = isPortfolio
       ? "Every product segment gets its own demand curve — continuously recalibrated as the market shifts."
-      : isIndexShift && indexPhase > 0
-      ? null
       : isIndexShift
-      ? "When costs or demand shift, the curve moves — and every price adjusts with it."
+      ? null
       : isSpotlight
         ? SEGMENT_HIGHLIGHTS[spotlightIdx].beforeBody
         : STEP_CONTEXT[chartStep]?.body || null;
@@ -729,7 +727,21 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
                 className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
                 style={{ color: NAVY }}
               >
-                {heading}
+                {isIndexShift ? (
+                  <>
+                    The market moves.{" "}
+                    <span className="relative inline-block">
+                      The curve moves with it.
+                      <motion.span
+                        className="absolute left-0 right-0 h-[2.5px] rounded-full"
+                        style={{ backgroundColor: STRAT_BLUE, bottom: -3, transformOrigin: "left" }}
+                        initial={{ scaleX: 0 }}
+                        animate={{ scaleX: indexIntroPhase >= 1 ? 1 : 0 }}
+                        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                      />
+                    </span>
+                  </>
+                ) : heading}
               </motion.h2>
               {subtitle && (
                 <AnimatePresence mode="wait">
@@ -769,95 +781,98 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
       {/* Unified chart region */}
       <div className={`relative w-full flex-1 min-h-0 flex flex-col overflow-hidden${isIndexShift ? ' rounded-2xl mt-2' : ''}`} style={isIndexShift ? { border: `1px solid ${NAVY}0F` } : undefined}>
 
-      {/* Start timeline prompt (after intro finishes) */}
-      <AnimatePresence>
-        {isIndexShift && indexPhase === 0 && indexIntroPhase >= 2 && (
-          <motion.div
-            key="start-prompt"
-            className="w-full flex-shrink-0 flex items-center justify-center px-6 py-3"
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.4 }}
-          >
-            <motion.button
-              onClick={advanceTimeline}
-              className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-[13px] font-semibold"
-              style={{ backgroundColor: `${STRAT_BLUE}0A`, color: STRAT_BLUE, border: `1.5px solid ${STRAT_BLUE}20` }}
-              whileHover={{ backgroundColor: `${STRAT_BLUE}18` }}
-              transition={{ duration: 0.2 }}
-            >
-              Start timeline &#8250;
-            </motion.button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Timeline area — animated height prevents layout jumps */}
+      <motion.div
+        className="relative w-full flex-shrink-0"
+        initial={false}
+        animate={{
+          height: isIndexShift && indexIntroPhase >= 2 ? 140 : 0,
+        }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      >
 
-      {/* Timeline strip — date/card + scrubber (visible after first event) */}
+      {/* Timeline strip — date/card + scrubber */}
       <AnimatePresence>
-        {isIndexShift && indexPhase > 0 && (
+        {isIndexShift && indexIntroPhase >= 2 && (
           <motion.div
             key="timeline-strip"
-            className="w-full flex-shrink-0 px-6 pt-3 pb-2"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
+            className="absolute inset-x-0 top-0 px-6 pt-3 pb-2"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
           >
             {/* Date display / Event card */}
-            <div className="relative flex items-center justify-center" style={{ height: 70, marginBottom: 4 }}>
+            <div className="relative flex items-center justify-center" style={{ height: 70, marginBottom: 4, transform: "translateX(calc(var(--rail-inset, 0px) * -0.5))" }}>
               <motion.button
                 className="absolute left-0 z-10 flex h-8 w-8 items-center justify-center rounded-full"
-                style={{ backgroundColor: `${NAVY}08`, color: MUTED }}
+                style={{ backgroundColor: `${NAVY}08`, color: MUTED, pointerEvents: indexPhase > 0 ? "auto" as const : "none" as const }}
                 onClick={retreatTimeline}
                 initial={{ opacity: 0 }}
-                animate={{ opacity: 0.7 }}
-                whileHover={{ opacity: 1, scale: 1.1 }}
+                animate={{ opacity: indexPhase > 0 ? 0.7 : 0.25 }}
+                whileHover={{ opacity: indexPhase > 0 ? 1 : 0.25, scale: indexPhase > 0 ? 1.1 : 1 }}
                 transition={{ duration: 0.2 }}
               >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 3L4.5 7L8.5 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </motion.button>
               <AnimatePresence mode="wait">
-                {currentEvent ? (
-                  <motion.div
-                    key={`event-${indexPhase}`}
-                    className="flex flex-col items-center cursor-pointer"
-                    onClick={advanceTimeline}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.3, ease: "easeOut" }}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <span
-                        className="rounded-full px-3 py-0.5 text-[11px] font-bold uppercase tracking-widest"
-                        style={{ backgroundColor: `${STRAT_BLUE}12`, color: STRAT_BLUE }}
-                      >
-                        {getMonthLabel(currentEvent.month)}
-                      </span>
-                      <span className="text-[22px] font-bold leading-tight" style={{ color: NAVY }}>
-                        {currentEvent.label}
-                      </span>
-                    </div>
-                    <span className="mt-1 text-[13px] font-medium" style={{ color: MUTED }}>
-                      {currentEvent.factor}
-                    </span>
-                  </motion.div>
-                ) : null}
-              </AnimatePresence>
-              {indexPhase > 0 && indexPhase < TIMELINE_EVENTS.length && (
-                <motion.button
-                  className="absolute right-0 z-10 flex h-8 w-8 items-center justify-center rounded-full"
-                  style={{ backgroundColor: `${STRAT_BLUE}10`, color: STRAT_BLUE }}
+                <motion.div
+                  key={`event-${indexPhase}`}
+                  className="flex flex-col items-center cursor-pointer"
                   onClick={advanceTimeline}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  whileHover={{ scale: 1.1 }}
-                  transition={{ duration: 0.2 }}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
                 >
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5.5 3L9.5 7L5.5 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                </motion.button>
-              )}
+                  {currentEvent ? (
+                    <>
+                      <div className="flex items-center gap-2.5">
+                        <span
+                          className="rounded-full px-3 py-0.5 text-[11px] font-bold uppercase tracking-widest"
+                          style={{ backgroundColor: `${STRAT_BLUE}12`, color: STRAT_BLUE }}
+                        >
+                          {getMonthLabel(currentEvent.month)}
+                        </span>
+                        <span className="text-[22px] font-bold leading-tight" style={{ color: NAVY }}>
+                          {currentEvent.label}
+                        </span>
+                      </div>
+                      <span className="mt-1 text-[13px] font-medium" style={{ color: MUTED }}>
+                        {currentEvent.factor}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2.5">
+                        <span
+                          className="rounded-full px-3 py-0.5 text-[11px] font-bold uppercase tracking-widest"
+                          style={{ backgroundColor: `${STRAT_BLUE}12`, color: STRAT_BLUE }}
+                        >
+                          {getMonthLabel(0)}
+                        </span>
+                        <span className="text-[22px] font-bold leading-tight" style={{ color: NAVY }}>
+                          Your market, day 1
+                        </span>
+                      </div>
+                      <span className="mt-1 text-[13px] font-medium" style={{ color: MUTED }}>
+                        Every price aligned to the current demand curve
+                      </span>
+                    </>
+                  )}
+                </motion.div>
+              </AnimatePresence>
+              <motion.button
+                className="absolute right-0 z-10 flex h-8 w-8 items-center justify-center rounded-full"
+                style={{ backgroundColor: `${STRAT_BLUE}10`, color: STRAT_BLUE, pointerEvents: indexPhase < TIMELINE_EVENTS.length ? "auto" as const : "none" as const }}
+                onClick={advanceTimeline}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: indexPhase < TIMELINE_EVENTS.length ? 1 : 0.3 }}
+                whileHover={{ scale: 1.1 }}
+                transition={{ duration: 0.2 }}
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5.5 3L9.5 7L5.5 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </motion.button>
             </div>
 
             {/* Timeline scrubber */}
@@ -935,15 +950,16 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
           </motion.div>
         )}
       </AnimatePresence>
+      </motion.div>
 
       {/* Chart area */}
       <div className="relative w-full flex-1 min-h-0 mt-0">
-        {/* Wireframe skeleton — visible while chart fades in */}
+        {/* Wireframe skeleton — visible during timeline intro */}
         <motion.div
           className="absolute inset-0 flex items-center justify-center"
           initial={{ opacity: 1 }}
-          animate={{ opacity: chartStep === 0 && introPhase < 5 ? 1 : 0 }}
-          transition={{ duration: 0.6 }}
+          animate={{ opacity: isIndexShift && indexIntroPhase < 2 ? 1 : 0 }}
+          transition={{ duration: 0.5 }}
           style={{ pointerEvents: "none" }}
         >
           <svg viewBox={`0 -6 ${CURVE_SLOT.x + CURVE_SLOT.w + 40} ${BASE_Y + 30}`} className="w-full h-full" preserveAspectRatio="xMidYMid meet">
@@ -975,10 +991,10 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
 
       <motion.div
         className="absolute inset-0 flex flex-col"
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 1, y: 0 }}
         animate={{
-          opacity: (chartStep === 0 && introPhase < 5) || isPortfolio ? 0 : 1,
-          y: chartStep === 0 && introPhase < 5 ? 20 : 0,
+          opacity: isPortfolio ? 0 : isIndexShift && indexIntroPhase < 2 ? 0 : 1,
+          y: 0,
         }}
         transition={{ duration: 1.0, ease: [0.22, 1, 0.36, 1] }}
         style={isPortfolio ? { pointerEvents: "none" as const } : undefined}
@@ -1122,24 +1138,26 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
                 const dotVisible = !isIndexShift || dot.birthMonth <= timelineTargetMonth;
                 const dotOpacity = dotVisible ? dotOpacityBase : 0;
 
-                const inChaos = chartStep === 0 && introPhase < 5;
-                const settling = chartStep === 0 && !inChaos;
-                const settleDelay = (dot.driftDelay / 5) * 0.6;
+                const settling = chartStep === 0;
+                const normalizedDelay = dot.driftDelay / 5;
+                const wavePhase = normalizedDelay < 0.15 ? 1 : normalizedDelay < 0.30 ? 2 : 3;
+                const waveActive = !settling || introPhase >= wavePhase;
+                const isPunch = settling && introPhase >= 3;
+                const waveStagger = isPunch && wavePhase === 3 ? dot.t * 0.25 : dot.t * 0.6;
+                const settlingOpacity = waveActive ? (isPunch ? dotOpacity : dotOpacity * 0.35) : 0;
 
-                let animCx: number | number[] = dot.chaosX;
-                let animCy: number | number[] = dot.chaosY;
+                let animCx: number | number[];
+                let animCy: number | number[];
 
-                if (!inChaos) {
-                  if (isAllToCurve) {
-                    animCx = baseCx;
-                    animCy = targetY;
-                  } else if (settling) {
-                    animCx = baseCx;
-                    animCy = scatterY;
-                  } else {
-                    animCx = [baseCx, baseCx + dot.driftDx, baseCx - dot.driftDx * 0.6, baseCx];
-                    animCy = [targetY, targetY + dot.driftDy, targetY - dot.driftDy * 0.6, targetY];
-                  }
+                if (isAllToCurve) {
+                  animCx = baseCx;
+                  animCy = targetY;
+                } else if (settling) {
+                  animCx = baseCx;
+                  animCy = waveActive ? scatterY : scatterY - 12;
+                } else {
+                  animCx = [baseCx, baseCx + dot.driftDx, baseCx - dot.driftDx * 0.6, baseCx];
+                  animCy = [targetY, targetY + dot.driftDy, targetY - dot.driftDy * 0.6, targetY];
                 }
 
                 return (
@@ -1147,35 +1165,31 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive }: { 
                     key={`dot-${i}`}
                     r={dot.r}
                     fill={dotColor}
-                    initial={{ cx: dot.chaosX, cy: dot.chaosY, opacity: 0, scale: 0 }}
+                    initial={{ cx: baseCx, cy: scatterY - 12, opacity: 0, scale: 0 }}
                     animate={{
                       cx: animCx,
                       cy: animCy,
-                      opacity: dotOpacity,
-                      scale: 1,
+                      opacity: settling ? settlingOpacity : (waveActive ? dotOpacity : 0),
+                      scale: waveActive ? 1 : 0,
                     }}
                     transition={{
-                      cx: inChaos
-                        ? { duration: 0 }
-                        : settling
-                          ? { duration: 1.2, delay: settleDelay, ease: [0.22, 1, 0.36, 1] }
+                      cx: settling
+                          ? { duration: 0.01 }
                           : isAllToCurve
                             ? { duration: 0.7, delay: shareMode ? 0 : 0.5 + dot.t * 2.5, ease: [0.22, 1, 0.36, 1] }
                             : { duration: dot.driftDuration, delay: dot.driftDelay, repeat: isActive && !shareMode ? Infinity : 0, ease: "easeInOut" },
-                      cy: inChaos
-                        ? { duration: 0 }
-                        : settling
-                          ? { duration: 1.2, delay: settleDelay, ease: [0.22, 1, 0.36, 1] }
+                      cy: settling
+                          ? { duration: waveActive ? 0.8 : 0.01, delay: waveActive ? waveStagger : 0, ease: [0.22, 1, 0.36, 1] }
                           : isAllToCurve
                             ? { duration: 0.6 + (Math.abs(dot.offsetY) / 36) * 0.3, delay: shareMode ? 0 : 0.5 + dot.t * 2.5, ease: [0.22, 1, 0.36, 1] }
                             : { duration: dot.driftDuration, delay: dot.driftDelay, repeat: isActive && !shareMode ? Infinity : 0, ease: "easeInOut" },
                       opacity: {
-                        delay: chartStep === 0 ? 0.1 + i * 0.007 : isIndexShift ? 0.15 + (i % 36) * 0.012 : 0.1,
-                        duration: isSpotlight ? 0.5 : isIndexShift ? 0.5 : 0.3,
+                        delay: settling ? (waveActive ? (isPunch && wavePhase < 3 ? 0 : waveStagger) : 0) : isIndexShift ? 0.15 + (i % 36) * 0.012 : 0.1,
+                        duration: isSpotlight ? 0.5 : isIndexShift ? 0.5 : settling ? (isPunch && wavePhase < 3 ? 0.3 : 0.6) : 0.3,
                       },
                       scale: shareMode
-                        ? { delay: chartStep === 0 ? 0.1 + i * 0.007 : isIndexShift ? 0.15 + (i % 36) * 0.012 : 0.1, duration: 0.25 }
-                        : { delay: chartStep === 0 ? 0.1 + i * 0.007 : isIndexShift ? 0.15 + (i % 36) * 0.012 : 0.1, type: "spring", stiffness: 300 },
+                        ? { delay: settling ? (waveActive ? waveStagger : 0) : isIndexShift ? 0.15 + (i % 36) * 0.012 : 0.1, duration: 0.25 }
+                        : { delay: settling ? (waveActive ? waveStagger : 0) : isIndexShift ? 0.15 + (i % 36) * 0.012 : 0.1, type: "spring", stiffness: 300 },
                     }}
                   />
                 );
