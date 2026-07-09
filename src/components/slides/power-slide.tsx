@@ -11,7 +11,7 @@ const GREEN = "#2e7d32";
 const PURPLE = "#7B5EA7";
 const MUTED = "#5A6A78";
 
-export const POWER_TOTAL_STEPS = 10;
+export const POWER_TOTAL_STEPS = 11;
 
 
 const SOLID_TINTS: Record<string, string> = {

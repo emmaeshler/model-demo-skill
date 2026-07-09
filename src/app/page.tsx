@@ -373,13 +373,13 @@ const CUSTOMER_DOT_COLORS: Record<string, string> = {
 
 const RAIL_CUSTOMERS = [
   { label: "Acme Industrial", price: "$19.24", newPrice: "$19.80", change: "+$0.56", dot: CUSTOMER_DOT_COLORS.Acme, reason: "Win rate climbing — margin available" },
-  { label: "MedSupply Co", price: "$14.89", newPrice: "$14.50", change: "−$0.39", dot: CUSTOMER_DOT_COLORS.MedSupply, reason: "New entrant undercutting — defend deal" },
   { label: "QuickParts LLC", price: "$22.10", newPrice: "$24.20", change: "+$2.10", dot: CUSTOMER_DOT_COLORS.QuickParts, reason: "No competition — cost pass-through" },
+  { label: "MedSupply Co", price: "$14.89", newPrice: "$14.50", change: "−$0.39", dot: CUSTOMER_DOT_COLORS.MedSupply, reason: "New entrant undercutting — defend deal" },
 ];
 
-const REFINE_STEP_TO_RAIL: Record<number, number> = { 2: 2, 3: 0, 4: 1 };
+const REFINE_STEP_TO_RAIL: Record<number, number> = { 2: 1, 3: 0, 4: 2 };
 
-const RAIL_INDEX_TO_REFINE_STEP: Record<number, number> = { 0: 3, 1: 4, 2: 2 };
+const RAIL_INDEX_TO_REFINE_STEP: Record<number, number> = { 0: 3, 1: 2, 2: 4 };
 
 function MiniExecuteConnector({ refineStep, flyIn = false, onSelectCustomer }: { refineStep?: number; flyIn?: boolean; onSelectCustomer?: (step: number) => void }) {
   const NAVY = "#00446A";
@@ -389,9 +389,9 @@ function MiniExecuteConnector({ refineStep, flyIn = false, onSelectCustomer }: {
   const adjustedSet = useMemo(() => {
     const s = new Set<number>();
     if (refineStep === undefined) return s;
-    if (refineStep >= 2) s.add(2);
+    if (refineStep >= 2) s.add(1);
     if (refineStep >= 3) s.add(0);
-    if (refineStep >= 4) s.add(1);
+    if (refineStep >= 4) s.add(2);
     return s;
   }, [refineStep]);
 
@@ -637,7 +637,7 @@ export function Home() {
   const notes = getPresenterNotes(config?.kind ?? "", subStep);
   const engineFocus = ENGINE_FOCUS_MAP[`${slide}-${subStep}`] ?? null;
   const railVisible = ENGINE_INDICATOR_SLIDES.has(slide) && !(slide === REFINE_INDEX && subStep === (REFINE_TOTAL_STEPS - 1));
-  const showDrivers = (slide === POWER_INDEX && subStep >= 8 && (subStep > 8 || vortexDone)) || slide === EXECUTE_INDEX || slide === REFINE_INDEX;
+  const showDrivers = (slide === POWER_INDEX && subStep >= 10) || slide === EXECUTE_INDEX || slide === REFINE_INDEX;
   const staticActiveCategories = ACTIVE_CATEGORIES_MAP[`${slide}-${subStep}`] ?? [];
   const activeCategories = (slide === POWER_INDEX && dynamicActiveCategories && dynamicActiveCategories.length > 0)
     ? dynamicActiveCategories
@@ -1274,16 +1274,16 @@ export function Home() {
           {slide === EXECUTE_INDEX && subStep >= 3 && (
             <ExecuteTransitionOverlay key="execute-overlay" onAdvance={() => navigate(slide + 1)} />
           )}
-          {slide === POWER_INDEX && subStep === 8 && vortexDone && (
-            <ExecuteTransitionOverlay key="power-overlay" onAdvance={() => navigate(slide + 1)} appearDelay={1.2} />
+          {slide === POWER_INDEX && subStep === 10 && (
+            <ExecuteTransitionOverlay key="power-overlay" onAdvance={() => navigate(slide + 1)} appearDelay={2} />
           )}
         </AnimatePresence>
       </main>
 
       <AnimatePresence mode="wait">
       {railVisible && (
-        (slide === EXECUTE_INDEX && subStep >= 3) ? (
-          <MiniExecuteConnector key="mini-exec-fly" flyIn />
+        slide === REFINE_INDEX ? (
+          <MiniExecuteConnector key="mini-exec" refineStep={subStep} flyIn onSelectCustomer={(step) => setSubStep(step)} />
         ) : (
           <ModelStatusRail
             key="model-rail"
