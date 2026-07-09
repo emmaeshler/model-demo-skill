@@ -36,7 +36,7 @@ Navigation structure (sidebar labels, grouping) is defined in [slide-nav.tsx](sr
 
 ### Animation Pattern
 
-All animations use Framer Motion. Slides receive `step` (the sub-step index) and advance through visual states based on it. Complex slides (power-slide, refine-slide) use internal phase state machines triggered by `useEffect` on step changes, with `setTimeout` chains for sequenced animations.
+All animations use Framer Motion. Slides receive `step` (the sub-step index) and advance through visual states based on it. Complex slides use internal phase state machines triggered by `useEffect` on step changes. Use `usePhaseSequence()` from [anim.ts](src/lib/anim.ts) instead of raw setTimeout chains, and the `EASE` constant instead of `[0.22, 1, 0.36, 1]`.
 
 SVG charts render inside `<svg>` elements. Interactive overlays inside SVG use `<foreignObject>`. Framer Motion `layoutId` does **not** work across the SVG/foreignObject boundary — use explicit transform animations instead.
 
@@ -60,9 +60,9 @@ If the export breaks, the issue is almost always in the esbuild bundle step — 
 
 The left-side rail (Model Drivers / Customer Order Price) is configured by a single `RAIL_CONFIG` table in `page.tsx`, keyed by `"slideIndex-subStep"`. Each entry declares: rail type (`"model"` or `"mini-exec"`), engine focus, active categories, whether to show drivers/engine/factors, and which customer highlights. To change the rail for any step, edit that one row — no other lookups to update.
 
-### Key Data Structures in power-slide.tsx
+### Key Data Structures in power-slide
 
-This is the largest slide (~2600 lines). Important constants:
+The power-slide is split across `power-slide.tsx` (orchestrator, ~400 lines) + `power-slide-data.tsx`, `power-slide-dots.tsx`, `power-slide-factors.tsx`, `power-slide-convergence.tsx`, `power-slide-bottom.tsx`. Important constants in the data file:
 - `SPOTLIGHTS` — the 4 bottom cards (ORDER, MARKET, CUSTOMER, PRODUCT) with data pills
 - `SQUARE_FACTORS` — 24 pricing factors with `category` matching spotlight labels (lowercase)
 - `CATEGORY_LAYOUT` — quadrant positions/colors for the factor grid
@@ -71,6 +71,10 @@ This is the largest slide (~2600 lines). Important constants:
 ## Styling
 
 Tailwind CSS v4 via `@tailwindcss/postcss`. Brand colors are CSS variables in [globals.css](src/app/globals.css): `--i2p-navy`, `--i2p-orange`, `--i2p-teal`, `--i2p-bg`. shadcn/ui components live in [src/components/ui/](src/components/ui/) (base-nova style).
+
+## Skills
+
+- **`/new-slide`** — Scaffolds a new slide: creates component files with correct boilerplate and wires up all 7 registration points in `page.tsx`. Use whenever adding a new slide to the presentation.
 
 ## Auth
 

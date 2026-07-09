@@ -131,7 +131,6 @@ export function FactorGrid({
                 }}
                 animate={{ scale: 1, opacity: 1, gap: 18 }}
               >
-                <AnimatePresence mode="popLayout">
                   {selectionPhase < 4 && CATEGORY_LAYOUT.map((cat, catIdx) => {
                     const catFactors = SQUARE_FACTORS.filter(f => f.category === cat.key);
                     const isActive = selectionPhase === catIdx;
@@ -153,7 +152,6 @@ export function FactorGrid({
                           opacity: isActive ? 1 : isPast ? 0.3 : 0.2,
                           backgroundColor: isActive ? `${cat.color}08` : "transparent",
                         }}
-                        exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.4, ease: EASE } }}
                         transition={{
                           opacity: { duration: 0.5 },
                           backgroundColor: { duration: 0.5 },
@@ -379,16 +377,11 @@ export function FactorGrid({
                         alignItems: "center",
                         justifyContent: "center",
                       }}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5, ease: EASE }}
+                      initial={false}
                     >
                       {/* Left: All factors */}
                       <motion.div
-                        style={{ display: "grid", gridTemplateColumns: "repeat(4, auto)", gap: 8, justifyContent: "start", alignContent: "start" }}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.5, delay: 0.5 }}
+                        style={{ display: "grid", gridTemplateColumns: "repeat(4, auto)", gap: 11, justifyContent: "start", alignContent: "start" }}
                       >
                         {SQUARE_FACTORS.map((f, fi) => {
                           const isSelected = SELECTED_FACTORS.some(sf => sf.label === f.label);
@@ -396,22 +389,24 @@ export function FactorGrid({
                           return (
                             <motion.span
                               key={f.label}
+                              layoutId={`factor-${f.label}`}
+                              layout
                               style={{
                                 display: "inline-flex",
                                 alignItems: "center",
-                                borderRadius: 6,
+                                borderRadius: 8,
                                 border: isSelected ? `1.5px solid ${TEAL}60` : `1px solid ${catColor}20`,
-                                padding: "5px 10px",
-                                fontSize: 11,
+                                padding: "8px 14px",
+                                fontSize: 14,
                                 fontWeight: isSelected ? 700 : 500,
                                 fontFamily: "inherit",
                                 whiteSpace: "nowrap",
                                 color: isSelected ? TEAL : `${catColor}90`,
                                 backgroundColor: isSelected ? `${TEAL}08` : `${catColor}06`,
                               }}
-                              initial={{ opacity: 0, y: 4 }}
-                              animate={{ opacity: isSelected ? 1 : 0.55, y: 0 }}
-                              transition={{ duration: 0.3, delay: 0.6 + fi * 0.03 }}
+                              initial={false}
+                              animate={{ opacity: isSelected ? 1 : 0.55 }}
+                              transition={{ opacity: { duration: 0.3 }, layout: { duration: 0.7, ease: EASE } }}
                             >
                               {f.label}
                             </motion.span>
@@ -420,10 +415,10 @@ export function FactorGrid({
                       </motion.div>
 
                       {/* Vertical divider */}
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", alignSelf: "stretch", padding: "0 8px" }}>
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", alignSelf: "stretch", padding: "0 14px" }}>
                         <div style={{ flex: 1, width: 1, backgroundColor: "#D1D5DB" }} />
                         <motion.span
-                          style={{ fontSize: 9, fontWeight: 600, letterSpacing: "0.08em", color: MUTED, fontFamily: "inherit", whiteSpace: "nowrap", writingMode: "vertical-lr", transform: "rotate(180deg)", padding: "10px 0" }}
+                          style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", color: MUTED, fontFamily: "inherit", whiteSpace: "nowrap", writingMode: "vertical-lr", transform: "rotate(180deg)", padding: "10px 0" }}
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           transition={{ duration: 0.3, delay: 0.6 }}
@@ -434,16 +429,16 @@ export function FactorGrid({
                       </div>
 
                       {/* Right: Model Drivers */}
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, flex: "0 0 auto", minWidth: 0 }}>
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, flex: "0 0 auto", minWidth: 0 }}>
                         <motion.span
-                          style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", color: TEAL, fontFamily: "inherit", textTransform: "uppercase" }}
+                          style={{ fontSize: 14, fontWeight: 700, letterSpacing: "0.12em", color: TEAL, fontFamily: "inherit", textTransform: "uppercase" }}
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           transition={{ duration: 0.3, delay: 0.2 }}
                         >
                           5 Model Drivers
                         </motion.span>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                           {SELECTED_FACTORS.map((sf, si) => (
                             <motion.span
                               key={sf.label}
@@ -451,10 +446,10 @@ export function FactorGrid({
                                 display: "inline-flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                borderRadius: 10,
+                                borderRadius: 12,
                                 border: `2.5px solid ${TEAL}`,
-                                padding: "10px 18px",
-                                fontSize: 15,
+                                padding: "14px 26px",
+                                fontSize: 18,
                                 fontWeight: 700,
                                 fontFamily: "inherit",
                                 whiteSpace: "nowrap",
@@ -472,7 +467,6 @@ export function FactorGrid({
                       </div>
                     </motion.div>
                   )}
-                </AnimatePresence>
               </motion.div>
             )}
           </AnimatePresence>

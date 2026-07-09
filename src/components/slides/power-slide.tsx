@@ -83,7 +83,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
     if (!onActiveCategoryChange) return;
     if (!isActive) { onActiveCategoryChange([]); return; }
     if (chartStep !== 2) { onActiveCategoryChange([]); return; }
-    const cats = ["customer", "product", "market", "order"] as const;
+    const cats = ["customer", "product", "order", "market"] as const;
     if (selectionPhase >= 0 && selectionPhase <= 3) {
       onActiveCategoryChange([cats[selectionPhase]]);
     } else if (selectionPhase < 0) {

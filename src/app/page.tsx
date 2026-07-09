@@ -79,8 +79,8 @@ type CategoryKey = "customer" | "product" | "market" | "order";
 const FACTOR_CATEGORIES: { key: CategoryKey; label: string; color: string; tint: string }[] = [
   { key: "customer", label: "Customer", color: "#00446A", tint: "rgba(0,68,106,0.08)" },
   { key: "product", label: "Product", color: "#E56910", tint: "rgba(229,105,16,0.08)" },
-  { key: "market", label: "Market", color: "#2e7d32", tint: "rgba(46,125,50,0.08)" },
   { key: "order", label: "Order", color: "#7B5EA7", tint: "rgba(123,94,167,0.08)" },
+  { key: "market", label: "Market", color: "#2e7d32", tint: "rgba(46,125,50,0.08)" },
 ];
 
 const DRIVER_RAIL_ITEMS: { label: string; color: string; tint: string }[] = [
@@ -111,7 +111,7 @@ interface RailStepConfig {
   refineStepForCustomer?: number;
 }
 
-const ALL_CATS: CategoryKey[] = ["customer", "product", "market", "order"];
+const ALL_CATS: CategoryKey[] = ["customer", "product", "order", "market"];
 
 /* ── Rail timeline ──────────────────────────────────────────
    Each slide maps to an ordered array of rail states (index = subStep).
@@ -131,12 +131,12 @@ const RAIL_TIMELINE: Partial<Record<number, (RailContent | null)[]>> = {
     /* 2  */ { show: "factors", engine: "strat", active: [] },
     /* 3  */ { show: "factors", engine: "strat", active: ["customer"] },
     /* 4  */ { show: "factors", engine: "strat", active: ["product"] },
-    /* 5  */ { show: "factors", engine: "strat", active: ["market"] },
-    /* 6  */ { show: "factors", engine: "strat", active: ["order"] },
-    /* 7  */ { show: "factors", engine: "strat", active: ALL_CATS },
-    /* 8  */ { show: "factors", engine: "strat", active: ALL_CATS },
-    /* 9  */ { show: "factors", engine: "both",  active: ALL_CATS },
-    /* 10 */ { show: "drivers", flyIn: true },
+    /* 5  */ { show: "factors", engine: "strat", active: ["order"] },
+    /* 6  */ { show: "factors", engine: "strat", active: ["market"] },
+    /* 7  */ { show: "drivers", flyIn: true },
+    /* 8  */ { show: "drivers", flyIn: false },
+    /* 9  */ { show: "drivers", flyIn: false },
+    /* 10 */ { show: "drivers", flyIn: false },
   ],
   [EXECUTE_INDEX]: [
     /* 0  */ { show: "drivers", flyIn: false },
@@ -147,8 +147,8 @@ const RAIL_TIMELINE: Partial<Record<number, (RailContent | null)[]>> = {
   [REFINE_INDEX]: [
     /* 0  */ { show: "mini-exec" },
     /* 1  */ { show: "mini-exec" },
-    /* 2  */ { show: "mini-exec", activeCustomer: 1, refineStepForCustomer: 2 },
-    /* 3  */ { show: "mini-exec", activeCustomer: 0, refineStepForCustomer: 3 },
+    /* 2  */ { show: "mini-exec", activeCustomer: 0, refineStepForCustomer: 2 },
+    /* 3  */ { show: "mini-exec", activeCustomer: 1, refineStepForCustomer: 3 },
     /* 4  */ { show: "mini-exec", activeCustomer: 2, refineStepForCustomer: 4 },
     /* 5  */ { show: "mini-exec" },
     /* 6  */ { show: "mini-exec" },
@@ -423,10 +423,10 @@ const CUSTOMER_DOT_COLORS: Record<string, string> = {
 };
 
 const RAIL_CUSTOMERS = [
-  { label: "Acme Industrial", price: "$19.24", newPrice: "$19.80", change: "+$0.56", dot: CUSTOMER_DOT_COLORS.Acme, reason: "Win rate climbing — margin available",
-    timelinePrices: ["$19.80", "$21.10", "$20.40", "$22.80"] },
   { label: "QuickParts LLC", price: "$22.10", newPrice: "$24.20", change: "+$2.10", dot: CUSTOMER_DOT_COLORS.QuickParts, reason: "No competition — cost pass-through",
     timelinePrices: ["$24.20", "$25.90", "$25.10", "$28.10"] },
+  { label: "Acme Industrial", price: "$19.24", newPrice: "$19.80", change: "+$0.56", dot: CUSTOMER_DOT_COLORS.Acme, reason: "Win rate climbing — margin available",
+    timelinePrices: ["$19.80", "$21.10", "$20.40", "$22.80"] },
   { label: "MedSupply Co", price: "$14.89", newPrice: "$14.50", change: "−$0.39", dot: CUSTOMER_DOT_COLORS.MedSupply, reason: "New entrant undercutting — defend deal",
     timelinePrices: ["$14.50", "$15.60", "$15.10", "$16.80"] },
 ];
@@ -447,8 +447,8 @@ function MiniExecuteConnector({ refineStep, flyIn = false, onSelectCustomer, tim
   const adjustedSet = useMemo(() => {
     const s = new Set<number>();
     if (refineStep === undefined) return s;
-    if (refineStep >= 2) s.add(1);
-    if (refineStep >= 3) s.add(0);
+    if (refineStep >= 2) s.add(0);
+    if (refineStep >= 3) s.add(1);
     if (refineStep >= 4) s.add(2);
     return s;
   }, [refineStep]);
@@ -590,8 +590,8 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
       { index: POWER_INDEX, label: "All factors", subStep: 2 },
       { index: POWER_INDEX, label: "Customer factors", subStep: 3 },
       { index: POWER_INDEX, label: "Product factors", subStep: 4 },
-      { index: POWER_INDEX, label: "Market factors", subStep: 5 },
-      { index: POWER_INDEX, label: "Order factors", subStep: 6 },
+      { index: POWER_INDEX, label: "Order factors", subStep: 5 },
+      { index: POWER_INDEX, label: "Market factors", subStep: 6 },
       { index: POWER_INDEX, label: "Final factors", subStep: 7 },
       { index: POWER_INDEX, label: "Model drivers", subStep: 8 },
       { index: POWER_INDEX, label: "SKU-level price", subStep: 9 },

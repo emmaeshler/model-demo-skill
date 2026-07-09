@@ -108,8 +108,8 @@ export const SQUARE_FACTORS: { label: string; category: "product" | "market" | "
 export const CATEGORY_LAYOUT = [
   { key: "customer" as const, x: 10, y: 0, w: 490, h: 210, color: NAVY, labelDelay: 0.2, baseDelay: 0.4 },
   { key: "product" as const, x: 520, y: 0, w: 490, h: 210, color: ORANGE, labelDelay: 0.25, baseDelay: 0.7 },
-  { key: "market" as const, x: 10, y: 250, w: 490, h: 210, color: GREEN, labelDelay: 0.3, baseDelay: 1.0 },
-  { key: "order" as const, x: 520, y: 250, w: 490, h: 210, color: PURPLE, labelDelay: 0.35, baseDelay: 1.3 },
+  { key: "order" as const, x: 10, y: 250, w: 490, h: 210, color: PURPLE, labelDelay: 0.3, baseDelay: 1.0 },
+  { key: "market" as const, x: 520, y: 250, w: 490, h: 210, color: GREEN, labelDelay: 0.35, baseDelay: 1.3 },
 ];
 
 export const CATEGORY_TO_SPOTLIGHT: Record<string, number> = {
@@ -122,15 +122,15 @@ export const CATEGORY_TO_SPOTLIGHT: Record<string, number> = {
 export const CATEGORY_TITLES = [
   "Customer factors",
   "Product factors",
-  "Market factors",
   "Order factors",
+  "Market factors",
 ];
 
 export const CATEGORY_NARRATION = [
   "Who is the customer — channel, region, size, tenure, and sales relationship.",
   "What's being sold — mix, family, specialization, cost, and price sensitivity.",
-  "Where you compete — price points, share, commodities, and competitive dynamics.",
   "How orders behave — frequency, size, lead time, terms, and seasonality.",
+  "Where you compete — price points, share, commodities, and competitive dynamics.",
 ];
 
 export const SELECTED_FACTORS = [
@@ -165,14 +165,14 @@ export const CATEGORY_ACTION_HINTS: (ActionHint | ActionHint[])[] = [
     { icon: "↑", color: TEAL, headline: "Weight it higher", detail: "End market is a key driver for this client — weight it higher." },
   ],
   { icon: "↑", color: TEAL, headline: "Emphasize key factors", detail: "Product specialization and product mix are key profitability drivers — weight them higher." },
-  { icon: "+", color: GREEN, headline: "Add a factor", detail: "Competitive intelligence is critical in this market — add it to the model." },
   { icon: "↓", color: PURPLE, headline: "Lower its weight", detail: "Seasonality has minimal impact for this customer — dial it down." },
+  { icon: "+", color: GREEN, headline: "Add a factor", detail: "Competitive intelligence is critical in this market — add it to the model." },
 ];
 
-export const FEED_NUDGE_Y = [130, 35, -75, -170];
+export const FEED_NUDGE_Y = [130, 35, -170, -75];
 
 const dissolveSeed = mulberry32(456);
-const DISSOLVE_COLORS = [NAVY, ORANGE, GREEN, PURPLE];
+const DISSOLVE_COLORS = [NAVY, ORANGE, PURPLE, GREEN];
 const DISSOLVE_ROW_Y = [60, 170, 280, 390];
 export const DISSOLVE_DOTS = Array.from({ length: 16 }, (_, i) => {
   const catIdx = i % 4;
