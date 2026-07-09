@@ -280,7 +280,7 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
   };
 
   return (
-    <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-5.5rem)] max-w-7xl flex-col items-center justify-start px-6 pt-2">
+    <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-7xl flex-col items-center justify-start px-6 pt-2">
 
       {/* Title — fixed-height container so chart never resizes */}
       <div className="relative w-full" style={{ height: 76, flexShrink: 0, transform: "translateX(calc(var(--rail-inset, 0px) * -0.5))" }}>

@@ -28,17 +28,7 @@ interface SlideNavProps {
   onToggleDark?: () => void;
 }
 
-function FullPageButton() {
-  const [isFullscreen, setIsFullscreen] = useState(false);
-
-  useEffect(() => {
-    function onFsChange() {
-      setIsFullscreen(!!document.fullscreenElement);
-    }
-    document.addEventListener("fullscreenchange", onFsChange);
-    return () => document.removeEventListener("fullscreenchange", onFsChange);
-  }, []);
-
+function FullPageButton({ isFullscreen, compact }: { isFullscreen: boolean; compact?: boolean }) {
   return (
     <button
       onClick={() => {
@@ -48,24 +38,19 @@ function FullPageButton() {
           document.documentElement.requestFullscreen();
         }
       }}
-      className="flex items-center gap-1.5 rounded-md border border-white/15 px-2.5 py-1 text-xs font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white"
-    >
-      {isFullscreen ? (
-        <>
-          <Minimize className="size-3.5" />
-          Exit Full Screen
-        </>
-      ) : (
-        <>
-          <Maximize className="size-3.5" />
-          Enter Full Screen
-        </>
+      className={cn(
+        "flex items-center gap-1.5 rounded-md border border-white/15 text-xs font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white",
+        compact ? "p-1.5" : "px-2.5 py-1",
       )}
+      title={isFullscreen ? "Exit Full Screen" : "Enter Full Screen"}
+    >
+      {isFullscreen ? <Minimize className="size-3.5" /> : <Maximize className="size-3.5" />}
+      {!compact && (isFullscreen ? "Exit Full Screen" : "Enter Full Screen")}
     </button>
   );
 }
 
-function DownloadLink() {
+function DownloadLink({ compact }: { compact?: boolean }) {
   const [show, setShow] = useState(false);
   useEffect(() => {
     const t = setTimeout(() => setShow(!document.getElementById("__export_root")));
@@ -76,10 +61,14 @@ function DownloadLink() {
     <a
       href="/Inside Your Dynamic Model - INSIGHT2PROFIT.html"
       download="Inside Your Dynamic Model - INSIGHT2PROFIT.html"
-      className="flex items-center gap-1.5 rounded-md border border-white/15 px-2.5 py-1 text-xs font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white"
+      className={cn(
+        "flex items-center gap-1.5 rounded-md border border-white/15 text-xs font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white",
+        compact ? "p-1.5" : "px-2.5 py-1",
+      )}
+      title="Download"
     >
       <Download className="size-3.5" />
-      Download
+      {!compact && "Download"}
     </a>
   );
 }
@@ -98,6 +87,15 @@ export function TopBar({
   const [open, setOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set());
   const panelRef = useRef<HTMLDivElement>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    function onFsChange() {
+      setIsFullscreen(!!document.fullscreenElement);
+    }
+    document.addEventListener("fullscreenchange", onFsChange);
+    return () => document.removeEventListener("fullscreenchange", onFsChange);
+  }, []);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [kebabOpen, setKebabOpen] = useState(false);
   const kebabRef = useRef<HTMLDivElement>(null);
@@ -205,7 +203,7 @@ export function TopBar({
               onClick={toggleShareMode}
               className="flex items-center gap-2 whitespace-nowrap rounded-md border border-white/15 px-2.5 py-1 text-xs font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/10"
             >
-              <span className={shareMode ? "text-teal-200" : ""}>I'm Sharing This On Teams</span>
+              <span className={shareMode ? "text-teal-200" : ""}>{isFullscreen ? "Teams" : "I'm Sharing This On Teams"}</span>
               <div
                 className={cn(
                   "relative h-4 w-7 rounded-full transition-colors duration-200",
@@ -223,14 +221,18 @@ export function TopBar({
             {onStartPresenting && (
               <button
                 onClick={onStartPresenting}
-                className="flex items-center gap-1.5 whitespace-nowrap rounded-md border border-white/15 px-2.5 py-1 text-xs font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white"
+                className={cn(
+                  "flex items-center gap-1.5 whitespace-nowrap rounded-md border border-white/15 text-xs font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white",
+                  isFullscreen ? "p-1.5" : "px-2.5 py-1",
+                )}
+                title="Open Presenter Mode"
               >
                 <MonitorPlay className="size-3.5" />
-                Open Presenter Mode
+                {!isFullscreen && "Open Presenter Mode"}
               </button>
             )}
-            <FullPageButton />
-            <DownloadLink />
+            <FullPageButton isFullscreen={isFullscreen} compact={isFullscreen} />
+            <DownloadLink compact={isFullscreen} />
             <div className="relative">
               <button
                 ref={kebabBtnRef}

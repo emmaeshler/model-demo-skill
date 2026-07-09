@@ -369,100 +369,101 @@ export function FactorGrid({
                       key="selected-factors"
                       style={{
                         display: "flex",
-                        flexDirection: "row",
+                        flexDirection: "column",
                         gap: 0,
                         padding: "12px 12px",
                         width: "100%",
                         maxWidth: 1100,
                         alignItems: "center",
-                        justifyContent: "center",
+                        justifyContent: "flex-start",
                       }}
                       initial={false}
                     >
-                      {/* Left: All factors */}
-                      <motion.div
-                        style={{ display: "grid", gridTemplateColumns: "repeat(4, auto)", gap: 11, justifyContent: "start", alignContent: "start" }}
+                      {/* "Selected from" label above factor grid */}
+                      <motion.span
+                        style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", color: MUTED, fontFamily: "inherit", marginBottom: 10 }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.3, delay: 0.6 }}
                       >
-                        {SQUARE_FACTORS.map((f, fi) => {
-                          const isSelected = SELECTED_FACTORS.some(sf => sf.label === f.label);
-                          const catColor = CATEGORY_LAYOUT.find(c => c.key === f.category)?.color ?? MUTED;
-                          return (
-                            <motion.span
-                              key={f.label}
-                              layoutId={`factor-${f.label}`}
-                              layout
-                              style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                borderRadius: 8,
-                                border: isSelected ? `1.5px solid ${TEAL}60` : `1px solid ${catColor}20`,
-                                padding: "8px 14px",
-                                fontSize: 14,
-                                fontWeight: isSelected ? 700 : 500,
-                                fontFamily: "inherit",
-                                whiteSpace: "nowrap",
-                                color: isSelected ? TEAL : `${catColor}90`,
-                                backgroundColor: isSelected ? `${TEAL}08` : `${catColor}06`,
-                              }}
-                              initial={false}
-                              animate={{ opacity: isSelected ? 1 : 0.55 }}
-                              transition={{ opacity: { duration: 0.3 }, layout: { duration: 0.7, ease: EASE } }}
-                            >
-                              {f.label}
-                            </motion.span>
-                          );
-                        })}
-                      </motion.div>
+                        selected from
+                      </motion.span>
 
-                      {/* Vertical divider */}
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", alignSelf: "stretch", padding: "0 14px" }}>
-                        <div style={{ flex: 1, width: 1, backgroundColor: "#D1D5DB" }} />
-                        <motion.span
-                          style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", color: MUTED, fontFamily: "inherit", whiteSpace: "nowrap", writingMode: "vertical-lr", transform: "rotate(180deg)", padding: "10px 0" }}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ duration: 0.3, delay: 0.6 }}
+                      <div style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center", width: "100%", gap: 0 }}>
+                        {/* Left: All factors */}
+                        <motion.div
+                          style={{ display: "grid", gridTemplateColumns: "repeat(4, auto)", gap: 11, justifyContent: "start", alignContent: "start" }}
                         >
-                          selected from
-                        </motion.span>
-                        <div style={{ flex: 1, width: 1, backgroundColor: "#D1D5DB" }} />
-                      </div>
+                          {SQUARE_FACTORS.map((f, fi) => {
+                            const isSelected = SELECTED_FACTORS.some(sf => sf.label === f.label);
+                            const catColor = CATEGORY_LAYOUT.find(c => c.key === f.category)?.color ?? MUTED;
+                            return (
+                              <motion.span
+                                key={f.label}
+                                layoutId={`factor-${f.label}`}
+                                layout
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  borderRadius: 8,
+                                  border: isSelected ? `1.5px solid ${TEAL}60` : `1px solid ${catColor}20`,
+                                  padding: "8px 14px",
+                                  fontSize: 14,
+                                  fontWeight: isSelected ? 700 : 500,
+                                  fontFamily: "inherit",
+                                  whiteSpace: "nowrap",
+                                  color: isSelected ? TEAL : `${catColor}90`,
+                                  backgroundColor: isSelected ? `${TEAL}08` : `${catColor}06`,
+                                }}
+                                initial={false}
+                                animate={{ opacity: isSelected ? 1 : 0.55 }}
+                                transition={{ opacity: { duration: 0.3 }, layout: { duration: 0.7, ease: EASE } }}
+                              >
+                                {f.label}
+                              </motion.span>
+                            );
+                          })}
+                        </motion.div>
 
-                      {/* Right: Model Drivers */}
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, flex: "0 0 auto", minWidth: 0 }}>
-                        <motion.span
-                          style={{ fontSize: 14, fontWeight: 700, letterSpacing: "0.12em", color: TEAL, fontFamily: "inherit", textTransform: "uppercase" }}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ duration: 0.3, delay: 0.2 }}
-                        >
-                          5 Model Drivers
-                        </motion.span>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                          {SELECTED_FACTORS.map((sf, si) => (
-                            <motion.span
-                              key={sf.label}
-                              style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                borderRadius: 12,
-                                border: `2.5px solid ${TEAL}`,
-                                padding: "14px 26px",
-                                fontSize: 18,
-                                fontWeight: 700,
-                                fontFamily: "inherit",
-                                whiteSpace: "nowrap",
-                                color: TEAL,
-                                backgroundColor: "#E5F5FA",
-                              }}
-                              initial={{ opacity: 0, scale: 0.7, y: 10 }}
-                              animate={{ opacity: 1, scale: 1, y: 0, boxShadow: `0 0 16px ${TEAL}30` }}
-                              transition={{ duration: 0.5, delay: si * 0.1, ease: EASE }}
-                            >
-                              {sf.label}
-                            </motion.span>
-                          ))}
+                        {/* Vertical line divider */}
+                        <div style={{ alignSelf: "stretch", width: 1, backgroundColor: "#D1D5DB", margin: "0 18px", flexShrink: 0 }} />
+
+                        {/* Right: Model Drivers */}
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, flex: "0 0 auto", minWidth: 0 }}>
+                          <motion.span
+                            style={{ fontSize: 14, fontWeight: 700, letterSpacing: "0.12em", color: TEAL, fontFamily: "inherit", textTransform: "uppercase" }}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.3, delay: 0.2 }}
+                          >
+                            5 Model Drivers
+                          </motion.span>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                            {SELECTED_FACTORS.map((sf, si) => (
+                              <motion.span
+                                key={sf.label}
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  borderRadius: 12,
+                                  border: `2.5px solid ${TEAL}`,
+                                  padding: "14px 26px",
+                                  fontSize: 18,
+                                  fontWeight: 700,
+                                  fontFamily: "inherit",
+                                  whiteSpace: "nowrap",
+                                  color: TEAL,
+                                  backgroundColor: "#E5F5FA",
+                                }}
+                                initial={{ opacity: 0, scale: 0.7, y: 10 }}
+                                animate={{ opacity: 1, scale: 1, y: 0, boxShadow: `0 0 16px ${TEAL}30` }}
+                                transition={{ duration: 0.5, delay: si * 0.1, ease: EASE }}
+                              >
+                                {sf.label}
+                              </motion.span>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </motion.div>

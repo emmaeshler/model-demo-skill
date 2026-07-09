@@ -96,11 +96,6 @@ const NOTES: Record<string, string[]> = {
     "When all customers are optimized together, the portfolio effect is powerful.",
     "Some prices go up, some go down — but total margin improves significantly.",
   ],
-  "closing-summary": [
-    "Let's recap what we've covered.",
-    "Design, Power, Execute, Refine — four phases working together as one dynamic pricing engine.",
-    "The result: pricing that's smarter, faster, and more profitable.",
-  ],
   "end": [
     "Thank you for your time.",
     "Happy to dive deeper into any area that's relevant to your business.",

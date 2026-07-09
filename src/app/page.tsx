@@ -13,7 +13,6 @@ import { OneModelSlide, ONE_MODEL_TOTAL_STEPS } from "@/components/slides/one-mo
 import { PowerSlide, POWER_TOTAL_STEPS } from "@/components/slides/power-slide";
 import { ExecuteSlide, EXECUTE_TOTAL_STEPS } from "@/components/slides/execute-slide";
 import { RefineSlideV2, REFINE_V2_TOTAL_STEPS } from "@/components/slides/refine-slide-v2";
-import { ClosingSummarySlide } from "@/components/slides/closing-summary";
 import { AnimationGlossary } from "@/components/animation-glossary";
 
 const MemoOverview = memo(OverviewSlide);
@@ -21,7 +20,6 @@ const MemoOneModel = memo(OneModelSlide);
 const MemoPower = memo(PowerSlide);
 const MemoExecute = memo(ExecuteSlide);
 const MemoRefine = memo(RefineSlideV2);
-const MemoClosing = memo(ClosingSummarySlide);
 
 type SlideKind =
   | "intro"
@@ -30,7 +28,6 @@ type SlideKind =
   | "power"
   | "execute"
   | "refine"
-  | "closing-summary"
   | "end";
 
 interface SlideConfig {
@@ -49,7 +46,6 @@ const SLIDES: SlideConfig[] = [
   { kind: "execute" },
   // Section 4: Refine
   { kind: "refine" },
-  { kind: "closing-summary" },
   { kind: "end" },
 ];
 
@@ -207,11 +203,11 @@ function ModelStatusRail({
   const [flyX] = useState(() => typeof window !== "undefined" ? window.innerWidth * 0.52 : 700);
   const [flyH] = useState(() => typeof window !== "undefined" ? window.innerHeight : 800);
   const driverFlyOffsets: { x: number; y: number }[] = useMemo(() => [
-    { x: flyX * 0.9,  y: -flyH * 0.22 },  // End market — top of circle
-    { x: flyX * 1.15, y: -flyH * 0.02 },   // Product specialization — right
-    { x: flyX * 1.1,  y:  flyH * 0.18 },   // Competitive price point — bottom-right
-    { x: flyX * 0.7,  y:  flyH * 0.18 },   // Order frequency — bottom-left
-    { x: flyX * 0.65, y: -flyH * 0.02 },   // Product mix — left
+    { x: flyX * 1.55, y: -flyH * 0.20 },  // End market — top card
+    { x: flyX * 1.55, y: -flyH * 0.10 },  // Product specialization
+    { x: flyX * 1.55, y:  0 },             // Competitive price point — center card
+    { x: flyX * 1.55, y:  flyH * 0.10 },  // Order frequency
+    { x: flyX * 1.55, y:  flyH * 0.20 },  // Product mix — bottom card
   ], [flyX, flyH]);
 
   const mlActive = engineFocus === "both" || engineFocus === "ml";
@@ -623,8 +619,7 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
     label: "Closing",
     subtitle: "Summary and next steps",
     slides: [
-      { index: 6, label: "Summary" },
-      { index: 7, label: "Thank you" },
+      { index: 6, label: "Thank you" },
     ],
   },
 ];
@@ -1373,7 +1368,6 @@ export function Home() {
                         />
                       )}
                       {sc.kind === "execute" && <MemoExecute step={isActive ? subStep : 0} skipAnimation={effectiveSkip} isActive={isActive} onCustomerChange={isActive ? handleExecuteCustomerChange : undefined} />}
-                      {sc.kind === "closing-summary" && <MemoClosing isActive={isActive} />}
                       {sc.kind === "end" && <EndSlide onRestart={() => navigate(0)} />}
                     </motion.div>
                   </motion.div>
@@ -2018,18 +2012,36 @@ function IntroSlide({ isActive }: { isActive: boolean }) {
 
 /* ── End Slide ────────────────────────────────────────────────── */
 
+const END_RECAP = [
+  { num: "1", title: "Design", desc: "One model built around your business — your data, your factors, your rules." },
+  { num: "2", title: "Power", desc: "ML finds pricing patterns across millions of transactions humans can't see." },
+  { num: "3", title: "Execute", desc: "SKU-level prices tailored to each customer, delivered where your team works." },
+  { num: "4", title: "Refine", desc: "The model continuously recalibrates as costs, competition, and markets shift." },
+];
+
 function EndSlide({ onRestart }: { onRestart: () => void }) {
   return (
-    <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-3xl flex-col items-center justify-center px-6 text-center">
-      <span className="mb-4 inline-block rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
+    <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-4xl flex-col items-center justify-center px-6 text-center">
+      <span className="mb-6 inline-block rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
         End of Walkthrough
       </span>
       <h2 className="text-4xl font-bold tracking-tight sm:text-5xl">
         Thank You
       </h2>
-      <p className="mt-4 max-w-xl text-lg text-muted-foreground">
+      <p className="mt-3 max-w-xl text-lg text-muted-foreground">
         Questions? Let&apos;s discuss how this model can work for your business.
       </p>
+
+      <div className="mt-10 grid w-full max-w-3xl grid-cols-4 gap-4">
+        {END_RECAP.map((item) => (
+          <div key={item.num} className="rounded-xl px-4 py-4 text-left" style={{ backgroundColor: "#00446A08", border: "1px solid #00446A0F" }}>
+            <span className="text-xs font-bold tracking-widest" style={{ color: "#21A5D5" }}>{item.num}</span>
+            <h3 className="mt-1 text-sm font-bold" style={{ color: "#00446A" }}>{item.title}</h3>
+            <p className="mt-1.5 text-[0.8rem] font-medium leading-snug" style={{ color: "#5A6A78" }}>{item.desc}</p>
+          </div>
+        ))}
+      </div>
+
       <button
         onClick={onRestart}
         className="mt-10 rounded-lg bg-[#00446a] px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-[#00446a]/90"
