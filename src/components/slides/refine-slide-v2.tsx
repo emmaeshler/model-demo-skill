@@ -3,317 +3,19 @@
 import { useMemo, useState, useEffect, useLayoutEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useShareMode } from "@/lib/share-context";
+import { usePhaseSequence } from "@/lib/anim";
 import { makeCurve } from "../visuals/demand-curve";
-
-const NAVY = "#00446A";
-const ORANGE = "#C27A3A";
-const TEAL = "#4A8FA8";
-const MUTED = "#8A9AAA";
-const STRAT_BLUE = "#21A5D5";
-const GREEN = "#4A8A5C";
-const RED = "#A65A52";
+import {
+  EASE, NAVY, MUTED, STRAT_BLUE,
+  CURVE_SLOT, BASE_Y, BASELINE_KPI, TIMELINE_EVENTS,
+  SEGMENT_HIGHLIGHTS, STEP_CONTEXT,
+} from "./refine-slide-data";
+import { TimelineStrip } from "./refine-slide-timeline";
+import { RefineChart } from "./refine-slide-chart";
+import { KpiSidebar } from "./refine-slide-kpi";
+import { PortfolioGrid } from "./refine-slide-portfolio";
 
 export const REFINE_V2_TOTAL_STEPS = 8;
-
-const CURVE_SLOT = { x: 50, y: 20, w: 460, h: 140 };
-const BASE_Y = CURVE_SLOT.y + CURVE_SLOT.h;
-const BASELINE_KPI = { winRate: 62, priceAdoption: 71, marginImpact: 1.8 };
-const TOTAL_MONTHS = 20;
-const TIMELINE_EVENTS = [
-  { month: 5, label: "Steel +8%", factor: "The model reprices upward to protect margin — a few low-margin deals fall away.", steepness: 5, shift: -12, kpi: { winRate: 59, priceAdoption: 76, marginImpact: 2.1 } },
-  { month: 10, label: "Freight −6%", factor: "The model splits the savings — it lowers price to win share and keeps the rest as margin.", steepness: 5, shift: -6, kpi: { winRate: 66, priceAdoption: 80, marginImpact: 2.4 } },
-  { month: 15, label: "Resin +12%", factor: "The model reprices within hours — margin holds (+0.1) even as win rate dips.", steepness: 5, shift: -30, kpi: { winRate: 63, priceAdoption: 84, marginImpact: 2.5 } },
-];
-
-const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-function getMonthLabel(month: number): string {
-  const m = Math.round(Math.max(0, month));
-  return `${MONTH_NAMES[m % 12]} '${24 + Math.floor(m / 12)}`;
-}
-
-/* ── Seeded PRNG (same as power-slide) ─────────────────── */
-
-function mulberry32(seed: number) {
-  return () => {
-    let t = (seed += 0x6d2b79f5);
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-/* ── Dot status types and colors ─────────────────────────── */
-
-type DotStatus = "won" | "lost" | "overridden" | "adjusted";
-type Customer = "QuickParts" | "Acme" | "MedSupply";
-
-const STATUS_COLORS: Record<DotStatus, string> = {
-  won: GREEN,
-  lost: RED,
-  overridden: ORANGE,
-  adjusted: TEAL,
-};
-
-const STATUS_WEIGHTS: { status: DotStatus; weight: number }[] = [
-  { status: "won", weight: 0.4 },
-  { status: "adjusted", weight: 0.25 },
-  { status: "overridden", weight: 0.2 },
-  { status: "lost", weight: 0.15 },
-];
-
-interface ScatterDot {
-  t: number;
-  offsetY: number;
-  jitterX: number;
-  status: DotStatus;
-  r: number;
-  driftDx: number;
-  driftDy: number;
-  driftDuration: number;
-  driftDelay: number;
-  chaosX: number;
-  chaosY: number;
-  residualY: number;
-  customer: Customer;
-  birthMonth: number;
-}
-
-const rng = mulberry32(73);
-
-function pickStatus(): DotStatus {
-  const roll = rng();
-  let cumulative = 0;
-  for (const { status, weight } of STATUS_WEIGHTS) {
-    cumulative += weight;
-    if (roll < cumulative) return status;
-  }
-  return "won";
-}
-
-const DOT_COUNT = 180;
-const SCATTER_DOTS: ScatterDot[] = Array.from({ length: DOT_COUNT }, () => {
-  const zone = rng();
-  let t: number;
-  let offsetY: number;
-
-  if (zone < 0.28) {
-    // Upper-left cluster: low volume, above curve (higher prices)
-    t = 0.02 + rng() * 0.22 + (rng() - 0.5) * 0.06;
-    offsetY = -(rng() * 35 + 3);
-  } else if (zone < 0.52) {
-    // Lower-left cluster: low volume, below curve (lower prices)
-    t = 0.04 + rng() * 0.24 + (rng() - 0.5) * 0.08;
-    offsetY = rng() * 60 + 10;
-  } else if (zone < 0.66) {
-    // Bridge between upper and lower left clusters
-    t = 0.06 + rng() * 0.20;
-    offsetY = (rng() - 0.5) * 50;
-  } else if (zone < 0.88) {
-    // Trail sweeping right from lower cluster
-    const progress = rng();
-    t = 0.22 + progress * 0.58;
-    offsetY = rng() * 45 + progress * 25;
-  } else {
-    // Sparse fill (avoid upper right)
-    t = rng() * 0.85;
-    let off = (rng() - 0.5) * 80;
-    if (t > 0.45 && off < -15) {
-      off = rng() * 40 + 5;
-    }
-    offsetY = off;
-  }
-
-  t = Math.max(0.03, Math.min(0.97, t));
-
-  return {
-    t,
-    offsetY,
-    jitterX: (rng() - 0.5) * 14,
-    status: pickStatus(),
-    r: (() => { rng(); rng(); return 1.4; })(),
-    driftDx: (rng() - 0.5) * 4,
-    driftDy: (rng() - 0.5) * 3,
-    driftDuration: 4 + rng() * 4,
-    driftDelay: rng() * 5,
-    chaosX: CURVE_SLOT.x + 10 + rng() * (CURVE_SLOT.w - 20),
-    chaosY: CURVE_SLOT.y + 5 + rng() * (CURVE_SLOT.h - 10),
-    residualY: (() => { const r = rng(); return r < 0.55 ? 0 : r < 0.8 ? 2 + rng() * 6 : 6 + rng() * 10; })(),
-    customer: (t < 0.25 ? "QuickParts" : t < 0.55 ? "Acme" : "MedSupply") as Customer,
-    birthMonth: (() => { const r = rng(); if (r < 0.22) return 0; if (r < 0.38) return 4; if (r < 0.54) return 8; if (r < 0.70) return 12; if (r < 0.85) return 16; return 20; })(),
-  };
-});
-
-const SEGMENT_HIGHLIGHTS = [
-  {
-    t: 0.12,
-    label: "QuickParts",
-    offsetY: 28,
-    oldPrice: "$22.10",
-    newPrice: "$24.20",
-    change: "+$2.10",
-    dotColor: ORANGE,
-    beforeTitle: "Priced too low",
-    shortReason: "No competition",
-    beforeBody: "No competition in this niche, but cost increases aren’t reflected in the price.",
-    afterTitle: "Adjusted +$2.10",
-    afterBody: "Cost pressure passes through — price moves to the calibrated curve.",
-    marketSignal: "Cost pressure, no competition",
-  },
-  {
-    t: 0.35,
-    label: "Acme",
-    offsetY: 24,
-    oldPrice: "$19.24",
-    newPrice: "$19.80",
-    change: "+$0.56",
-    dotColor: NAVY,
-    beforeTitle: "Underpriced",
-    shortReason: "Win rate climbing",
-    beforeBody: "Win rate is climbing — a pattern, not noise. There’s room to price higher.",
-    afterTitle: "Adjusted +$0.56",
-    afterBody: "Price rises to capture margin the data says is available.",
-    marketSignal: "Win rate climbing, margin available",
-  },
-  {
-    t: 0.72,
-    label: "MedSupply",
-    offsetY: -22,
-    oldPrice: "$14.89",
-    newPrice: "$14.50",
-    change: "−$0.39",
-    dotColor: TEAL,
-    beforeTitle: "At risk",
-    shortReason: "New entrant undercutting",
-    beforeBody: "A new entrant is undercutting — willingness to pay is dropping in this region.",
-    afterTitle: "Adjusted −$0.39",
-    afterBody: "Price drops to defend the deal against the competitive threat.",
-    marketSignal: "New entrant undercutting",
-  },
-];
-
-const LEGEND_ITEMS = (() => {
-  const items = [
-    { label: "Won", color: GREEN },
-    { label: "Lost", color: RED },
-    { label: "Overridden", color: ORANGE },
-  ];
-  const CHAR_W = 2.6;
-  const DOT_PLUS_GAP = 5;
-  const AFTER_LABEL_GAP = 7;
-  let x = 0;
-  return items.map((item) => {
-    const out = { ...item, x };
-    x += DOT_PLUS_GAP + item.label.length * CHAR_W + AFTER_LABEL_GAP;
-    return out;
-  });
-})();
-
-const STEP_CONTEXT: Record<number, { title: string; body: string }> = {
-  0: {
-    title: "Now the model looks at all of them at once",
-    body: "Thousands of transactions, seen together, reveal the shape of your market — and every price gets refined against it.",
-  },
-  1: {
-    title: "Your calibrated curve",
-    body: "The model builds a price–volume relationship from your historical win/loss data.",
-  },
-  2: {
-    title: "QuickParts",
-    body: "The model detects a pricing gap and adjusts to the recommended price.",
-  },
-  3: {
-    title: "Acme",
-    body: "The model detects a pricing gap and adjusts to the recommended price.",
-  },
-  4: {
-    title: "MedSupply",
-    body: "The model detects a pricing gap and adjusts to the recommended price.",
-  },
-  5: {
-    title: "Every price, optimized",
-    body: "Every transaction is now aligned to the model's recommended price — lifting underpriced deals while protecting wins.",
-  },
-  6: {
-    title: "The market moves. The model moves with it.",
-    body: "Price indices — published benchmarks for costs like steel, freight, or labor — feed the model continuously. When costs shift, the model reprices, and every recommendation stays current.",
-  },
-  7: {
-    title: "We do this across your entire portfolio",
-    body: "Every product segment gets its own model — continuously recalibrated as the market shifts.",
-  },
-};
-
-const MINI_SLOT = { x: 4, y: 2, w: 52, h: 24 };
-
-type PortfolioFeature = "scatter" | "delta" | "price-dot" | "live" | "plain";
-
-const PORTFOLIO_SEGMENTS = (() => {
-  const pRng = mulberry32(42);
-  const names = [
-    "Fasteners – Industrial", "Bearings – Heavy Duty", "Filters – Automotive",
-    "Gaskets – Marine", "Valves – HVAC", "Tubing – Medical",
-    "Adhesives – Aerospace", "Seals – Oil & Gas", "Coatings – Marine",
-    "Fittings – Plumbing", "Wire – Telecom", "Insulation – Commercial",
-    "Clamps – Automotive", "Connectors – Electronics", "Hinges – Furniture",
-    "Springs – Defense", "Rods – Construction", "Brackets – Solar",
-    "Panels – Signage", "Rivets – Aerospace", "Washers – Rail",
-    "Bushings – Mining", "Flanges – Petrochem", "Pins – Electronics",
-    "Caps – Packaging", "Shims – Precision", "Plates – Structural",
-    "O-Rings – Hydraulic", "Bolts – Wind Energy", "Chains – Agriculture",
-  ];
-  const features: PortfolioFeature[] = [
-    "scatter", "delta", "price-dot", "live", "plain", "scatter",
-    "delta", "plain", "price-dot", "scatter", "live", "delta",
-    "plain", "scatter", "price-dot", "delta", "live", "scatter",
-    "delta", "price-dot", "plain", "scatter", "live", "price-dot",
-    "plain", "scatter", "delta", "live", "price-dot", "plain",
-  ];
-  const deltas = [
-    "+1.8%", "-0.4%", "+3.2%", "+0.9%", "-1.1%", "+2.4%",
-    "-0.7%", "+1.5%", "+0.3%", "-0.9%", "+2.7%", "+1.2%",
-    "-0.5%", "+1.9%", "-0.2%", "+3.1%", "+0.8%", "-1.3%",
-    "+2.0%", "-0.6%", "+1.4%", "+0.7%", "-0.3%", "+2.5%",
-    "+1.1%", "-0.8%", "+1.6%", "+0.4%", "-1.0%", "+2.2%",
-  ];
-  return names.map((name, i) => {
-    const steepness = 2 + pRng() * 10;
-    const raw = makeCurve(MINI_SLOT, steepness);
-    const n = 32;
-    const pts = Array.from({ length: n + 1 }, (_, j) => {
-      const pt = raw.sampleAt(j / n);
-      return { x: pt.x, y: pt.y };
-    });
-    const d = "M " + pts.map(p => `${p.x},${p.y}`).join(" L ");
-    const feature = features[i];
-    const col = i % 10;
-    const row = Math.floor(i / 10);
-    const dist = Math.sqrt(Math.pow(col - 4.5, 2) + Math.pow(row - 1, 2));
-
-    const scatterDots = feature === "scatter" ? Array.from({ length: 5 }, () => {
-      const t = 0.05 + pRng() * 0.9;
-      const curvePt = raw.sampleAt(t);
-      const cy = curvePt.y + (pRng() - 0.5) * 12;
-      pRng();
-      return { cx: curvePt.x, cy: Math.max(3, Math.min(25, cy)), r: 1.0 };
-    }) : undefined;
-
-    const priceDotPt = feature === "price-dot" ? (() => {
-      const t = 0.15 + pRng() * 0.5;
-      const curvePt = raw.sampleAt(t);
-      return { x: curvePt.x, y: curvePt.y };
-    })() : undefined;
-
-    return { name, d, feature, dist, delta: deltas[i], scatterDots, priceDotPt };
-  });
-})();
-
-const PORTFOLIO_REVEAL_ORDER = (() => {
-  const indexed = PORTFOLIO_SEGMENTS.map((seg, i) => ({ i, dist: seg.dist }));
-  indexed.sort((a, b) => a.dist - b.dist);
-  const order = new Array<number>(PORTFOLIO_SEGMENTS.length);
-  indexed.forEach((item, ri) => { order[item.i] = ri; });
-  return order;
-})();
 
 export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, onTimelinePhase, requestedPhase, advanceRequest, onSpotlightRefined }: { step: number; onAutoAdvance?: () => void; skipAnimation?: boolean; isActive: boolean; onTimelinePhase?: (phase: number) => void; requestedPhase?: number; advanceRequest?: number; onSpotlightRefined?: () => void }) {
   const { shareMode } = useShareMode();
@@ -327,8 +29,8 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
     });
     const ghostCurvePts: { x: number; y: number }[][] = [];
     const ghostCurves = [
-      { steepness: 2, customer: "MedSupply", color: TEAL },
-      { steepness: 14, customer: "QuickParts", color: ORANGE },
+      { steepness: 2, customer: "MedSupply", color: "#4A8FA8" },
+      { steepness: 14, customer: "QuickParts", color: "#C27A3A" },
     ].map(({ steepness, customer, color }) => {
       const g = makeCurve(CURVE_SLOT, steepness);
       const gPts = Array.from({ length: n + 1 }, (_, i) => {
@@ -374,42 +76,18 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
   }, []);
 
   const chartStep = step;
-  /* ── Intro phase for chartStep 0 animated title build ── */
-  const [introPhase, setIntroPhase] = useState(skipAnimation ? 6 : chartStep === 0 ? 0 : 6);
-  useEffect(() => {
-    if (!isActive) {
-      setIntroPhase(0);
-      return;
-    }
-    if (skipAnimation) {
-      const t0 = setTimeout(() => setIntroPhase(6));
-      return () => clearTimeout(t0);
-    }
-    if (chartStep !== 0) {
-      const t0 = setTimeout(() => setIntroPhase(6));
-      return () => clearTimeout(t0);
-    }
-    const t0 = setTimeout(() => setIntroPhase(0));
-    const t1 = setTimeout(() => setIntroPhase(1), 400);
-    const t2 = setTimeout(() => setIntroPhase(2), 1600);
-    const t3 = setTimeout(() => setIntroPhase(3), 2800);
-    const t4 = setTimeout(() => setIntroPhase(4), 3800);
-    const t5 = setTimeout(() => setIntroPhase(5), 4700);
-    const t6 = setTimeout(() => setIntroPhase(6), 5600);
-    return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); clearTimeout(t5); clearTimeout(t6); };
-  }, [chartStep, skipAnimation, isActive]);
 
-  /* ── Spotlight auto-animation (steps 3-5) ────────────── */
+  const INTRO_DELAYS = [0, 400, 1600, 2800, 3800, 4700, 5600] as const;
+  const introPhase = usePhaseSequence(INTRO_DELAYS, { active: isActive, skip: !!skipAnimation, enabled: chartStep === 0 });
+
+  /* ── Spotlight auto-animation (steps 3-5) ── */
   const isSpotlight = chartStep >= 2 && chartStep <= 4;
   const spotlightIdx = isSpotlight ? chartStep - 2 : -1;
 
   const [spotPhase, setSpotPhase] = useState(0);
   const spotRefinedForStep = useRef(-1);
   useEffect(() => {
-    if (!isActive) {
-      setSpotPhase(0);
-      return;
-    }
+    if (!isActive) { setSpotPhase(0); return; }
     if (!isSpotlight) {
       const t0 = setTimeout(() => setSpotPhase(0));
       return () => clearTimeout(t0);
@@ -435,7 +113,7 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
     }
   }, [advanceRequest]);
 
-  /* ── Timeline intro + click-to-advance (step 6) ────── */
+  /* ── Timeline intro + click-to-advance (step 6) ── */
   const [indexIntroPhase, setIndexIntroPhase] = useState(0);
   const [indexPhase, setIndexPhase] = useState(0);
   useEffect(() => {
@@ -470,11 +148,7 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
   const [kpiRevealed, setKpiRevealed] = useState(false);
   const prevIndexPhaseRef = useRef(0);
   useLayoutEffect(() => {
-    if (!isActive) {
-      setIndexMorphProgress(0);
-      setKpiRevealed(false);
-      return;
-    }
+    if (!isActive) { setIndexMorphProgress(0); setKpiRevealed(false); return; }
     const prev = prevIndexPhaseRef.current;
     prevIndexPhaseRef.current = indexPhase;
     if (indexPhase === prev) { setIndexMorphProgress(1); return; }
@@ -507,22 +181,10 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
     return () => { clearTimeout(delayTimer); clearTimeout(kpiTimer); cancelAnimationFrame(frame); };
   }, [indexPhase, skipAnimation, isActive]);
 
-  /* ── Portfolio headline phases (step 7) ──────────────── */
-  const [portfolioPhase, setPortfolioPhase] = useState(0);
-  useEffect(() => {
-    if (!isActive) { setPortfolioPhase(0); return; }
-    if (chartStep !== 7) { setPortfolioPhase(0); return; }
-    if (skipAnimation) { setPortfolioPhase(4); return; }
-    setPortfolioPhase(0);
-    const t1 = setTimeout(() => setPortfolioPhase(1), 200);
-    const t2 = setTimeout(() => setPortfolioPhase(2), 1200);
-    const t3 = setTimeout(() => setPortfolioPhase(3), 2200);
-    const t4 = setTimeout(() => setPortfolioPhase(4), 2800);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
-  }, [chartStep, skipAnimation, isActive]);
+  const PORTFOLIO_DELAYS = [0, 200, 1200, 2200, 2800] as const;
+  const portfolioPhase = usePhaseSequence(PORTFOLIO_DELAYS, { active: isActive, skip: !!skipAnimation, enabled: chartStep === 7 });
 
-  /* ── Chart animation ────────────────────────────────── */
-
+  /* ── Derived state ── */
   const showCurve = chartStep >= 1;
   const isAllToCurve = chartStep >= 5;
   const isIndexShift = chartStep === 6;
@@ -584,6 +246,7 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
   }, [isIndexShift, indexPhase]);
 
   const dotOpacityBase = chartStep === 1 ? 0.15 : isSpotlight ? 0 : isIndexShift ? 0.35 : 1;
+  const isLifted = spotPhase >= 1;
 
   const heading = isPortfolio
     ? "We do this across your entire portfolio"
@@ -605,8 +268,16 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
 
   const spotlightAfterLine = isSpotlight && spotPhase >= 1 ? SEGMENT_HIGHLIGHTS[spotlightIdx].afterBody : null;
 
-  const activeHighlight = isSpotlight ? SEGMENT_HIGHLIGHTS[spotlightIdx] : null;
-  const isLifted = spotPhase >= 1;
+  const handleSpotClick = () => {
+    if (!isSpotlight) return;
+    if (spotRefinedForStep.current !== chartStep) {
+      spotRefinedForStep.current = chartStep;
+      setSpotPhase(2);
+      onSpotlightRefined?.();
+    } else {
+      onAutoAdvance?.();
+    }
+  };
 
   return (
     <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-5.5rem)] max-w-7xl flex-col items-center justify-start px-6 pt-2">
@@ -762,7 +433,7 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
                         style={{ backgroundColor: STRAT_BLUE, bottom: -3, transformOrigin: "left" }}
                         initial={{ scaleX: 0 }}
                         animate={{ scaleX: indexIntroPhase >= 1 ? 1 : 0 }}
-                        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                        transition={{ duration: 0.8, ease: EASE }}
                       />
                     </span>
                   </>
@@ -810,175 +481,31 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
       <motion.div
         className="relative w-full flex-shrink-0"
         initial={false}
-        animate={{
-          height: isIndexShift && indexIntroPhase >= 2 ? 140 : 0,
-        }}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        animate={{ height: isIndexShift && indexIntroPhase >= 2 ? 140 : 0 }}
+        transition={{ duration: 0.5, ease: EASE }}
       >
-
-      {/* Timeline strip — date/card + scrubber */}
-      <AnimatePresence>
-        {isIndexShift && indexIntroPhase >= 2 && (
-          <motion.div
-            key="timeline-strip"
-            className="absolute inset-x-0 top-0 px-6 pt-3 pb-2"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            {/* Date display / Event card */}
-            <div className="relative flex items-center justify-center" style={{ height: 70, marginBottom: 4 }}>
-              <motion.button
-                className="absolute left-0 z-10 flex h-8 w-8 items-center justify-center rounded-full"
-                style={{ backgroundColor: `${NAVY}08`, color: MUTED, pointerEvents: indexPhase > 0 ? "auto" as const : "none" as const }}
-                onClick={retreatTimeline}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: indexPhase > 0 ? 0.7 : 0.25 }}
-                whileHover={{ opacity: indexPhase > 0 ? 1 : 0.25, scale: indexPhase > 0 ? 1.1 : 1 }}
-                transition={{ duration: 0.2 }}
-              >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 3L4.5 7L8.5 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              </motion.button>
-              <div style={{ transform: "translateX(calc(var(--rail-inset, 0px) * -0.5))" }}>
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={`event-${indexPhase}`}
-                    className="flex flex-col items-center cursor-pointer"
-                    onClick={advanceTimeline}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.3, ease: "easeOut" }}
-                  >
-                    {currentEvent ? (
-                      <>
-                        <div className="flex items-center gap-2.5">
-                          <span
-                            className="rounded-full px-3 py-0.5 text-[11px] font-bold uppercase tracking-widest"
-                            style={{ backgroundColor: `${STRAT_BLUE}12`, color: STRAT_BLUE }}
-                          >
-                            {getMonthLabel(currentEvent.month)}
-                          </span>
-                          <span className="text-[22px] font-bold leading-tight" style={{ color: NAVY }}>
-                            {currentEvent.label}
-                          </span>
-                        </div>
-                        <span className="mt-1 text-[13px] font-medium" style={{ color: MUTED }}>
-                          {currentEvent.factor}
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <div className="flex items-center gap-2.5">
-                          <span
-                            className="rounded-full px-3 py-0.5 text-[11px] font-bold uppercase tracking-widest"
-                            style={{ backgroundColor: `${STRAT_BLUE}12`, color: STRAT_BLUE }}
-                          >
-                            {getMonthLabel(0)}
-                          </span>
-                          <span className="text-[22px] font-bold leading-tight" style={{ color: ORANGE }}>
-                            Your market, day 1
-                          </span>
-                        </div>
-                        <span className="mt-1 text-[13px] font-medium" style={{ color: MUTED }}>
-                          Your day 1 baseline — and where the model prices from here.
-                        </span>
-                      </>
-                    )}
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-              <motion.button
-                className="absolute right-0 z-10 flex h-8 w-8 items-center justify-center rounded-full"
-                style={{ backgroundColor: `${STRAT_BLUE}10`, color: STRAT_BLUE, pointerEvents: indexPhase < TIMELINE_EVENTS.length ? "auto" as const : "none" as const }}
-                onClick={advanceTimeline}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: indexPhase < TIMELINE_EVENTS.length ? 1 : 0.3 }}
-                whileHover={{ scale: 1.1 }}
-                transition={{ duration: 0.2 }}
-              >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5.5 3L9.5 7L5.5 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              </motion.button>
-            </div>
-
-            {/* Timeline scrubber */}
-            <div className="relative mt-1 cursor-pointer" style={{ height: 32 }} onClick={advanceTimeline}>
-              {/* Track bg */}
-              <div className="absolute rounded-full" style={{ left: 0, right: 0, top: "50%", height: 3, transform: "translateY(-50%)", backgroundColor: `${NAVY}0D` }} />
-              {/* Track fill */}
-              <motion.div
-                className="absolute rounded-full"
-                style={{ left: 0, top: "50%", height: 3, transform: "translateY(-50%)", backgroundColor: `${STRAT_BLUE}80` }}
-                animate={{ width: `${(currentMonth / TOTAL_MONTHS) * 100}%` }}
-                transition={{ duration: 0.6, ease: "easeOut" }}
+        <AnimatePresence>
+          {isIndexShift && indexIntroPhase >= 2 && (
+            <motion.div
+              key="timeline-strip"
+              className="absolute inset-x-0 top-0"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <TimelineStrip
+                indexPhase={indexPhase}
+                indexMorphProgress={indexMorphProgress}
+                currentMonth={currentMonth}
+                currentEvent={currentEvent}
+                advanceTimeline={advanceTimeline}
+                retreatTimeline={retreatTimeline}
+                setIndexPhase={setIndexPhase}
               />
-              {/* Milestone dots — clickable */}
-              {TIMELINE_EVENTS.map((event, i) => {
-                const pos = (event.month / TOTAL_MONTHS) * 100;
-                const isPast = currentMonth >= event.month;
-                const isActive = indexPhase === i + 1 && indexMorphProgress >= 1;
-                return (
-                  <div
-                    key={event.month}
-                    className="absolute cursor-pointer"
-                    style={{ left: `${pos}%`, top: "50%", transform: "translate(-50%, -50%)", padding: 8, zIndex: 2 }}
-                    onClick={(e) => { e.stopPropagation(); setIndexPhase(i + 1); }}
-                  >
-                    <motion.div
-                      className="rounded-full"
-                      animate={{
-                        width: isActive ? 14 : isPast ? 10 : 8,
-                        height: isActive ? 14 : isPast ? 10 : 8,
-                        backgroundColor: isActive ? STRAT_BLUE : isPast ? NAVY : `${NAVY}25`,
-                      }}
-                      whileHover={{ scale: 1.3 }}
-                      transition={{ duration: 0.3 }}
-                    />
-                  </div>
-                );
-              })}
-              {/* Start dot */}
-              <div className="absolute rounded-full" style={{ left: 0, top: "50%", width: 6, height: 6, backgroundColor: NAVY, transform: "translate(-50%, -50%)", zIndex: 1 }} />
-              {/* End dot */}
-              <div className="absolute rounded-full" style={{ right: 0, top: "50%", width: 6, height: 6, backgroundColor: `${NAVY}25`, transform: "translate(50%, -50%)", zIndex: 1 }} />
-              {/* Big circle scrubber — pointer-events-none so dots underneath stay clickable */}
-              <motion.div
-                className="absolute z-10 rounded-full pointer-events-none"
-                style={{
-                  top: "50%",
-                  width: 22, height: 22,
-                  marginLeft: -11, marginTop: -11,
-                  backgroundColor: STRAT_BLUE,
-                  border: "3px solid white",
-                  boxShadow: `0 2px 12px ${STRAT_BLUE}50`,
-                }}
-                animate={{ left: `${(currentMonth / TOTAL_MONTHS) * 100}%` }}
-                transition={{ duration: 0.6, ease: "easeOut" }}
-              />
-              {/* Month labels below track */}
-              <div className="absolute" style={{ top: "50%", marginTop: 14, left: 0, right: 0 }}>
-                <span className="absolute text-[10px] font-medium" style={{ left: 0, color: MUTED }}>{getMonthLabel(0)}</span>
-                {TIMELINE_EVENTS.map((event, i) => {
-                  const pos = (event.month / TOTAL_MONTHS) * 100;
-                  const isActive = indexPhase === i + 1 && indexMorphProgress >= 1;
-                  return (
-                    <span
-                      key={event.month}
-                      className="absolute text-[10px] font-medium transition-colors duration-300 cursor-pointer"
-                      style={{ left: `${pos}%`, transform: "translateX(-50%)", color: isActive ? STRAT_BLUE : MUTED }}
-                      onClick={(e) => { e.stopPropagation(); setIndexPhase(i + 1); }}
-                    >
-                      {getMonthLabel(event.month)}
-                    </span>
-                  );
-                })}
-                <span className="absolute text-[10px] font-medium" style={{ right: 0, color: MUTED }}>{getMonthLabel(TOTAL_MONTHS)}</span>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
 
       {/* Chart area */}
@@ -992,20 +519,16 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
           style={{ pointerEvents: "none" }}
         >
           <svg viewBox={`0 -6 ${CURVE_SLOT.x + CURVE_SLOT.w + 40} ${BASE_Y + 30}`} className="w-full h-full" preserveAspectRatio="xMidYMid meet">
-            {/* Axes */}
             <line x1={CURVE_SLOT.x} y1={CURVE_SLOT.y} x2={CURVE_SLOT.x} y2={BASE_Y} stroke={NAVY} strokeWidth={1} strokeDasharray="4 3" opacity={0.18} />
             <line x1={CURVE_SLOT.x} y1={BASE_Y} x2={CURVE_SLOT.x + CURVE_SLOT.w} y2={BASE_Y} stroke={NAVY} strokeWidth={1} strokeDasharray="4 3" opacity={0.18} />
-            {/* Grid */}
             {Array.from({ length: 5 }, (_, i) => {
               const y = CURVE_SLOT.y + ((i + 1) / 6) * CURVE_SLOT.h;
               return <line key={`rsg-h${i}`} x1={CURVE_SLOT.x} y1={y} x2={CURVE_SLOT.x + CURVE_SLOT.w} y2={y} stroke={NAVY} strokeWidth={0.5} strokeDasharray="3 5" opacity={0.07} />;
             })}
-            {/* Ghost demand curve */}
             <path
               d={`M ${CURVE_SLOT.x} ${CURVE_SLOT.y + 8} Q ${CURVE_SLOT.x + CURVE_SLOT.w * 0.25} ${CURVE_SLOT.y + CURVE_SLOT.h * 0.35} ${CURVE_SLOT.x + CURVE_SLOT.w * 0.5} ${CURVE_SLOT.y + CURVE_SLOT.h * 0.65} T ${CURVE_SLOT.x + CURVE_SLOT.w} ${BASE_Y - 8}`}
               fill="none" stroke={NAVY} strokeWidth={2} strokeDasharray="6 4" opacity={0.14}
             />
-            {/* Ghost scatter dots */}
             {[
               [0.08, 0.15], [0.12, 0.22], [0.18, 0.35], [0.25, 0.30], [0.15, 0.50],
               [0.35, 0.48], [0.42, 0.55], [0.50, 0.62], [0.30, 0.70], [0.55, 0.58],
@@ -1018,793 +541,69 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
           </svg>
         </motion.div>
 
-      <motion.div
-        className="absolute inset-0 flex flex-col"
-        initial={{ opacity: 1, y: 0 }}
-        animate={{
-          opacity: isPortfolio ? 0 : isIndexShift && indexIntroPhase < 2 ? 0 : 1,
-          y: 0,
-        }}
-        transition={{ duration: 1.0, ease: [0.22, 1, 0.36, 1] }}
-        style={isPortfolio ? { pointerEvents: "none" as const } : undefined}
-      >
-        {/* Chart */}
-        <div className="relative min-w-0 flex-1 flex items-center justify-center" style={isIndexShift ? { paddingRight: 175 } : undefined}>
-            <svg
-              viewBox={`0 -6 ${CURVE_SLOT.x + CURVE_SLOT.w + 40} ${BASE_Y + 30}`}
-              className="w-full h-full"
-              preserveAspectRatio="xMidYMid meet"
-            >
-              {/* Legend — bottom-left below chart (hidden during timeline) */}
-              {!isIndexShift && <g>
-                {LEGEND_ITEMS.map((item) => (
-                  <g key={item.label} transform={`translate(${CURVE_SLOT.x + item.x}, ${BASE_Y + 14})`}>
-                    <circle cx={0} cy={0} r={1.2} fill={item.color} opacity={0.7} />
-                    <text x={3.5} y={1.5} fontSize="4.5" fontWeight="500" fill={MUTED} style={{ fontFamily: "inherit" }}>{item.label}</text>
-                  </g>
-                ))}
-              </g>}
+        <motion.div
+          className="absolute inset-0 flex flex-col"
+          initial={{ opacity: 1, y: 0 }}
+          animate={{
+            opacity: isPortfolio ? 0 : isIndexShift && indexIntroPhase < 2 ? 0 : 1,
+            y: 0,
+          }}
+          transition={{ duration: 1.0, ease: EASE }}
+          style={isPortfolio ? { pointerEvents: "none" as const } : undefined}
+        >
+          <div className="relative min-w-0 flex-1 flex items-center justify-center" style={isIndexShift ? { paddingRight: 175 } : undefined}>
+            <RefineChart
+              curve={curve}
+              morphedIndexCurveD={morphedIndexCurveD}
+              ghostIndexCurveD={ghostIndexCurveD}
+              chartStep={chartStep}
+              showCurve={showCurve}
+              isAllToCurve={isAllToCurve}
+              isIndexShift={isIndexShift}
+              isSpotlight={isSpotlight}
+              spotlightIdx={spotlightIdx}
+              spotPhase={spotPhase}
+              isLifted={isLifted}
+              dotOpacityBase={dotOpacityBase}
+              introPhase={introPhase}
+              activeIndexCurve={activeIndexCurve}
+              indexMorphFrom={indexMorphFrom}
+              indexMorphProgress={indexMorphProgress}
+              indexPhase={indexPhase}
+              timelineTargetMonth={timelineTargetMonth}
+              shareMode={shareMode}
+              isActive={isActive}
+              skipAnimation={skipAnimation}
+              onSpotClick={handleSpotClick}
+            />
+          </div>
+        </motion.div>
 
-              {/* Subtle gridlines */}
-              {Array.from({ length: 7 }, (_, i) => {
-                const y = CURVE_SLOT.y + (i / 6) * CURVE_SLOT.h;
-                return (
-                  <line key={`gh${i}`} x1={CURVE_SLOT.x} y1={y} x2={CURVE_SLOT.x + CURVE_SLOT.w} y2={y} stroke={`${NAVY}08`} strokeWidth={0.5} />
-                );
-              })}
-              {Array.from({ length: 6 }, (_, i) => {
-                const x = CURVE_SLOT.x + (i / 5) * CURVE_SLOT.w;
-                return (
-                  <line key={`gv${i}`} x1={x} y1={CURVE_SLOT.y} x2={x} y2={BASE_Y} stroke={`${NAVY}08`} strokeWidth={0.5} />
-                );
-              })}
-
-              {/* Axes */}
-              <line
-                x1={CURVE_SLOT.x}
-                y1={BASE_Y}
-                x2={CURVE_SLOT.x + CURVE_SLOT.w}
-                y2={BASE_Y}
-                stroke={`${NAVY}30`}
-                strokeWidth={1.2}
-              />
-              <line
-                x1={CURVE_SLOT.x}
-                y1={CURVE_SLOT.y}
-                x2={CURVE_SLOT.x}
-                y2={BASE_Y}
-                stroke={`${NAVY}30`}
-                strokeWidth={1.2}
-              />
-              <text
-                x={30}
-                y={CURVE_SLOT.y + CURVE_SLOT.h / 2}
-                textAnchor="middle"
-                transform={`rotate(-90, 30, ${CURVE_SLOT.y + CURVE_SLOT.h / 2})`}
-                style={{ fill: MUTED, fontSize: 7, fontWeight: 500, fontFamily: "inherit" }}
-              >
-                Price
-              </text>
-
-              <text
-                x={CURVE_SLOT.x + CURVE_SLOT.w / 2}
-                y={BASE_Y + 14}
-                textAnchor="middle"
-                style={{ fill: MUTED, fontSize: 7, fontWeight: 500, fontFamily: "inherit" }}
-              >
-                Volume
-              </text>
-
-              {/* Fixed background demand curve — identical on all timeline slides */}
-              {isIndexShift && (
-                <motion.path
-                  d={curve.d}
-                  fill="none"
-                  stroke={`${NAVY}18`}
-                  strokeWidth={1.8}
-                  strokeLinecap="round"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.8 }}
-                />
-              )}
-              {/* Timeline legend — top-right of chart */}
-              {isIndexShift && indexPhase > 0 && (
-                <motion.g
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.5, delay: 0.6 }}
-                >
-                  {/* Recommended price */}
-                  <line x1={CURVE_SLOT.x + CURVE_SLOT.w - 90} y1={CURVE_SLOT.y + 8} x2={CURVE_SLOT.x + CURVE_SLOT.w - 76} y2={CURVE_SLOT.y + 8} stroke={NAVY} strokeWidth={2} strokeLinecap="round" />
-                  <text x={CURVE_SLOT.x + CURVE_SLOT.w - 72} y={CURVE_SLOT.y + 10.5} fontSize="5.5" fontWeight="700" fill={NAVY} style={{ fontFamily: "inherit" }}>Recommended price</text>
-                  {/* Prior price */}
-                  <line x1={CURVE_SLOT.x + CURVE_SLOT.w - 90} y1={CURVE_SLOT.y + 19} x2={CURVE_SLOT.x + CURVE_SLOT.w - 76} y2={CURVE_SLOT.y + 19} stroke={MUTED} strokeWidth={1.5} strokeDasharray="4 3" strokeLinecap="round" />
-                  <text x={CURVE_SLOT.x + CURVE_SLOT.w - 72} y={CURVE_SLOT.y + 21.5} fontSize="5.5" fontWeight="600" fill={MUTED} style={{ fontFamily: "inherit" }}>Prior price</text>
-                  {/* Day 1 baseline */}
-                  <line x1={CURVE_SLOT.x + CURVE_SLOT.w - 90} y1={CURVE_SLOT.y + 30} x2={CURVE_SLOT.x + CURVE_SLOT.w - 76} y2={CURVE_SLOT.y + 30} stroke={`${NAVY}30`} strokeWidth={1.8} strokeLinecap="round" />
-                  <text x={CURVE_SLOT.x + CURVE_SLOT.w - 72} y={CURVE_SLOT.y + 32.5} fontSize="5.5" fontWeight="600" fill={`${NAVY}40`} style={{ fontFamily: "inherit" }}>Day 1 baseline</text>
-                </motion.g>
-              )}
-
-              {/* Ghost "old" curve — shows previous price schedule during index shifts */}
-              {isIndexShift && indexPhase > 0 && (
-                <motion.path
-                  key={`ghost-${indexPhase}`}
-                  d={ghostIndexCurveD}
-                  fill="none"
-                  stroke={MUTED}
-                  strokeWidth={1.5}
-                  strokeDasharray="6 4"
-                  strokeLinecap="round"
-                  initial={{ opacity: 0.55 }}
-                  animate={{ opacity: 0.35 }}
-                  transition={{ opacity: { duration: 1.2, ease: "easeOut" } }}
-                />
-              )}
-
-              {/* Recommended price line (Acme's curve = base) */}
-              {showCurve && (
-                <motion.path
-                  d={isIndexShift ? morphedIndexCurveD : curve.d}
-                  fill="none"
-                  stroke={NAVY}
-                  strokeLinecap="round"
-                  initial={{ pathLength: 0, opacity: 0 }}
-                  animate={{
-                    pathLength: 1,
-                    opacity: isSpotlight ? (spotlightIdx === 1 ? 1 : 0.15) : 1,
-                    strokeWidth: isSpotlight && spotlightIdx === 1 ? 3 : 2,
-                  }}
-                  transition={{ duration: 1, ease: "easeOut" }}
-                />
-              )}
-
-
-
-              {/* Calibrated curve label (step 1 only) */}
-              {showCurve && (
-                <motion.text
-                  x={curve.sampleAt(0.5).x}
-                  y={curve.sampleAt(0.5).y - 10}
-                  fontSize={isSpotlight && spotlightIdx === 1 ? 10 : 9}
-                  fontWeight="700"
-                  fill={NAVY}
-                  textAnchor="middle"
-                  style={{ fontFamily: "inherit" }}
-                  initial={{ opacity: 0 }}
-                  animate={{
-                    opacity: chartStep >= 2 ? 0 : 0.5,
-                  }}
-                  transition={{ delay: 0.8, duration: 0.5 }}
-                >
-                  Calibrated curve
-                </motion.text>
-              )}
-
-              {/* Curve labels now handled by legend in top-right */}
-
-              {/* Scatter dots */}
-              {SCATTER_DOTS.map((dot, i) => {
-                if (shareMode && i % 6 !== 0) return null;
-                const pt = curve.sampleAt(dot.t);
-                const baseCx = Math.max(CURVE_SLOT.x + 4, Math.min(CURVE_SLOT.x + CURVE_SLOT.w - 4, pt.x + dot.jitterX));
-                const scatterY = Math.max(CURVE_SLOT.y + 4, Math.min(BASE_Y - 4, pt.y + dot.offsetY));
-                const isBelowCurve = scatterY > pt.y;
-
-                const rawTargetY = isAllToCurve ? (isBelowCurve ? pt.y + dot.residualY : scatterY) : scatterY;
-                const toShift = activeIndexCurve ? activeIndexCurve.sampleAt(dot.t).y - pt.y : 0;
-                const fromShift = indexMorphFrom > 0 ? curve.indexCurves[indexMorphFrom - 1].sampleAt(dot.t).y - pt.y : 0;
-                const shiftOffset = isIndexShift ? fromShift + (toShift - fromShift) * indexMorphProgress : 0;
-                const targetY = rawTargetY + shiftOffset;
-                const dotColor = isAllToCurve && !isIndexShift ? STATUS_COLORS[dot.status] : MUTED;
-                const dotVisible = !isIndexShift || dot.birthMonth <= timelineTargetMonth;
-                const dotOpacity = dotVisible ? dotOpacityBase : 0;
-
-                const settling = chartStep === 0;
-                const normalizedDelay = dot.driftDelay / 5;
-                const wavePhase = normalizedDelay < 0.15 ? 1 : normalizedDelay < 0.30 ? 2 : 3;
-                const waveActive = !settling || introPhase >= wavePhase;
-                const isPunch = settling && introPhase >= 3;
-                const waveStagger = isPunch && wavePhase === 3 ? dot.t * 0.25 : dot.t * 0.6;
-                const settlingOpacity = waveActive ? (isPunch ? dotOpacity : dotOpacity * 0.35) : 0;
-
-                let animCx: number | number[];
-                let animCy: number | number[];
-
-                if (isAllToCurve) {
-                  animCx = baseCx;
-                  animCy = targetY;
-                } else if (settling) {
-                  animCx = baseCx;
-                  animCy = waveActive ? scatterY : scatterY - 12;
-                } else {
-                  animCx = [baseCx, baseCx + dot.driftDx, baseCx - dot.driftDx * 0.6, baseCx];
-                  animCy = [targetY, targetY + dot.driftDy, targetY - dot.driftDy * 0.6, targetY];
-                }
-
-                return (
-                  <motion.circle
-                    key={`dot-${i}`}
-                    r={dot.r}
-                    fill={dotColor}
-                    initial={{ cx: baseCx, cy: scatterY - 12, opacity: 0, scale: 0 }}
-                    animate={{
-                      cx: animCx,
-                      cy: animCy,
-                      opacity: settling ? settlingOpacity : (waveActive ? dotOpacity : 0),
-                      scale: waveActive ? 1 : 0,
-                    }}
-                    transition={{
-                      cx: settling
-                          ? { duration: 0.01 }
-                          : isAllToCurve
-                            ? { duration: 0.7, delay: shareMode ? 0 : 0.5 + dot.t * 2.5, ease: [0.22, 1, 0.36, 1] }
-                            : { duration: dot.driftDuration, delay: dot.driftDelay, repeat: isActive && !shareMode ? Infinity : 0, ease: "easeInOut" },
-                      cy: settling
-                          ? { duration: waveActive ? 0.8 : 0.01, delay: waveActive ? waveStagger : 0, ease: [0.22, 1, 0.36, 1] }
-                          : isAllToCurve
-                            ? { duration: 0.6 + (Math.abs(dot.offsetY) / 36) * 0.3, delay: shareMode ? 0 : 0.5 + dot.t * 2.5, ease: [0.22, 1, 0.36, 1] }
-                            : { duration: dot.driftDuration, delay: dot.driftDelay, repeat: isActive && !shareMode ? Infinity : 0, ease: "easeInOut" },
-                      opacity: {
-                        delay: settling ? (waveActive ? (isPunch && wavePhase < 3 ? 0 : waveStagger) : 0) : isIndexShift ? 0.15 + (i % 36) * 0.012 : 0.1,
-                        duration: isSpotlight ? 0.5 : isIndexShift ? 0.5 : settling ? (isPunch && wavePhase < 3 ? 0.3 : 0.6) : 0.3,
-                      },
-                      scale: shareMode
-                        ? { delay: settling ? (waveActive ? waveStagger : 0) : isIndexShift ? 0.15 + (i % 36) * 0.012 : 0.1, duration: 0.25 }
-                        : { delay: settling ? (waveActive ? waveStagger : 0) : isIndexShift ? 0.15 + (i % 36) * 0.012 : 0.1, type: "spring", stiffness: 300 },
-                    }}
-                  />
-                );
-              })}
-
-              {/* Scan line — sweeps left-to-right as dots converge */}
-              {isAllToCurve && !isIndexShift && !shareMode && (
-                <motion.rect
-                  y={CURVE_SLOT.y - 4}
-                  width={1.5}
-                  height={CURVE_SLOT.h + 8}
-                  fill={STRAT_BLUE}
-                  rx={0.75}
-                  initial={{ x: CURVE_SLOT.x, opacity: 0 }}
-                  animate={{ x: CURVE_SLOT.x + CURVE_SLOT.w, opacity: [0, 0.5, 0.5, 0.5, 0] }}
-                  transition={{ duration: 3, delay: 0.4, ease: "linear" }}
-                />
-              )}
-
-              {/* Highlight product dots — start below curve, auto-animate to curve */}
-              {SEGMENT_HIGHLIGHTS.map((seg, si) => {
-                const visible = isAllToCurve || (isSpotlight && si <= spotlightIdx);
-                if (!visible) return null;
-
-                const rawPt = curve.sampleAt(seg.t);
-                const segToShift = activeIndexCurve ? activeIndexCurve.sampleAt(seg.t).y - curve.sampleAt(seg.t).y : 0;
-                const segFromShift = indexMorphFrom > 0 ? curve.indexCurves[indexMorphFrom - 1].sampleAt(seg.t).y - curve.sampleAt(seg.t).y : 0;
-                const segShiftOffset = isIndexShift ? segFromShift + (segToShift - segFromShift) * indexMorphProgress : 0;
-                const pt = isIndexShift ? { x: rawPt.x, y: rawPt.y + segShiftOffset } : rawPt;
-                const belowY = pt.y + seg.offsetY;
-                const isActive = isSpotlight && si === spotlightIdx;
-                const isPast = isSpotlight && si < spotlightIdx;
-                const dotLifted = isAllToCurve || isPast || (isActive && isLifted);
-                const targetCy = dotLifted ? pt.y : belowY;
-
-                const handleSpotClick = () => {
-                  if (!isActive) return;
-                  if (spotRefinedForStep.current !== chartStep) {
-                    spotRefinedForStep.current = chartStep;
-                    setSpotPhase(2);
-                    onSpotlightRefined?.();
-                  } else {
-                    onAutoAdvance?.();
-                  }
-                };
-
-                return (
-                  <g key={seg.label} onClick={handleSpotClick} style={{ cursor: isActive ? "pointer" : "default" }}>
-                    {/* Dashed line from dot to curve position */}
-                    {isActive && (
-                      <motion.line
-                        x1={pt.x}
-                        y1={pt.y}
-                        x2={pt.x}
-                        y2={belowY}
-                        stroke={seg.dotColor}
-                        strokeWidth={1}
-                        strokeDasharray="3 3"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: dotLifted ? 0 : 0.3 }}
-                        transition={{ duration: 0.4, delay: dotLifted ? 0 : 0.5 }}
-                      />
-                    )}
-
-                    {/* Target ring on the curve */}
-                    {(isActive || isPast || isAllToCurve) && (
-                      <motion.circle
-                        cx={pt.x}
-                        cy={pt.y}
-                        r={isAllToCurve ? 4 : 10}
-                        fill="none"
-                        stroke={seg.dotColor}
-                        strokeWidth={isAllToCurve ? 0.8 : 1.5}
-                        strokeDasharray={dotLifted ? "0" : "4 3"}
-                        initial={{ opacity: 0, scale: 0.5 }}
-                        animate={{
-                          opacity: isAllToCurve ? 0.2 : dotLifted ? 0.5 : 0.3,
-                          scale: 1,
-                        }}
-                        transition={{ duration: 0.5, delay: isActive ? 0.4 : 0.2 }}
-                        style={{ transformOrigin: `${pt.x}px ${pt.y}px` }}
-                      />
-                    )}
-
-                    {/* Main dot — starts at belowY, auto-lifts to curve */}
-                    <motion.circle
-                      cx={pt.x}
-                      r={isAllToCurve ? 2.5 : 6}
-                      fill={isAllToCurve ? seg.dotColor : "white"}
-                      stroke={seg.dotColor}
-                      strokeWidth={isAllToCurve ? 0.8 : 2.5}
-                      initial={{ cy: belowY, opacity: 0 }}
-                      animate={{ cy: targetCy, opacity: 1 }}
-                      transition={{
-                        cy: { duration: 1.0, ease: [0.22, 1, 0.36, 1] },
-                        opacity: { duration: 0.3, delay: 0.1 },
-                      }}
-                      style={{ cursor: isActive ? "pointer" : "default" }}
-                    />
-
-                    {/* Label near dot (before lift) */}
-                    {isActive && !dotLifted && (
-                      <motion.g
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.6, duration: 0.4 }}
-                      >
-                        <text
-                          x={pt.x}
-                          y={seg.offsetY < 0 ? belowY - 26 : belowY + 16}
-                          fontSize="9"
-                          fontWeight="600"
-                          fill={seg.dotColor}
-                          textAnchor="middle"
-                          style={{ fontFamily: "inherit" }}
-                        >
-                          {seg.label}
-                        </text>
-                        <text
-                          x={pt.x}
-                          y={seg.offsetY < 0 ? belowY - 16 : belowY + 26}
-                          fontSize="11"
-                          fontWeight="800"
-                          fill={seg.dotColor}
-                          textAnchor="middle"
-                          style={{ fontFamily: "inherit" }}
-                        >
-                          {seg.oldPrice}
-                        </text>
-                      </motion.g>
-                    )}
-
-                    {/* Label above dot (after lift to curve) */}
-                    {dotLifted && !isAllToCurve && (
-                      <motion.g
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: isActive ? 1 : isPast ? 0.5 : 0.7 }}
-                        transition={{ delay: isActive ? 0.6 : 0, duration: 0.4 }}
-                      >
-                        <text
-                          x={pt.x}
-                          y={pt.y - 26}
-                          fontSize="9"
-                          fontWeight="600"
-                          fill={seg.dotColor}
-                          textAnchor="middle"
-                          style={{ fontFamily: "inherit" }}
-                        >
-                          {seg.label}
-                        </text>
-                        <text
-                          x={pt.x}
-                          y={pt.y - 16}
-                          fontSize="11"
-                          fontWeight="800"
-                          fill={seg.dotColor}
-                          textAnchor="middle"
-                          style={{ fontFamily: "inherit" }}
-                        >
-                          {seg.newPrice}
-                        </text>
-                      </motion.g>
-                    )}
-
-                    {/* Info card — to the right of the dot */}
-                    <AnimatePresence>
-                      {isActive && (() => {
-                        const CARD_W = 135;
-                        const CARD_H = spotPhase >= 2 ? 42 : 28;
-                        const cardX = pt.x + 28;
-                        return (
-                          <motion.g
-                            key={`card-${si}`}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ delay: 0.3, duration: 0.4 }}
-                            style={{ cursor: "pointer" }}
-                          >
-                            <motion.g
-                              initial={{ y: belowY }}
-                              animate={{ y: dotLifted ? pt.y : belowY }}
-                              transition={{ y: { duration: 1.0, ease: [0.22, 1, 0.36, 1] } }}
-                            >
-                              <motion.rect
-                                x={cardX}
-                                y={-CARD_H - 4}
-                                width={CARD_W}
-                                animate={{ height: CARD_H }}
-                                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                                rx={3}
-                                ry={3}
-                                fill="white"
-                                fillOpacity={0.95}
-                                stroke={seg.dotColor}
-                                strokeOpacity={0.2}
-                                strokeWidth={0.5}
-                              />
-                              <motion.rect
-                                x={cardX}
-                                y={-CARD_H - 4}
-                                width={1.5}
-                                animate={{ height: CARD_H }}
-                                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                                rx={0.75}
-                                fill={seg.dotColor}
-                              />
-                              <AnimatePresence mode="wait">
-                                {spotPhase < 2 ? (
-                                  <motion.g key="before" exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
-                                    <text
-                                      x={cardX + 6}
-                                      y={-CARD_H - 4 + 12}
-                                      fontSize="7"
-                                      fontWeight="700"
-                                      fill={seg.dotColor}
-                                      style={{ fontFamily: "inherit" }}
-                                    >
-                                      {seg.beforeTitle}
-                                    </text>
-                                    <text
-                                      x={cardX + 6}
-                                      y={-CARD_H - 4 + 22}
-                                      fontSize="6"
-                                      fontWeight="500"
-                                      fill={MUTED}
-                                      style={{ fontFamily: "inherit" }}
-                                    >
-                                      {seg.shortReason}
-                                    </text>
-                                  </motion.g>
-                                ) : (
-                                  <motion.g key="after" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.35 }}>
-                                    <text
-                                      x={cardX + 6}
-                                      y={-CARD_H - 4 + 12}
-                                      fontSize="5.5"
-                                      fontWeight="600"
-                                      fill={MUTED}
-                                      style={{ fontFamily: "inherit" }}
-                                    >
-                                      Order price {seg.oldPrice}
-                                    </text>
-                                    <text
-                                      x={cardX + 6}
-                                      y={-CARD_H - 4 + 23}
-                                      fontSize="5"
-                                      fontWeight="500"
-                                      fill={`${MUTED}BB`}
-                                      style={{ fontFamily: "inherit" }}
-                                    >
-                                      {seg.marketSignal}
-                                    </text>
-                                    <text
-                                      x={cardX + 6}
-                                      y={-CARD_H - 4 + 36}
-                                      fontSize="7"
-                                      fontWeight="700"
-                                      fill={GREEN}
-                                      style={{ fontFamily: "inherit" }}
-                                    >
-                                      Price is now {seg.newPrice}
-                                    </text>
-                                  </motion.g>
-                                )}
-                              </AnimatePresence>
-                            </motion.g>
-                          </motion.g>
-                        );
-                      })()}
-                    </AnimatePresence>
-                  </g>
-                );
-              })}
-
-            </svg>
-        </div>
-
-      </motion.div>
-
-      {/* KPI sidebar — visible after first timeline event */}
-      <AnimatePresence>
-        {isIndexShift && indexIntroPhase >= 2 && (
-          <motion.div
-            key="kpi-sidebar"
-            className="absolute right-0 top-0 bottom-0 z-20 flex flex-col justify-center gap-3 px-3 pb-16"
-            style={{ width: 175, borderLeft: `1px solid ${NAVY}0A` }}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            {/* Win rate */}
-            <div className="rounded-xl px-3.5 py-3" style={{ backgroundColor: `${NAVY}05` }}>
-              <div className="text-[11px] font-semibold tracking-wide" style={{ color: MUTED }}>Win rate</div>
-              <div className="text-[26px] font-bold tabular-nums leading-tight mt-0.5" style={{ color: NAVY }}>
-                {Math.round(currentKpi.winRate)}%
-              </div>
-              <AnimatePresence mode="wait">
-                {indexPhase === 0 ? (
-                  <motion.div
-                    key="wr-baseline"
-                    className="text-[11px] font-semibold mt-1"
-                    style={{ color: MUTED }}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.35, ease: "easeOut" }}
-                  >
-                    Baseline
-                  </motion.div>
-                ) : kpiRevealed && kpiDelta.winRate !== 0 ? (
-                  <motion.div
-                    key={`wr-${indexPhase}`}
-                    className="text-[11px] font-semibold mt-1"
-                    style={{ color: kpiDelta.winRate > 0 ? GREEN : RED }}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.35, ease: "easeOut" }}
-                  >
-                    {kpiDelta.winRate > 0 ? "↗" : "↘"} {kpiDelta.winRate > 0 ? "+" : ""}{kpiDelta.winRate} pts vs. last checkpoint
-                  </motion.div>
-                ) : null}
-              </AnimatePresence>
-            </div>
-
-            {/* Price adoption */}
-            <div className="rounded-xl px-3.5 py-3" style={{ backgroundColor: `${NAVY}05` }}>
-              <div className="text-[11px] font-semibold tracking-wide" style={{ color: MUTED }}>Price adoption</div>
-              <div className="text-[26px] font-bold tabular-nums leading-tight mt-0.5" style={{ color: NAVY }}>
-                {Math.round(currentKpi.priceAdoption)}%
-              </div>
-              <AnimatePresence mode="wait">
-                {indexPhase === 0 ? (
-                  <motion.div
-                    key="pa-baseline"
-                    className="text-[11px] font-semibold mt-1"
-                    style={{ color: MUTED }}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.35, ease: "easeOut" }}
-                  >
-                    Baseline
-                  </motion.div>
-                ) : kpiRevealed ? (
-                  <motion.div
-                    key={`pa-${indexPhase}`}
-                    className="text-[11px] font-semibold mt-1"
-                    style={{ color: kpiDelta.priceAdoption > 0 ? GREEN : kpiDelta.priceAdoption < 0 ? RED : MUTED }}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.35, ease: "easeOut" }}
-                  >
-                    {kpiDelta.priceAdoption > 0 ? `↗ +${kpiDelta.priceAdoption} pts` : kpiDelta.priceAdoption < 0 ? `↘ ${kpiDelta.priceAdoption} pts` : "— No change"}
-                  </motion.div>
-                ) : null}
-              </AnimatePresence>
-            </div>
-
-            {/* Margin impact */}
+        {/* KPI sidebar — visible after first timeline event */}
+        <AnimatePresence>
+          {isIndexShift && indexIntroPhase >= 2 && (
             <motion.div
-              className="rounded-xl px-3.5 py-3"
-              animate={{
-                backgroundColor: kpiRevealed && indexPhase > 0 ? (kpiDelta.marginImpact >= 0 ? `${GREEN}0A` : `${RED}0A`) : `${NAVY}05`,
-                borderColor: kpiRevealed && indexPhase > 0 ? (kpiDelta.marginImpact >= 0 ? `${GREEN}40` : `${RED}40`) : "transparent",
-              }}
-              style={{ border: "1.5px solid transparent" }}
-              transition={{ duration: 0.4 }}
+              key="kpi-sidebar"
+              className="absolute right-0 top-0 bottom-0 z-20"
+              style={{ width: 175, borderLeft: `1px solid ${NAVY}0A` }}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
             >
-              <div className="flex items-baseline gap-1.5">
-                <div className="text-[11px] font-semibold tracking-wide" style={{ color: MUTED }}>Margin impact</div>
-                <div className="text-[8px] font-medium" style={{ color: `${MUTED}90` }}>vs. no-model repricing</div>
-              </div>
-              <div className="text-[26px] font-bold tabular-nums leading-tight mt-0.5" style={{ color: kpiRevealed && indexPhase > 0 ? (kpiDelta.marginImpact >= 0 ? GREEN : RED) : NAVY }}>
-                +{currentKpi.marginImpact.toFixed(1)}%
-              </div>
-              <AnimatePresence mode="wait">
-                {indexPhase === 0 ? (
-                  <motion.div
-                    key="mi-baseline"
-                    className="text-[11px] font-semibold mt-1"
-                    style={{ color: MUTED }}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.35, ease: "easeOut" }}
-                  >
-                    Baseline
-                  </motion.div>
-                ) : kpiRevealed && kpiDelta.marginImpact !== 0 ? (
-                  <motion.div
-                    key={`mi-${indexPhase}`}
-                    className="text-[11px] font-semibold mt-1"
-                    style={{ color: kpiDelta.marginImpact > 0 ? GREEN : RED }}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.35, ease: "easeOut" }}
-                  >
-                    {kpiDelta.marginImpact > 0 ? "↗" : "↘"} {kpiDelta.marginImpact > 0 ? "+" : ""}{kpiDelta.marginImpact} vs. last checkpoint
-                  </motion.div>
-                ) : null}
-              </AnimatePresence>
+              <KpiSidebar
+                indexPhase={indexPhase}
+                currentKpi={currentKpi}
+                kpiDelta={kpiDelta}
+                kpiRevealed={kpiRevealed}
+              />
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>
 
-      {/* Portfolio grid (step 8) — 30 mini demand curves */}
-      <AnimatePresence>
-        {isPortfolio && (
-          <motion.div
-            key="portfolio-grid"
-            className="absolute inset-0 flex flex-col items-center justify-center"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            <div className="grid grid-cols-10 gap-2 px-4" style={{ maxWidth: 1100, width: "100%" }}>
-              {PORTFOLIO_SEGMENTS.map((seg, i) => {
-                const revealIdx = PORTFOLIO_REVEAL_ORDER[i];
-                const enterDelay = revealIdx === 0 ? 0.15 : 0.5 + Math.sqrt(revealIdx - 1) * 0.38;
-                const curveDelay = enterDelay + 0.2;
-                const isPositive = seg.delta.startsWith("+");
-
-                return (
-                  <motion.div
-                    key={seg.name}
-                    className="rounded-lg px-2.5 pt-2 pb-1.5 relative overflow-hidden"
-                    style={{ backgroundColor: `${NAVY}04`, border: `1px solid ${NAVY}0A` }}
-                    initial={{ opacity: 0, scale: 0.55 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.45, delay: enterDelay, ease: [0.22, 1, 0.36, 1] }}
-                  >
-                    {seg.feature === "delta" && (
-                      <motion.div
-                        className="absolute top-1 right-1.5 rounded px-1 py-0.5"
-                        style={{
-                          fontSize: 7, fontWeight: 700,
-                          color: isPositive ? GREEN : RED,
-                          backgroundColor: isPositive ? `${GREEN}10` : `${RED}10`,
-                        }}
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: curveDelay + 0.5, duration: 0.3 }}
-                      >
-                        {seg.delta}
-                      </motion.div>
-                    )}
-
-                    {seg.feature === "live" && (
-                      <motion.div
-                        className="absolute top-1.5 right-2 flex items-center gap-1"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: curveDelay + 0.6, duration: 0.3 }}
-                      >
-                        <motion.div
-                          className="rounded-full"
-                          style={{ width: 4, height: 4, backgroundColor: GREEN }}
-                          animate={{ opacity: isActive ? [1, 0.3, 1] : 1 }}
-                          transition={{ duration: 2, repeat: isActive && !shareMode ? Infinity : 0, ease: "easeInOut", delay: isActive ? curveDelay + 0.8 : 0 }}
-                        />
-                        <span style={{ fontSize: 6, fontWeight: 600, letterSpacing: "0.08em", color: GREEN, textTransform: "uppercase" as const }}>Live</span>
-                      </motion.div>
-                    )}
-
-                    <svg viewBox="0 0 60 28" className="w-full" preserveAspectRatio="xMidYMid meet">
-                      <motion.path
-                        d={`${seg.d} L 56,26 L 4,26 Z`}
-                        fill={`${NAVY}06`}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: curveDelay + 0.3, duration: 0.5 }}
-                      />
-                      <line x1={4} y1={26} x2={56} y2={26} stroke={`${NAVY}15`} strokeWidth={0.5} />
-                      <line x1={4} y1={2} x2={4} y2={26} stroke={`${NAVY}15`} strokeWidth={0.5} />
-                      <motion.path
-                        d={seg.d}
-                        fill="none"
-                        stroke={NAVY}
-                        strokeWidth={1.5}
-                        strokeLinecap="round"
-                        opacity={0.65}
-                        initial={{ pathLength: 0 }}
-                        animate={{ pathLength: 1 }}
-                        transition={{ duration: 0.7, delay: curveDelay, ease: "easeOut" }}
-                      />
-
-                      {seg.scatterDots?.map((dot, di) => (
-                        <motion.circle
-                          key={di}
-                          cx={dot.cx}
-                          cy={dot.cy}
-                          r={dot.r}
-                          fill={NAVY}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 0.35 }}
-                          transition={{ delay: curveDelay + 0.4 + di * 0.06, duration: 0.3 }}
-                        />
-                      ))}
-
-                      {seg.priceDotPt && (
-                        <>
-                          <motion.circle
-                            cx={seg.priceDotPt.x}
-                            cy={seg.priceDotPt.y}
-                            r={3.5}
-                            fill={STRAT_BLUE}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: isActive ? [0, 0.2, 0.08, 0.2] : 0 }}
-                            transition={{ delay: isActive ? curveDelay + 0.5 : 0, duration: 3, repeat: isActive && !shareMode ? Infinity : 0, ease: "easeInOut" }}
-                          />
-                          <motion.circle
-                            cx={seg.priceDotPt.x}
-                            cy={seg.priceDotPt.y}
-                            r={1.5}
-                            fill={STRAT_BLUE}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 0.7 }}
-                            transition={{ delay: curveDelay + 0.5, duration: 0.3 }}
-                          />
-                        </>
-                      )}
-                    </svg>
-
-                    <div className="text-[9px] font-medium truncate mt-0.5" style={{ color: MUTED }}>
-                      {seg.name}
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-            <motion.p
-              className="mt-4 text-center text-sm"
-              style={{ color: MUTED }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 2.8, duration: 0.5 }}
-            >
-              Showing 30 of <span style={{ color: NAVY, fontWeight: 700 }}>247 segments</span> monitored continuously
-            </motion.p>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        <PortfolioGrid isPortfolio={isPortfolio} isActive={isActive} shareMode={shareMode} />
       </div>
       </div>{/* end unified chart region */}
     </div>
   );
 }
-

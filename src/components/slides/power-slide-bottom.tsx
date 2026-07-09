@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  SPOTLIGHTS, DRIVERS, MODEL_DRIVERS, CategoryIcon, MUTED,
+  EASE, SPOTLIGHTS, DRIVERS, MODEL_DRIVERS, CategoryIcon, MUTED,
 } from "./power-slide-data";
 import { useShareMode } from "@/lib/share-context";
 
@@ -25,7 +25,7 @@ export function BottomCards({ chartStep, scanCardCount, driversRevealed }: Botto
           initial={{ opacity: 0, y: 16, height: 0 }}
           animate={{ opacity: 1, y: 0, height: "auto" }}
           exit={{ opacity: 0, height: 0 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.6, ease: EASE }}
         >
           <motion.div
             className="text-[0.7rem] font-semibold tracking-[0.08em] uppercase"
@@ -59,7 +59,7 @@ export function BottomCards({ chartStep, scanCardCount, driversRevealed }: Botto
                   y: 0,
                   scale: 1,
                 }}
-                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                transition={{ duration: 0.5, ease: EASE }}
               >
                 {isActive && !allDone && (
                   <motion.div
@@ -111,7 +111,7 @@ export function BottomCards({ chartStep, scanCardCount, driversRevealed }: Botto
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.5, ease: EASE }}
         >
           {MODEL_DRIVERS.map((d, i) => (
             <motion.div
@@ -123,7 +123,7 @@ export function BottomCards({ chartStep, scanCardCount, driversRevealed }: Botto
               }}
               initial={{ opacity: 0, scale: 0.85, y: 8 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.4, delay: i * 0.12, ease: EASE }}
             >
               <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: d.color }} />
               <span className="text-[0.75rem] font-semibold whitespace-nowrap" style={{ color: d.color }}>

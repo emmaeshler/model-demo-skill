@@ -96,13 +96,10 @@ const NOTES: Record<string, string[]> = {
     "When all customers are optimized together, the portfolio effect is powerful.",
     "Some prices go up, some go down — but total margin improves significantly.",
   ],
-  "closing-summary:0": [
-    "This is the core contrast — static pricing leaves money on the table.",
-    "With ML, every price reflects what's actually happening in the market, with the customer, and with the product.",
-  ],
-  "closing-summary:1": [
-    "The bottom line: differentiated pricing captures more margin on every transaction.",
-    "This isn't incremental — it's a fundamentally different way to price.",
+  "closing-summary": [
+    "Let's recap what we've covered.",
+    "Design, Power, Execute, Refine — four phases working together as one dynamic pricing engine.",
+    "The result: pricing that's smarter, faster, and more profitable.",
   ],
   "end": [
     "Thank you for your time.",

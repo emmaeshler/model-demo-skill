@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import {
-  SQUARE_VERTS, PLOT_CX, PLOT_CY, CONVERGE_MODEL_R,
+  EASE, SQUARE_VERTS, PLOT_CX, PLOT_CY, CONVERGE_MODEL_R,
   DISSOLVE_DOTS, PRICE_SATELLITES, SELECTED_FACTORS,
   SOLID_TINTS, ORANGE, GREEN, NAVY, PURPLE, TEAL, MUTED,
 } from "./power-slide-data";
@@ -149,7 +149,7 @@ export function ConvergenceModel({
         fill="white" stroke={TEAL} strokeWidth={2.5}
         initial={{ r: MODEL_R, opacity: 0, scale: 0.5 }}
         animate={{ r: convergeReady ? CONVERGE_MODEL_R : MODEL_R, opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6, delay: convergeReady ? 0 : 0.3, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 0.6, delay: convergeReady ? 0 : 0.3, ease: EASE }}
         style={{ transformOrigin: `${PLOT_CX}px ${PLOT_CY}px` }}
       />
       {!convergeReady && (
@@ -244,7 +244,7 @@ export function ConvergenceModel({
             }}
             transition={allAbsorbed ? {
               opacity: { duration: 0.4 },
-              scale: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+              scale: { duration: 0.5, ease: EASE },
               fill: { duration: 0.4 },
             } : {
               opacity: { duration: 1.4, repeat: shareMode ? 0 : Infinity, ease: "easeInOut" },
@@ -276,7 +276,7 @@ export function ConvergenceModel({
                 height={28}
                 initial={{ opacity: 0, scale: 0.7 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.45, delay: skipAnimation ? 0 : 0.6 + si * 0.1, ease: [0.22, 1, 0.36, 1] }}
+                transition={{ duration: 0.45, delay: skipAnimation ? 0 : 0.6 + si * 0.1, ease: EASE }}
               >
                 <div style={{
                   display: "flex",

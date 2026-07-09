@@ -3,8 +3,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useShareMode } from "@/lib/share-context";
+import { usePhaseSequence } from "@/lib/anim";
 import {
-  NAVY, TEAL, MUTED, PLOT, PLOT_W, PLOT_H, PLOT_CX, PLOT_CY,
+  EASE, NAVY, TEAL, MUTED, PLOT, PLOT_W, PLOT_H, PLOT_CX, PLOT_CY,
   Y_TICKS, X_TICKS, yForTick, xForTick, DRIVERS,
   SPOTLIGHTS, TITLES, SUBTITLES, SWEEP_DURATION,
   CATEGORY_LAYOUT, CATEGORY_TITLES, CATEGORY_NARRATION, CATEGORY_ACTION_HINTS,
@@ -23,26 +24,12 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
 
   const stepSelectionPhase = step < 2 ? -1 : step === 2 ? -1 : step <= 6 ? step - 3 : 5;
 
-  const [introPhase, setIntroPhase] = useState(skipAnimation ? 5 : chartStep === 0 ? 0 : 4);
+  const INTRO_DELAYS = [0, 1600, 2500, 3700, 4200, 5100] as const;
+  const introPhase = usePhaseSequence(INTRO_DELAYS, { active: isActive, skip: !!skipAnimation, enabled: chartStep === 0 });
+
   const [selectionPhase, setSelectionPhase] = useState(chartStep > 5 || (skipAnimation && chartStep > 5) ? 5 : stepSelectionPhase);
   const [factorsPhase, setFactorsPhase] = useState(chartStep >= 2 ? 7 : 0);
   const [morphPhase, setMorphPhase] = useState(!!skipAnimation || chartStep > 2 ? 4 : chartStep === 2 ? -1 : -1);
-  useEffect(() => {
-    if (!isActive) { setIntroPhase(0); return; }
-    if (skipAnimation) { setIntroPhase(5); return; }
-    if (chartStep !== 0) {
-      const t0 = setTimeout(() => setIntroPhase(5));
-      return () => clearTimeout(t0);
-    }
-    const settle = 700;
-    const t0 = setTimeout(() => setIntroPhase(0));
-    const t1 = setTimeout(() => setIntroPhase(1), settle + 900);
-    const t2 = setTimeout(() => setIntroPhase(2), settle + 1800);
-    const t3 = setTimeout(() => setIntroPhase(3), settle + 3000);
-    const t4 = setTimeout(() => setIntroPhase(4), settle + 3500);
-    const t5 = setTimeout(() => setIntroPhase(5), settle + 4400);
-    return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); clearTimeout(t5); };
-  }, [isActive, chartStep, skipAnimation]);
 
   useEffect(() => {
     if (!isActive) { setFactorsPhase(0); return; }
@@ -75,6 +62,22 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
     const t = setTimeout(() => setActionRevealed(true), 600);
     return () => clearTimeout(t);
   }, [isActive, selectionPhase, skipAnimation]);
+
+  const [customerActionStep, setCustomerActionStep] = useState(!!skipAnimation || stepSelectionPhase > 0 ? 1 : 0);
+  useEffect(() => {
+    if (!isActive || selectionPhase !== 0) {
+      if (selectionPhase > 0) setCustomerActionStep(1);
+      return;
+    }
+    if (skipAnimation) { setCustomerActionStep(1); return; }
+    if (!actionRevealed) { setCustomerActionStep(0); return; }
+    setCustomerActionStep(0);
+    const t = setTimeout(() => setCustomerActionStep(1), 2000);
+    return () => clearTimeout(t);
+  }, [isActive, selectionPhase, actionRevealed, skipAnimation]);
+
+  const rawHint = CATEGORY_ACTION_HINTS[selectionPhase];
+  const currentHint = rawHint ? (Array.isArray(rawHint) ? rawHint[selectionPhase === 0 ? customerActionStep : 0] : rawHint) : null;
 
   useEffect(() => {
     if (!onActiveCategoryChange) return;
@@ -238,16 +241,16 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                           {CATEGORY_NARRATION[selectionPhase]}
                         </span>
                         <AnimatePresence>
-                          {actionRevealed && CATEGORY_ACTION_HINTS[selectionPhase] && (
-                            <motion.div key={`action-hint-${selectionPhase}`} className="mt-2 flex items-center justify-center gap-2" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.35 }}>
-                              <span className="inline-flex items-center justify-center rounded-full" style={{ width: 24, height: 24, backgroundColor: `${CATEGORY_ACTION_HINTS[selectionPhase].color}15`, color: CATEGORY_ACTION_HINTS[selectionPhase].color, fontSize: 14, fontWeight: 800, flexShrink: 0 }}>
-                                {CATEGORY_ACTION_HINTS[selectionPhase].icon}
+                          {actionRevealed && currentHint && (
+                            <motion.div key={`action-hint-${selectionPhase}-${selectionPhase === 0 ? customerActionStep : 0}`} className="mt-2 flex items-center justify-center gap-2" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.35 }}>
+                              <span className="inline-flex items-center justify-center rounded-full" style={{ width: 24, height: 24, backgroundColor: `${currentHint.color}15`, color: currentHint.color, fontSize: 14, fontWeight: 800, flexShrink: 0 }}>
+                                {currentHint.icon}
                               </span>
-                              <span className="text-[0.95rem] font-bold" style={{ color: CATEGORY_ACTION_HINTS[selectionPhase].color }}>
-                                {CATEGORY_ACTION_HINTS[selectionPhase].headline}
+                              <span className="text-[0.95rem] font-bold" style={{ color: currentHint.color }}>
+                                {currentHint.headline}
                               </span>
                               <span className="text-[0.85rem] leading-relaxed" style={{ color: MUTED }}>
-                                {CATEGORY_ACTION_HINTS[selectionPhase].detail}
+                                {currentHint.detail}
                               </span>
                             </motion.div>
                           )}
@@ -271,7 +274,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                 <>
                   <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: NAVY, display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "0 0.3em" }}>
                     {(TITLES[chartStep] ?? "").split(" ").map((word, wi) => (
-                      <motion.span key={wi} initial={skipAnimation ? false : { opacity: 0, y: 14, filter: "blur(4px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} transition={{ duration: 0.4, delay: skipAnimation ? 0 : wi * 0.08, ease: [0.22, 1, 0.36, 1] }}>
+                      <motion.span key={wi} initial={skipAnimation ? false : { opacity: 0, y: 14, filter: "blur(4px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} transition={{ duration: 0.4, delay: skipAnimation ? 0 : wi * 0.08, ease: EASE }}>
                         {word}
                       </motion.span>
                     ))}
@@ -315,7 +318,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
           </svg>
         </motion.div>
 
-        <motion.div className="absolute inset-0 flex items-stretch gap-0" initial={{ opacity: 1, y: 0 }} animate={{ opacity: 1, y: convergeReady ? 25 : 0 }} transition={{ duration: 1.0, ease: [0.22, 1, 0.36, 1] }}>
+        <motion.div className="absolute inset-0 flex items-stretch gap-0" initial={{ opacity: 1, y: 0 }} animate={{ opacity: 1, y: convergeReady ? 25 : 0 }} transition={{ duration: 1.0, ease: EASE }}>
           <div className="relative flex-1 min-w-0 flex items-center justify-center">
             <svg viewBox="0 -40 1020 570" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
               <motion.g animate={{ opacity: clustered ? 0 : 1 }} transition={{ duration: 0.5, delay: clustered ? 0 : 0.3 }}>
@@ -373,6 +376,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                 actionRevealed={actionRevealed}
                 feeding={feeding}
                 shareMode={shareMode}
+                customerActionStep={customerActionStep}
               />
 
               <ConvergenceModel

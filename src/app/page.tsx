@@ -13,7 +13,7 @@ import { OneModelSlide, ONE_MODEL_TOTAL_STEPS } from "@/components/slides/one-mo
 import { PowerSlide, POWER_TOTAL_STEPS } from "@/components/slides/power-slide";
 import { ExecuteSlide, EXECUTE_TOTAL_STEPS } from "@/components/slides/execute-slide";
 import { RefineSlideV2, REFINE_V2_TOTAL_STEPS } from "@/components/slides/refine-slide-v2";
-import { ClosingSummarySlide, CLOSING_SUMMARY_TOTAL_STEPS } from "@/components/slides/closing-summary";
+import { ClosingSummarySlide } from "@/components/slides/closing-summary";
 import { AnimationGlossary } from "@/components/animation-glossary";
 
 const MemoOverview = memo(OverviewSlide);
@@ -58,7 +58,6 @@ const ONE_MODEL_INDEX = 2;
 const POWER_INDEX = 3;
 const EXECUTE_INDEX = 4;
 const REFINE_INDEX = 5;
-const CLOSING_INDEX = 6;
 
 const SUB_STEP_CONFIG: Record<number, number> = {
   [OVERVIEW_INDEX]: OVERVIEW_TOTAL_STEPS,
@@ -66,7 +65,6 @@ const SUB_STEP_CONFIG: Record<number, number> = {
   [POWER_INDEX]: POWER_TOTAL_STEPS,
   [EXECUTE_INDEX]: EXECUTE_TOTAL_STEPS,
   [REFINE_INDEX]: REFINE_V2_TOTAL_STEPS,
-  [CLOSING_INDEX]: CLOSING_SUMMARY_TOTAL_STEPS,
 };
 
 const EXECUTE_PRESENTER_STEPS = 4;
@@ -86,11 +84,11 @@ const FACTOR_CATEGORIES: { key: CategoryKey; label: string; color: string; tint:
 ];
 
 const DRIVER_RAIL_ITEMS: { label: string; color: string; tint: string }[] = [
-  { label: "Sales rep", color: "#00446A", tint: "rgba(0,68,106,0.08)" },
-  { label: "Price sensitivity", color: "#E56910", tint: "rgba(229,105,16,0.08)" },
+  { label: "End market", color: "#00446A", tint: "rgba(0,68,106,0.08)" },
+  { label: "Product specialization", color: "#E56910", tint: "rgba(229,105,16,0.08)" },
   { label: "Competitive price point", color: "#2e7d32", tint: "rgba(46,125,50,0.08)" },
   { label: "Order frequency", color: "#7B5EA7", tint: "rgba(123,94,167,0.08)" },
-  { label: "Cost to serve", color: "#E56910", tint: "rgba(229,105,16,0.08)" },
+  { label: "Product mix", color: "#E56910", tint: "rgba(229,105,16,0.08)" },
 ];
 
 const ENGINE_ITEMS: { key: "ml" | "strat"; label: string; color: string; tint: string }[] = [
@@ -209,11 +207,11 @@ function ModelStatusRail({
   const [flyX] = useState(() => typeof window !== "undefined" ? window.innerWidth * 0.52 : 700);
   const [flyH] = useState(() => typeof window !== "undefined" ? window.innerHeight : 800);
   const driverFlyOffsets: { x: number; y: number }[] = useMemo(() => [
-    { x: flyX * 0.9,  y: -flyH * 0.22 },  // Sales rep — top of circle
-    { x: flyX * 1.15, y: -flyH * 0.02 },   // Price sensitivity — right
+    { x: flyX * 0.9,  y: -flyH * 0.22 },  // End market — top of circle
+    { x: flyX * 1.15, y: -flyH * 0.02 },   // Product specialization — right
     { x: flyX * 1.1,  y:  flyH * 0.18 },   // Competitive price point — bottom-right
     { x: flyX * 0.7,  y:  flyH * 0.18 },   // Order frequency — bottom-left
-    { x: flyX * 0.65, y: -flyH * 0.02 },   // Cost to serve — left
+    { x: flyX * 0.65, y: -flyH * 0.02 },   // Product mix — left
   ], [flyX, flyH]);
 
   const mlActive = engineFocus === "both" || engineFocus === "ml";
@@ -1375,7 +1373,7 @@ export function Home() {
                         />
                       )}
                       {sc.kind === "execute" && <MemoExecute step={isActive ? subStep : 0} skipAnimation={effectiveSkip} isActive={isActive} onCustomerChange={isActive ? handleExecuteCustomerChange : undefined} />}
-                      {sc.kind === "closing-summary" && <MemoClosing step={isActive ? subStep : 0} isActive={isActive} />}
+                      {sc.kind === "closing-summary" && <MemoClosing isActive={isActive} />}
                       {sc.kind === "end" && <EndSlide onRestart={() => navigate(0)} />}
                     </motion.div>
                   </motion.div>

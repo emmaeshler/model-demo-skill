@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import {
-  SQUARE_FACTORS, CATEGORY_LAYOUT, CATEGORY_ACTIONS,
+  EASE, SQUARE_FACTORS, CATEGORY_LAYOUT, CATEGORY_ACTIONS,
   SELECTED_FACTORS, SOLID_TINTS, FEED_NUDGE_Y,
   TEAL, PURPLE, MUTED,
 } from "./power-slide-data";
@@ -17,11 +17,13 @@ interface FactorGridProps {
   actionRevealed: boolean;
   feeding: boolean;
   shareMode: boolean;
+  customerActionStep: number;
 }
 
 export function FactorGrid({
   factorsVisible, convergeReady, customized, selectionPhase,
   factorsPhase, morphPhase, actionRevealed, feeding, shareMode,
+  customerActionStep,
 }: FactorGridProps) {
   if (!factorsVisible || convergeReady) return null;
 
@@ -106,7 +108,7 @@ export function FactorGrid({
                                 opacity: { duration: 0.6, delay: fi * 0.15 },
                                 scale: shareMode ? { duration: 0.25, delay: fi * 0.15 } : { type: "spring", stiffness: 260, damping: 26, delay: fi * 0.15 },
                                 y: shareMode ? { duration: 0.25, delay: fi * 0.15 } : { type: "spring", stiffness: 260, damping: 26, delay: fi * 0.15 },
-                                layout: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+                                layout: { duration: 0.6, ease: EASE },
                               }}
                             >
                               {f.label}
@@ -151,11 +153,11 @@ export function FactorGrid({
                           opacity: isActive ? 1 : isPast ? 0.3 : 0.2,
                           backgroundColor: isActive ? `${cat.color}08` : "transparent",
                         }}
-                        exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } }}
+                        exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.4, ease: EASE } }}
                         transition={{
                           opacity: { duration: 0.5 },
                           backgroundColor: { duration: 0.5 },
-                          layout: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+                          layout: { duration: 0.5, ease: EASE },
                         }}
                       >
                         <motion.div
@@ -175,22 +177,27 @@ export function FactorGrid({
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 10, flex: 1 }}>
                           <AnimatePresence>
                           {catFactors.map((f, fi) => {
-                            const chipAction = catActions.find(a => a.label === f.label);
+                            const allChipActions = catActions.filter(a => a.label === f.label);
+                            const hasSteps = allChipActions.some(a => a.step !== undefined);
+                            const chipAction = hasSteps
+                              ? allChipActions.filter(a => a.step !== undefined && a.step <= customerActionStep).pop()
+                              : allChipActions[0];
                             const showAction = isActive && actionRevealed && !!chipAction;
                             const isElevated = showAction && chipAction?.action === "elevate";
                             const isAdding = showAction && chipAction?.action === "add";
                             const isLowered = showAction && chipAction?.action === "lower";
-                            const isRemoving = showAction && chipAction?.action === "remove";
                             const noAction = isActive && actionRevealed && !chipAction;
                             const isAddTarget = chipAction?.action === "add";
                             const isRemoveTarget = chipAction?.action === "remove";
-                            if (isAddTarget && !showAction) return null;
-                            if (isRemoveTarget && showAction) return (
+                            const isCrossoff = hasSteps && chipAction?.action === "remove" && showAction;
+                            const isCrossoffShake = isCrossoff && customerActionStep === (chipAction?.step ?? 0);
+                            if (isAddTarget && !showAction && !isPast) return null;
+                            if (isRemoveTarget && showAction && !hasSteps) return (
                               <motion.span
                                 key={f.label}
                                 layoutId={`factor-${f.label}`}
                                 layout
-                                exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } }}
+                                exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.4, ease: EASE } }}
                                 style={{
                                   display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4, borderRadius: 8,
                                   padding: "12px 20px", fontSize: 17, fontWeight: 700,
@@ -219,14 +226,14 @@ export function FactorGrid({
                                   duration: 0.7, delay: catIdx * 0.04 + fi * 0.02, ease: [0.4, 0, 0.1, 1],
                                 } : {
                                   x: { duration: 0.6, delay: 0.4, times: [0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1] },
-                                  scale: { duration: 1.0, times: [0, 0.15, 0.4, 0.55, 0.7, 1], ease: [0.22, 1, 0.36, 1] },
+                                  scale: { duration: 1.0, times: [0, 0.15, 0.4, 0.55, 0.7, 1], ease: EASE },
                                   border: { duration: 0.8, delay: 0.5, times: [0, 0.4, 1] },
                                   color: { duration: 0.8, delay: 0.5, times: [0, 0.4, 1] },
                                   backgroundColor: { duration: 0.8, delay: 0.5, times: [0, 0.4, 1] },
                                   textDecorationLine: { duration: 0.8, delay: 0.5, times: [0, 0.4, 1] },
                                   boxShadow: { duration: 1.0, delay: 0.2, times: [0, 0.3, 1] },
                                   opacity: { duration: 0.3 },
-                                  layout: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+                                  layout: { duration: 0.5, ease: EASE },
                                 }}
                               >
                                 {f.label}
@@ -238,25 +245,32 @@ export function FactorGrid({
                                 key={f.label}
                                 layoutId={`factor-${f.label}`}
                                 layout
-                                initial={isAddTarget ? { opacity: 0, scale: 0.8 } : false}
+                                initial={isAddTarget ? { opacity: 0, x: -15 } : false}
                                 style={{
                                   display: "inline-flex",
                                   alignItems: "center",
                                   justifyContent: "center",
                                   gap: 4,
                                   borderRadius: 8,
-                                  border: (isElevated || isAdding) ? `2px solid ${TEAL}`
+                                  border: isCrossoff ? `2px solid ${MUTED}60`
+                                    : (isElevated || isAdding) ? `2px solid ${TEAL}`
                                     : isLowered ? `2px solid ${PURPLE}`
                                     : `2px solid ${cat.color}25`,
-                                  padding: (isElevated || isAdding || isLowered) ? "12px 20px" : "10px 18px",
-                                  fontSize: (isElevated || isAdding || isLowered) ? 17 : 16,
-                                  fontWeight: (isElevated || isAdding || isLowered) ? 700 : 600,
+                                  padding: (isElevated || isLowered || isCrossoff) ? "12px 20px" : "10px 18px",
+                                  fontSize: (isElevated || isLowered || isCrossoff) ? 17 : 16,
+                                  fontWeight: (isElevated || isLowered || isCrossoff) ? 700 : 600,
                                   fontFamily: "inherit",
                                   whiteSpace: "nowrap",
-                                  color: (isElevated || isAdding) ? TEAL : isLowered ? PURPLE : cat.color,
-                                  backgroundColor: (isElevated || isAdding) ? "#E5F5FA" : isLowered ? `${PURPLE}12` : (SOLID_TINTS[cat.color] ?? "white"),
-                                  textDecoration: "none",
-                                  transition: "color 0.5s, background-color 0.5s, border 0.5s, padding 0.5s, font-size 0.5s",
+                                  color: isCrossoff ? MUTED
+                                    : (isElevated || isAdding) ? TEAL
+                                    : isLowered ? PURPLE
+                                    : cat.color,
+                                  backgroundColor: isCrossoff ? "#F3F4F6"
+                                    : (isElevated || isAdding) ? "#E5F5FA"
+                                    : isLowered ? `${PURPLE}12`
+                                    : (SOLID_TINTS[cat.color] ?? "white"),
+                                  textDecoration: isCrossoff ? "line-through" : "none",
+                                  transition: "color 0.5s, background-color 0.5s, border 0.5s, padding 0.5s, font-size 0.5s, text-decoration 0.5s",
                                 }}
                                 animate={feeding ? {
                                   x: ((catFactors.length - 1) / 2 - fi) * 40,
@@ -264,15 +278,20 @@ export function FactorGrid({
                                   scale: 0,
                                   opacity: 0,
                                 } : {
-                                  x: 0,
+                                  x: isCrossoffShake ? [0, 0, -5, 6, -4, 3, -1, 0] : 0,
                                   y: 0,
-                                  scale: (isElevated || isAdding || isLowered) ? [1, 1.15, 1.05] : 1,
+                                  scale: isCrossoffShake ? [1, 1.02, 0.97, 0.95]
+                                    : isCrossoff ? 0.95
+                                    : (isElevated || isLowered) ? [1, 1.15, 1.05]
+                                    : 1,
                                   opacity: noAction ? 0.35 : 1,
-                                  boxShadow: (isElevated || isAdding)
-                                    ? ["0 0 0px transparent", `0 0 20px ${TEAL}50`, `0 0 8px ${TEAL}25`]
-                                    : isLowered
-                                      ? ["0 0 0px transparent", `0 0 20px ${PURPLE}50`, `0 0 8px ${PURPLE}25`]
-                                      : "0 0 0px transparent",
+                                  boxShadow: isCrossoffShake
+                                    ? [`0 0 12px ${TEAL}30`, `0 0 12px ${TEAL}30`, "0 0 0px transparent"]
+                                    : (isElevated || isAdding)
+                                      ? ["0 0 0px transparent", `0 0 20px ${TEAL}50`, `0 0 8px ${TEAL}25`]
+                                      : isLowered
+                                        ? ["0 0 0px transparent", `0 0 20px ${PURPLE}50`, `0 0 8px ${PURPLE}25`]
+                                        : "0 0 0px transparent",
                                 }}
                                 transition={feeding ? {
                                   duration: 0.7,
@@ -280,18 +299,37 @@ export function FactorGrid({
                                   ease: [0.4, 0, 0.1, 1],
                                 } : {
                                   opacity: { duration: 0.4 },
-                                  scale: {
-                                    duration: (isElevated || isAdding || isLowered) ? 0.7 : 0.3,
-                                    times: (isElevated || isAdding || isLowered) ? [0, 0.4, 1] : undefined,
-                                    ease: [0.22, 1, 0.36, 1],
-                                  },
-                                  boxShadow: { duration: showAction ? 0.7 : 0.3 },
-                                  layout: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+                                  x: isCrossoffShake
+                                    ? { duration: 0.6, delay: 0.4, times: [0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1] }
+                                    : { duration: 0.3 },
+                                  scale: isCrossoffShake
+                                    ? { duration: 1.0, times: [0, 0.15, 0.55, 1], ease: EASE }
+                                    : {
+                                        duration: (isElevated || isLowered) ? 0.7 : 0.3,
+                                        times: (isElevated || isLowered) ? [0, 0.4, 1] : undefined,
+                                        ease: EASE,
+                                      },
+                                  boxShadow: isCrossoffShake
+                                    ? { duration: 1.0, delay: 0.2, times: [0, 0.3, 1] }
+                                    : { duration: showAction ? 0.7 : 0.3 },
+                                  layout: { duration: 0.5, ease: EASE },
                                 }}
                               >
                                 {f.label}
+                                {isCrossoff && (
+                                  <motion.span
+                                    key="crossoff-x"
+                                    style={{ marginLeft: 4, fontSize: 13, color: MUTED }}
+                                    initial={{ opacity: 0, scale: 0 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ delay: 0.5, duration: 0.3 }}
+                                  >
+                                    ×
+                                  </motion.span>
+                                )}
                                 {isElevated && (
                                   <motion.sup
+                                    key="elevate-arrow"
                                     style={{ fontSize: 14, fontWeight: 800, color: TEAL, marginLeft: 3, lineHeight: 1 }}
                                     initial={{ opacity: 0, scale: 0 }}
                                     animate={{ opacity: 1, scale: 1 }}
@@ -333,74 +371,21 @@ export function FactorGrid({
                       key="selected-factors"
                       style={{
                         display: "flex",
-                        flexDirection: "column",
-                        gap: 20,
+                        flexDirection: "row",
+                        gap: 0,
                         padding: "12px 12px",
                         width: "100%",
                         maxWidth: 1100,
+                        alignItems: "center",
+                        justifyContent: "center",
                       }}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                      transition={{ duration: 0.5, ease: EASE }}
                     >
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
-                        <motion.span
-                          style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", color: TEAL, fontFamily: "inherit", textTransform: "uppercase" }}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ duration: 0.3, delay: 0.2 }}
-                        >
-                          5 Model Drivers
-                        </motion.span>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 16, justifyContent: "center", maxWidth: 1100 }}>
-                          {SELECTED_FACTORS.map((sf, si) => (
-                            <motion.span
-                              key={sf.label}
-                              style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 10,
-                                borderRadius: 12,
-                                border: `2.5px solid ${TEAL}`,
-                                padding: "20px 28px",
-                                fontSize: 22,
-                                fontWeight: 700,
-                                fontFamily: "inherit",
-                                whiteSpace: "nowrap",
-                                color: TEAL,
-                                backgroundColor: "#E5F5FA",
-                              }}
-                              initial={{ opacity: 0, scale: 0.7, y: 10 }}
-                              animate={{ opacity: 1, scale: 1, y: 0, boxShadow: `0 0 16px ${TEAL}30` }}
-                              transition={{ duration: 0.5, delay: si * 0.1, ease: [0.22, 1, 0.36, 1] }}
-                            >
-                              {sf.label}
-                              <span style={{
-                                fontSize: 18, fontWeight: 600, color: `${TEAL}90`,
-                                borderLeft: `1.5px solid ${TEAL}30`, paddingLeft: 10, marginLeft: 4,
-                              }}>
-                                {sf.weight}×
-                              </span>
-                            </motion.span>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "0 40px" }}>
-                        <div style={{ flex: 1, height: 1, backgroundColor: "#D1D5DB" }} />
-                        <motion.span
-                          style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", color: MUTED, fontFamily: "inherit", whiteSpace: "nowrap" }}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ duration: 0.3, delay: 0.6 }}
-                        >
-                          selected from the factors we analyzed
-                        </motion.span>
-                        <div style={{ flex: 1, height: 1, backgroundColor: "#D1D5DB" }} />
-                      </div>
-
+                      {/* Left: All factors */}
                       <motion.div
-                        style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", padding: "0 20px" }}
+                        style={{ display: "grid", gridTemplateColumns: "repeat(4, auto)", gap: 8, justifyContent: "start", alignContent: "start" }}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ duration: 0.5, delay: 0.5 }}
@@ -433,6 +418,58 @@ export function FactorGrid({
                           );
                         })}
                       </motion.div>
+
+                      {/* Vertical divider */}
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", alignSelf: "stretch", padding: "0 8px" }}>
+                        <div style={{ flex: 1, width: 1, backgroundColor: "#D1D5DB" }} />
+                        <motion.span
+                          style={{ fontSize: 9, fontWeight: 600, letterSpacing: "0.08em", color: MUTED, fontFamily: "inherit", whiteSpace: "nowrap", writingMode: "vertical-lr", transform: "rotate(180deg)", padding: "10px 0" }}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ duration: 0.3, delay: 0.6 }}
+                        >
+                          selected from
+                        </motion.span>
+                        <div style={{ flex: 1, width: 1, backgroundColor: "#D1D5DB" }} />
+                      </div>
+
+                      {/* Right: Model Drivers */}
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, flex: "0 0 auto", minWidth: 0 }}>
+                        <motion.span
+                          style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", color: TEAL, fontFamily: "inherit", textTransform: "uppercase" }}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ duration: 0.3, delay: 0.2 }}
+                        >
+                          5 Model Drivers
+                        </motion.span>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                          {SELECTED_FACTORS.map((sf, si) => (
+                            <motion.span
+                              key={sf.label}
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                borderRadius: 10,
+                                border: `2.5px solid ${TEAL}`,
+                                padding: "10px 18px",
+                                fontSize: 15,
+                                fontWeight: 700,
+                                fontFamily: "inherit",
+                                whiteSpace: "nowrap",
+                                color: TEAL,
+                                backgroundColor: "#E5F5FA",
+                              }}
+                              initial={{ opacity: 0, scale: 0.7, y: 10 }}
+                              animate={{ opacity: 1, scale: 1, y: 0, boxShadow: `0 0 16px ${TEAL}30` }}
+                              transition={{ duration: 0.5, delay: si * 0.1, ease: EASE }}
+                            >
+                              {sf.label}
+                            </motion.span>
+                          ))}
+                        </div>
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>

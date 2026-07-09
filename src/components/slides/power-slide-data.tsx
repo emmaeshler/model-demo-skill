@@ -5,6 +5,8 @@ export const GREEN = "#2e7d32";
 export const PURPLE = "#7B5EA7";
 export const MUTED = "#5A6A78";
 
+export const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
+
 export const SOLID_TINTS: Record<string, string> = {
   [ORANGE]: "#FEF4EC",
   [NAVY]: "#E8F1F6",
@@ -84,14 +86,13 @@ export const SQUARE_FACTORS: { label: string; category: "product" | "market" | "
   { label: "Cost to serve", category: "product" },
   { label: "Willingness to pay", category: "product" },
   { label: "Price sensitivity", category: "product" },
-  { label: "Competitive price point", category: "market" },
   { label: "Market share", category: "market" },
   { label: "Commodity index", category: "market" },
-  { label: "Regional pricing", category: "market" },
   { label: "Industry trends", category: "market" },
   { label: "Competitor activity", category: "market" },
+  { label: "Competitive price point", category: "market" },
   { label: "Customer channel", category: "customer" },
-  { label: "End market", category: "customer", emphasis: "crossoff" },
+  { label: "End market", category: "customer" },
   { label: "Sales rep", category: "customer" },
   { label: "Region", category: "customer" },
   { label: "Size of customer", category: "customer" },
@@ -133,19 +134,21 @@ export const CATEGORY_NARRATION = [
 ];
 
 export const SELECTED_FACTORS = [
-  { label: "Sales rep", color: NAVY, weight: 3, note: "" },
-  { label: "Price sensitivity", color: ORANGE, weight: 3, note: "" },
+  { label: "End market", color: NAVY, weight: 4, note: "Weighted ↑" },
+  { label: "Product specialization", color: ORANGE, weight: 3, note: "" },
   { label: "Competitive price point", color: GREEN, weight: 3, note: "Added" },
   { label: "Order frequency", color: PURPLE, weight: 2, note: "" },
-  { label: "Cost to serve", color: ORANGE, weight: 4, note: "Weighted ↑" },
+  { label: "Product mix", color: ORANGE, weight: 3, note: "" },
 ];
 
-export const CATEGORY_ACTIONS: Record<string, { label: string; action: "elevate" | "remove" | "lower" | "add" }[]> = {
+export const CATEGORY_ACTIONS: Record<string, { label: string; action: "elevate" | "remove" | "lower" | "add"; step?: number }[]> = {
   customer: [
-    { label: "End market", action: "remove" },
+    { label: "Sales rep", action: "remove", step: 0 },
+    { label: "End market", action: "elevate", step: 1 },
   ],
   product: [
-    { label: "Cost to serve", action: "elevate" },
+    { label: "Product specialization", action: "elevate" },
+    { label: "Product mix", action: "elevate" },
   ],
   market: [
     { label: "Competitive price point", action: "add" },
@@ -155,9 +158,13 @@ export const CATEGORY_ACTIONS: Record<string, { label: string; action: "elevate"
   ],
 };
 
-export const CATEGORY_ACTION_HINTS: { icon: string; color: string; headline: string; detail: string }[] = [
-  { icon: "×", color: TEAL, headline: "Remove a factor", detail: "End market isn't a meaningful driver for this client — take it out." },
-  { icon: "↑", color: TEAL, headline: "Weight it higher", detail: "Cost to serve is a key profitability driver — weight it higher." },
+type ActionHint = { icon: string; color: string; headline: string; detail: string };
+export const CATEGORY_ACTION_HINTS: (ActionHint | ActionHint[])[] = [
+  [
+    { icon: "×", color: TEAL, headline: "Remove a factor", detail: "Sales rep doesn't seem like a meaningful driver — take it out." },
+    { icon: "↑", color: TEAL, headline: "Weight it higher", detail: "End market is a key driver for this client — weight it higher." },
+  ],
+  { icon: "↑", color: TEAL, headline: "Emphasize key factors", detail: "Product specialization and product mix are key profitability drivers — weight them higher." },
   { icon: "+", color: GREEN, headline: "Add a factor", detail: "Competitive intelligence is critical in this market — add it to the model." },
   { icon: "↓", color: PURPLE, headline: "Lower its weight", detail: "Seasonality has minimal impact for this customer — dial it down." },
 ];

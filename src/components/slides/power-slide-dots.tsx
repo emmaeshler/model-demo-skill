@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import {
-  DOTS, DOT_COUNT, CLUSTER_TARGETS, SQUARE_TARGETS, CLUSTER_SPREAD,
+  EASE, DOTS, DOT_COUNT, CLUSTER_TARGETS, SQUARE_TARGETS, CLUSTER_SPREAD,
   CLUSTER_COLORS, CLUSTER_R, DRIVERS, PLOT, PLOT_CX, PLOT_CY, PLOT_H,
   TEAL, MUTED, SWEEP_DURATION, highlightDotsForCluster, CALLOUTS,
 } from "./power-slide-data";
@@ -93,8 +93,8 @@ export function DotField({
           targetFill = CLUSTER_COLORS[cl.ci];
           targetOpacity = convergeReady ? 0 : 0.2;
           targetR = convergeReady ? 0 : dot.r * 0.5;
-          cxTransition = { duration: 1.2, delay: dot.delay * 0.4, ease: [0.22, 1, 0.36, 1] };
-          cyTransition = { duration: 1.2, delay: dot.delay * 0.4, ease: [0.22, 1, 0.36, 1] };
+          cxTransition = { duration: 1.2, delay: dot.delay * 0.4, ease: EASE };
+          cyTransition = { duration: 1.2, delay: dot.delay * 0.4, ease: EASE };
           opacityDelay = dot.delay * 0.4 + 0.3;
         } else if (factorsVisible && factorsPhase >= 1) {
           const sq = SQUARE_TARGETS[i];
@@ -103,8 +103,8 @@ export function DotField({
           targetFill = TEAL;
           targetOpacity = customized ? 0 : morphPhase >= 0 ? 0.1 : 0.35;
           targetR = customized ? 0 : morphPhase >= 0 ? dot.r * 0.4 : dot.r * 0.7;
-          cxTransition = { duration: 0.7, delay: dot.delay * 0.15, ease: [0.22, 1, 0.36, 1] };
-          cyTransition = { duration: 0.7, delay: dot.delay * 0.15, ease: [0.22, 1, 0.36, 1] };
+          cxTransition = { duration: 0.7, delay: dot.delay * 0.15, ease: EASE };
+          cyTransition = { duration: 0.7, delay: dot.delay * 0.15, ease: EASE };
           opacityDelay = dot.delay * 0.15;
         } else if (factorsVisible) {
           const cl = CLUSTER_TARGETS[i];
@@ -113,8 +113,8 @@ export function DotField({
           targetFill = CLUSTER_COLORS[cl.ci];
           targetOpacity = customized ? 0 : 0.55;
           targetR = customized ? 0 : dot.r * 0.8;
-          cxTransition = { duration: 0.6, delay: dot.delay * 0.1, ease: [0.22, 1, 0.36, 1] };
-          cyTransition = { duration: 0.6, delay: dot.delay * 0.1, ease: [0.22, 1, 0.36, 1] };
+          cxTransition = { duration: 0.6, delay: dot.delay * 0.1, ease: EASE };
+          cyTransition = { duration: 0.6, delay: dot.delay * 0.1, ease: EASE };
           opacityDelay = dot.delay * 0.1;
         } else if (clustered) {
           const sp = CLUSTER_SPREAD[dot.cluster];
@@ -125,8 +125,8 @@ export function DotField({
           targetCy = Math.max(sp.cy - CLUSTER_R + 4, Math.min(sp.cy + CLUSTER_R - 4, spreadCy));
           targetFill = DRIVERS[dot.cluster].color;
           targetOpacity = 0.65;
-          cxTransition = { duration: 1.2, delay: dot.delay * 0.3, ease: [0.22, 1, 0.36, 1] };
-          cyTransition = { duration: 1.2, delay: dot.delay * 0.3, ease: [0.22, 1, 0.36, 1] };
+          cxTransition = { duration: 1.2, delay: dot.delay * 0.3, ease: EASE };
+          cyTransition = { duration: 1.2, delay: dot.delay * 0.3, ease: EASE };
           opacityDelay = dot.delay * 0.3;
         } else if (chartStep === 0 && introPhase < 5) {
           const wavePhase = dot.delay < 0.14 ? 0 : dot.delay < 0.27 ? 1 : 3;
@@ -138,8 +138,8 @@ export function DotField({
           targetCy = waveActive ? dot.sy : dot.sy - 18;
           targetR = waveActive ? dot.r : 0;
           targetOpacity = waveActive ? (isPunch ? dot.scatterOpacity : dot.scatterOpacity * 0.5) : 0;
-          cxTransition = { duration: waveActive ? 0.8 : 0.01, delay: waveActive ? waveStagger : 0, ease: [0.22, 1, 0.36, 1] };
-          cyTransition = { duration: waveActive ? 0.8 : 0.01, delay: waveActive ? waveStagger : 0, ease: [0.22, 1, 0.36, 1] };
+          cxTransition = { duration: waveActive ? 0.8 : 0.01, delay: waveActive ? waveStagger : 0, ease: EASE };
+          cyTransition = { duration: waveActive ? 0.8 : 0.01, delay: waveActive ? waveStagger : 0, ease: EASE };
           opacityDelay = waveActive ? (isPunch && wavePhase < 3 ? 0 : waveStagger) : 0;
         } else if (introPhase >= 5 || chartStep > 0) {
           targetCx = chartStep > 0
@@ -152,8 +152,8 @@ export function DotField({
             cxTransition = { duration: 0.4, ease: "easeOut" };
             cyTransition = { duration: 0.4, ease: "easeOut" };
           } else if (chartStep > 1) {
-            cxTransition = { duration: 0.9, delay: dotEntranceDelay, ease: [0.22, 1, 0.36, 1] };
-            cyTransition = { duration: 0.9, delay: dotEntranceDelay, ease: [0.22, 1, 0.36, 1] };
+            cxTransition = { duration: 0.9, delay: dotEntranceDelay, ease: EASE };
+            cyTransition = { duration: 0.9, delay: dotEntranceDelay, ease: EASE };
           } else {
             cxTransition = { duration: dot.driftDuration, delay: dot.driftDelay, repeat: shareMode ? 0 : Infinity, ease: "easeInOut" };
             cyTransition = { duration: dot.driftDuration, delay: dot.driftDelay, repeat: shareMode ? 0 : Infinity, ease: "easeInOut" };
@@ -162,8 +162,8 @@ export function DotField({
         } else {
           targetCx = dot.sx;
           targetCy = dot.sy;
-          cxTransition = { duration: 0.5, delay: dotEntranceDelay, ease: [0.22, 1, 0.36, 1] };
-          cyTransition = { duration: 0.6, delay: dotEntranceDelay, ease: [0.22, 1, 0.36, 1] };
+          cxTransition = { duration: 0.5, delay: dotEntranceDelay, ease: EASE };
+          cyTransition = { duration: 0.6, delay: dotEntranceDelay, ease: EASE };
           opacityDelay = dotEntranceDelay;
         }
 
@@ -232,7 +232,7 @@ export function DotField({
               cx={c.x} cy={c.y} stroke={c.color}
               initial={{ opacity: 0 }}
               animate={{ opacity: showCallout ? 0.5 : 0 }}
-              transition={{ duration: showCallout ? 0.5 : 0.7, delay: showCallout ? enterDelay : exitDelay, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: showCallout ? 0.5 : 0.7, delay: showCallout ? enterDelay : exitDelay, ease: EASE }}
             />
             <motion.circle
               r={4} cx={c.x} cy={c.y} fill={c.color}

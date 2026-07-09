@@ -20,6 +20,7 @@ const SVG_W = 1120;
 const SVG_H = 440;
 
 const BOX_H = 230;
+const PROFILE_BOX_H = 290;
 
 const MODEL_W = BOX_H;
 const MODEL_X = 445;
@@ -62,26 +63,30 @@ const CUSTOMERS: CustomerScenario[] = [
     label: "Acme Industrial",
     segment: "High volume · loyal",
     sliders: [
-      { label: "Order volume", value: 0.82 },
-      { label: "Product specificity", value: 0.88 },
+      { label: "Sales rep", value: 0.80 },
       { label: "Price sensitivity", value: 0.30 },
-      { label: "Relationship depth", value: 0.90 },
+      { label: "Competitive price point", value: 0.55 },
+      { label: "Order frequency", value: 0.82 },
+      { label: "Cost to serve", value: 0.25 },
+      { label: "Customer Tenure", value: 0.90 },
     ],
     color: NAVY,
     price: "$19.24",
     delta: "+$1.74 above list",
     winProb: "68%",
     margin: "+9.9%",
-    narrative: "Same product, but now the model layers in the customer — volume commitment, relationship depth, and win history push the price above list.",
+    narrative: "Same product, but now the model layers in the customer — strong sales relationship, high order frequency, and long tenure push the price above list.",
   },
   {
     label: "MedSupply Co",
     segment: "Price-sensitive · contested",
     sliders: [
-      { label: "Order volume", value: 0.45 },
-      { label: "Product specificity", value: 0.20 },
+      { label: "Sales rep", value: 0.45 },
       { label: "Price sensitivity", value: 0.75 },
-      { label: "Relationship depth", value: 0.40 },
+      { label: "Competitive price point", value: 0.70 },
+      { label: "Order frequency", value: 0.45 },
+      { label: "Cost to serve", value: 0.55 },
+      { label: "Customer Tenure", value: 0.40 },
     ],
     color: TEAL,
     price: "$14.89",
@@ -94,10 +99,12 @@ const CUSTOMERS: CustomerScenario[] = [
     label: "QuickParts LLC",
     segment: "Niche need · captive",
     sliders: [
-      { label: "Order volume", value: 0.22 },
-      { label: "Product specificity", value: 0.55 },
-      { label: "Price sensitivity", value: 0.85 },
-      { label: "Relationship depth", value: 0.15 },
+      { label: "Sales rep", value: 0.30 },
+      { label: "Price sensitivity", value: 0.40 },
+      { label: "Competitive price point", value: 0.20 },
+      { label: "Order frequency", value: 0.22 },
+      { label: "Cost to serve", value: 0.70 },
+      { label: "Customer Tenure", value: 0.15 },
     ],
     color: SLATE,
     price: "$22.10",
@@ -243,49 +250,90 @@ function FlowLabels({
 /* ── Slider ↔ Driver color mapping ──────────────────── */
 
 const SLIDER_DRIVER_DOT: Record<string, string> = {
-  "Order volume": "#7B5EA7",
+  "Sales rep": "#00446A",
   "Price sensitivity": "#E56910",
-  "Product specificity": "#2e7d32",
-  "Relationship depth": "#00446A",
+  "Competitive price point": "#2e7d32",
+  "Order frequency": "#7B5EA7",
+  "Cost to serve": "#E56910",
+  "Customer Tenure": "#21A5D5",
 };
+
+const RAIL_DRIVER_LABELS = new Set([
+  "Sales rep", "Price sensitivity", "Competitive price point",
+  "Order frequency", "Cost to serve",
+]);
 
 /* ── Profile card with sliders (SVG) ─────────────────── */
 
-function ProfileCard({ cust }: { cust: CustomerScenario }) {
-  const y = MODEL_CY - BOX_H / 2;
+function ProfileCard({ cust, flyFromRail }: { cust: CustomerScenario; flyFromRail?: boolean }) {
+  const { shareMode } = useShareMode();
+  const y = MODEL_CY - PROFILE_BOX_H / 2;
   const cx = PROFILE_X + PROFILE_W / 2;
   const SLIDER_X = PROFILE_X + 16;
   const SLIDER_W = PROFILE_W - 32;
+  const SPACING = 36;
 
   return (
     <motion.g
-      initial={{ opacity: 0, x: -30 }}
-      animate={{ opacity: 1, x: 0 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       exit={{ opacity: 0, x: -20 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
+      transition={{ duration: 0.3 }}
     >
-      <rect
-        x={PROFILE_X} y={y} width={PROFILE_W} height={BOX_H}
-        rx={14} fill="white" stroke={GREY} strokeWidth={1.5}
-      />
-      <rect x={PROFILE_X} y={y} width={PROFILE_W} height={34} rx={14} fill={cust.color} />
-      <rect x={PROFILE_X} y={y + 20} width={PROFILE_W} height={14} fill={cust.color} />
-      <text x={cx} y={y + 16} fontSize="13" fontWeight="700" fill="white" textAnchor="middle">
-        {cust.label}
-      </text>
-      <text x={cx} y={y + 28} fontSize="9" fontWeight="500" fill="rgba(255,255,255,0.7)" textAnchor="middle">
-        {cust.segment}
-      </text>
+      {/* Card frame + header */}
+      <motion.g
+        initial={shareMode ? false : { opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.35, ease: "easeOut" }}
+      >
+        <rect
+          x={PROFILE_X} y={y} width={PROFILE_W} height={PROFILE_BOX_H}
+          rx={14} fill="white" stroke={GREY} strokeWidth={1.5}
+        />
+        <rect x={PROFILE_X} y={y} width={PROFILE_W} height={34} rx={14} fill={cust.color} />
+        <rect x={PROFILE_X} y={y + 20} width={PROFILE_W} height={14} fill={cust.color} />
+        <text x={cx} y={y + 16} fontSize="13" fontWeight="700" fill="white" textAnchor="middle">
+          {cust.label}
+        </text>
+        <text x={cx} y={y + 28} fontSize="9" fontWeight="500" fill="rgba(255,255,255,0.7)" textAnchor="middle">
+          {cust.segment}
+        </text>
+      </motion.g>
 
+      {/* Driver rows */}
       {cust.sliders.map((s, si) => {
-        const sy = y + 52 + si * 38;
+        const sy = y + 50 + si * SPACING;
         const dotColor = SLIDER_DRIVER_DOT[s.label];
+        const isRailDriver = RAIL_DRIVER_LABELS.has(s.label);
+        const shouldFlyIn = flyFromRail && isRailDriver && !shareMode;
+        const isExtraDriver = flyFromRail && !isRailDriver && !shareMode;
+
+        const flyDelay = 0.12 + si * 0.08;
+        const normalDelay = 0.15 + si * 0.06;
+        const extraDelay = 0.75;
+
         return (
-          <g key={s.label}>
+          <motion.g
+            key={s.label}
+            initial={
+              shareMode ? false
+              : shouldFlyIn ? { x: -380, opacity: 0 }
+              : isExtraDriver ? { opacity: 0, y: 8 }
+              : { opacity: 0, x: -20 }
+            }
+            animate={{ x: 0, y: 0, opacity: 1 }}
+            transition={
+              shouldFlyIn
+                ? { duration: 0.65, delay: flyDelay, ease: [0.22, 1, 0.36, 1] }
+                : isExtraDriver
+                  ? { duration: 0.4, delay: extraDelay, ease: "easeOut" }
+                  : { duration: 0.4, delay: normalDelay, ease: "easeOut" }
+            }
+          >
             {dotColor && (
               <circle cx={SLIDER_X - 8} cy={sy - 3.5} r={3} fill={dotColor} />
             )}
-            <text x={SLIDER_X} y={sy} fontSize="9.5" fontWeight="600" fill="#4A5568">
+            <text x={SLIDER_X} y={sy} fontSize="11.5" fontWeight="600" fill="#4A5568">
               {s.label}
             </text>
             <rect x={SLIDER_X} y={sy + 6} width={SLIDER_W} height={6} rx={3} fill="#E8ECF0" />
@@ -293,15 +341,23 @@ function ProfileCard({ cust }: { cust: CustomerScenario }) {
               x={SLIDER_X} y={sy + 6} height={6} rx={3} fill={dotColor || ORANGE}
               initial={{ width: 0 }}
               animate={{ width: SLIDER_W * s.value }}
-              transition={{ duration: 0.6, delay: 0.15 + si * 0.08, ease: "easeOut" }}
+              transition={{
+                duration: 0.5,
+                delay: shouldFlyIn ? flyDelay + 0.45 : isExtraDriver ? extraDelay + 0.15 : normalDelay + 0.1,
+                ease: "easeOut",
+              }}
             />
             <motion.circle
               cy={sy + 9} r={5} fill="white" stroke={dotColor || ORANGE} strokeWidth={2}
               initial={{ cx: SLIDER_X }}
               animate={{ cx: SLIDER_X + SLIDER_W * s.value }}
-              transition={{ duration: 0.6, delay: 0.15 + si * 0.08, ease: "easeOut" }}
+              transition={{
+                duration: 0.5,
+                delay: shouldFlyIn ? flyDelay + 0.45 : isExtraDriver ? extraDelay + 0.15 : normalDelay + 0.1,
+                ease: "easeOut",
+              }}
             />
-          </g>
+          </motion.g>
         );
       })}
     </motion.g>
@@ -312,7 +368,7 @@ function ProfileCard({ cust }: { cust: CustomerScenario }) {
 
 function ResultCard({ cust }: { cust: CustomerScenario }) {
   const { shareMode } = useShareMode();
-  const y = MODEL_CY - BOX_H / 2;
+  const y = MODEL_CY - PROFILE_BOX_H / 2;
   const cx = RESULT_CARD_X + RESULT_CARD_W / 2;
   return (
     <motion.g
@@ -322,14 +378,14 @@ function ResultCard({ cust }: { cust: CustomerScenario }) {
       transition={{ duration: 0.4, delay: 0.2, ease: "easeOut" }}
     >
       <rect
-        x={RESULT_CARD_X} y={y} width={RESULT_CARD_W} height={BOX_H}
+        x={RESULT_CARD_X} y={y} width={RESULT_CARD_W} height={PROFILE_BOX_H}
         rx={14} fill="white" stroke={STEEL} strokeWidth={1.5}
       />
-      <text x={cx} y={y + 24} fontSize="10" fontWeight="600" fill="#4A5568" textAnchor="middle">
+      <text x={cx} y={y + 30} fontSize="12" fontWeight="600" fill="#4A5568" textAnchor="middle">
         Recommended price
       </text>
       <motion.text
-        x={cx} y={y + 68} fontSize="34" fontWeight="800" fill={ORANGE} textAnchor="middle"
+        x={cx} y={y + 88} fontSize="42" fontWeight="800" fill={ORANGE} textAnchor="middle"
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={shareMode ? { duration: 0.25, delay: 0.35 } : { duration: 0.4, delay: 0.35, type: "spring", stiffness: 200 }}
@@ -337,7 +393,7 @@ function ResultCard({ cust }: { cust: CustomerScenario }) {
         {cust.price}
       </motion.text>
       <motion.text
-        x={cx} y={y + 90} fontSize="11" fontWeight="600" textAnchor="middle"
+        x={cx} y={y + 116} fontSize="13" fontWeight="600" textAnchor="middle"
         fill={cust.price > LIST_PRICE ? "#2e7d32" : "#c62828"}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -346,25 +402,25 @@ function ResultCard({ cust }: { cust: CustomerScenario }) {
         {cust.delta}
       </motion.text>
 
-      <line x1={RESULT_CARD_X + 20} y1={y + 106} x2={RESULT_CARD_X + RESULT_CARD_W - 20} y2={y + 106} stroke="#E8ECF0" strokeWidth={1} />
+      <line x1={RESULT_CARD_X + 20} y1={y + 140} x2={RESULT_CARD_X + RESULT_CARD_W - 20} y2={y + 140} stroke="#E8ECF0" strokeWidth={1} />
 
-      <text x={RESULT_CARD_X + 24} y={y + 130} fontSize="10" fill="#4A5568">
+      <text x={RESULT_CARD_X + 24} y={y + 172} fontSize="12" fontWeight="500" fill="#4A5568">
         Win probability
       </text>
-      <text x={RESULT_CARD_X + RESULT_CARD_W - 24} y={y + 130} fontSize="12" fontWeight="700" fill={cust.color} textAnchor="end">
+      <text x={RESULT_CARD_X + RESULT_CARD_W - 24} y={y + 172} fontSize="15" fontWeight="700" fill={cust.color} textAnchor="end">
         {cust.winProb}
       </text>
 
-      <text x={RESULT_CARD_X + 24} y={y + 154} fontSize="10" fill="#4A5568">
+      <text x={RESULT_CARD_X + 24} y={y + 206} fontSize="12" fontWeight="500" fill="#4A5568">
         Margin impact
       </text>
-      <text x={RESULT_CARD_X + RESULT_CARD_W - 24} y={y + 154} fontSize="12" fontWeight="700" fill={cust.color} textAnchor="end">
+      <text x={RESULT_CARD_X + RESULT_CARD_W - 24} y={y + 206} fontSize="15" fontWeight="700" fill={cust.color} textAnchor="end">
         {cust.margin}
       </text>
 
       {/* List price reference */}
-      <line x1={RESULT_CARD_X + 20} y1={y + 168} x2={RESULT_CARD_X + RESULT_CARD_W - 20} y2={y + 168} stroke="#E8ECF0" strokeWidth={1} />
-      <text x={cx} y={y + 186} fontSize="9" fill={GREY} textAnchor="middle">
+      <line x1={RESULT_CARD_X + 20} y1={y + 234} x2={RESULT_CARD_X + RESULT_CARD_W - 20} y2={y + 234} stroke="#E8ECF0" strokeWidth={1} />
+      <text x={cx} y={y + 258} fontSize="10" fontWeight="500" fill={GREY} textAnchor="middle">
         List: {LIST_PRICE} / unit
       </text>
     </motion.g>
@@ -635,6 +691,7 @@ export function ExecuteSlide({
   const [selected, setSelected] = useState(0);
   const [revealPhase, setRevealPhase] = useState(skipAnimation ? 4 : 1);
   const hasInteracted = useRef(false);
+  const initialRevealDone = useRef(skipAnimation);
   const cust = CUSTOMERS[selected];
 
   useEffect(() => {
@@ -649,6 +706,7 @@ export function ExecuteSlide({
       setRevealPhase(1);
       setSelected(0);
       hasInteracted.current = false;
+      initialRevealDone.current = false;
       return;
     }
     if (isPresenter) {
@@ -657,6 +715,12 @@ export function ExecuteSlide({
       setRevealPhase(skipAnimation ? selfMaxPhase : (step >= 1 ? 4 : 1));
     }
   }, [step, skipAnimation, isPresenter, selfMaxPhase, isActive]);
+
+  useEffect(() => {
+    if (revealPhase >= 2 && !initialRevealDone.current) {
+      initialRevealDone.current = true;
+    }
+  }, [revealPhase]);
 
   useEffect(() => {
     if (!isActive) return;
@@ -767,7 +831,7 @@ export function ExecuteSlide({
                   : revealPhase === 2
                     ? "The model weighs each factor to calculate Acme’s calibrated price."
                     : revealPhase === 3
-                      ? <>{cust.price} — volume commitment and relationship depth push the price <span style={{ fontWeight: 700, color: "#2e7d32" }}>{cust.delta}</span>.</>
+                      ? <>{cust.price} — sales relationship, order frequency, and tenure push the price <span style={{ fontWeight: 700, color: "#2e7d32" }}>{cust.delta}</span>.</>
                       : cust.narrative}
               </motion.p>
             </AnimatePresence>
@@ -866,7 +930,7 @@ export function ExecuteSlide({
                     {revealPhase >= 2 && (
                       <>
                         <AnimatePresence mode="wait">
-                          <ProfileCard key={selected} cust={cust} />
+                          <ProfileCard key={selected} cust={cust} flyFromRail={!initialRevealDone.current} />
                         </AnimatePresence>
                         <AnimatePresence mode="wait">
                           <motion.g key={`flow-${selected}`}>
