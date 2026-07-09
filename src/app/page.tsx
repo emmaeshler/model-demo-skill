@@ -13,7 +13,7 @@ import { OneModelSlide, ONE_MODEL_TOTAL_STEPS } from "@/components/slides/one-mo
 import { PowerSlide, POWER_TOTAL_STEPS } from "@/components/slides/power-slide";
 import { ExecuteSlide, EXECUTE_TOTAL_STEPS } from "@/components/slides/execute-slide";
 import { RefineSlideV2, REFINE_V2_TOTAL_STEPS } from "@/components/slides/refine-slide-v2";
-import { ClosingSummarySlide } from "@/components/slides/closing-summary";
+import { ClosingSummarySlide, CLOSING_SUMMARY_TOTAL_STEPS } from "@/components/slides/closing-summary";
 import { AnimationGlossary } from "@/components/animation-glossary";
 
 const MemoOverview = memo(OverviewSlide);
@@ -58,6 +58,7 @@ const ONE_MODEL_INDEX = 2;
 const POWER_INDEX = 3;
 const EXECUTE_INDEX = 4;
 const REFINE_INDEX = 5;
+const CLOSING_INDEX = 6;
 
 const SUB_STEP_CONFIG: Record<number, number> = {
   [OVERVIEW_INDEX]: OVERVIEW_TOTAL_STEPS,
@@ -65,6 +66,7 @@ const SUB_STEP_CONFIG: Record<number, number> = {
   [POWER_INDEX]: POWER_TOTAL_STEPS,
   [EXECUTE_INDEX]: EXECUTE_TOTAL_STEPS,
   [REFINE_INDEX]: REFINE_V2_TOTAL_STEPS,
+  [CLOSING_INDEX]: CLOSING_SUMMARY_TOTAL_STEPS,
 };
 
 const EXECUTE_PRESENTER_STEPS = 4;
@@ -1373,7 +1375,7 @@ export function Home() {
                         />
                       )}
                       {sc.kind === "execute" && <MemoExecute step={isActive ? subStep : 0} skipAnimation={effectiveSkip} isActive={isActive} onCustomerChange={isActive ? handleExecuteCustomerChange : undefined} />}
-                      {sc.kind === "closing-summary" && <MemoClosing isActive={isActive} />}
+                      {sc.kind === "closing-summary" && <MemoClosing step={isActive ? subStep : 0} isActive={isActive} />}
                       {sc.kind === "end" && <EndSlide onRestart={() => navigate(0)} />}
                     </motion.div>
                   </motion.div>
