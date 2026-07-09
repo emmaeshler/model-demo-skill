@@ -142,7 +142,7 @@ const RAIL_TIMELINE: Partial<Record<number, (RailContent | null)[]>> = {
     /* 0  */ { show: "drivers", flyIn: false },
     /* 1  */ { show: "drivers", flyIn: false },
     /* 2  */ { show: "drivers", flyIn: false },
-    /* 3  */ { show: "mini-exec" },
+    /* 3  */ { show: "drivers", flyIn: false },
   ],
   [REFINE_INDEX]: [
     /* 0  */ { show: "mini-exec" },
@@ -486,7 +486,7 @@ function MiniExecuteConnector({ refineStep, flyIn = false, onSelectCustomer, tim
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3, delay: flyIn ? 0.7 : 0.2 }}
       >
-        Customer Order Price, Refined
+        {refineStep !== undefined && refineStep >= 2 ? "Customer Order Price, Refined" : "Customer Order Prices"}
       </motion.span>
 
       <div className="relative z-10 flex flex-col gap-1.5">
