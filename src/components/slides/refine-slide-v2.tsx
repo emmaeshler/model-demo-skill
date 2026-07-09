@@ -940,6 +940,8 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
               })}
               {/* Start dot */}
               <div className="absolute rounded-full" style={{ left: 0, top: "50%", width: 6, height: 6, backgroundColor: NAVY, transform: "translate(-50%, -50%)", zIndex: 1 }} />
+              {/* End dot */}
+              <div className="absolute rounded-full" style={{ right: 0, top: "50%", width: 6, height: 6, backgroundColor: `${NAVY}25`, transform: "translate(50%, -50%)", zIndex: 1 }} />
               {/* Big circle scrubber — pointer-events-none so dots underneath stay clickable */}
               <motion.div
                 className="absolute z-10 rounded-full pointer-events-none"
@@ -960,18 +962,18 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
                 {TIMELINE_EVENTS.map((event, i) => {
                   const pos = (event.month / TOTAL_MONTHS) * 100;
                   const isActive = indexPhase === i + 1 && indexMorphProgress >= 1;
-                  const isLast = i === TIMELINE_EVENTS.length - 1;
                   return (
                     <span
                       key={event.month}
                       className="absolute text-[10px] font-medium transition-colors duration-300 cursor-pointer"
-                      style={{ left: `${pos}%`, transform: isLast ? "translateX(-100%)" : "translateX(-50%)", color: isActive ? STRAT_BLUE : MUTED }}
+                      style={{ left: `${pos}%`, transform: "translateX(-50%)", color: isActive ? STRAT_BLUE : MUTED }}
                       onClick={(e) => { e.stopPropagation(); setIndexPhase(i + 1); }}
                     >
                       {getMonthLabel(event.month)}
                     </span>
                   );
                 })}
+                <span className="absolute text-[10px] font-medium" style={{ right: 0, color: MUTED }}>{getMonthLabel(TOTAL_MONTHS)}</span>
               </div>
             </div>
           </motion.div>

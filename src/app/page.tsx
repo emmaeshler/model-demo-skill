@@ -136,12 +136,12 @@ const RAIL_TIMELINE: Partial<Record<number, (RailContent | null)[]>> = {
     /* 7  */ { show: "factors", engine: "strat", active: ALL_CATS },
     /* 8  */ { show: "factors", engine: "strat", active: ALL_CATS },
     /* 9  */ { show: "factors", engine: "both",  active: ALL_CATS },
-    /* 10 */ { show: "factors", engine: null, active: ALL_CATS },
+    /* 10 */ { show: "drivers", flyIn: true },
   ],
   [EXECUTE_INDEX]: [
-    /* 0  */ { show: "factors", engine: null, active: ALL_CATS },
-    /* 1  */ { show: "drivers", flyIn: true },
-    /* 2  */ { show: "mini-exec" },
+    /* 0  */ { show: "drivers", flyIn: false },
+    /* 1  */ { show: "drivers", flyIn: false },
+    /* 2  */ { show: "drivers", flyIn: false },
     /* 3  */ { show: "mini-exec" },
   ],
   [REFINE_INDEX]: [
