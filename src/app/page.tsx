@@ -14,6 +14,7 @@ import { PowerSlide, POWER_TOTAL_STEPS } from "@/components/slides/power-slide";
 import { ExecuteSlide, EXECUTE_TOTAL_STEPS } from "@/components/slides/execute-slide";
 import { RefineSlideV2, REFINE_V2_TOTAL_STEPS } from "@/components/slides/refine-slide-v2";
 import { AnimationGlossary } from "@/components/animation-glossary";
+import { WalkthroughOverlay } from "@/components/walkthrough-overlay";
 
 const MemoOverview = memo(OverviewSlide);
 const MemoOneModel = memo(OneModelSlide);
@@ -652,6 +653,7 @@ export function Home() {
   const [navGroups, setNavGroups] = useState(DEFAULT_NAV_GROUPS);
   const [darkMode, setDarkMode] = useState(false);
   const [glossaryOpen, setGlossaryOpen] = useState(false);
+  const [walkthroughOpen, setWalkthroughOpen] = useState(false);
   const [presenterNavOpen, setPresenterNavOpen] = useState(false);
   const { mode } = useMode();
   const channelRef = useRef<BroadcastChannel | null>(null);
@@ -1248,6 +1250,7 @@ export function Home() {
   useEffect(() => {
     if (isAudience) return;
     function onKey(e: KeyboardEvent) {
+      if (walkthroughOpen) return;
       if (e.key === "ArrowRight" || e.key === "ArrowDown") {
         e.preventDefault();
         const isRefineSpotlight = slide === REFINE_INDEX && subStep >= 2 && subStep <= 4;
@@ -1271,7 +1274,7 @@ export function Home() {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [slide, navigate, isAudience, presenting, endPresenting, slideSorterOpen, presenterNavOpen, glossaryOpen]);
+  }, [slide, navigate, isAudience, presenting, endPresenting, slideSorterOpen, presenterNavOpen, glossaryOpen, walkthroughOpen]);
 
   return (
     <>
@@ -1426,6 +1429,7 @@ export function Home() {
           onStartPresenting={mode === "presenter" ? startPresenting : undefined}
           onAnimationGlossary={() => setGlossaryOpen(true)}
           onSlideSorter={() => setSlideSorterOpen(true)}
+          onHowItWorks={() => setWalkthroughOpen(true)}
           showReplay={skipAnimation}
           onReplay={handleReplay}
         />
@@ -1604,6 +1608,7 @@ export function Home() {
       )}
 
       {glossaryOpen && <AnimationGlossary onClose={() => setGlossaryOpen(false)} />}
+      {walkthroughOpen && <WalkthroughOverlay onClose={() => setWalkthroughOpen(false)} />}
 
       {/* Presenter console overlay */}
       {presenting && !isAudience && (

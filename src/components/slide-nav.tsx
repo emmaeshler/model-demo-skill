@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, ChevronDown, Check, Download, MonitorPlay, RotateCcw, Maximize, Minimize, PlayCircle, BookOpen, MoreVertical, LayoutGrid } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, Check, Download, MonitorPlay, RotateCcw, Maximize, Minimize, PlayCircle, BookOpen, MoreVertical, LayoutGrid, HelpCircle } from "lucide-react";
 import { useShareMode } from "@/lib/share-context";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -24,6 +24,7 @@ interface SlideNavProps {
   onReplay?: () => void;
   onSlideSorter?: () => void;
   onAnimationGlossary?: () => void;
+  onHowItWorks?: () => void;
   darkMode?: boolean;
   onToggleDark?: () => void;
 }
@@ -43,6 +44,7 @@ function FullPageButton({ isFullscreen, compact }: { isFullscreen: boolean; comp
         compact ? "p-1.5" : "px-2.5 py-1",
       )}
       title={isFullscreen ? "Exit Full Screen" : "Enter Full Screen"}
+      data-wt="fullscreen"
     >
       {isFullscreen ? <Minimize className="size-3.5" /> : <Maximize className="size-3.5" />}
       {!compact && (isFullscreen ? "Exit Full Screen" : "Enter Full Screen")}
@@ -66,6 +68,7 @@ function DownloadLink({ compact }: { compact?: boolean }) {
         compact ? "p-1.5" : "px-2.5 py-1",
       )}
       title="Download"
+      data-wt="download"
     >
       <Download className="size-3.5" />
       {!compact && "Download"}
@@ -82,6 +85,7 @@ export function TopBar({
   onStartPresenting,
   onAnimationGlossary,
   onSlideSorter,
+  onHowItWorks,
 }: SlideNavProps) {
   const { shareMode, toggleShareMode } = useShareMode();
   const [open, setOpen] = useState(false);
@@ -188,6 +192,7 @@ export function TopBar({
             ref={triggerRef}
             onClick={() => setOpen(!open)}
             className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-white/70 transition-colors hover:bg-white/10"
+            data-wt="nav-dropdown"
           >
             {currentGroup?.label ?? ""}
             <ChevronDown
@@ -202,6 +207,7 @@ export function TopBar({
             <button
               onClick={toggleShareMode}
               className="flex items-center gap-2 whitespace-nowrap rounded-md border border-white/15 px-2.5 py-1 text-xs font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/10"
+              data-wt="teams-toggle"
             >
               <span className={shareMode ? "text-teal-200" : ""}>{isFullscreen ? "Teams" : "I'm Sharing This On Teams"}</span>
               <div
@@ -226,6 +232,7 @@ export function TopBar({
                   isFullscreen ? "p-1.5" : "px-2.5 py-1",
                 )}
                 title="Open Presenter Mode"
+                data-wt="presenter-mode"
               >
                 <MonitorPlay className="size-3.5" />
                 {!isFullscreen && "Open Presenter Mode"}
@@ -233,7 +240,7 @@ export function TopBar({
             )}
             <FullPageButton isFullscreen={isFullscreen} compact={isFullscreen} />
             <DownloadLink compact={isFullscreen} />
-            <div className="relative">
+            <div className="relative" data-wt="kebab">
               <button
                 ref={kebabBtnRef}
                 onClick={() => setKebabOpen(!kebabOpen)}
@@ -256,16 +263,27 @@ export function TopBar({
                       Slide Sorter
                     </button>
                   )}
-                  <a
-                    href="/walkthrough"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => setKebabOpen(false)}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white"
-                  >
-                    <PlayCircle className="size-3.5" />
-                    Walk Through
-                  </a>
+                  <div className="group/wt relative">
+                    <button
+                      disabled
+                      className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-white/30 cursor-not-allowed"
+                    >
+                      <PlayCircle className="size-3.5" />
+                      Self Walkthrough
+                    </button>
+                    <div className="pointer-events-none absolute right-full top-1/2 mr-2 -translate-y-1/2 rounded-lg border border-white/10 bg-[#06283D] px-3 py-2 text-[11px] font-medium leading-relaxed text-white/60 opacity-0 shadow-xl transition-opacity group-hover/wt:opacity-100 w-52">
+                      A self-paced version for clients to walk through on their own. Will also be available as a download. Currently under construction.
+                    </div>
+                  </div>
+                  {onHowItWorks && (
+                    <button
+                      onClick={() => { onHowItWorks(); setKebabOpen(false); }}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                    >
+                      <HelpCircle className="size-3.5" />
+                      How It Works
+                    </button>
+                  )}
                   {onAnimationGlossary && (
                     <button
                       onClick={() => { onAnimationGlossary(); setKebabOpen(false); }}
@@ -416,7 +434,7 @@ export function BottomBar({
     ) ?? groups.find((g) => g.slides.some((s) => s.index === current));
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-[#06283D]/90 backdrop-blur-md">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-[#06283D]/90 backdrop-blur-md" data-wt="bottom-nav">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-2.5">
         <div className="flex shrink-0 items-center gap-1">
           <Button
