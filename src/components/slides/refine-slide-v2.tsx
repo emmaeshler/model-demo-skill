@@ -15,7 +15,7 @@ import { RefineChart } from "./refine-slide-chart";
 import { KpiSidebar } from "./refine-slide-kpi";
 import { PortfolioGrid } from "./refine-slide-portfolio";
 
-export const REFINE_V2_TOTAL_STEPS = 8;
+export const REFINE_V2_TOTAL_STEPS = 9;
 
 export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, onTimelinePhase, requestedPhase, advanceRequest, onSpotlightRefined }: { step: number; onAutoAdvance?: () => void; skipAnimation?: boolean; isActive: boolean; onTimelinePhase?: (phase: number) => void; requestedPhase?: number; advanceRequest?: number; onSpotlightRefined?: () => void }) {
   const { shareMode } = useShareMode();
@@ -182,13 +182,14 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
   }, [indexPhase, skipAnimation, isActive]);
 
   const PORTFOLIO_DELAYS = [0, 200, 1200, 2200, 2800] as const;
-  const portfolioPhase = usePhaseSequence(PORTFOLIO_DELAYS, { active: isActive, skip: !!skipAnimation, enabled: chartStep === 7 });
+  const portfolioPhase = usePhaseSequence(PORTFOLIO_DELAYS, { active: isActive, skip: !!skipAnimation, enabled: chartStep === 8 });
 
   /* ── Derived state ── */
   const showCurve = chartStep >= 1;
   const isAllToCurve = chartStep >= 5;
   const isIndexShift = chartStep === 6;
-  const isPortfolio = chartStep === 7;
+  const isPortfolioHero = chartStep === 7;
+  const isPortfolio = chartStep === 8;
   const activeIndexCurve = isIndexShift && indexPhase > 0 ? curve.indexCurves[indexPhase - 1] : null;
   const currentEvent = indexPhase > 0 ? TIMELINE_EVENTS[indexPhase - 1] : null;
 
@@ -250,6 +251,8 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
 
   const heading = isPortfolio
     ? "We do this across your entire portfolio"
+    : isPortfolioHero
+    ? STEP_CONTEXT[7]?.title || ""
     : isIndexShift
     ? "The market moves. The model moves with it."
     : isAllToCurve
@@ -259,7 +262,9 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
         : STEP_CONTEXT[chartStep]?.title || "Detect patterns, refine pricing guidance";
 
   const subtitle = isPortfolio
-      ? "Every product segment gets its own model — continuously recalibrated as the market shifts."
+      ? "Every customer–end market combination gets its own model — continuously recalibrated as the market shifts."
+      : isPortfolioHero
+      ? STEP_CONTEXT[7]?.body || null
       : isIndexShift
       ? null
       : isSpotlight
@@ -405,12 +410,40 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
                 animate={{ opacity: portfolioPhase >= 4 ? 1 : 0, y: portfolioPhase >= 4 ? 0 : 6 }}
                 transition={{ duration: 0.4 }}
               >
-                Every product segment gets its own model — continuously{" "}
+                Every customer–end market combination gets its own model — continuously{" "}
                 <span className="font-bold" style={{ color: NAVY, whiteSpace: "nowrap", textDecoration: "underline", textDecorationColor: STRAT_BLUE, textUnderlineOffset: "4px", textDecorationThickness: "2px" }}>recalibrated as the market shifts</span>.
               </motion.p>
             </motion.div>
           )}
-          {chartStep > 0 && !isPortfolio && (
+          {isPortfolioHero && (
+            <motion.div
+              key="hero-title"
+              className="absolute inset-0 flex flex-col items-center justify-start"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <motion.h2
+                className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
+                style={{ color: NAVY }}
+              >
+                {heading}
+              </motion.h2>
+              {subtitle && (
+                <motion.p
+                  className="mx-auto mt-1 max-w-2xl text-center text-[1.05rem] font-medium leading-relaxed"
+                  style={{ color: MUTED }}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.15 }}
+                >
+                  {subtitle}
+                </motion.p>
+              )}
+            </motion.div>
+          )}
+          {chartStep > 0 && !isPortfolio && !isPortfolioHero && (
             <motion.div
               key={`step-title-${chartStep === 1 ? 'curve-intro' : `step-${chartStep}`}`}
               className="absolute inset-0 flex flex-col items-center justify-start"
@@ -545,11 +578,11 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
           className="absolute inset-0 flex flex-col"
           initial={{ opacity: 1, y: 0 }}
           animate={{
-            opacity: isPortfolio ? 0 : isIndexShift && indexIntroPhase < 2 ? 0 : 1,
+            opacity: isPortfolio || isPortfolioHero ? 0 : isIndexShift && indexIntroPhase < 2 ? 0 : 1,
             y: 0,
           }}
           transition={{ duration: 1.0, ease: EASE }}
-          style={isPortfolio ? { pointerEvents: "none" as const } : undefined}
+          style={isPortfolio || isPortfolioHero ? { pointerEvents: "none" as const } : undefined}
         >
           <div className="relative min-w-0 flex-1 flex items-center justify-center" style={isIndexShift ? { paddingRight: 175 } : undefined}>
             <RefineChart
@@ -579,30 +612,30 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
           </div>
         </motion.div>
 
-        {/* KPI sidebar — visible after first timeline event */}
-        <AnimatePresence>
-          {isIndexShift && indexIntroPhase >= 2 && (
-            <motion.div
-              key="kpi-sidebar"
-              className="absolute right-0 top-0 bottom-0 z-20"
-              style={{ width: 175, borderLeft: `1px solid ${NAVY}0A` }}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
-              <KpiSidebar
-                indexPhase={indexPhase}
-                currentKpi={currentKpi}
-                kpiDelta={kpiDelta}
-                kpiRevealed={kpiRevealed}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <PortfolioGrid isPortfolio={isPortfolio} isActive={isActive} shareMode={shareMode} />
+        <PortfolioGrid isPortfolio={isPortfolio} isPortfolioHero={isPortfolioHero} isActive={isActive} shareMode={shareMode} />
       </div>
+
+      {/* KPI sidebar — spans full chart region height (timeline + chart) */}
+      <AnimatePresence>
+        {isIndexShift && indexIntroPhase >= 2 && (
+          <motion.div
+            key="kpi-sidebar"
+            className="absolute right-0 top-0 bottom-0 z-20"
+            style={{ width: 175, borderLeft: `1px solid ${NAVY}0A` }}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <KpiSidebar
+              indexPhase={indexPhase}
+              currentKpi={currentKpi}
+              kpiDelta={kpiDelta}
+              kpiRevealed={kpiRevealed}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
       </div>{/* end unified chart region */}
     </div>
   );

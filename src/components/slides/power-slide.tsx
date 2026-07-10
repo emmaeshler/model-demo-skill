@@ -16,11 +16,11 @@ import { FactorGrid } from "./power-slide-factors";
 import { ConvergenceModel } from "./power-slide-convergence";
 import { BottomCards } from "./power-slide-bottom";
 
-export const POWER_TOTAL_STEPS = 10;
+export const POWER_TOTAL_STEPS = 2;
 
 export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCategoryChange, isActive = true }: { step: number; onAutoAdvance?: () => void; skipAnimation?: boolean; onActiveCategoryChange?: (categories: string[]) => void; isActive?: boolean }) {
   const { shareMode } = useShareMode();
-  const chartStep = step <= 1 ? step : step <= 8 ? 2 : 3;
+  const chartStep = step;
 
   const stepSelectionPhase = step < 2 ? -1 : step === 2 ? -1 : step <= 6 ? step - 3 : 5;
 
@@ -122,7 +122,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
   }, [isActive, chartStep, skipAnimation, onAutoAdvance]);
 
   const clustered = chartStep >= 2;
-  const factorsVisible = chartStep >= 2;
+  const factorsVisible = false;
   const customized = chartStep >= 2;
   const feeding = chartStep >= 3;
   const sweepActive = chartStep === 1 && !driversRevealed;

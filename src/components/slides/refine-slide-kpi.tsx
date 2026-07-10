@@ -12,9 +12,9 @@ interface KpiSidebarProps {
 
 export function KpiSidebar({ indexPhase, currentKpi, kpiDelta, kpiRevealed }: KpiSidebarProps) {
   return (
-    <div className="flex flex-col justify-center gap-3 px-3 pt-3 h-full">
+    <div className="flex flex-col justify-center gap-2 px-3 pt-3 h-full">
       {/* Win rate */}
-      <div className="rounded-xl px-3.5 py-2.5" style={{ backgroundColor: `${NAVY}05` }}>
+      <div className="rounded-xl px-3.5 py-2" style={{ backgroundColor: `${NAVY}05` }}>
         <div className="text-[11px] font-semibold tracking-wide" style={{ color: MUTED }}>Win rate</div>
         <div className="text-[22px] font-bold tabular-nums leading-tight mt-0.5" style={{ color: NAVY }}>
           {Math.round(currentKpi.winRate)}%
@@ -49,7 +49,7 @@ export function KpiSidebar({ indexPhase, currentKpi, kpiDelta, kpiRevealed }: Kp
       </div>
 
       {/* Price adoption */}
-      <div className="rounded-xl px-3.5 py-2.5" style={{ backgroundColor: `${NAVY}05` }}>
+      <div className="rounded-xl px-3.5 py-2" style={{ backgroundColor: `${NAVY}05` }}>
         <div className="text-[11px] font-semibold tracking-wide" style={{ color: MUTED }}>Price adoption</div>
         <div className="text-[22px] font-bold tabular-nums leading-tight mt-0.5" style={{ color: NAVY }}>
           {Math.round(currentKpi.priceAdoption)}%
@@ -85,7 +85,7 @@ export function KpiSidebar({ indexPhase, currentKpi, kpiDelta, kpiRevealed }: Kp
 
       {/* Margin impact */}
       <motion.div
-        className="rounded-xl px-3.5 py-2.5"
+        className="rounded-xl px-3.5 py-2"
         animate={{
           backgroundColor: kpiRevealed && indexPhase > 0 ? (kpiDelta.marginImpact >= 0 ? `${GREEN}0A` : `${RED}0A`) : `${NAVY}05`,
           borderColor: kpiRevealed && indexPhase > 0 ? (kpiDelta.marginImpact >= 0 ? `${GREEN}40` : `${RED}40`) : "transparent",

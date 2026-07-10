@@ -125,22 +125,17 @@ const RAIL_TIMELINE: Partial<Record<number, (RailContent | null)[]>> = {
   [POWER_INDEX]: [
     /* 0  */ { show: "engine-only", engine: null },
     /* 1  */ { show: "engine-only", engine: "ml" },
-    /* 2  */ { show: "factors", engine: "strat", active: [] },
-    /* 3  */ { show: "factors", engine: "strat", active: ["customer"] },
-    /* 4  */ { show: "factors", engine: "strat", active: ["product"] },
-    /* 5  */ { show: "factors", engine: "strat", active: ["order"] },
-    /* 6  */ { show: "factors", engine: "strat", active: ["market"] },
-    /* 7  */ { show: "drivers", flyIn: true },
-    /* 8  */ { show: "drivers", flyIn: false },
-    /* 9  */ { show: "drivers", flyIn: false },
-    /* 10 */ { show: "drivers", flyIn: false },
   ],
   [DRIVER_IMP_INDEX]: [
-    /* 0  */ { show: "factors", engine: "strat", active: [] },
-    /* 1  */ { show: "factors", engine: "strat", active: ["customer"] },
-    /* 2  */ { show: "factors", engine: "strat", active: ["product"] },
-    /* 3  */ { show: "factors", engine: "strat", active: ["order"] },
-    /* 4  */ { show: "factors", engine: "strat", active: ["market"] },
+    /* 0  intro  */ { show: "factors", engine: "strat", active: [] },
+    /* 1  cust   */ { show: "factors", engine: "strat", active: ["customer"] },
+    /* 2  cust*  */ { show: "factors", engine: "strat", active: ["customer"] },
+    /* 3  prod   */ { show: "factors", engine: "strat", active: ["product"] },
+    /* 4  prod*  */ { show: "factors", engine: "strat", active: ["product"] },
+    /* 5  order  */ { show: "factors", engine: "strat", active: ["order"] },
+    /* 6  order* */ { show: "factors", engine: "strat", active: ["order"] },
+    /* 7  mkt    */ { show: "factors", engine: "strat", active: ["market"] },
+    /* 8  mkt*   */ { show: "factors", engine: "strat", active: ["market"] },
   ],
   [EXECUTE_INDEX]: [
     /* 0  */ { show: "drivers", flyIn: false },
@@ -156,6 +151,7 @@ const RAIL_TIMELINE: Partial<Record<number, (RailContent | null)[]>> = {
     /* 4  */ { show: "mini-exec", activeCustomer: 2, refineStepForCustomer: 4 },
     /* 5  */ { show: "mini-exec" },
     /* 6  */ { show: "mini-exec" },
+    null,
     null,
   ],
 };
@@ -577,58 +573,45 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
     label: "1 | Design",
     subtitle: "One model built around your business",
     slides: [
-      { index: ONE_MODEL_INDEX, label: "Model inputs", subStep: 0 },
-      { index: ONE_MODEL_INDEX, label: "Pricing model", subStep: 1 },
-      { index: ONE_MODEL_INDEX, label: "ML & strategic guidance", subStep: 2 },
+      { index: ONE_MODEL_INDEX, label: "Four key inputs", subStep: 0 },
+      { index: ONE_MODEL_INDEX, label: "One unified model", subStep: 1 },
+      { index: ONE_MODEL_INDEX, label: "ML meets expertise", subStep: 2 },
     ],
   },
   {
     label: "2 | Power",
     subtitle: "How the ML model finds pricing patterns",
     slides: [
-      { index: POWER_INDEX, label: "The problem", subStep: 0 },
-      { index: POWER_INDEX, label: "Pattern scanning", subStep: 1 },
-      { index: POWER_INDEX, label: "All factors", subStep: 2 },
-      { index: POWER_INDEX, label: "Customer factors", subStep: 3 },
-      { index: POWER_INDEX, label: "Product factors", subStep: 4 },
-      { index: POWER_INDEX, label: "Order factors", subStep: 5 },
-      { index: POWER_INDEX, label: "Market factors", subStep: 6 },
-      { index: POWER_INDEX, label: "Final factors", subStep: 7 },
-      { index: POWER_INDEX, label: "Model drivers", subStep: 8 },
-      { index: POWER_INDEX, label: "SKU-level price", subStep: 9 },
-    ],
-  },
-  {
-    label: "Driver Importance",
-    subtitle: "How much each factor contributes to pricing accuracy",
-    slides: [
-      { index: DRIVER_IMP_INDEX, label: "Overview", subStep: 0 },
-      { index: DRIVER_IMP_INDEX, label: "Customer drivers", subStep: 1 },
-      { index: DRIVER_IMP_INDEX, label: "Product drivers", subStep: 2 },
-      { index: DRIVER_IMP_INDEX, label: "Order drivers", subStep: 3 },
-      { index: DRIVER_IMP_INDEX, label: "Market drivers", subStep: 4 },
+      { index: POWER_INDEX, label: "36M price points", subStep: 0 },
+      { index: POWER_INDEX, label: "Finding patterns", subStep: 1 },
+      { index: DRIVER_IMP_INDEX, label: "Pricing factors", subStep: 0 },
+      { index: DRIVER_IMP_INDEX, label: "Customer", subStep: 1 },
+      { index: DRIVER_IMP_INDEX, label: "Product", subStep: 3 },
+      { index: DRIVER_IMP_INDEX, label: "Order", subStep: 5 },
+      { index: DRIVER_IMP_INDEX, label: "Market", subStep: 7 },
     ],
   },
   {
     label: "3 | Execute",
     subtitle: "SKU-level prices tailored to each customer",
     slides: [
-      { index: EXECUTE_INDEX, label: "Customer drivers", subStep: 0 },
-      { index: EXECUTE_INDEX, label: "Customer examples", subStep: 1 },
+      { index: EXECUTE_INDEX, label: "Optimized price per SKU", subStep: 0 },
+      { index: EXECUTE_INDEX, label: "Acme walkthrough", subStep: 1 },
     ],
   },
   {
     label: "4 | Refine",
     subtitle: "Optimizing prices along the demand curve",
     slides: [
-      { index: REFINE_INDEX, label: "Market effects", subStep: 0 },
-      { index: REFINE_INDEX, label: "Demand curve", subStep: 1 },
-      { index: REFINE_INDEX, label: "Quickparts", subStep: 2 },
-      { index: REFINE_INDEX, label: "Acme", subStep: 3 },
-      { index: REFINE_INDEX, label: "Medsupply", subStep: 4 },
-      { index: REFINE_INDEX, label: "Price optimization", subStep: 5 },
-      { index: REFINE_INDEX, label: "Market changes", subStep: 6 },
-      { index: REFINE_INDEX, label: "Full portfolio", subStep: 7 },
+      { index: REFINE_INDEX, label: "Every product, priced right", subStep: 0 },
+      { index: REFINE_INDEX, label: "Your demand curve", subStep: 1 },
+      { index: REFINE_INDEX, label: "QuickParts: underpriced", subStep: 2 },
+      { index: REFINE_INDEX, label: "Acme: rising win rate", subStep: 3 },
+      { index: REFINE_INDEX, label: "MedSupply: at risk", subStep: 4 },
+      { index: REFINE_INDEX, label: "Prices snap to the curve", subStep: 5 },
+      { index: REFINE_INDEX, label: "The curve adapts", subStep: 6 },
+      { index: REFINE_INDEX, label: "Segment models", subStep: 7 },
+      { index: REFINE_INDEX, label: "Full portfolio", subStep: 8 },
     ],
   },
   {
@@ -685,7 +668,7 @@ export function Home() {
   const [refineTimelinePhase, setRefineTimelinePhase] = useState(0);
   const handleRefineTimelinePhase = useCallback((phase: number) => setRefineTimelinePhase(phase), []);
   const [vortexDone, setVortexDone] = useState(false);
-  const vortexTriggered = slide === POWER_INDEX && subStep === 8;
+  const vortexTriggered = false;
 
   useEffect(() => {
     if (!vortexTriggered) { setVortexDone(false); return; }

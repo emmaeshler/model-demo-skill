@@ -13,7 +13,7 @@ export const RED = "#A65A52";
 export const CURVE_SLOT = { x: 50, y: 20, w: 460, h: 140 };
 export const BASE_Y = CURVE_SLOT.y + CURVE_SLOT.h;
 export const BASELINE_KPI = { winRate: 62, priceAdoption: 71, marginImpact: 1.8 };
-export const TOTAL_MONTHS = 20;
+export const TOTAL_MONTHS = 18;
 export const TIMELINE_EVENTS = [
   { month: 4, label: "Steel +8%", factor: "The model reprices upward to protect margin — a few low-margin deals fall away.", steepness: 5, shift: -12, kpi: { winRate: 59, priceAdoption: 76, marginImpact: 2.1 } },
   { month: 8, label: "Freight −6%", factor: "The model splits the savings — it lowers price to win share and keeps the rest as margin.", steepness: 5, shift: -6, kpi: { winRate: 66, priceAdoption: 80, marginImpact: 2.4 } },
@@ -225,8 +225,12 @@ export const STEP_CONTEXT: Record<number, { title: string; body: string }> = {
     body: "Price indices — published benchmarks for costs like steel, freight, or labor — feed the model continuously. When costs shift, the model reprices, and every recommendation stays current.",
   },
   7: {
+    title: "Every customer–market combination gets its own model",
+    body: "Each with unique price sensitivities, calibrated independently.",
+  },
+  8: {
     title: "We do this across your entire portfolio",
-    body: "Every product segment gets its own model — continuously recalibrated as the market shifts.",
+    body: "Every customer–end market combination gets its own model — continuously recalibrated as the market shifts.",
   },
 };
 
@@ -237,16 +241,16 @@ export type PortfolioFeature = "scatter" | "delta" | "price-dot" | "live" | "pla
 export const PORTFOLIO_SEGMENTS = (() => {
   const pRng = mulberry32(42);
   const names = [
-    "Fasteners – Industrial", "Bearings – Heavy Duty", "Filters – Automotive",
-    "Gaskets – Marine", "Valves – HVAC", "Tubing – Medical",
-    "Adhesives – Aerospace", "Seals – Oil & Gas", "Coatings – Marine",
-    "Fittings – Plumbing", "Wire – Telecom", "Insulation – Commercial",
-    "Clamps – Automotive", "Connectors – Electronics", "Hinges – Furniture",
-    "Springs – Defense", "Rods – Construction", "Brackets – Solar",
-    "Panels – Signage", "Rivets – Aerospace", "Washers – Rail",
-    "Bushings – Mining", "Flanges – Petrochem", "Pins – Electronics",
-    "Caps – Packaging", "Shims – Precision", "Plates – Structural",
-    "O-Rings – Hydraulic", "Bolts – Wind Energy", "Chains – Agriculture",
+    "Acme Mfg – Industrial MRO", "BearingCo – Heavy Equipment", "AutoParts Direct – Automotive OEM",
+    "SeaGuard – Marine Offshore", "ClimaTech – HVAC Systems", "MedSupply Co – Medical Devices",
+    "AeroSpec – Aerospace Def.", "PetroChem Ltd – Oil & Gas", "CoastLine – Marine Coatings",
+    "FlowTech – Comm. Plumbing", "NetWire Corp – Telecom", "ThermalPro – Commercial",
+    "DriveLink – Auto Aftermkt.", "CircuitEdge – Electronics", "HomeFit – Furniture",
+    "ArmorTech – Defense Sys.", "SteelRise – Construction", "SunBuild – Solar Energy",
+    "SignCraft – Signage", "SkyFast – Aerospace Mfg.", "RailWorks – Rail Transport",
+    "DeepCore – Mining Ops.", "PetroFlow – Petrochemical", "MicroPin – Electronics",
+    "PackRight – Packaging", "PrecisionCo – Precision", "StructurePro – Structural",
+    "HydraForce – Hydraulic", "WindPower – Wind Energy", "AgriChain – Agriculture",
   ];
   const features: PortfolioFeature[] = [
     "scatter", "delta", "price-dot", "live", "plain", "scatter",
@@ -291,6 +295,55 @@ export const PORTFOLIO_SEGMENTS = (() => {
     })() : undefined;
 
     return { name, d, feature, dist, delta: deltas[i], scatterDots, priceDotPt };
+  });
+})();
+
+export const HERO_SEGMENT_INDICES = [0, 1, 2, 3];
+
+const HERO_SLOT = { x: 35, y: 15, w: 200, h: 105 };
+export const HERO_VIEWBOX = "0 0 270 150";
+
+export const HERO_SEGMENTS = (() => {
+  const hRng = mulberry32(99);
+  const steepnesses = [4, 8, 3, 10];
+  return HERO_SEGMENT_INDICES.map((idx, hi) => {
+    const seg = PORTFOLIO_SEGMENTS[idx];
+    const raw = makeCurve(HERO_SLOT, steepnesses[hi]);
+    const n = 64;
+    const pts = Array.from({ length: n + 1 }, (_, j) => {
+      const pt = raw.sampleAt(j / n);
+      return { x: pt.x, y: pt.y };
+    });
+    const d = "M " + pts.map(p => `${p.x},${p.y}`).join(" L ");
+    const fillD = d + ` L ${HERO_SLOT.x + HERO_SLOT.w},${HERO_SLOT.y + HERO_SLOT.h} L ${HERO_SLOT.x},${HERO_SLOT.y + HERO_SLOT.h} Z`;
+
+    const scatterDots = Array.from({ length: 28 }, () => {
+      const t = 0.03 + hRng() * 0.94;
+      const curvePt = raw.sampleAt(t);
+      const spread = 20 + t * 30;
+      const cy = curvePt.y + (hRng() - 0.5) * spread;
+      const r = 1.8 + hRng() * 1.8;
+      const opacity = 0.15 + hRng() * 0.3;
+      return {
+        cx: curvePt.x + (hRng() - 0.5) * 10,
+        cy: Math.max(HERO_SLOT.y + 2, Math.min(HERO_SLOT.y + HERO_SLOT.h - 2, cy)),
+        r, opacity,
+      };
+    });
+
+    const priceT = 0.2 + hRng() * 0.35;
+    const pricePt = raw.sampleAt(priceT);
+
+    return {
+      name: seg.name,
+      feature: seg.feature,
+      delta: seg.delta,
+      d,
+      fillD,
+      scatterDots,
+      pricePt: { x: pricePt.x, y: pricePt.y },
+      slot: HERO_SLOT,
+    };
   });
 })();
 

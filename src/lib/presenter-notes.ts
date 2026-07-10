@@ -26,35 +26,6 @@ const NOTES: Record<string, string[]> = {
     "The model scans all four data dimensions simultaneously — orders, market signals, customer profiles, and win/loss history.",
     "Every past pricing decision — win or loss — teaches the model about price sensitivity.",
   ],
-  "power:2": [
-    "Here are all 31 pricing factors we analyze, organized across four dimensions.",
-    "Next we'll walk through each category and customize them for your business.",
-  ],
-  "power:3": [
-    "Every business is different — we tune each factor based on your data.",
-    "Starting with customer factors: channel, region, size, tenure, and sales relationship.",
-  ],
-  "power:4": [
-    "Product factors: mix, family, specialization, cost, and price sensitivity.",
-  ],
-  "power:5": [
-    "Market factors: price points, share, commodities, and competitive dynamics.",
-  ],
-  "power:6": [
-    "Order factors: frequency, size, lead time, terms, and seasonality.",
-  ],
-  "power:7": [
-    "All four factor groups are now tuned to this client's data.",
-    "Add what matters, remove what doesn't, and adjust the balance.",
-  ],
-  "power:8": [
-    "These five drivers are what the model actually uses — distilled from all 31 factors we analyzed.",
-    "Watch the rail update to reflect the finalized model inputs.",
-  ],
-  "power:9": [
-    "These four factors combine to produce a single SKU-level price.",
-    "From here, that price gets customized to each customer — that's the next step.",
-  ],
   "execute:0": [
     "The model produced $17.50 for SKU #A-7200 — now watch how it customizes that price for each customer.",
     "Click to see how different customer profiles shift the recommendation.",
@@ -91,6 +62,14 @@ const NOTES: Record<string, string[]> = {
   "refine:6": [
     "When all customers are optimized together, the portfolio effect is powerful.",
     "Some prices go up, some go down — but total margin improves significantly.",
+  ],
+  "refine:7": [
+    "Every customer–end market combination gets its own model.",
+    "Here are four examples — each calibrated independently based on its own price sensitivities.",
+  ],
+  "refine:8": [
+    "Now zoom out — we do this across 247 segments, continuously.",
+    "Every segment is monitored and recalibrated as the market shifts.",
   ],
   "end": [
     "Thank you for your time.",

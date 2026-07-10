@@ -21,7 +21,7 @@ export function TimelineStrip({
   advanceTimeline, retreatTimeline, setIndexPhase,
 }: TimelineStripProps) {
   return (
-    <div className="absolute inset-x-0 top-0 px-6 pt-3 pb-2">
+    <div className="absolute inset-x-0 top-0 pl-6 pr-[200px] pt-3 pb-2">
       {/* Date display / Event card */}
       <div className="relative flex items-center justify-center" style={{ height: 70, marginBottom: 4 }}>
         <motion.button
@@ -131,7 +131,6 @@ export function TimelineStrip({
           );
         })}
         <div className="absolute rounded-full" style={{ left: 0, top: "50%", width: 6, height: 6, backgroundColor: NAVY, transform: "translate(-50%, -50%)", zIndex: 1 }} />
-        <div className="absolute rounded-full" style={{ right: 0, top: "50%", width: 6, height: 6, backgroundColor: `${NAVY}25`, transform: "translate(50%, -50%)", zIndex: 1 }} />
         <motion.div
           className="absolute z-10 rounded-full pointer-events-none"
           style={{
@@ -161,7 +160,6 @@ export function TimelineStrip({
               </span>
             );
           })}
-          <span className="absolute text-[10px] font-medium" style={{ right: 0, color: MUTED }}>{getMonthLabel(TOTAL_MONTHS)}</span>
         </div>
       </div>
     </div>
