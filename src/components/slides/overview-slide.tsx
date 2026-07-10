@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useShareMode } from "@/lib/share-context";
 
 const NAVY = "#00446A";
 const TEAL = "#21A5D5";
@@ -43,12 +44,13 @@ const MINI_START = CX - (MODULES.length - 1) * MINI_SPACING / 2;
 export const OVERVIEW_TOTAL_STEPS = 1;
 
 export function OverviewSlide({ step, skipAnimation, isActive }: { step: number; skipAnimation?: boolean; isActive: boolean }) {
-  const [collapsed, setCollapsed] = useState(!!skipAnimation);
+  const { shareMode } = useShareMode();
+  const [collapsed, setCollapsed] = useState(!!skipAnimation || shareMode);
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [showWireframe, setShowWireframe] = useState(false);
 
   useEffect(() => {
-    if (!isActive || skipAnimation) {
+    if (!isActive || skipAnimation || shareMode) {
       setCollapsed(true);
       return;
     }
@@ -58,14 +60,14 @@ export function OverviewSlide({ step, skipAnimation, isActive }: { step: number;
       COLLAPSE_DELAY * 1000,
     );
     return () => clearTimeout(timerRef.current);
-  }, [isActive, skipAnimation]);
+  }, [isActive, skipAnimation, shareMode]);
 
   useEffect(() => {
-    if (!isActive || skipAnimation) { setShowWireframe(false); return; }
+    if (!isActive || skipAnimation || shareMode) { setShowWireframe(false); return; }
     setShowWireframe(true);
     const t = setTimeout(() => setShowWireframe(false), 2000);
     return () => clearTimeout(t);
-  }, [isActive, skipAnimation]);
+  }, [isActive, skipAnimation, shareMode]);
 
   return (
     <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-5xl flex-col items-center justify-center px-6 pt-8">

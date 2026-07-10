@@ -181,7 +181,7 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
     return () => { clearTimeout(delayTimer); clearTimeout(kpiTimer); cancelAnimationFrame(frame); };
   }, [indexPhase, skipAnimation, isActive]);
 
-  const PORTFOLIO_DELAYS = [0, 300, 2000, 3500, 4200] as const;
+  const PORTFOLIO_DELAYS = [0, 600, 2200, 3800, 4500] as const;
   const portfolioPhase = usePhaseSequence(PORTFOLIO_DELAYS, { active: isActive, skip: !!skipAnimation, enabled: chartStep === 8 });
 
   /* ── Derived state ── */
@@ -364,26 +364,26 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
                 <motion.h2
                   className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
                   style={{ color: NAVY }}
-                  initial={{ opacity: 0, y: 8 }}
+                  initial={{ opacity: 1, y: 0 }}
                   animate={{
-                    opacity: portfolioPhase >= 1 && portfolioPhase < 3 ? 1 : 0,
-                    y: portfolioPhase >= 1 && portfolioPhase < 3 ? 0 : portfolioPhase >= 3 ? -12 : 8,
-                    height: portfolioPhase >= 3 ? 0 : "auto",
-                    marginBottom: portfolioPhase >= 3 ? 0 : 4,
+                    opacity: portfolioPhase < 2 ? 1 : 0,
+                    y: portfolioPhase >= 2 ? -12 : 0,
+                    height: portfolioPhase >= 2 ? 0 : "auto",
+                    marginBottom: portfolioPhase >= 2 ? 0 : 4,
                   }}
                   transition={{ duration: 0.5 }}
                 >
-                  One segment, one curve
+                  Every customer–market combination gets its own model
                 </motion.h2>
                 <motion.h2
                   className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
                   style={{ color: NAVY }}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{
-                    opacity: portfolioPhase >= 2 && portfolioPhase < 3 ? 1 : 0,
-                    y: portfolioPhase >= 2 && portfolioPhase < 3 ? 0 : portfolioPhase >= 3 ? -12 : 8,
-                    height: portfolioPhase < 2 || portfolioPhase >= 3 ? 0 : "auto",
-                    marginBottom: portfolioPhase < 2 || portfolioPhase >= 3 ? 0 : 4,
+                    opacity: portfolioPhase >= 1 && portfolioPhase < 3 ? 1 : 0,
+                    y: portfolioPhase >= 1 && portfolioPhase < 3 ? 0 : portfolioPhase >= 3 ? -12 : 8,
+                    height: portfolioPhase < 1 || portfolioPhase >= 3 ? 0 : "auto",
+                    marginBottom: portfolioPhase < 1 || portfolioPhase >= 3 ? 0 : 4,
                   }}
                   transition={{ duration: 0.5 }}
                 >
@@ -404,14 +404,20 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
                 </AnimatePresence>
               </div>
               <motion.p
-                className="mx-auto mt-2 max-w-xl text-center text-[1.05rem] font-medium leading-relaxed"
+                className="mx-auto mt-1 max-w-2xl text-center text-[1.05rem] font-medium leading-relaxed"
                 style={{ color: MUTED }}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: portfolioPhase >= 4 ? 1 : 0, y: portfolioPhase >= 4 ? 0 : 6 }}
+                initial={{ opacity: 1, y: 0 }}
+                animate={{
+                  opacity: portfolioPhase < 1 || portfolioPhase >= 4 ? 1 : 0,
+                  y: portfolioPhase < 1 || portfolioPhase >= 4 ? 0 : 6,
+                }}
                 transition={{ duration: 0.4 }}
               >
-                Every customer–end market combination gets its own model — continuously{" "}
-                <span className="font-bold" style={{ color: NAVY, whiteSpace: "nowrap", textDecoration: "underline", textDecorationColor: STRAT_BLUE, textUnderlineOffset: "4px", textDecorationThickness: "2px" }}>recalibrated as the market shifts</span>.
+                {portfolioPhase < 1
+                  ? "Each with unique price sensitivities, calibrated independently."
+                  : <>Every customer–end market combination gets its own model — continuously{" "}
+                    <span className="font-bold" style={{ color: NAVY, whiteSpace: "nowrap", textDecoration: "underline", textDecorationColor: STRAT_BLUE, textUnderlineOffset: "4px", textDecorationThickness: "2px" }}>recalibrated as the market shifts</span>.</>
+                }
               </motion.p>
             </motion.div>
           )}
@@ -421,7 +427,7 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
               className="absolute inset-0 flex flex-col items-center justify-start"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
+              exit={{ opacity: 0, transition: { duration: 0.15 } }}
               transition={{ duration: 0.5 }}
             >
               <motion.h2

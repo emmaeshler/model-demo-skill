@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { TrendingUp, Target, ShieldCheck, ArrowDownRight, Zap } from "lucide-react";
+import { useShareMode } from "@/lib/share-context";
 
 const NAVY = "#00446A";
 const ORANGE = "#E56910";
@@ -167,6 +168,7 @@ const STEP_NARRATIVES = [
 export const PROFIT_GROWTH_TOTAL_STEPS = 5;
 
 export function ProfitGrowthSlide({ step = 0, onAutoAdvance, skipAnimation }: { step: number; onAutoAdvance?: () => void; skipAnimation?: boolean }) {
+  const { shareMode } = useShareMode();
   const showChart = step >= 1;
   const announcing = step === 2;
   const showScan = step >= 3;
@@ -178,7 +180,7 @@ export function ProfitGrowthSlide({ step = 0, onAutoAdvance, skipAnimation }: { 
   const scanning = showScan && !showSweep && modelScanIdx >= 0;
 
   useEffect(() => {
-    if (skipAnimation || step !== 1) return;
+    if (skipAnimation || shareMode || step !== 1) return;
     let cycle = 0;
     const timer = setInterval(() => {
       cycle++;
@@ -193,10 +195,10 @@ export function ProfitGrowthSlide({ step = 0, onAutoAdvance, skipAnimation }: { 
       });
     }, HIGHLIGHT_CYCLE_MS);
     return () => clearInterval(timer);
-  }, [step, onAutoAdvance, skipAnimation]);
+  }, [step, onAutoAdvance, skipAnimation, shareMode]);
 
   useEffect(() => {
-    if (skipAnimation) { setModelScanIdx(-1); return; }
+    if (skipAnimation || shareMode) { setModelScanIdx(-1); return; }
     if (!showScan || showSweep) {
       const t = setTimeout(() => setModelScanIdx(-1));
       return () => clearTimeout(t);
@@ -411,9 +413,10 @@ export function ProfitGrowthSlide({ step = 0, onAutoAdvance, skipAnimation }: { 
                   />
 
                   {DOTS.map((dot, i) => {
+                    if (shareMode && i % 3 !== 0) return null;
                     const isManualHL = step === 1 && HIGHLIGHT_GROUPS[highlightIdx]?.includes(i);
                     const isModelHL = scanning && MODEL_SCAN_GROUPS[modelScanIdx]?.includes(i);
-                    const sweepDelay = DOT_SWEEP_DELAY[i];
+                    const sweepDelay = shareMode ? 0 : DOT_SWEEP_DELAY[i];
 
                     let opacity = 0.15;
                     let scale = 1;
@@ -440,7 +443,7 @@ export function ProfitGrowthSlide({ step = 0, onAutoAdvance, skipAnimation }: { 
                     return (
                       <motion.circle
                         key={i}
-                        r={2.8}
+                        r={shareMode ? 3.2 : 2.8}
                         initial={{ opacity: 0, scale: 0, cx: dot.sqX, cy: dot.sqY }}
                         animate={{ opacity, scale, fill, cx, cy }}
                         transition={{
