@@ -26,7 +26,7 @@ const NOTES: Record<string, string[]> = {
     "The model scans all four data dimensions simultaneously — orders, market signals, customer profiles, and win/loss history.",
     "Every past pricing decision — win or loss — teaches the model about price sensitivity.",
   ],
-  "driver-importance:9": [
+  "driver-importance:6": [
     "Here are the five factors the model selected as the most important drivers for your pricing.",
     "Each one was chosen because it explains a meaningful share of price variance in your data.",
   ],

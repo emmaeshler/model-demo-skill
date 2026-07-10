@@ -1,10 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   EASE, SPOTLIGHTS, DRIVERS, MODEL_DRIVERS, CategoryIcon, MUTED,
 } from "./power-slide-data";
 import { useShareMode } from "@/lib/share-context";
+
+const RAIL_ORDER: Record<string, number> = { CUSTOMER: 0, PRODUCT: 1, MARKET: 3, ORDER: 2 };
 
 interface BottomCardsProps {
   chartStep: number;
@@ -15,12 +18,28 @@ interface BottomCardsProps {
 export function BottomCards({ chartStep, scanCardCount, driversRevealed }: BottomCardsProps) {
   const { shareMode } = useShareMode();
 
+  const [flyTargets] = useState(() => {
+    const w = typeof window !== "undefined" ? window.innerWidth : 1400;
+    const h = typeof window !== "undefined" ? window.innerHeight : 900;
+    return SPOTLIGHTS.map((s) => {
+      const railIdx = RAIL_ORDER[s.label] ?? 0;
+      return {
+        x: -(w * 0.38),
+        y: -(h * 0.22) + railIdx * 46,
+      };
+    });
+  });
+
+  const showScanCards =
+    (chartStep === 1 && scanCardCount > 0 && !driversRevealed) || chartStep === 2;
+  const isFlying = chartStep === 2;
+
   return (
     <AnimatePresence mode="wait">
-      {chartStep === 1 && scanCardCount > 0 && !driversRevealed && (
+      {showScanCards && (
         <motion.div
           key="scan-cards"
-          className="flex flex-col items-center gap-1.5 w-full overflow-hidden -mt-10"
+          className={`flex flex-col items-center gap-1.5 w-full ${isFlying ? "overflow-visible" : "overflow-hidden"} -mt-10`}
           style={{ maxWidth: "calc(100% - 2rem)", paddingLeft: "5%", paddingRight: "10%" }}
           initial={{ opacity: 0, y: 16, height: 0 }}
           animate={{ opacity: 1, y: 0, height: "auto" }}
@@ -30,9 +49,8 @@ export function BottomCards({ chartStep, scanCardCount, driversRevealed }: Botto
           <motion.div
             className="text-[0.7rem] font-semibold tracking-[0.08em] uppercase"
             style={{ color: MUTED }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.4 }}
+            animate={{ opacity: isFlying ? 0 : 1 }}
+            transition={{ duration: isFlying ? 0.2 : 0.4 }}
           >
             Dimensions identified
           </motion.div>
@@ -42,7 +60,7 @@ export function BottomCards({ chartStep, scanCardCount, driversRevealed }: Botto
             const isActive = i === scanCardCount - 1;
             const isRevealed = i < scanCardCount;
             const allDone = scanCardCount >= 4;
-            if (!isRevealed) return null;
+            if (!isRevealed && !isFlying) return null;
             return (
               <motion.div
                 key={s.label}
@@ -53,15 +71,24 @@ export function BottomCards({ chartStep, scanCardCount, driversRevealed }: Botto
                   borderColor: `${d.color}20`,
                   backgroundColor: "rgba(255,255,255,0.95)",
                 }}
-                initial={{ opacity: 0, y: 12, scale: 0.95 }}
-                animate={{
+                initial={isFlying ? false : { opacity: 0, y: 12, scale: 0.95 }}
+                animate={isFlying ? {
+                  opacity: 0,
+                  x: flyTargets[i].x,
+                  y: flyTargets[i].y,
+                  scale: 0.3,
+                } : {
                   opacity: allDone || isActive ? 1 : 0.55,
                   y: 0,
                   scale: 1,
                 }}
-                transition={{ duration: 0.5, ease: EASE }}
+                transition={isFlying ? {
+                  duration: 0.65,
+                  delay: 0.05 + i * 0.08,
+                  ease: EASE,
+                } : { duration: 0.5, ease: EASE }}
               >
-                {isActive && !allDone && (
+                {isActive && !allDone && !isFlying && (
                   <motion.div
                     className="absolute top-0 left-0 right-0 h-[2px]"
                     style={{
@@ -75,7 +102,7 @@ export function BottomCards({ chartStep, scanCardCount, driversRevealed }: Botto
                 <div className="px-2.5 py-1.5">
                   <div className="flex items-center gap-1.5">
                     <div className="relative flex-shrink-0">
-                      {isActive && !allDone && (
+                      {isActive && !allDone && !isFlying && (
                         <motion.div
                           className="absolute inset-0 rounded-full"
                           style={{ backgroundColor: d.color }}

@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useShareMode } from "@/lib/share-context";
 
 const NAVY = "#00446A";
 const ORANGE = "#E56910";
@@ -26,6 +27,7 @@ const fadeUp = (delay: number) => ({
 });
 
 export function ResolutionAlgorithmSlide() {
+  const { shareMode } = useShareMode();
   return (
     <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-6xl flex-col justify-center gap-4 px-6">
       <motion.div {...fadeUp(0)}>
@@ -155,8 +157,10 @@ export function ResolutionAlgorithmSlide() {
               <div className="flex flex-col items-center">
                 <svg width="40" height="40" viewBox="0 0 40 40">
                   <circle cx="20" cy="20" r="16" fill="none" stroke={TEAL} strokeWidth="2" opacity={0.2} />
-                  <path d="M20 20 L20 4" fill="none" stroke={TEAL} strokeWidth="2" strokeLinecap="round">
-                    <animateTransform attributeName="transform" type="rotate" from="0 20 20" to="360 20 20" dur="3s" repeatCount="indefinite" />
+                  <path d="M20 20 L20 4" fill="none" stroke={TEAL} strokeWidth="2" strokeLinecap="round"
+                    transform={shareMode ? "rotate(45 20 20)" : undefined}
+                  >
+                    {!shareMode && <animateTransform attributeName="transform" type="rotate" from="0 20 20" to="360 20 20" dur="3s" repeatCount="indefinite" />}
                   </path>
                 </svg>
                 <p className="text-[9px] text-muted-foreground">User Iteration</p>

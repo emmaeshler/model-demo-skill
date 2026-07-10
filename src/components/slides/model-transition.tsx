@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { useShareMode } from "@/lib/share-context";
 
 const ML_GREEN = "#3A7D44";
 const STRAT_BLUE = "#2A7BA5";
@@ -13,17 +14,19 @@ const CX = SIZE / 2;
 const CY = SIZE / 2;
 
 export function ModelTransitionSlide({ onDone }: { onDone: () => void }) {
+  const { shareMode } = useShareMode();
   // 0=circle visible, 1=halves split apart, 2=halves morph to sidebar
-  const [phase, setPhase] = useState(0);
+  const [phase, setPhase] = useState(shareMode ? 2 : 0);
 
   useEffect(() => {
+    if (shareMode) { onDone(); return; }
     const timers = [
       setTimeout(() => setPhase(1), 150),
       setTimeout(() => setPhase(2), 700),
       setTimeout(onDone, 1500),
     ];
     return () => timers.forEach(clearTimeout);
-  }, [onDone]);
+  }, [onDone, shareMode]);
 
   const ease = [0.22, 1, 0.36, 1] as const;
 

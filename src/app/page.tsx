@@ -104,6 +104,7 @@ interface RailStepConfig {
   showEngine: boolean;
   showFactors: boolean;
   driversFlyIn: boolean;
+  factorsFlyIn: boolean;
   activeCustomer?: number;
   refineStepForCustomer?: number;
 }
@@ -117,7 +118,7 @@ const ALL_CATS: CategoryKey[] = ["customer", "product", "order", "market"];
    ──────────────────────────────────────────────────────────── */
 type RailContent =
   | { show: "engine-only"; engine: EngineFocus }
-  | { show: "factors"; engine: EngineFocus; active: CategoryKey[] }
+  | { show: "factors"; engine: EngineFocus; active: CategoryKey[]; flyIn?: boolean }
   | { show: "drivers"; flyIn: boolean }
   | { show: "mini-exec"; activeCustomer?: number; refineStepForCustomer?: number }
 
@@ -125,20 +126,18 @@ const RAIL_TIMELINE: Partial<Record<number, (RailContent | null)[]>> = {
   [POWER_INDEX]: [
     /* 0  */ { show: "engine-only", engine: null },
     /* 1  */ { show: "engine-only", engine: "ml" },
+    /* 2  transition */ { show: "factors", engine: "both", active: [], flyIn: true },
   ],
   [DRIVER_IMP_INDEX]: [
     /* 0  intro  */ { show: "factors", engine: "strat", active: [] },
     /* 1  cust   */ { show: "factors", engine: "strat", active: ["customer"] },
-    /* 2  cust*  */ { show: "factors", engine: "strat", active: ["customer"] },
-    /* 3  prod   */ { show: "factors", engine: "strat", active: ["product"] },
-    /* 4  prod*  */ { show: "factors", engine: "strat", active: ["product"] },
-    /* 5  order  */ { show: "factors", engine: "strat", active: ["order"] },
-    /* 6  order* */ { show: "factors", engine: "strat", active: ["order"] },
-    /* 7  mkt    */ { show: "factors", engine: "strat", active: ["market"] },
-    /* 8  mkt*   */ { show: "factors", engine: "strat", active: ["market"] },
-    /* 9  summary chips */ { show: "factors", engine: "strat", active: ["customer", "product", "order", "market"] },
-    /* 10 summary drivers */ { show: "drivers", flyIn: true },
-    /* 11 vortex */ { show: "drivers", flyIn: false },
+    /* 2  prod   */ { show: "factors", engine: "strat", active: ["product"] },
+    /* 3  order  */ { show: "factors", engine: "strat", active: ["order"] },
+    /* 4  mkt    */ { show: "factors", engine: "strat", active: ["market"] },
+    /* 5  consolidated */ { show: "factors", engine: "strat", active: ["customer", "product", "order", "market"] },
+    /* 6  summary chips */ { show: "factors", engine: "strat", active: ["customer", "product", "order", "market"] },
+    /* 7  summary drivers */ { show: "drivers", flyIn: true },
+    /* 8  vortex */ { show: "drivers", flyIn: false },
   ],
   [EXECUTE_INDEX]: [
     /* 0  */ { show: "drivers", flyIn: false },
@@ -170,16 +169,16 @@ function compileRailTimeline(timeline: Partial<Record<number, (RailContent | nul
       const key = `${si}-${sub}`;
       switch (c.show) {
         case "engine-only":
-          out[key] = { rail: "model", engine: c.engine, categories: [], drivers: false, showEngine: true, showFactors: false, driversFlyIn: false };
+          out[key] = { rail: "model", engine: c.engine, categories: [], drivers: false, showEngine: true, showFactors: false, driversFlyIn: false, factorsFlyIn: false };
           break;
         case "factors":
-          out[key] = { rail: "model", engine: c.engine, categories: c.active, drivers: false, showEngine: true, showFactors: true, driversFlyIn: false };
+          out[key] = { rail: "model", engine: c.engine, categories: c.active, drivers: false, showEngine: true, showFactors: true, driversFlyIn: false, factorsFlyIn: c.flyIn ?? false };
           break;
         case "drivers":
-          out[key] = { rail: "model", engine: null, categories: [], drivers: true, showEngine: false, showFactors: true, driversFlyIn: c.flyIn };
+          out[key] = { rail: "model", engine: null, categories: [], drivers: true, showEngine: false, showFactors: true, driversFlyIn: c.flyIn, factorsFlyIn: false };
           break;
         case "mini-exec":
-          out[key] = { rail: "mini-exec", engine: null, categories: [], drivers: false, showEngine: false, showFactors: false, driversFlyIn: false, activeCustomer: c.activeCustomer, refineStepForCustomer: c.refineStepForCustomer };
+          out[key] = { rail: "mini-exec", engine: null, categories: [], drivers: false, showEngine: false, showFactors: false, driversFlyIn: false, factorsFlyIn: false, activeCustomer: c.activeCustomer, refineStepForCustomer: c.refineStepForCustomer };
           break;
       }
     }
@@ -197,6 +196,7 @@ function ModelStatusRail({
   customerDotColor,
   driversFlyIn = false,
   showFactors = false,
+  factorsFlyIn = false,
 }: {
   activeCategories: CategoryKey[];
   drivers?: { label: string; color: string; tint: string }[];
@@ -205,6 +205,7 @@ function ModelStatusRail({
   customerDotColor?: string;
   driversFlyIn?: boolean;
   showFactors?: boolean;
+  factorsFlyIn?: boolean;
 }) {
   const activeSet = useMemo(() => new Set(activeCategories), [activeCategories]);
   const [flyX] = useState(() => typeof window !== "undefined" ? window.innerWidth * 0.52 : 700);
@@ -362,25 +363,40 @@ function ModelStatusRail({
             >
               {FACTOR_CATEGORIES.map(({ key, label, color, tint }, i) => {
                 const active = activeSet.has(key);
+                const flyDelay = 0.15 + i * 0.12;
                 return (
                   <motion.div
                     key={key}
                     className="flex items-center gap-2 rounded-md border px-2 py-1.5"
-                    initial={{ x: 120, opacity: 0, scale: 1.15 }}
+                    initial={factorsFlyIn
+                      ? { x: flyX * 0.8, y: flyH * 0.2, opacity: 0, scale: 0.4 }
+                      : { x: 120, opacity: 0, scale: 1.15 }
+                    }
                     animate={{
                       x: 0,
+                      y: 0,
                       opacity: 1,
                       scale: 1,
                       backgroundColor: active ? tint : "#f3f4f6",
                       borderColor: active ? color : "transparent",
                     }}
-                    transition={{
-                      x: { duration: 0.45, delay: 0.35 + i * 0.09, ease: [0.22, 1, 0.36, 1] },
-                      opacity: { duration: 0.3, delay: 0.35 + i * 0.09 },
-                      scale: { duration: 0.4, delay: 0.35 + i * 0.09, ease: [0.22, 1, 0.36, 1] },
-                      backgroundColor: { duration: 0.2 },
-                      borderColor: { duration: 0.2 },
-                    }}
+                    transition={factorsFlyIn
+                      ? {
+                          x: { duration: 0.7, delay: flyDelay, ease: [0.22, 1, 0.36, 1] },
+                          y: { duration: 0.7, delay: flyDelay, ease: [0.22, 1, 0.36, 1] },
+                          opacity: { duration: 0.35, delay: flyDelay },
+                          scale: { duration: 0.6, delay: flyDelay, ease: [0.22, 1, 0.36, 1] },
+                          backgroundColor: { duration: 0.2 },
+                          borderColor: { duration: 0.2 },
+                        }
+                      : {
+                          x: { duration: 0.45, delay: 0.35 + i * 0.09, ease: [0.22, 1, 0.36, 1] },
+                          opacity: { duration: 0.3, delay: 0.35 + i * 0.09 },
+                          scale: { duration: 0.4, delay: 0.35 + i * 0.09, ease: [0.22, 1, 0.36, 1] },
+                          backgroundColor: { duration: 0.2 },
+                          borderColor: { duration: 0.2 },
+                        }
+                    }
                   >
                     <div
                       className="size-2 shrink-0 rounded"
@@ -589,10 +605,10 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
       { index: POWER_INDEX, label: "Finding patterns", subStep: 1 },
       { index: DRIVER_IMP_INDEX, label: "Pricing factors", subStep: 0 },
       { index: DRIVER_IMP_INDEX, label: "Customer", subStep: 1 },
-      { index: DRIVER_IMP_INDEX, label: "Product", subStep: 3 },
-      { index: DRIVER_IMP_INDEX, label: "Order", subStep: 5 },
-      { index: DRIVER_IMP_INDEX, label: "Market", subStep: 7 },
-      { index: DRIVER_IMP_INDEX, label: "Your model drivers", subStep: 9 },
+      { index: DRIVER_IMP_INDEX, label: "Product", subStep: 2 },
+      { index: DRIVER_IMP_INDEX, label: "Order", subStep: 3 },
+      { index: DRIVER_IMP_INDEX, label: "Market", subStep: 4 },
+      { index: DRIVER_IMP_INDEX, label: "Your model drivers", subStep: 6 },
     ],
   },
   {
@@ -1228,12 +1244,14 @@ export function Home() {
         const goingBack = target < slide;
 
         // Going back into a sub-step slide from the next slide → land on last step
+        // Skip the power slide's auto-advance transition step
         const targetMax = subStepConfig[target] ?? 0;
         if (goingBack && targetMax > 0 && slide === target + 1) {
+          const landStep = target === POWER_INDEX ? targetMax - 2 : targetMax - 1;
           startTransition(() => {
             setSkipAnimation(true);
             setSlide(target);
-            setSubStep(targetMax - 1);
+            setSubStep(Math.max(0, landStep));
           });
           return;
         }
@@ -1415,6 +1433,7 @@ export function Home() {
             customerDotColor={slide === EXECUTE_INDEX ? CUSTOMER_DOT_COLORS[executeCustomer] : undefined}
             driversFlyIn={railCfg.driversFlyIn}
             showFactors={railCfg.showFactors}
+            factorsFlyIn={railCfg.factorsFlyIn}
           />
         );
       })()}

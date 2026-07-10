@@ -16,7 +16,7 @@ import { FactorGrid } from "./power-slide-factors";
 import { ConvergenceModel } from "./power-slide-convergence";
 import { BottomCards } from "./power-slide-bottom";
 
-export const POWER_TOTAL_STEPS = 2;
+export const POWER_TOTAL_STEPS = 3;
 
 export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCategoryChange, isActive = true }: { step: number; onAutoAdvance?: () => void; skipAnimation?: boolean; onActiveCategoryChange?: (categories: string[]) => void; isActive?: boolean }) {
   const { shareMode } = useShareMode();
@@ -120,6 +120,13 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
     const s4 = setTimeout(() => setScanCardCount(4), cardInterval * 3);
     return () => { clearTimeout(s1); clearTimeout(s2); clearTimeout(s3); clearTimeout(s4); };
   }, [isActive, chartStep, skipAnimation, onAutoAdvance]);
+
+  useEffect(() => {
+    if (!isActive || chartStep !== 2) return;
+    if (skipAnimation || shareMode) { onAutoAdvance?.(); return; }
+    const t = setTimeout(() => onAutoAdvance?.(), 900);
+    return () => clearTimeout(t);
+  }, [isActive, chartStep, skipAnimation, shareMode, onAutoAdvance]);
 
   const clustered = chartStep >= 2;
   const factorsVisible = false;

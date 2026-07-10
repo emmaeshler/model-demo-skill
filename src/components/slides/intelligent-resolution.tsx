@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useShareMode } from "@/lib/share-context";
 
 const NAVY = "#00446A";
 const ORANGE = "#E56910";
@@ -100,6 +101,7 @@ function HighlightedToken({
   annotation: Annotation;
   active: boolean;
 }) {
+  const { shareMode } = useShareMode();
   return (
     <motion.span
       className="relative inline-block rounded px-0.5 font-semibold"
@@ -108,7 +110,7 @@ function HighlightedToken({
         color: active ? annotation.color : "inherit",
         borderBottom: active ? `2px solid ${annotation.color}` : "2px solid transparent",
       }}
-      transition={{ duration: 0.7, delay: active ? annotation.delay : 0 }}
+      transition={{ duration: shareMode ? 0.3 : 0.7, delay: active && !shareMode ? annotation.delay : 0 }}
     >
       {annotation.text}
     </motion.span>
@@ -178,6 +180,7 @@ function EmailCard({ step, analyzing }: { step: number; analyzing: boolean }) {
 }
 
 function AnnotationCards() {
+  const { shareMode } = useShareMode();
   return (
     <div className="grid w-full max-w-4xl grid-cols-5 gap-2.5">
       {ANNOTATIONS.map((a) => (
@@ -185,9 +188,9 @@ function AnnotationCards() {
           key={a.id}
           className="rounded-lg border bg-white p-3 shadow-sm"
           style={{ borderTopWidth: 3, borderTopColor: a.color }}
-          initial={{ opacity: 0, y: 16 }}
+          initial={shareMode ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: a.delay + 0.3, duration: 0.6 }}
+          transition={{ delay: shareMode ? 0 : a.delay + 0.3, duration: shareMode ? 0.2 : 0.6 }}
         >
           <p className="text-xs font-bold" style={{ color: a.color }}>
             {a.title}
@@ -202,15 +205,16 @@ function AnnotationCards() {
 }
 
 function ConnectorArrows() {
+  const { shareMode } = useShareMode();
   return (
     <div className="flex w-full max-w-xl justify-around py-1">
       {ANNOTATIONS.map((a) => (
         <motion.div
           key={a.id}
           className="flex flex-col items-center"
-          initial={{ opacity: 0 }}
+          initial={shareMode ? { opacity: 0.5 } : { opacity: 0 }}
           animate={{ opacity: 0.5 }}
-          transition={{ delay: a.delay + 0.2, duration: 0.5 }}
+          transition={{ delay: shareMode ? 0 : a.delay + 0.2, duration: shareMode ? 0.2 : 0.5 }}
         >
           <svg width="2" height="20" className="overflow-visible">
             <motion.line
@@ -218,16 +222,16 @@ function ConnectorArrows() {
               stroke={a.color}
               strokeWidth={1.5}
               strokeDasharray="3 2"
-              initial={{ pathLength: 0 }}
+              initial={{ pathLength: shareMode ? 1 : 0 }}
               animate={{ pathLength: 1 }}
-              transition={{ delay: a.delay + 0.2, duration: 0.5 }}
+              transition={{ delay: shareMode ? 0 : a.delay + 0.2, duration: shareMode ? 0 : 0.5 }}
             />
             <motion.polygon
               points="-3,20 1,26 5,20"
               fill={a.color}
-              initial={{ opacity: 0 }}
+              initial={shareMode ? { opacity: 1 } : { opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: a.delay + 0.5 }}
+              transition={{ delay: shareMode ? 0 : a.delay + 0.5 }}
             />
           </svg>
         </motion.div>
@@ -368,7 +372,8 @@ function ConfiguredQuote() {
   );
 }
 
-export function IntelligentResolutionSlide({ step = 0 }: { step: number }) {
+export function IntelligentResolutionSlide({ step = 0, skipAnimation }: { step: number; skipAnimation?: boolean }) {
+  const { shareMode } = useShareMode();
   // step 0: subtitle only
   // step 1: email card appears
   // step 2: analysis annotations

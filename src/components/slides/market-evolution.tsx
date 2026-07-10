@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { makeCurve } from "../visuals/demand-curve";
+import { useShareMode } from "@/lib/share-context";
 
 const NAVY = "#00446A";
 const ORANGE = "#E56910";
@@ -65,14 +66,16 @@ const fadeUp = (delay: number) => ({
 });
 
 export function MarketEvolutionSlide() {
+  const { shareMode } = useShareMode();
   const [stateIdx, setStateIdx] = useState(0);
 
   useEffect(() => {
+    if (shareMode) return;
     const timer = setInterval(() => {
       setStateIdx((i) => (i + 1) % STATES.length);
     }, 3500);
     return () => clearInterval(timer);
-  }, []);
+  }, [shareMode]);
 
   const state = STATES[stateIdx];
   const curve = useMemo(() => makeCurve(SLOT, state.steepness), [state.steepness]);

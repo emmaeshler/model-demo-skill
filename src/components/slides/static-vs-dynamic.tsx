@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { makeCurve } from "../visuals/demand-curve";
+import { useShareMode } from "@/lib/share-context";
 
 const NAVY = "#00446A";
 const ORANGE = "#E56910";
@@ -111,6 +112,7 @@ function StaticTree() {
 }
 
 function DynamicCurve() {
+  const { shareMode } = useShareMode();
   const revenuePathD = (() => {
     const pts: string[] = [];
     const steps = 40;
@@ -149,9 +151,9 @@ function DynamicCurve() {
         stroke={NAVY}
         strokeWidth={2.5}
         strokeLinecap="round"
-        initial={{ pathLength: 0 }}
+        initial={{ pathLength: shareMode ? 1 : 0 }}
         animate={{ pathLength: 1 }}
-        transition={{ delay: 0.2, duration: 0.8, ease: "easeInOut" }}
+        transition={{ delay: shareMode ? 0 : 0.2, duration: shareMode ? 0 : 0.8, ease: "easeInOut" }}
       />
 
       {/* Customer dots */}
@@ -160,9 +162,9 @@ function DynamicCurve() {
         return (
           <motion.g
             key={c.label}
-            initial={{ opacity: 0, scale: 0 }}
+            initial={shareMode ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.6 + i * 0.15 }}
+            transition={{ delay: shareMode ? 0 : 0.6 + i * 0.15 }}
           >
             <circle cx={pt.x} cy={pt.y} r={6} fill={c.color} />
             <line x1={pt.x} y1={pt.y + 7} x2={pt.x} y2={BASE_Y} stroke={c.color} strokeWidth={0.7} strokeDasharray="3 2" opacity={0.3} />

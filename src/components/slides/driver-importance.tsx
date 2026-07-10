@@ -12,7 +12,7 @@ import { useShareMode } from "@/lib/share-context";
 
 const RED = "#DC2626";
 
-export const DRIVER_IMPORTANCE_TOTAL_STEPS = 12;
+export const DRIVER_IMPORTANCE_TOTAL_STEPS = 9;
 
 type CategoryKey = "customer" | "product" | "order" | "market";
 const REVEAL_ORDER: CategoryKey[] = ["customer", "product", "order", "market"];
@@ -106,46 +106,64 @@ export function DriverImportanceSlide({
   onAutoAdvance?: () => void;
 }) {
   const { shareMode } = useShareMode();
-  const isVortex = step === 11;
-  const isSummary = step >= 9 && step <= 10;
-  const summaryStep = isSummary ? step - 9 : (isVortex ? 1 : -1);
+  const isVortex = step === 8;
+  const isSummary = step >= 6 && step <= 7;
+  const summaryStep = isSummary ? step - 6 : (isVortex ? 1 : -1);
+  const isConsolidated = step === 5;
   const isIntro = step === 0;
-  const isChart = !isIntro && !isSummary && !isVortex;
-  const categoryIndex = isChart ? Math.floor((step - 1) / 2) : -1;
-  const isActionPhase = isChart && (step - 1) % 2 === 1;
+  const isChart = step >= 1 && step <= 4;
+  const categoryIndex = isChart ? step - 1 : -1;
   const activeCategory = isChart ? REVEAL_ORDER[categoryIndex] : null;
 
-  /* Phase 1: actionRevealed (600ms) → keep/add items appear */
-  const [actionRevealed, setActionRevealed] = useState(!!skipAnimation && isActionPhase);
+  /* Auto-phase 1: after bars animate in, reveal keep/add annotations */
+  const [actionRevealed, setActionRevealed] = useState(!!skipAnimation && isChart);
   useEffect(() => {
-    if (!isActive || !isActionPhase) { setActionRevealed(false); return; }
-    if (skipAnimation) { setActionRevealed(true); return; }
+    if (!isActive || !isChart) { setActionRevealed(false); return; }
+    if (skipAnimation || shareMode) { setActionRevealed(true); return; }
     setActionRevealed(false);
-    const t = setTimeout(() => setActionRevealed(true), 600);
+    const t = setTimeout(() => setActionRevealed(true), 1200);
     return () => clearTimeout(t);
-  }, [isActive, step, skipAnimation, isActionPhase]);
+  }, [isActive, step, skipAnimation, isChart]);
 
   /* Phase 2: secondPhase (900ms after phase 1) → remove items (or market keep) */
   const [secondPhase, setSecondPhase] = useState(!!skipAnimation);
   useEffect(() => {
     if (!actionRevealed) { setSecondPhase(false); return; }
-    if (skipAnimation) { setSecondPhase(true); return; }
+    if (skipAnimation || shareMode) { setSecondPhase(true); return; }
     setSecondPhase(false);
     const t = setTimeout(() => setSecondPhase(true), 900);
     return () => clearTimeout(t);
   }, [actionRevealed, skipAnimation]);
 
+  const [consolidatedPhase, setConsolidatedPhase] = useState(0);
+  useEffect(() => {
+    if (!isActive || !isConsolidated) { setConsolidatedPhase(0); return; }
+    if (skipAnimation) { setConsolidatedPhase(0); return; }
+    if (shareMode) { setConsolidatedPhase(2); onAutoAdvance?.(); return; }
+    setConsolidatedPhase(0);
+    const t1 = setTimeout(() => setConsolidatedPhase(1), 1400);
+    const t2 = setTimeout(() => {
+      setConsolidatedPhase(2);
+      onAutoAdvance?.();
+    }, 2800);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [isActive, isConsolidated, skipAnimation, onAutoAdvance, shareMode]);
+
   const removedSet = useMemo(() => {
     const set = new Set<string>();
-    for (let i = 0; i < categoryIndex; i++) {
-      CATEGORY_REMOVALS[REVEAL_ORDER[i]].forEach(l => set.add(l));
+    if (isConsolidated) {
+      for (const cat of REVEAL_ORDER) CATEGORY_REMOVALS[cat].forEach(l => set.add(l));
+    } else {
+      for (let i = 0; i < categoryIndex; i++) {
+        CATEGORY_REMOVALS[REVEAL_ORDER[i]].forEach(l => set.add(l));
+      }
     }
     return set;
-  }, [categoryIndex]);
+  }, [categoryIndex, isConsolidated]);
 
   const revealedSet = useMemo(
-    () => new Set(isIntro ? [] : REVEAL_ORDER.slice(0, categoryIndex + 1)),
-    [isIntro, categoryIndex],
+    () => new Set(isIntro ? [] : isConsolidated ? REVEAL_ORDER : REVEAL_ORDER.slice(0, categoryIndex + 1)),
+    [isIntro, categoryIndex, isConsolidated],
   );
 
   const visibleFactors = useMemo(() => {
@@ -160,26 +178,24 @@ export function DriverImportanceSlide({
 
   const [clickReady, setClickReady] = useState(!!skipAnimation);
   useEffect(() => {
-    if (!isActive || isSummary || isVortex) { setClickReady(false); return; }
-    if (skipAnimation) { setClickReady(true); return; }
+    if (!isActive || isSummary || isVortex || isConsolidated) { setClickReady(false); return; }
+    if (skipAnimation || shareMode) { setClickReady(true); return; }
     setClickReady(false);
     if (isIntro) {
       const t = setTimeout(() => setClickReady(true), 800);
       return () => clearTimeout(t);
     }
-    if (isActionPhase) {
+    if (isChart) {
       if (!secondPhase) return;
       const t = setTimeout(() => setClickReady(true), 600);
       return () => clearTimeout(t);
     }
-    const t = setTimeout(() => setClickReady(true), 600 + visibleFactors.length * 30);
-    return () => clearTimeout(t);
-  }, [isActive, isIntro, isActionPhase, secondPhase, isSummary, isVortex, skipAnimation, step, visibleFactors.length]);
+  }, [isActive, isIntro, isChart, secondPhase, isSummary, isVortex, isConsolidated, skipAnimation, step]);
 
   function getDisposition(f: { label: string; category: string }): Disposition | null {
     const catKey = f.category as CategoryKey;
     const catStep = REVEAL_ORDER.indexOf(catKey);
-    if (catStep !== categoryIndex || !isActionPhase || !actionRevealed) return null;
+    if (catStep !== categoryIndex || !actionRevealed) return null;
     // Market: add is phase 1, keep is phase 2
     if (f.label === MARKET_ADD_FACTOR && catKey === "market") return "add";
     if (catKey === "market") return secondPhase ? "keep" : null;
@@ -237,7 +253,7 @@ export function DriverImportanceSlide({
   const [chipsReady, setChipsReady] = useState(!!skipAnimation);
   useEffect(() => {
     if (!isActive || !(isSummary || isVortex)) { setChipsReady(false); return; }
-    if (skipAnimation) { setChipsReady(true); return; }
+    if (skipAnimation || shareMode) { setChipsReady(true); return; }
     setChipsReady(false);
     const t = setTimeout(() => setChipsReady(true), 300);
     return () => clearTimeout(t);
@@ -272,7 +288,36 @@ export function DriverImportanceSlide({
       >
         <div className="mx-auto max-w-3xl text-center">
           <AnimatePresence mode="wait">
-            {isIntro ? (
+            {isConsolidated && consolidatedPhase >= 1 ? (
+              <motion.div
+                key="consolidated-list"
+                className="flex flex-col items-center gap-2"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.5, ease: EASE }}
+              >
+                <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: TEAL }}>
+                  Your model factors
+                </h2>
+              </motion.div>
+            ) : isConsolidated ? (
+              <motion.div
+                key="consolidated-bars"
+                className="flex flex-col items-center gap-2"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.5, ease: EASE }}
+              >
+                <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: TEAL }}>
+                  Your refined pricing factors
+                </h2>
+                <p className="mx-auto max-w-xl text-center text-[1.05rem] leading-relaxed" style={{ color: MUTED }}>
+                  13 factors refined from 22 — tuned to your business.
+                </p>
+              </motion.div>
+            ) : isIntro ? (
               <motion.div
                 key="intro"
                 className="flex flex-col items-center gap-2"
@@ -358,9 +403,13 @@ export function DriverImportanceSlide({
               className="absolute inset-0 flex justify-center"
               exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.35 } }}
             >
-              <div className="w-full max-w-5xl flex gap-3">
+              <div className="w-full max-w-5xl flex gap-3 relative">
                 {/* Bar chart column */}
-                <div className="flex-1 min-w-0">
+                <motion.div
+                  className="flex-1 min-w-0"
+                  animate={{ opacity: (isConsolidated && consolidatedPhase >= 1) ? 0 : 1 }}
+                  transition={{ duration: 0.5, ease: EASE }}
+                >
                   <motion.div
                     className="mb-2 text-[10px] font-semibold uppercase tracking-[0.1em]"
                     style={{ color: MUTED, paddingLeft: 178 }}
@@ -386,7 +435,7 @@ export function DriverImportanceSlide({
                         const isKeep = disposition === "keep";
 
                         const catKey = f.category as CategoryKey;
-                        const isActiveCategory = catKey === activeCategory && isActionPhase && actionRevealed;
+                        const isActiveCategory = catKey === activeCategory && actionRevealed;
                         const willBeRemoved = isActiveCategory && CATEGORY_REMOVALS[catKey]?.has(f.label);
                         const willBeKept = isActiveCategory && !CATEGORY_REMOVALS[catKey]?.has(f.label) && f.label !== MARKET_ADD_FACTOR;
 
@@ -551,9 +600,10 @@ export function DriverImportanceSlide({
                   >
                     * Percentage of explainable variance — how much each factor contributes to the model&rsquo;s pricing accuracy.
                   </motion.p>
-                </div>
+                </motion.div>
 
                 {/* Annotation column */}
+                {!isConsolidated && (
                 <div
                   className="w-[260px] shrink-0 relative"
                   style={{ minHeight: visibleFactors.length * ROW_H + 30 }}
@@ -574,6 +624,41 @@ export function DriverImportanceSlide({
                     ))}
                   </AnimatePresence>
                 </div>
+                )}
+
+                {/* Simple list that replaces bars during consolidated morph */}
+                <AnimatePresence>
+                  {isConsolidated && consolidatedPhase >= 1 && (
+                    <motion.div
+                      key="factor-list"
+                      className="absolute inset-0 flex justify-center pt-2"
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.5, delay: 0.15, ease: EASE }}
+                    >
+                      <div className="columns-2 gap-x-10 w-full max-w-lg">
+                        {visibleFactors.map((f, i) => (
+                          <motion.div
+                            key={f.label}
+                            className="flex items-center gap-2.5 py-1.5 break-inside-avoid"
+                            initial={{ opacity: 0, x: -12 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.35, delay: 0.2 + i * 0.04, ease: EASE }}
+                          >
+                            <span
+                              className="w-2 h-2 rounded-full shrink-0"
+                              style={{ backgroundColor: CATEGORY_COLORS[f.category] }}
+                            />
+                            <span className="text-[14px] font-semibold" style={{ color: NAVY }}>
+                              {f.label}
+                            </span>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </motion.div>
           )}
