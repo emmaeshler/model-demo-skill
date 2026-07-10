@@ -1608,7 +1608,13 @@ export function Home() {
       )}
 
       {glossaryOpen && <AnimationGlossary onClose={() => setGlossaryOpen(false)} />}
-      {walkthroughOpen && <WalkthroughOverlay onClose={() => setWalkthroughOpen(false)} />}
+      {walkthroughOpen && (
+        <WalkthroughOverlay
+          onClose={() => setWalkthroughOpen(false)}
+          onStartPresenting={mode === "presenter" ? startPresenting : undefined}
+          onEndPresenting={endPresenting}
+        />
+      )}
 
       {/* Presenter console overlay */}
       {presenting && !isAudience && (
@@ -1619,6 +1625,7 @@ export function Home() {
               <button
                 onClick={endPresenting}
                 className={cn("flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors", darkMode ? "border-white/15 bg-white/5 text-white/70 hover:border-red-500/30 hover:bg-red-500/20 hover:text-red-300" : "border-black/15 bg-black/5 text-gray-600 hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-600")}
+                data-wt="p-end-show"
               >
                 <X className="size-3.5" />
                 End Show
@@ -1634,7 +1641,7 @@ export function Home() {
             </div>
 
             {/* Center: Timer */}
-            <div className="absolute left-1/2 flex -translate-x-1/2 items-center gap-2">
+            <div className="absolute left-1/2 flex -translate-x-1/2 items-center gap-2" data-wt="p-timer">
               <span className={cn("font-mono text-xl font-semibold tabular-nums", darkMode ? "text-white" : "text-gray-900")}>
                 {formatElapsed(presentElapsed)}
               </span>
@@ -1726,7 +1733,7 @@ export function Home() {
           {/* Content area */}
           <div className="flex min-h-0 flex-1">
             {/* Left: Current slide + progress */}
-            <div className="flex flex-1 flex-col p-4">
+            <div className="flex flex-1 flex-col p-4" data-wt="p-slide-preview">
               <div className={cn("relative flex-1 overflow-hidden rounded-xl border", darkMode ? "border-white/10 bg-[#06283D]" : "border-black/10 bg-[#06283D]")}>
                 <iframe
                   src={iframeSrcRef.current}
@@ -1768,7 +1775,7 @@ export function Home() {
             </div>
 
             {/* Right panel */}
-            <div className={cn("flex w-[380px] shrink-0 flex-col border-l transition-colors", darkMode ? "border-white/10 bg-[#111]" : "border-black/10 bg-white")}>
+            <div className={cn("flex w-[380px] shrink-0 flex-col border-l transition-colors", darkMode ? "border-white/10 bg-[#111]" : "border-black/10 bg-white")} data-wt="p-notes-panel">
               {/* Next slide preview */}
               <div className={cn("shrink-0 border-b p-4", darkMode ? "border-white/10" : "border-black/10")}>
                 <h3 className={cn("mb-2 text-[10px] font-bold uppercase tracking-[0.15em]", darkMode ? "text-white/40" : "text-gray-400")}>

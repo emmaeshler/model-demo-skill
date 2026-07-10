@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, ChevronLeft, X } from "lucide-react";
+import { ChevronRight, ChevronLeft, X, MonitorPlay } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface WalkthroughStep {
@@ -11,9 +11,11 @@ interface WalkthroughStep {
   description: string;
   target: string;
   position: "top" | "bottom" | "left" | "right";
+  detour?: string;
+  detourNote?: string;
 }
 
-const STEPS: WalkthroughStep[] = [
+const MAIN_STEPS: WalkthroughStep[] = [
   {
     id: "nav-dropdown",
     title: "Section Navigator",
@@ -24,7 +26,7 @@ const STEPS: WalkthroughStep[] = [
   {
     id: "teams-toggle",
     title: "Teams Sharing Mode",
-    description: "Toggle this on when screen-sharing via Teams. It disables looping animations so they don't distract your audience.",
+    description: "Teams compresses your screen share, which can make animations look laggy. Toggle this on to limit motion so your presentation stays smooth for viewers.",
     target: "[data-wt='teams-toggle']",
     position: "bottom",
   },
@@ -34,6 +36,8 @@ const STEPS: WalkthroughStep[] = [
     description: "Opens a synced audience window you can share on Teams while keeping presenter notes and controls on your screen.",
     target: "[data-wt='presenter-mode']",
     position: "bottom",
+    detour: "presenter",
+    detourNote: "This will open a new browser tab for the audience view. Switch back to this tab to continue the tour.",
   },
   {
     id: "fullscreen",
@@ -65,6 +69,37 @@ const STEPS: WalkthroughStep[] = [
   },
 ];
 
+const PRESENTER_STEPS: WalkthroughStep[] = [
+  {
+    id: "p-slide-preview",
+    title: "Slide Preview",
+    description: "This is what your audience sees. A synced window opens on your second monitor (or for screen-sharing) showing the same content full screen.",
+    target: "[data-wt='p-slide-preview']",
+    position: "right",
+  },
+  {
+    id: "p-notes-panel",
+    title: "Speaker Notes & Next Slide",
+    description: "Your speaker notes for the current step appear here, along with a preview of the next slide so you always know what's coming.",
+    target: "[data-wt='p-notes-panel']",
+    position: "left",
+  },
+  {
+    id: "p-timer",
+    title: "Presentation Timer",
+    description: "A running timer to help you pace your talk. Pause or reset it with the controls on either side.",
+    target: "[data-wt='p-timer']",
+    position: "bottom",
+  },
+  {
+    id: "p-end-show",
+    title: "End Show",
+    description: "Closes the audience window and returns you to the normal editing view.",
+    target: "[data-wt='p-end-show']",
+    position: "bottom",
+  },
+];
+
 function getRect(selector: string): DOMRect | null {
   const el = document.querySelector(selector);
   return el?.getBoundingClientRect() ?? null;
@@ -74,21 +109,35 @@ const PAD = 6;
 const CARD_W = 340;
 const CARD_GAP = 14;
 
-export function WalkthroughOverlay({ onClose }: { onClose: () => void }) {
-  const [step, setStep] = useState(0);
+interface WalkthroughOverlayProps {
+  onClose: () => void;
+  onStartPresenting?: () => void;
+  onEndPresenting?: () => void;
+}
+
+export function WalkthroughOverlay({ onClose, onStartPresenting, onEndPresenting }: WalkthroughOverlayProps) {
+  const [mainStep, setMainStep] = useState(0);
+  const [detour, setDetour] = useState<string | null>(null);
+  const [detourStep, setDetourStep] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
+  const [waitingForTarget, setWaitingForTarget] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
-  const current = STEPS[step];
+  const inDetour = detour !== null;
+  const steps = inDetour ? PRESENTER_STEPS : MAIN_STEPS;
+  const step = inDetour ? detourStep : mainStep;
+  const totalSteps = steps.length;
+  const current = steps[step];
 
   const measure = useCallback(() => {
     const r = getRect(current.target);
     setRect(r);
-  }, [current.target]);
+    if (r && waitingForTarget) setWaitingForTarget(false);
+  }, [current.target, waitingForTarget]);
 
   useEffect(() => {
     measure();
-    const id = setInterval(measure, 200);
+    const id = setInterval(measure, 150);
     window.addEventListener("resize", measure);
     window.addEventListener("scroll", measure, true);
     return () => {
@@ -98,18 +147,72 @@ export function WalkthroughOverlay({ onClose }: { onClose: () => void }) {
     };
   }, [measure]);
 
+  const enterDetour = useCallback(() => {
+    if (!onStartPresenting) return;
+    setWaitingForTarget(true);
+    onStartPresenting();
+    setTimeout(() => {
+      setDetour("presenter");
+      setDetourStep(0);
+    }, 600);
+  }, [onStartPresenting]);
+
+  const exitDetour = useCallback(() => {
+    onEndPresenting?.();
+    setDetour(null);
+    setDetourStep(0);
+    setWaitingForTarget(false);
+    setMainStep(s => s + 1);
+  }, [onEndPresenting]);
+
+  const goNext = useCallback(() => {
+    if (step < totalSteps - 1) {
+      if (inDetour) setDetourStep(s => s + 1);
+      else setMainStep(s => s + 1);
+    } else if (inDetour) {
+      exitDetour();
+    } else {
+      onClose();
+    }
+  }, [step, totalSteps, inDetour, exitDetour, onClose]);
+
+  const goBack = useCallback(() => {
+    if (step > 0) {
+      if (inDetour) setDetourStep(s => s - 1);
+      else setMainStep(s => s - 1);
+    } else if (inDetour) {
+      exitDetour();
+    }
+  }, [step, inDetour, exitDetour]);
+
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") { onClose(); return; }
-      if (e.key === "ArrowRight" || e.key === "Enter") {
-        if (step < STEPS.length - 1) setStep(s => s + 1);
+      if (waitingForTarget) return;
+      if (e.key === "Escape") {
+        if (inDetour) exitDetour();
         else onClose();
+        return;
       }
-      if (e.key === "ArrowLeft" && step > 0) setStep(s => s - 1);
+      if (e.key === "ArrowRight" || e.key === "Enter") goNext();
+      if (e.key === "ArrowLeft") goBack();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [step, onClose]);
+  }, [goNext, goBack, onClose, inDetour, exitDetour, waitingForTarget]);
+
+  if (waitingForTarget) {
+    return (
+      <div className="fixed inset-0 z-[200]">
+        <div className="fixed inset-0 bg-black/40" />
+        <div className="fixed inset-0 flex items-center justify-center" style={{ zIndex: 203 }}>
+          <div className="rounded-xl border border-white/10 bg-[#06283D] px-8 py-6 text-center shadow-2xl">
+            <div className="mx-auto mb-3 size-6 animate-spin rounded-full border-2 border-white/20 border-t-[#21A5D5]" />
+            <p className="text-sm font-medium text-white/70">Opening Presenter Mode...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const cardStyle = (() => {
     if (!rect) return { top: "50%", left: "50%", transform: "translate(-50%, -50%)" } as const;
@@ -122,11 +225,11 @@ export function WalkthroughOverlay({ onClose }: { onClose: () => void }) {
     } else if (pos === "top") {
       style.left = Math.max(12, Math.min(rect.left + rect.width / 2 - CARD_W / 2, window.innerWidth - CARD_W - 12));
     } else if (pos === "right") {
-      style.top = Math.max(12, rect.top);
-      style.left = rect.right + CARD_GAP;
+      style.top = Math.max(12, Math.min(rect.top + rect.height / 2 - 100, window.innerHeight - 220));
+      style.left = Math.min(rect.right + CARD_GAP, window.innerWidth - CARD_W - 12);
     } else {
-      style.top = Math.max(12, rect.top);
-      style.left = rect.left - CARD_GAP - CARD_W;
+      style.top = Math.max(12, Math.min(rect.top + rect.height / 2 - 100, window.innerHeight - 220));
+      style.left = Math.max(12, rect.left - CARD_GAP - CARD_W);
     }
     return style;
   })();
@@ -134,6 +237,8 @@ export function WalkthroughOverlay({ onClose }: { onClose: () => void }) {
   const cardBottom = current.position === "top" && rect
     ? { bottom: window.innerHeight - rect.top + CARD_GAP }
     : undefined;
+
+  const hasDetour = !inDetour && current.detour && onStartPresenting;
 
   return (
     <div className="fixed inset-0 z-[200]">
@@ -172,17 +277,17 @@ export function WalkthroughOverlay({ onClose }: { onClose: () => void }) {
         />
       )}
 
-      {/* Clickable backdrop to close */}
+      {/* Clickable backdrop */}
       <div
         className="fixed inset-0"
         style={{ zIndex: 202 }}
-        onClick={onClose}
+        onClick={() => { if (inDetour) exitDetour(); else onClose(); }}
       />
 
       {/* Card */}
       <AnimatePresence mode="wait">
         <motion.div
-          key={current.id}
+          key={`${detour ?? "main"}-${current.id}`}
           ref={cardRef}
           className="fixed rounded-xl border border-white/10 bg-[#06283D] p-5 shadow-2xl"
           style={{
@@ -200,10 +305,14 @@ export function WalkthroughOverlay({ onClose }: { onClose: () => void }) {
           {/* Step counter */}
           <div className="mb-3 flex items-center justify-between">
             <span className="text-[11px] font-semibold tracking-wide text-white/40">
-              {step + 1} of {STEPS.length}
+              {inDetour ? (
+                <>Presenter Mode — {step + 1} of {totalSteps}</>
+              ) : (
+                <>{step + 1} of {totalSteps}</>
+              )}
             </span>
             <button
-              onClick={onClose}
+              onClick={() => { if (inDetour) exitDetour(); else onClose(); }}
               className="rounded p-0.5 text-white/40 transition-colors hover:bg-white/10 hover:text-white"
             >
               <X className="size-3.5" />
@@ -215,13 +324,35 @@ export function WalkthroughOverlay({ onClose }: { onClose: () => void }) {
             {current.description}
           </p>
 
+          {/* Detour button */}
+          {hasDetour && (
+            <div className="mt-3">
+              <button
+                onClick={(e) => { e.stopPropagation(); enterDetour(); }}
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#21A5D5]/30 bg-[#21A5D5]/10 px-3 py-2 text-xs font-bold text-[#21A5D5] transition-colors hover:bg-[#21A5D5]/20"
+              >
+                <MonitorPlay className="size-3.5" />
+                Tour Presenter Mode
+              </button>
+              {current.detourNote && (
+                <p className="mt-2 text-[11px] font-medium leading-snug text-white/35">
+                  {current.detourNote}
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Progress dots + nav */}
           <div className="mt-4 flex items-center justify-between">
             <div className="flex items-center gap-1.5">
-              {STEPS.map((_, i) => (
+              {steps.map((_, i) => (
                 <button
                   key={i}
-                  onClick={(e) => { e.stopPropagation(); setStep(i); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (inDetour) setDetourStep(i);
+                    else setMainStep(i);
+                  }}
                   className={cn(
                     "size-1.5 rounded-full transition-all",
                     i === step ? "scale-125 bg-[#21A5D5]" : i < step ? "bg-white/30" : "bg-white/15",
@@ -230,25 +361,21 @@ export function WalkthroughOverlay({ onClose }: { onClose: () => void }) {
               ))}
             </div>
             <div className="flex items-center gap-1.5">
-              {step > 0 && (
+              {(step > 0 || inDetour) && (
                 <button
-                  onClick={(e) => { e.stopPropagation(); setStep(s => s - 1); }}
+                  onClick={(e) => { e.stopPropagation(); goBack(); }}
                   className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-white/50 transition-colors hover:bg-white/10 hover:text-white"
                 >
                   <ChevronLeft className="size-3" />
-                  Back
+                  {inDetour && step === 0 ? "Exit Tour" : "Back"}
                 </button>
               )}
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (step < STEPS.length - 1) setStep(s => s + 1);
-                  else onClose();
-                }}
+                onClick={(e) => { e.stopPropagation(); goNext(); }}
                 className="flex items-center gap-1 rounded-md bg-[#21A5D5] px-3 py-1 text-xs font-bold text-white transition-colors hover:bg-[#21A5D5]/80"
               >
-                {step < STEPS.length - 1 ? "Next" : "Done"}
-                {step < STEPS.length - 1 && <ChevronRight className="size-3" />}
+                {inDetour && step === totalSteps - 1 ? "Back to Tour" : step === totalSteps - 1 && !inDetour ? "Done" : "Next"}
+                {(step < totalSteps - 1 || inDetour) && <ChevronRight className="size-3" />}
               </button>
             </div>
           </div>
