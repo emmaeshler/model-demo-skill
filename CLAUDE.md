@@ -78,4 +78,4 @@ Tailwind CSS v4 via `@tailwindcss/postcss`. Brand colors are CSS variables in [g
 
 ## Auth
 
-Login page → `/api/auth/check` (username lookup) → `/api/auth/login` (credential verify against external service at `AUTH_ADMIN_URL`). Session stored in `ml_explainer_session` httpOnly cookie. Env vars `AUTH_ADMIN_URL` and `AUTH_API_KEY` required for auth to work.
+SSO via password admin. `/login` server-redirects to `{AUTH_ADMIN_URL}/auth?app=ml-explainer&redirect={callback}`. After login, password admin redirects back to `/api/auth/callback?token=...`, which exchanges the one-time token for user data and sets the `ml_explainer_session` httpOnly cookie. Env vars `AUTH_ADMIN_URL` and `AUTH_API_KEY` required.
