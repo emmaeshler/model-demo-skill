@@ -87,12 +87,14 @@ const BAR_MAX_W = 340;
 const ROW_H = 24;
 const HEADER_H = 26;
 
-const SKELETON_WIDTHS = [
-  0.95, 0.78, 0.65, 0.58, 0.50, 0.44, 0.39, 0.34, 0.30, 0.26,
-  0.22, 0.19, 0.17, 0.15, 0.13, 0.11, 0.10, 0.08, 0.07, 0.06,
-  0.05, 0.04, 0.03,
+const SKEL_ROWS = [
+  [0.38, 0.28, 0.22, 0.12],
+  [0.20, 0.35, 0.18, 0.27],
+  [0.30, 0.15, 0.32, 0.23],
+  [0.25, 0.30, 0.20, 0.25],
+  [0.18, 0.22, 0.35, 0.15],
+  [0.32, 0.20, 0.28, 0.20],
 ];
-const SKELETON_LABEL_W = [80, 110, 95, 70, 85, 100, 90, 75, 65, 80, 70, 60, 55, 90, 100, 45, 85, 55, 75, 70, 80, 55, 65];
 
 type Disposition = "keep" | "remove" | "add";
 
@@ -355,67 +357,10 @@ export function DriverImportanceSlide({
                     {isIntro && (
                       <motion.div
                         key="skeleton"
-                        className="flex flex-col"
-                        exit={{ opacity: 0, transition: { duration: 0.25 } }}
+                        className="w-full"
+                        exit={{ opacity: 0, scale: 0.97, transition: { duration: 0.25 } }}
                       >
-                        {SKELETON_WIDTHS.map((w, i) => (
-                          <div key={i} className="flex items-center" style={{ height: 22, marginBottom: 2 }}>
-                            <div className="shrink-0 flex justify-end pr-3" style={{ width: 170 }}>
-                              <motion.div
-                                className="rounded-sm overflow-hidden relative"
-                                style={{ height: 11, backgroundColor: `${MUTED}30` }}
-                                initial={skipAnimation ? { width: SKELETON_LABEL_W[i] } : { width: 0, opacity: 0 }}
-                                animate={{
-                                  width: SKELETON_LABEL_W[i],
-                                  opacity: 1,
-                                }}
-                                transition={{
-                                  width: { duration: 0.4, delay: 0.2 + i * 0.04, ease: EASE },
-                                  opacity: { duration: 0.4, delay: 0.2 + i * 0.04 },
-                                }}
-                              >
-                                <motion.div
-                                  className="absolute inset-0"
-                                  style={{
-                                    background: `linear-gradient(90deg, transparent 0%, ${MUTED}25 50%, transparent 100%)`,
-                                  }}
-                                  animate={{ x: ["-100%", "200%"] }}
-                                  transition={{
-                                    duration: 1.8,
-                                    delay: 0.6 + i * 0.06,
-                                    repeat: Infinity,
-                                    repeatDelay: 0.8,
-                                    ease: "easeInOut",
-                                  }}
-                                />
-                              </motion.div>
-                            </div>
-                            <motion.div
-                              className="rounded-r-sm overflow-hidden relative"
-                              style={{ height: "100%", backgroundColor: `${MUTED}22` }}
-                              initial={skipAnimation ? { width: w * BAR_MAX_W } : { width: 0 }}
-                              animate={{ width: w * BAR_MAX_W }}
-                              transition={{
-                                width: { duration: 0.5, delay: 0.3 + i * 0.04, ease: EASE },
-                              }}
-                            >
-                              <motion.div
-                                className="absolute inset-0"
-                                style={{
-                                  background: `linear-gradient(90deg, transparent 0%, ${MUTED}20 50%, transparent 100%)`,
-                                }}
-                                animate={{ x: ["-100%", "200%"] }}
-                                transition={{
-                                  duration: 2,
-                                  delay: 0.8 + i * 0.08,
-                                  repeat: Infinity,
-                                  repeatDelay: 0.6,
-                                  ease: "easeInOut",
-                                }}
-                              />
-                            </motion.div>
-                          </div>
-                        ))}
+                        <SkeletonGrid skipAnimation={skipAnimation} />
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -592,6 +537,89 @@ export function DriverImportanceSlide({
           )}
         </AnimatePresence>
       </div>
+    </div>
+  );
+}
+
+function SkeletonGrid({ skipAnimation }: { skipAnimation?: boolean }) {
+  const blocks = useMemo(() => {
+    const items: { row: number; col: number; w: number; gi: number }[] = [];
+    let gi = 0;
+    SKEL_ROWS.forEach((row, r) => {
+      row.forEach((w, c) => {
+        items.push({ row: r, col: c, w, gi: gi++ });
+      });
+    });
+    return items;
+  }, []);
+
+  const GAP = 6;
+  const ROW_H = 28;
+
+  return (
+    <div className="w-full relative" style={{ height: SKEL_ROWS.length * (ROW_H + GAP) }}>
+      {blocks.map((b) => {
+        const colsBefore = SKEL_ROWS[b.row].slice(0, b.col);
+        const leftFrac = colsBefore.reduce((s, v) => s + v, 0);
+        const gapOffset = b.col * GAP;
+
+        return (
+          <motion.div
+            key={`${b.row}-${b.col}`}
+            className="absolute rounded overflow-hidden"
+            style={{
+              top: b.row * (ROW_H + GAP),
+              left: `calc(${leftFrac * 100}% + ${gapOffset}px)`,
+              width: `calc(${b.w * 100}% - ${GAP}px)`,
+              height: ROW_H,
+              backgroundColor: `${MUTED}18`,
+            }}
+            initial={skipAnimation ? false : { opacity: 0, scaleX: 0, originX: 0 }}
+            animate={{ opacity: 1, scaleX: 1 }}
+            transition={{
+              duration: 0.4,
+              delay: skipAnimation ? 0 : 0.15 + b.gi * 0.03,
+              ease: EASE,
+            }}
+          >
+            <motion.div
+              className="absolute inset-0"
+              style={{
+                background: `linear-gradient(90deg, transparent 0%, ${MUTED}20 50%, transparent 100%)`,
+              }}
+              animate={{ x: ["-100%", "200%"] }}
+              transition={{
+                duration: 1.6,
+                delay: 0.5 + b.gi * 0.07,
+                repeat: Infinity,
+                repeatDelay: 0.5,
+                ease: "easeInOut",
+              }}
+            />
+          </motion.div>
+        );
+      })}
+
+      {/* Category label placeholders on right side */}
+      {SKEL_ROWS.map((_, r) => (
+        <motion.div
+          key={`label-${r}`}
+          className="absolute right-0 rounded"
+          style={{
+            top: r * (ROW_H + GAP) + 8,
+            width: 60 + (r % 3) * 20,
+            height: 12,
+            backgroundColor: `${MUTED}12`,
+          }}
+          initial={skipAnimation ? false : { opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{
+            duration: 0.35,
+            delay: skipAnimation ? 0 : 0.6 + r * 0.08,
+            ease: EASE,
+          }}
+        />
+      ))}
     </div>
   );
 }
