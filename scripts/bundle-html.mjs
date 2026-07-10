@@ -42,12 +42,32 @@ const bundledJs = jsResult.outputFiles[0].text;
 console.log(`  JS bundle: ${(bundledJs.length / 1024).toFixed(0)} KB`);
 
 // ── Step 2: Build static export for CSS + fonts ──
+// Temporarily hide dynamic API routes that can't be statically exported.
+const HIDE_ROUTES = [join(ROOT, "src", "app", "api", "auth", "callback")];
+const hidden = [];
+for (const dir of HIDE_ROUTES) {
+  const routeFile = join(dir, "route.ts");
+  const hiddenFile = join(dir, "route.ts.bak");
+  if (existsSync(routeFile)) {
+    const { renameSync } = await import("node:fs");
+    renameSync(routeFile, hiddenFile);
+    hidden.push({ original: routeFile, backup: hiddenFile });
+  }
+}
+
 console.log("Building static export for CSS...");
-execSync("npx next build", {
-  cwd: ROOT,
-  stdio: "inherit",
-  env: { ...process.env, STATIC_EXPORT: "1" },
-});
+try {
+  execSync("npx next build", {
+    cwd: ROOT,
+    stdio: "inherit",
+    env: { ...process.env, STATIC_EXPORT: "1" },
+  });
+} finally {
+  for (const { original, backup } of hidden) {
+    const { renameSync } = await import("node:fs");
+    renameSync(backup, original);
+  }
+}
 
 // ── Step 3: Collect CSS + fonts by scanning the filesystem ──
 // (Vercel's modifyConfig can strip <link> tags from index.html, so we find files directly)
