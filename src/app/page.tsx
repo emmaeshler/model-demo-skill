@@ -8,7 +8,6 @@ import { useMode } from "@/lib/mode-context";
 import { useShareMode } from "@/lib/share-context";
 import { getPresenterNotes } from "@/lib/presenter-notes";
 import { cn } from "@/lib/utils";
-import { OverviewSlide, OVERVIEW_TOTAL_STEPS } from "@/components/slides/overview-slide";
 import { OneModelSlide, ONE_MODEL_TOTAL_STEPS } from "@/components/slides/one-model";
 import { PowerSlide, POWER_TOTAL_STEPS } from "@/components/slides/power-slide";
 import { ExecuteSlide, EXECUTE_TOTAL_STEPS } from "@/components/slides/execute-slide";
@@ -16,7 +15,6 @@ import { RefineSlideV2, REFINE_V2_TOTAL_STEPS } from "@/components/slides/refine
 import { AnimationGlossary } from "@/components/animation-glossary";
 import { WalkthroughOverlay } from "@/components/walkthrough-overlay";
 
-const MemoOverview = memo(OverviewSlide);
 const MemoOneModel = memo(OneModelSlide);
 const MemoPower = memo(PowerSlide);
 const MemoExecute = memo(ExecuteSlide);
@@ -24,7 +22,6 @@ const MemoRefine = memo(RefineSlideV2);
 
 type SlideKind =
   | "intro"
-  | "overview"
   | "one-model"
   | "power"
   | "execute"
@@ -37,8 +34,6 @@ interface SlideConfig {
 
 const SLIDES: SlideConfig[] = [
   { kind: "intro" },
-  // Overview
-  { kind: "overview" },
   // Section 1: Design
   { kind: "one-model" },
   // Section 2: Power
@@ -50,14 +45,12 @@ const SLIDES: SlideConfig[] = [
   { kind: "end" },
 ];
 
-const OVERVIEW_INDEX = 1;
-const ONE_MODEL_INDEX = 2;
-const POWER_INDEX = 3;
-const EXECUTE_INDEX = 4;
-const REFINE_INDEX = 5;
+const ONE_MODEL_INDEX = 1;
+const POWER_INDEX = 2;
+const EXECUTE_INDEX = 3;
+const REFINE_INDEX = 4;
 
 const SUB_STEP_CONFIG: Record<number, number> = {
-  [OVERVIEW_INDEX]: OVERVIEW_TOTAL_STEPS,
   [ONE_MODEL_INDEX]: ONE_MODEL_TOTAL_STEPS,
   [POWER_INDEX]: POWER_TOTAL_STEPS,
   [EXECUTE_INDEX]: EXECUTE_TOTAL_STEPS,
@@ -564,10 +557,9 @@ function MiniExecuteConnector({ refineStep, flyIn = false, onSelectCustomer, tim
 const DEFAULT_NAV_GROUPS: NavGroup[] = [
   {
     label: "Introduction",
-    subtitle: "Overview of the five core pillars",
+    subtitle: "Welcome",
     slides: [
       { index: 0, label: "Welcome" },
-      { index: OVERVIEW_INDEX, label: "Five core pillars", subStep: 0 },
     ],
   },
   {
@@ -575,7 +567,8 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
     subtitle: "One model built around your business",
     slides: [
       { index: ONE_MODEL_INDEX, label: "Model inputs", subStep: 0 },
-      { index: ONE_MODEL_INDEX, label: "ML & strategic guidance", subStep: 1 },
+      { index: ONE_MODEL_INDEX, label: "Pricing model", subStep: 1 },
+      { index: ONE_MODEL_INDEX, label: "ML & strategic guidance", subStep: 2 },
     ],
   },
   {
@@ -620,7 +613,7 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
     label: "Closing",
     subtitle: "Summary and next steps",
     slides: [
-      { index: 6, label: "Thank you" },
+      { index: 5, label: "Thank you" },
     ],
   },
 ];
@@ -685,8 +678,8 @@ export function Home() {
   const total = SLIDES.length;
 
   const presenterSkipped = useMemo(
-    () => (mode === "presenter" ? new Set([OVERVIEW_INDEX]) : new Set<number>()),
-    [mode],
+    () => new Set<number>(),
+    [],
   );
 
   const subStepConfig = useMemo(() => {
@@ -1340,7 +1333,6 @@ export function Home() {
                       transition={{ duration: railEntering ? 0.1 : 0.4 }}
                     >
                       {sc.kind === "intro" && <IntroSlide isActive={isActive} />}
-                      {sc.kind === "overview" && <MemoOverview step={isActive ? subStep : 0} skipAnimation={effectiveSkip} isActive={isActive} />}
                       {sc.kind === "one-model" && (
                         <MemoOneModel
                           step={isActive ? subStep : 0}

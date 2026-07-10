@@ -3,20 +3,16 @@ const NOTES: Record<string, string[]> = {
     "Welcome everyone to Inside Your Dynamic Model.",
     "Today we'll walk through how the pricing model works — from design through execution and refinement.",
   ],
-  "overview:0": [
-    "Let's start with the big picture.",
-    "Our approach has four phases: Design the model, Power it with data, Execute pricing decisions, and Refine through continuous feedback.",
-  ],
-  "overview:1": [
-    "At the center is the pricing model itself — a unified engine that combines machine learning with strategic business guidance.",
-  ],
   "one-model:0": [
-    "Four key inputs feed into the pricing model — all on the left.",
+    "Let's start with the four key inputs that power the ideal pricing model.",
     "Data inputs: your transaction history and external market signals.",
     "Expertise inputs: in-house business knowledge and industry benchmarks.",
-    "Right now they're all flowing into one unified model. Click to see what's inside.",
   ],
   "one-model:1": [
+    "All four inputs converge into one unified pricing model.",
+    "Right now they're all flowing into a single engine. Click to see what's inside.",
+  ],
+  "one-model:2": [
     "The model splits into two complementary engines.",
     "Machine learning handles pattern recognition — data inputs (green) feed it historical and market signals.",
     "Strategic guidance encodes your business expertise — knowledge inputs (blue) feed it rules and constraints.",
