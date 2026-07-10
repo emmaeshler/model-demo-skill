@@ -16,7 +16,7 @@ import { FactorGrid } from "./power-slide-factors";
 import { ConvergenceModel } from "./power-slide-convergence";
 import { BottomCards } from "./power-slide-bottom";
 
-export const POWER_TOTAL_STEPS = 11;
+export const POWER_TOTAL_STEPS = 10;
 
 export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCategoryChange, isActive = true }: { step: number; onAutoAdvance?: () => void; skipAnimation?: boolean; onActiveCategoryChange?: (categories: string[]) => void; isActive?: boolean }) {
   const { shareMode } = useShareMode();
@@ -148,9 +148,9 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
   }
 
   return (
-    <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-6rem)] max-w-7xl flex-col items-center justify-start px-6 pt-1">
+    <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-7xl flex-col items-center justify-start px-6 pt-4">
       {/* Title */}
-      <div className="relative w-full" style={{ height: 96, flexShrink: 0, transform: "translateX(calc(var(--rail-inset, 0px) * -0.5))" }}>
+      <div className="relative w-full" style={{ height: 116, flexShrink: 0, transform: "translateX(calc(var(--rail-inset, 0px) * -0.5))" }}>
         <AnimatePresence mode="wait">
           {chartStep === 0 && (
             <motion.div
@@ -366,19 +366,6 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                 revealedClusters={revealedClusters}
               />
 
-              <FactorGrid
-                factorsVisible={factorsVisible}
-                convergeReady={convergeReady}
-                customized={customized}
-                selectionPhase={selectionPhase}
-                factorsPhase={factorsPhase}
-                morphPhase={morphPhase}
-                actionRevealed={actionRevealed}
-                feeding={feeding}
-                shareMode={shareMode}
-                customerActionStep={customerActionStep}
-              />
-
               <ConvergenceModel
                 feeding={feeding}
                 convergeReady={convergeReady}
@@ -390,6 +377,19 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
             </svg>
           </div>
         </motion.div>
+
+        <FactorGrid
+          factorsVisible={factorsVisible}
+          convergeReady={convergeReady}
+          customized={customized}
+          selectionPhase={selectionPhase}
+          factorsPhase={factorsPhase}
+          morphPhase={morphPhase}
+          actionRevealed={actionRevealed}
+          feeding={feeding}
+          shareMode={shareMode}
+          customerActionStep={customerActionStep}
+        />
       </div>
 
       <BottomCards chartStep={chartStep} scanCardCount={scanCardCount} driversRevealed={driversRevealed} />

@@ -72,10 +72,10 @@ const CUSTOMERS: CustomerScenario[] = [
     ],
     color: NAVY,
     price: "$19.24",
-    delta: "+$1.74 above list",
+    delta: "+$1.74 above peer",
     winProb: "68%",
     margin: "+9.9%",
-    narrative: "Same product, but now the model layers in the customer — strong sales relationship, high order frequency, and long tenure push the price above list.",
+    narrative: "Same product, but now the model layers in the customer — strong sales relationship, high order frequency, and long tenure push the price above peer.",
   },
   {
     label: "MedSupply Co",
@@ -108,7 +108,7 @@ const CUSTOMERS: CustomerScenario[] = [
     ],
     color: SLATE,
     price: "$22.10",
-    delta: "+$4.60 above list",
+    delta: "+$4.60 above peer",
     winProb: "81%",
     margin: "+5.7%",
     narrative: "Same bearing, highest price — this buyer's niche application has few alternatives, so willingness to pay is the strongest of the three.",
@@ -860,11 +860,8 @@ export function ExecuteSlide({
                     <motion.circle
                       cx={MODEL_CX} cy={MODEL_CY}
                       fill="white" stroke={TEAL} strokeWidth={2.5}
-                      initial={skipAnimation ? { r: BOX_H / 2 } : { r: 150 }}
-                      animate={isActive
-                        ? { r: revealPhase >= 2 ? BOX_H / 2 : (skipAnimation ? BOX_H / 2 : 150) }
-                        : { r: skipAnimation ? BOX_H / 2 : 150 }}
-                      transition={{ duration: 0.8, delay: (isActive && !skipAnimation) ? 0.05 : 0, ease: [0.22, 1, 0.36, 1] }}
+                      initial={{ r: BOX_H / 2 }}
+                      animate={{ r: BOX_H / 2 }}
                     />
 
                     {/* Converge echo — stays until Acme drivers arrive */}
@@ -873,16 +870,16 @@ export function ExecuteSlide({
                       animate={{ opacity: revealPhase >= 2 ? 0 : 1 }}
                       transition={{ duration: revealPhase >= 2 ? 0.35 : 0.4 }}
                     >
-                      <text x={MODEL_CX} y={MODEL_CY - 38} textAnchor="middle"
-                        style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.18em", fill: "#5A6A78" }}>
+                      <text x={MODEL_CX} y={MODEL_CY - 28} textAnchor="middle"
+                        style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.18em", fill: "#5A6A78" }}>
                         OPTIMIZED
                       </text>
-                      <text x={MODEL_CX} y={MODEL_CY + 22} textAnchor="middle"
-                        style={{ fontSize: 54, fontWeight: 800, fill: NAVY }}>
+                      <text x={MODEL_CX} y={MODEL_CY + 14} textAnchor="middle"
+                        style={{ fontSize: 38, fontWeight: 800, fill: NAVY }}>
                         PRICE
                       </text>
-                      <text x={MODEL_CX} y={MODEL_CY + 52} textAnchor="middle"
-                        style={{ fontSize: 16, fontWeight: 500, fill: "#5A6A78" }}>
+                      <text x={MODEL_CX} y={MODEL_CY + 36} textAnchor="middle"
+                        style={{ fontSize: 13, fontWeight: 500, fill: "#5A6A78" }}>
                         per SKU
                       </text>
                     </motion.g>
@@ -923,6 +920,95 @@ export function ExecuteSlide({
                     </motion.text>
 
                   </g>
+
+                  {/* Skeleton layout — frames the flow before data arrives */}
+                  <AnimatePresence>
+                    {revealPhase < 2 && (
+                      <motion.g
+                        key="skeleton"
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        {/* Left: Customer drivers ghost card */}
+                        <motion.g
+                          initial={skipAnimation ? false : { opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.5, delay: 0.3 }}
+                        >
+                          <rect x={PROFILE_X} y={MODEL_CY - PROFILE_BOX_H / 2} width={PROFILE_W} height={PROFILE_BOX_H}
+                            rx={14} fill="white" stroke={GREY} strokeWidth={1.2} strokeDasharray="6 4" opacity={0.6} />
+                          <text x={PROFILE_X + PROFILE_W / 2} y={MODEL_CY - PROFILE_BOX_H / 2 + 24}
+                            fontSize="10" fontWeight="700" letterSpacing="0.1em" fill={GREY} textAnchor="middle">
+                            CUSTOMER DRIVERS
+                          </text>
+                          {[0, 1, 2, 3, 4, 5].map(i => {
+                            const sy = MODEL_CY - PROFILE_BOX_H / 2 + 48 + i * 38;
+                            return (
+                              <g key={`skel-row-${i}`}>
+                                <rect x={PROFILE_X + 20} y={sy} width={65 + (i % 3) * 20} height={8} rx={4} fill={GREY} opacity={0.12} />
+                                <rect x={PROFILE_X + 20} y={sy + 14} width={PROFILE_W - 40} height={5} rx={2.5} fill={GREY} opacity={0.08} />
+                              </g>
+                            );
+                          })}
+                        </motion.g>
+
+                        {/* Connector left */}
+                        <motion.path
+                          d={inCurvePath()}
+                          fill="none" stroke={GREY} strokeWidth={1.2} strokeDasharray="4 4"
+                          initial={skipAnimation ? false : { opacity: 0 }}
+                          animate={{ opacity: 0.25 }}
+                          transition={{ duration: 0.4, delay: 0.5 }}
+                        />
+                        <motion.text
+                          x={(PROFILE_X + PROFILE_W + MODEL_X) / 2} y={MODEL_CY + 5}
+                          fontSize="16" fill={GREY} textAnchor="middle"
+                          initial={skipAnimation ? false : { opacity: 0 }}
+                          animate={{ opacity: 0.3 }}
+                          transition={{ delay: 0.6 }}
+                        >
+                          →
+                        </motion.text>
+
+                        {/* Right: Outcome price ghost card */}
+                        <motion.g
+                          initial={skipAnimation ? false : { opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.5, delay: 0.4 }}
+                        >
+                          <rect x={RESULT_CARD_X} y={MODEL_CY - PROFILE_BOX_H / 2} width={RESULT_CARD_W} height={PROFILE_BOX_H}
+                            rx={14} fill="white" stroke={GREY} strokeWidth={1.2} strokeDasharray="6 4" opacity={0.6} />
+                          <text x={RESULT_CARD_X + RESULT_CARD_W / 2} y={MODEL_CY - PROFILE_BOX_H / 2 + 24}
+                            fontSize="10" fontWeight="700" letterSpacing="0.1em" fill={GREY} textAnchor="middle">
+                            OUTCOME PRICE
+                          </text>
+                          <rect x={RESULT_CARD_X + 50} y={MODEL_CY - 14} width={RESULT_CARD_W - 100} height={24} rx={6} fill={GREY} opacity={0.08} />
+                          <rect x={RESULT_CARD_X + 70} y={MODEL_CY + 22} width={RESULT_CARD_W - 140} height={8} rx={4} fill={GREY} opacity={0.08} />
+                          <line x1={RESULT_CARD_X + 20} y1={MODEL_CY + 50} x2={RESULT_CARD_X + RESULT_CARD_W - 20} y2={MODEL_CY + 50} stroke={GREY} strokeWidth={0.5} opacity={0.2} />
+                          <rect x={RESULT_CARD_X + 24} y={MODEL_CY + 64} width={80} height={7} rx={3.5} fill={GREY} opacity={0.08} />
+                          <rect x={RESULT_CARD_X + 24} y={MODEL_CY + 84} width={65} height={7} rx={3.5} fill={GREY} opacity={0.08} />
+                        </motion.g>
+
+                        {/* Connector right */}
+                        <motion.path
+                          d={outCurvePath()}
+                          fill="none" stroke={GREY} strokeWidth={1.2} strokeDasharray="4 4"
+                          initial={skipAnimation ? false : { opacity: 0 }}
+                          animate={{ opacity: 0.25 }}
+                          transition={{ duration: 0.4, delay: 0.6 }}
+                        />
+                        <motion.text
+                          x={(MODEL_X + MODEL_W + RESULT_CARD_X) / 2} y={MODEL_CY + 5}
+                          fontSize="16" fill={GREY} textAnchor="middle"
+                          initial={skipAnimation ? false : { opacity: 0 }}
+                          animate={{ opacity: 0.3 }}
+                          transition={{ delay: 0.7 }}
+                        >
+                          →
+                        </motion.text>
+                      </motion.g>
+                    )}
+                  </AnimatePresence>
 
                   {/* Interactive elements — staged reveal */}
                   <>

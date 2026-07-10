@@ -21,10 +21,11 @@ const ModeContext = createContext<ModeContextValue | null>(null);
 
 export function ModeProvider({ children }: { children: ReactNode }) {
   const [mode, setModeState] = useState<PresentationMode>(() => {
-    if (typeof window !== "undefined" && window.location.pathname.startsWith("/walkthrough")) {
-      return "self";
+    if (typeof window !== "undefined") {
+      const param = new URLSearchParams(window.location.search).get("mode");
+      if (param === "presenter") return "presenter";
     }
-    return "presenter";
+    return "self";
   });
 
   useEffect(() => {

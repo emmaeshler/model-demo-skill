@@ -15,9 +15,10 @@ export const BASE_Y = CURVE_SLOT.y + CURVE_SLOT.h;
 export const BASELINE_KPI = { winRate: 62, priceAdoption: 71, marginImpact: 1.8 };
 export const TOTAL_MONTHS = 20;
 export const TIMELINE_EVENTS = [
-  { month: 5, label: "Steel +8%", factor: "The model reprices upward to protect margin — a few low-margin deals fall away.", steepness: 5, shift: -12, kpi: { winRate: 59, priceAdoption: 76, marginImpact: 2.1 } },
-  { month: 10, label: "Freight −6%", factor: "The model splits the savings — it lowers price to win share and keeps the rest as margin.", steepness: 5, shift: -6, kpi: { winRate: 66, priceAdoption: 80, marginImpact: 2.4 } },
-  { month: 15, label: "Resin +12%", factor: "The model reprices within hours — margin holds (+0.1) even as win rate dips.", steepness: 5, shift: -30, kpi: { winRate: 63, priceAdoption: 84, marginImpact: 2.5 } },
+  { month: 4, label: "Steel +8%", factor: "The model reprices upward to protect margin — a few low-margin deals fall away.", steepness: 5, shift: -12, kpi: { winRate: 59, priceAdoption: 76, marginImpact: 2.1 } },
+  { month: 8, label: "Freight −6%", factor: "The model splits the savings — it lowers price to win share and keeps the rest as margin.", steepness: 5, shift: -6, kpi: { winRate: 66, priceAdoption: 80, marginImpact: 2.4 } },
+  { month: 12, label: "Resin +12%", factor: "The model reprices within hours — margin holds (+0.1) even as win rate dips.", steepness: 5, shift: -30, kpi: { winRate: 63, priceAdoption: 84, marginImpact: 2.5 } },
+  { month: 16, label: "Labor +5%", factor: "The model absorbs the cost shift and rebalances — adoption holds as prices adjust.", steepness: 5, shift: -18, kpi: { winRate: 61, priceAdoption: 86, marginImpact: 2.7 } },
 ];
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];

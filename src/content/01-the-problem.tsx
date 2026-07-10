@@ -174,7 +174,7 @@ function CaptureAnimation() {
           )}
         </AnimatePresence>
 
-        {/* Leaked area above list price — phase 2 */}
+        {/* Leaked area above peer price — phase 2 */}
         <AnimatePresence>
           {phase === 2 && (
             <motion.g initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ delay: 0.6, duration: 0.4 }}>

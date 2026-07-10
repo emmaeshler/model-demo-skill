@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useShareMode } from "@/lib/share-context";
+import { EASE } from "@/lib/anim";
 
 const NAVY = "#00446A";
 const ML_GREEN = "#3A7D44";
@@ -167,7 +168,7 @@ function ModelVisualization({ step, isActive }: { step: number; isActive: boolea
         initial={false}
         animate={isActive && showCircle ? { scale: 1, opacity: 1 } : { scale: 0.5, opacity: 0 }}
         transition={{
-          scale: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
+          scale: { duration: 0.8, ease: EASE },
           opacity: { duration: 0.5 },
         }}
         style={{ transformOrigin: `${CX}px ${CY}px` }}
@@ -182,7 +183,7 @@ function ModelVisualization({ step, isActive }: { step: number; isActive: boolea
           : { opacity: 0, scale: 0.85, fill: NAVY_INNER }}
         transition={{
           opacity: { duration: 0.6, delay: showCircle ? 0.15 : 0 },
-          scale: { duration: 0.7, delay: showCircle ? 0.15 : 0, ease: [0.22, 1, 0.36, 1] },
+          scale: { duration: 0.7, delay: showCircle ? 0.15 : 0, ease: EASE },
           fill: { duration: 0.7, ease: "easeInOut" },
         }}
         style={{ transformOrigin: `${CX}px ${CY}px` }}
@@ -196,7 +197,7 @@ function ModelVisualization({ step, isActive }: { step: number; isActive: boolea
           : { opacity: 0, scale: 0.85, fill: NAVY_INNER }}
         transition={{
           opacity: { duration: 0.6, delay: showCircle ? 0.15 : 0 },
-          scale: { duration: 0.7, delay: showCircle ? 0.15 : 0, ease: [0.22, 1, 0.36, 1] },
+          scale: { duration: 0.7, delay: showCircle ? 0.15 : 0, ease: EASE },
           fill: { duration: 0.7, ease: "easeInOut" },
         }}
         style={{ transformOrigin: `${CX}px ${CY}px` }}
@@ -270,7 +271,7 @@ function ModelVisualization({ step, isActive }: { step: number; isActive: boolea
           ? { opacity: 1, x: 0, fill: showColors ? ML_GREEN : NAVY }
           : { opacity: 0, x: -30, fill: NAVY }}
         transition={{
-          x: { duration: 0.6, delay: isActive ? 0.1 : 0, ease: [0.22, 1, 0.36, 1] },
+          x: { duration: 0.6, delay: isActive ? 0.1 : 0, ease: EASE },
           opacity: { duration: 0.4, delay: isActive ? 0.1 : 0 },
           fill: { duration: 0.5 },
         }}>
@@ -282,7 +283,7 @@ function ModelVisualization({ step, isActive }: { step: number; isActive: boolea
           ? { opacity: 1, x: 0, fill: showColors ? STRAT_BLUE : NAVY }
           : { opacity: 0, x: -30, fill: NAVY }}
         transition={{
-          x: { duration: 0.6, delay: isActive ? 0.55 : 0, ease: [0.22, 1, 0.36, 1] },
+          x: { duration: 0.6, delay: isActive ? 0.55 : 0, ease: EASE },
           opacity: { duration: 0.4, delay: isActive ? 0.55 : 0 },
           fill: { duration: 0.5 },
         }}>
@@ -319,8 +320,8 @@ function ModelVisualization({ step, isActive }: { step: number; isActive: boolea
                 ? { opacity: 1, x: 0, y: 0 }
                 : { opacity: 0, x: -50, y: 8 }}
               transition={{
-                x: { duration: 0.7, delay: isActive ? cardDelay : 0, ease: [0.22, 1, 0.36, 1] },
-                y: { duration: 0.7, delay: isActive ? cardDelay : 0, ease: [0.22, 1, 0.36, 1] },
+                x: { duration: 0.7, delay: isActive ? cardDelay : 0, ease: EASE },
+                y: { duration: 0.7, delay: isActive ? cardDelay : 0, ease: EASE },
                 opacity: { duration: 0.45, delay: isActive ? cardDelay : 0 },
               }}
             >
@@ -373,22 +374,24 @@ interface OneModelSlideProps {
 
 const STEP_DELAYS: Record<number, number> = {
   0: 2000,
-  1: 2500,
+  1: 1500,
 };
 
 /* ── Slide shell ── */
 
 export function OneModelSlide({ step, isActive, skipAnimation, onAutoAdvance }: OneModelSlideProps) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const advanceRef = useRef(onAutoAdvance);
+  advanceRef.current = onAutoAdvance;
 
   useEffect(() => {
     clearTimeout(timerRef.current);
-    if (!isActive || skipAnimation || !onAutoAdvance) return;
+    if (!isActive || skipAnimation || !advanceRef.current) return;
     const delay = STEP_DELAYS[step];
     if (delay == null) return;
-    timerRef.current = setTimeout(onAutoAdvance, delay);
+    timerRef.current = setTimeout(() => advanceRef.current?.(), delay);
     return () => clearTimeout(timerRef.current);
-  }, [step, isActive, skipAnimation, onAutoAdvance]);
+  }, [step, isActive, skipAnimation]);
 
   return (
     <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-6xl flex-col items-center justify-center px-6 pt-8 relative">

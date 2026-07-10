@@ -61,7 +61,7 @@ const NOTES: Record<string, string[]> = {
   ],
   "execute:1": [
     "Same product, same list price — but each customer gets a different answer.",
-    "Acme's high volume and deep relationship push the price above list.",
+    "Acme's high volume and deep relationship push the price above peer.",
     "Click the customer chips to compare how different profiles shift the recommendation.",
   ],
   "refine:0": [

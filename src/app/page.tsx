@@ -12,11 +12,13 @@ import { OneModelSlide, ONE_MODEL_TOTAL_STEPS } from "@/components/slides/one-mo
 import { PowerSlide, POWER_TOTAL_STEPS } from "@/components/slides/power-slide";
 import { ExecuteSlide, EXECUTE_TOTAL_STEPS } from "@/components/slides/execute-slide";
 import { RefineSlideV2, REFINE_V2_TOTAL_STEPS } from "@/components/slides/refine-slide-v2";
+import { DriverImportanceSlide, DRIVER_IMPORTANCE_TOTAL_STEPS } from "@/components/slides/driver-importance";
 import { AnimationGlossary } from "@/components/animation-glossary";
 import { WalkthroughOverlay } from "@/components/walkthrough-overlay";
 
 const MemoOneModel = memo(OneModelSlide);
 const MemoPower = memo(PowerSlide);
+const MemoDriverImportance = memo(DriverImportanceSlide);
 const MemoExecute = memo(ExecuteSlide);
 const MemoRefine = memo(RefineSlideV2);
 
@@ -24,6 +26,7 @@ type SlideKind =
   | "intro"
   | "one-model"
   | "power"
+  | "driver-importance"
   | "execute"
   | "refine"
   | "end";
@@ -38,6 +41,8 @@ const SLIDES: SlideConfig[] = [
   { kind: "one-model" },
   // Section 2: Power
   { kind: "power" },
+  // Section 2b: Driver Importance
+  { kind: "driver-importance" },
   // Section 3: Execute
   { kind: "execute" },
   // Section 4: Refine
@@ -47,12 +52,14 @@ const SLIDES: SlideConfig[] = [
 
 const ONE_MODEL_INDEX = 1;
 const POWER_INDEX = 2;
-const EXECUTE_INDEX = 3;
-const REFINE_INDEX = 4;
+const DRIVER_IMP_INDEX = 3;
+const EXECUTE_INDEX = 4;
+const REFINE_INDEX = 5;
 
 const SUB_STEP_CONFIG: Record<number, number> = {
   [ONE_MODEL_INDEX]: ONE_MODEL_TOTAL_STEPS,
   [POWER_INDEX]: POWER_TOTAL_STEPS,
+  [DRIVER_IMP_INDEX]: DRIVER_IMPORTANCE_TOTAL_STEPS,
   [EXECUTE_INDEX]: EXECUTE_TOTAL_STEPS,
   [REFINE_INDEX]: REFINE_V2_TOTAL_STEPS,
 };
@@ -127,6 +134,13 @@ const RAIL_TIMELINE: Partial<Record<number, (RailContent | null)[]>> = {
     /* 8  */ { show: "drivers", flyIn: false },
     /* 9  */ { show: "drivers", flyIn: false },
     /* 10 */ { show: "drivers", flyIn: false },
+  ],
+  [DRIVER_IMP_INDEX]: [
+    /* 0  */ { show: "factors", engine: "strat", active: [] },
+    /* 1  */ { show: "factors", engine: "strat", active: ["customer"] },
+    /* 2  */ { show: "factors", engine: "strat", active: ["product"] },
+    /* 3  */ { show: "factors", engine: "strat", active: ["order"] },
+    /* 4  */ { show: "factors", engine: "strat", active: ["market"] },
   ],
   [EXECUTE_INDEX]: [
     /* 0  */ { show: "drivers", flyIn: false },
@@ -231,40 +245,37 @@ function ModelStatusRail({
           Model Engine
         </motion.span>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col items-center gap-0.5">
+          <motion.span
+            className="text-[8px] font-semibold leading-tight"
+            animate={{ color: mlActive ? ML_GREEN : "#D1D5DB" }}
+            transition={{ duration: 0.3 }}
+          >
+            ML Prediction
+          </motion.span>
           <svg width={svgSize} height={svgSize} viewBox={`0 0 ${svgSize} ${svgSize}`}>
             <motion.path
-              d={`M ${CX} ${CY - R} A ${R} ${R} 0 0 0 ${CX} ${CY + R} L ${CX} ${CY} Z`}
+              d={`M ${CX - R} ${CY} A ${R} ${R} 0 0 1 ${CX + R} ${CY} L ${CX} ${CY} Z`}
               fill={ML_GREEN}
               animate={{ opacity: mlActive ? 1 : 0.15 }}
               transition={{ duration: 0.3 }}
             />
             <motion.path
-              d={`M ${CX} ${CY - R} A ${R} ${R} 0 0 1 ${CX} ${CY + R} L ${CX} ${CY} Z`}
+              d={`M ${CX - R} ${CY} A ${R} ${R} 0 0 0 ${CX + R} ${CY} L ${CX} ${CY} Z`}
               fill={STRAT_BLUE}
               animate={{ opacity: stratActive ? 1 : 0.15 }}
               transition={{ duration: 0.3 }}
             />
-            <line x1={CX} y1={CY - R} x2={CX} y2={CY + R} stroke="white" strokeWidth={1.5} />
+            <line x1={CX - R} y1={CY} x2={CX + R} y2={CY} stroke="white" strokeWidth={1.5} />
             <circle cx={CX} cy={CY} r={R} fill="none" stroke="white" strokeWidth={1.5} opacity={0.4} />
           </svg>
-
-          <div className="flex flex-col gap-0.5">
-            <motion.span
-              className="text-[8px] font-semibold leading-tight"
-              animate={{ color: mlActive ? ML_GREEN : "#D1D5DB" }}
-              transition={{ duration: 0.3 }}
-            >
-              ML Prediction
-            </motion.span>
-            <motion.span
-              className="text-[8px] font-semibold leading-tight"
-              animate={{ color: stratActive ? STRAT_BLUE : "#D1D5DB" }}
-              transition={{ duration: 0.3 }}
-            >
-              Strategic Guidance
-            </motion.span>
-          </div>
+          <motion.span
+            className="text-[8px] font-semibold leading-tight"
+            animate={{ color: stratActive ? STRAT_BLUE : "#D1D5DB" }}
+            transition={{ duration: 0.3 }}
+          >
+            Strategic Guidance
+          </motion.span>
         </div>
       </div>
 
@@ -588,6 +599,17 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    label: "Driver Importance",
+    subtitle: "How much each factor contributes to pricing accuracy",
+    slides: [
+      { index: DRIVER_IMP_INDEX, label: "Overview", subStep: 0 },
+      { index: DRIVER_IMP_INDEX, label: "Customer drivers", subStep: 1 },
+      { index: DRIVER_IMP_INDEX, label: "Product drivers", subStep: 2 },
+      { index: DRIVER_IMP_INDEX, label: "Order drivers", subStep: 3 },
+      { index: DRIVER_IMP_INDEX, label: "Market drivers", subStep: 4 },
+    ],
+  },
+  {
     label: "3 | Execute",
     subtitle: "SKU-level prices tailored to each customer",
     slides: [
@@ -613,7 +635,7 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
     label: "Closing",
     subtitle: "Summary and next steps",
     slides: [
-      { index: 5, label: "Thank you" },
+      { index: 6, label: "Thank you" },
     ],
   },
 ];
@@ -1360,6 +1382,13 @@ export function Home() {
                           requestedPhase={isActive && subStep === 6 ? refineTimelinePhase : undefined}
                           advanceRequest={spotlightAdvanceReq}
                           onSpotlightRefined={handleSpotlightRefined}
+                        />
+                      )}
+                      {sc.kind === "driver-importance" && (
+                        <MemoDriverImportance
+                          step={isActive ? subStep : 0}
+                          skipAnimation={effectiveSkip}
+                          isActive={isActive}
                         />
                       )}
                       {sc.kind === "execute" && <MemoExecute step={isActive ? subStep : 0} skipAnimation={effectiveSkip} isActive={isActive} onCustomerChange={isActive ? handleExecuteCustomerChange : undefined} />}

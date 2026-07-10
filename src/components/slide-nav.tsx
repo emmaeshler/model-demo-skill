@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, ChevronDown, Check, Download, MonitorPlay, RotateCcw, Maximize, Minimize, PlayCircle, BookOpen, MoreVertical, LayoutGrid, HelpCircle } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useShareMode } from "@/lib/share-context";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -115,6 +116,13 @@ export function TopBar({
     ) ?? groups.find((g) => g.slides.some((s) => s.index === current));
 
   const currentGroupIndex = groups.indexOf(currentGroup!);
+  const activeGroupRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (open && activeGroupRef.current) {
+      activeGroupRef.current.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+  }, [open]);
 
   const handleNavigate = useCallback(
     (index: number, subStep?: number) => {
@@ -320,7 +328,7 @@ export function TopBar({
               const isExpanded = groupActive || expandedGroups.has(gi);
 
               return (
-                <div key={gi} className="mb-1.5 last:mb-0">
+                <div key={gi} ref={groupActive ? activeGroupRef : undefined} className="mb-1.5 last:mb-0">
                   <button
                     onClick={() => {
                       if (groupActive) {
@@ -330,13 +338,11 @@ export function TopBar({
                         );
                       } else {
                         setExpandedGroups((prev) => {
-                          const next = new Set(prev);
-                          if (next.has(gi)) {
-                            next.delete(gi);
+                          if (prev.has(gi)) {
+                            return new Set();
                           } else {
-                            next.add(gi);
+                            return new Set([gi]);
                           }
-                          return next;
                         });
                       }
                     }}
@@ -381,29 +387,40 @@ export function TopBar({
                       />
                     )}
                   </button>
-                  {isExpanded && group.slides.length > 1 && (
-                    <div className="ml-7 mt-0.5 space-y-0.5">
-                      {group.slides.map((s, si) => {
-                        const isSlideActive =
-                          s.index === current &&
-                          (s.subStep === undefined || s.subStep === currentSubStep);
-                        return (
-                          <button
-                            key={si}
-                            onClick={() => handleNavigate(s.index, s.subStep)}
-                            className={cn(
-                              "w-full rounded px-2.5 py-1 text-left text-xs font-medium transition-colors",
-                              isSlideActive
-                                ? "bg-white/10 text-white"
-                                : "text-white/45 hover:bg-white/5 hover:text-white/70",
-                            )}
-                          >
-                            {s.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
+                  <AnimatePresence initial={false}>
+                    {isExpanded && group.slides.length > 1 && (
+                      <motion.div
+                        key={`sub-${gi}`}
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                        className="ml-7 overflow-hidden"
+                      >
+                        <div className="mt-0.5 space-y-0.5">
+                          {group.slides.map((s, si) => {
+                            const isSlideActive =
+                              s.index === current &&
+                              (s.subStep === undefined || s.subStep === currentSubStep);
+                            return (
+                              <button
+                                key={si}
+                                onClick={() => handleNavigate(s.index, s.subStep)}
+                                className={cn(
+                                  "w-full rounded px-2.5 py-1 text-left text-xs font-semibold transition-colors",
+                                  isSlideActive
+                                    ? "border-l-2 border-white/80 bg-white/10 pl-2 text-white"
+                                    : "text-white/60 hover:bg-white/5 hover:text-white/80",
+                                )}
+                              >
+                                {s.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               );
             })}
