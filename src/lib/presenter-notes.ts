@@ -27,8 +27,8 @@ const NOTES: Record<string, string[]> = {
     "Every past pricing decision — win or loss — teaches the model about price sensitivity.",
   ],
   "driver-importance:6": [
-    "Here are the five factors the model selected as the most important drivers for your pricing.",
-    "Each one was chosen because it explains a meaningful share of price variance in your data.",
+    "These five drivers now feed the pricing model — each selected because it explains meaningful price variance in your data.",
+    "Click to see how the model uses them to produce an optimized price per SKU.",
   ],
   "execute:0": [
     "The model produced $17.50 for SKU #A-7200 — now watch how it customizes that price for each customer.",

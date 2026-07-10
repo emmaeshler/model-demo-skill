@@ -106,20 +106,20 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
   }, [absorbedCount]);
 
   const [scanCardCount, setScanCardCount] = useState(chartStep > 1 || !!skipAnimation ? 4 : 0);
-  const [driversRevealed, setDriversRevealed] = useState(chartStep > 1 || !!skipAnimation);
+  const [driversRevealed, setDriversRevealed] = useState(chartStep > 2 || !!skipAnimation);
   useEffect(() => {
     if (!isActive) { setScanCardCount(0); setDriversRevealed(false); return; }
-    if (chartStep !== 1) { setScanCardCount(chartStep > 1 ? 4 : 0); setDriversRevealed(chartStep > 1); return; }
+    if (chartStep !== 1) { setScanCardCount(chartStep > 1 ? 4 : 0); setDriversRevealed(chartStep > 2); return; }
     if (skipAnimation) { setScanCardCount(4); setDriversRevealed(true); return; }
     setScanCardCount(0);
     setDriversRevealed(false);
-    const cardInterval = SWEEP_DURATION * 1000 / 4;
     const s1 = setTimeout(() => setScanCardCount(1), 600);
-    const s2 = setTimeout(() => setScanCardCount(2), cardInterval);
-    const s3 = setTimeout(() => setScanCardCount(3), cardInterval * 2);
-    const s4 = setTimeout(() => setScanCardCount(4), cardInterval * 3);
+    const s2 = setTimeout(() => setScanCardCount(2), 2000);
+    const s3 = setTimeout(() => setScanCardCount(3), 3400);
+    const s4 = setTimeout(() => setScanCardCount(4), 4800);
     return () => { clearTimeout(s1); clearTimeout(s2); clearTimeout(s3); clearTimeout(s4); };
-  }, [isActive, chartStep, skipAnimation, onAutoAdvance]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isActive, chartStep, skipAnimation]);
 
   useEffect(() => {
     if (!isActive || chartStep !== 2) return;
@@ -128,9 +128,9 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
     return () => clearTimeout(t);
   }, [isActive, chartStep, skipAnimation, shareMode, onAutoAdvance]);
 
-  const clustered = chartStep >= 2;
+  const clustered = chartStep >= 3;
   const factorsVisible = false;
-  const customized = chartStep >= 2;
+  const customized = chartStep >= 3;
   const feeding = chartStep >= 3;
   const sweepActive = chartStep === 1 && !driversRevealed;
 
@@ -146,7 +146,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
   function dotOpacity(dot: (typeof DOTS)[0]) {
     if (customized) return 0;
     if (factorsVisible) return factorsPhase >= 2 ? 0 : 0.12;
-    if (chartStep === 1) {
+    if (chartStep === 1 || chartStep === 2) {
       if (driversRevealed) return 0.7;
       if (revealedClusters.has(dot.cluster)) return 0.7;
       return dot.scatterOpacity;
@@ -220,64 +220,14 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
           )}
           {chartStep > 0 && (
             <motion.div
-              key={`step-title-${chartStep}`}
+              key={`step-title-${chartStep === 2 ? 1 : chartStep}`}
               className="absolute inset-0 flex flex-col items-center justify-start"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.5, delay: chartStep === 1 ? 0.2 : 0.15 }}
             >
-              {chartStep === 2 ? (
-                <div className="mx-auto max-w-3xl text-center">
-                  <AnimatePresence mode="wait">
-                    {selectionPhase === -1 ? (
-                      <motion.div key="factors-intro" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.4 }}>
-                        <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: NAVY }}>
-                          Pricing factors across four dimensions
-                        </h2>
-                        <p className="mt-1 text-[1.05rem] leading-relaxed" style={{ color: MUTED }}>
-                          We analyze what matters most to you — elevating key factors, removing what doesn&rsquo;t apply, and tuning the balance.
-                        </p>
-                      </motion.div>
-                    ) : selectionPhase >= 0 && selectionPhase <= 3 ? (
-                      <motion.div key={`sel-narr-${selectionPhase}`} className="flex flex-col items-center gap-1" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.3 }}>
-                        <motion.h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: CATEGORY_LAYOUT[selectionPhase].color }}>
-                          {CATEGORY_TITLES[selectionPhase]}
-                        </motion.h2>
-                        <span className="text-[0.95rem] leading-relaxed" style={{ color: MUTED }}>
-                          {CATEGORY_NARRATION[selectionPhase]}
-                        </span>
-                        <AnimatePresence>
-                          {actionRevealed && currentHint && (
-                            <motion.div key={`action-hint-${selectionPhase}-${selectionPhase === 0 ? customerActionStep : 0}`} className="mt-2 flex items-center justify-center gap-2" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.35 }}>
-                              <span className="inline-flex items-center justify-center rounded-full" style={{ width: 24, height: 24, backgroundColor: `${currentHint.color}15`, color: currentHint.color, fontSize: 14, fontWeight: 800, flexShrink: 0 }}>
-                                {currentHint.icon}
-                              </span>
-                              <span className="text-[0.95rem] font-bold" style={{ color: currentHint.color }}>
-                                {currentHint.headline}
-                              </span>
-                              <span className="text-[0.85rem] leading-relaxed" style={{ color: MUTED }}>
-                                {currentHint.detail}
-                              </span>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </motion.div>
-                    ) : selectionPhase === 4 ? (
-                      <motion.div key="sel-picks" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-                        <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: TEAL }}>
-                          Selected factors for the model
-                        </h2>
-                      </motion.div>
-                    ) : (
-                      <motion.div key="final-sub" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-                        <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: NAVY }}>{TITLES[chartStep]}</h2>
-                        <p className="mt-1 text-[1.05rem] leading-relaxed" style={{ color: MUTED }}>{SUBTITLES[2]}</p>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              ) : chartStep >= 3 ? (
+              {chartStep >= 3 ? (
                 <>
                   <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: NAVY, display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "0 0.3em" }}>
                     {(TITLES[chartStep] ?? "").split(" ").map((word, wi) => (
@@ -296,9 +246,9 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                 </>
               ) : (
                 <>
-                  <motion.h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: NAVY }}>{TITLES[chartStep]}</motion.h2>
+                  <motion.h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: NAVY }}>{TITLES[chartStep === 2 ? 1 : chartStep]}</motion.h2>
                   <motion.p className="mx-auto mt-1 max-w-2xl text-center text-[1.05rem] leading-relaxed" style={{ color: MUTED }} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: chartStep === 1 ? 0.4 : 0.15 }}>
-                    {SUBTITLES[chartStep]}
+                    {SUBTITLES[chartStep === 2 ? 1 : chartStep]}
                   </motion.p>
                 </>
               )}

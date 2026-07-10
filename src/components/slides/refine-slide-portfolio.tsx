@@ -94,9 +94,9 @@ function HeroCardContent({ seg, delay, isActive, shareMode }: {
   );
 }
 
-function GridCardContent({ seg, colSpan }: { seg: typeof PORTFOLIO_SEGMENTS[number]; colSpan: number }) {
-  const isLarge = colSpan >= 5;
-  const isMedium = colSpan >= 2;
+function GridCardContent({ seg, cols }: { seg: typeof PORTFOLIO_SEGMENTS[number]; cols: number }) {
+  const isLarge = cols <= 4;
+  const isMedium = cols <= 5;
   const isPositive = seg.delta.startsWith("+");
 
   return (
@@ -137,16 +137,17 @@ function GridCardContent({ seg, colSpan }: { seg: typeof PORTFOLIO_SEGMENTS[numb
 export function PortfolioGrid({ isPortfolio, isPortfolioHero, isActive, shareMode, portfolioPhase }: PortfolioGridProps) {
   const isVisible = isPortfolioHero || isPortfolio;
 
-  const colSpan = isPortfolioHero ? 5
-    : portfolioPhase >= 3 ? 1
-    : portfolioPhase >= 2 ? 2
-    : 5;
+  const cols = isPortfolioHero ? 2
+    : portfolioPhase >= 3 ? 10
+    : portfolioPhase >= 2 ? 5
+    : 4;
   const visibleCount = isPortfolioHero ? 4
     : portfolioPhase >= 3 ? 30
     : portfolioPhase >= 2 ? 15
-    : 4;
-  const isLarge = colSpan >= 5;
-  const showHeroContent = isPortfolioHero || (isPortfolio && portfolioPhase < 1);
+    : 8;
+  const isHero = isPortfolioHero;
+  const isLarge = isHero;
+  const showHeroContent = isPortfolioHero;
 
   const visibleSegments = useMemo(
     () => PORTFOLIO_SEGMENTS.slice(0, visibleCount),
@@ -164,9 +165,10 @@ export function PortfolioGrid({ isPortfolio, isPortfolioHero, isActive, shareMod
           exit={{ opacity: 0, transition: { duration: 0.35 } }}
         >
           <div
-            className="grid grid-cols-10 px-4"
+            className="grid px-4"
             style={{
-              maxWidth: isLarge ? 780 : 1100,
+              gridTemplateColumns: `repeat(${cols}, 1fr)`,
+              maxWidth: isHero ? 780 : 1100,
               width: "100%",
               gap: isLarge ? 16 : 8,
               transition: "max-width 0.8s cubic-bezier(0.22, 1, 0.36, 1), gap 0.8s cubic-bezier(0.22, 1, 0.36, 1)",
@@ -174,15 +176,15 @@ export function PortfolioGrid({ isPortfolio, isPortfolioHero, isActive, shareMod
           >
             <AnimatePresence>
               {visibleSegments.map((seg, i) => {
-                const heroSeg = i < 4 ? HERO_SEGMENTS[i] : null;
-                const cardPad = isLarge ? "12px 16px 10px" : colSpan >= 2 ? "8px 10px 6px" : "8px 10px 6px";
+                const heroSeg = isPortfolioHero && i < 4 ? HERO_SEGMENTS[i] : null;
+                const isMedium = cols <= 5;
+                const cardPad = isLarge ? "12px 16px 10px" : isMedium ? "8px 10px 6px" : "8px 10px 6px";
                 return (
                   <motion.div
                     key={seg.name}
                     layout
                     className={`${isLarge ? "rounded-xl" : "rounded-lg"} relative overflow-hidden`}
                     style={{
-                      gridColumn: `span ${colSpan}`,
                       backgroundColor: `${NAVY}04`,
                       border: `1px solid ${NAVY}0A`,
                       padding: cardPad,
@@ -191,16 +193,16 @@ export function PortfolioGrid({ isPortfolio, isPortfolioHero, isActive, shareMod
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     transition={{
                       layout: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
-                      opacity: { duration: isPortfolioHero && i < 4 ? 0.6 : 0.35, delay: isPortfolioHero && i < 4 ? 0.2 + i * 0.18 : 0 },
-                      scale: { duration: isPortfolioHero && i < 4 ? 0.6 : 0.35, delay: isPortfolioHero && i < 4 ? 0.2 + i * 0.18 : 0 },
-                      y: { duration: isPortfolioHero && i < 4 ? 0.6 : 0.35, delay: isPortfolioHero && i < 4 ? 0.2 + i * 0.18 : 0 },
+                      opacity: { duration: isPortfolioHero ? 0.6 : 0.35, delay: isPortfolioHero ? 0.2 + i * 0.18 : 0 },
+                      scale: { duration: isPortfolioHero ? 0.6 : 0.35, delay: isPortfolioHero ? 0.2 + i * 0.18 : 0 },
+                      y: { duration: isPortfolioHero ? 0.6 : 0.35, delay: isPortfolioHero ? 0.2 + i * 0.18 : 0 },
                     }}
                   >
                     <motion.div
                       animate={{ opacity: heroSeg && showHeroContent ? 0 : 1 }}
                       transition={{ duration: 0.5, ease: "easeInOut" }}
                     >
-                      <GridCardContent seg={seg} colSpan={colSpan} />
+                      <GridCardContent seg={seg} cols={cols} />
                     </motion.div>
                     {heroSeg && !(isPortfolio && portfolioPhase >= 2) && (
                       <motion.div

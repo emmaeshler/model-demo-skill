@@ -135,9 +135,7 @@ const RAIL_TIMELINE: Partial<Record<number, (RailContent | null)[]>> = {
     /* 3  order  */ { show: "factors", engine: "strat", active: ["order"] },
     /* 4  mkt    */ { show: "factors", engine: "strat", active: ["market"] },
     /* 5  consolidated */ { show: "factors", engine: "strat", active: ["customer", "product", "order", "market"] },
-    /* 6  summary chips */ { show: "factors", engine: "strat", active: ["customer", "product", "order", "market"] },
-    /* 7  summary drivers */ { show: "drivers", flyIn: true },
-    /* 8  vortex */ { show: "drivers", flyIn: false },
+    /* 6  driver cards */ { show: "factors", engine: "strat", active: ["customer", "product", "order", "market"] },
   ],
   [EXECUTE_INDEX]: [
     /* 0  */ { show: "drivers", flyIn: false },
@@ -608,7 +606,7 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
       { index: DRIVER_IMP_INDEX, label: "Product", subStep: 2 },
       { index: DRIVER_IMP_INDEX, label: "Order", subStep: 3 },
       { index: DRIVER_IMP_INDEX, label: "Market", subStep: 4 },
-      { index: DRIVER_IMP_INDEX, label: "Your model drivers", subStep: 6 },
+      { index: DRIVER_IMP_INDEX, label: "5 model drivers", subStep: 6 },
     ],
   },
   {
@@ -678,6 +676,7 @@ export function Home() {
   const audienceWindowRef = useRef<Window | null>(null);
   const iframeSrcRef = useRef("");
   const [railEntering, setRailEntering] = useState(false);
+  const isReplayingRef = useRef(false);
   const spotlightRefinedRef = useRef(false);
   const [spotlightAdvanceReq, setSpotlightAdvanceReq] = useState(0);
   const handleSpotlightRefined = useCallback(() => { spotlightRefinedRef.current = true; }, []);
@@ -687,14 +686,6 @@ export function Home() {
   const handleExecuteCustomerChange = useCallback((c: string) => setExecuteCustomer(c), []);
   const [refineTimelinePhase, setRefineTimelinePhase] = useState(0);
   const handleRefineTimelinePhase = useCallback((phase: number) => setRefineTimelinePhase(phase), []);
-  const [vortexDone, setVortexDone] = useState(false);
-  const vortexTriggered = false;
-
-  useEffect(() => {
-    if (!vortexTriggered) { setVortexDone(false); return; }
-    const t = setTimeout(() => setVortexDone(true), 600);
-    return () => clearTimeout(t);
-  }, [vortexTriggered]);
   const prevRailVisibleRef = useRef(false);
   const [presentElapsed, setPresentElapsed] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
@@ -1176,6 +1167,7 @@ export function Home() {
   const markAnimationDone = useCallback(() => setAnimationDone(true), []);
 
   const handleReplay = useCallback(() => {
+    isReplayingRef.current = true;
     startTransition(() => {
       setSkipAnimation(false);
       setSlideReplayKeys(prev => prev.map((k, i) => i === slide ? k + 1 : k));
@@ -1184,6 +1176,7 @@ export function Home() {
 
   const navigate = useCallback(
     (index: number, targetSubStep?: number) => {
+      isReplayingRef.current = false;
       // Skip over presenter-hidden slides
       let target = index;
       if (targetSubStep === undefined && presenterSkipped.has(target)) {
@@ -1234,7 +1227,7 @@ export function Home() {
       if (target === slide - 1 && currentMax > 0 && subStep > 0) {
         startTransition(() => {
           setSkipAnimation(true);
-          setSubStep((s) => s - 1);
+          setSubStep((s) => Math.max(0, s - 1));
           if (slide === REFINE_INDEX && subStep === 7) setRefineTimelinePhase(3);
         });
         return;
@@ -1365,13 +1358,13 @@ export function Home() {
                           step={isActive ? subStep : 0}
                           skipAnimation={effectiveSkip}
                           isActive={isActive}
-                          onAutoAdvance={isActive && !skipAnimation ? () => navigate(slide + 1) : undefined}
+                          onAutoAdvance={isActive && !skipAnimation && !isReplayingRef.current ? () => navigate(slide + 1) : undefined}
                         />
                       )}
                       {sc.kind === "power" && (
                         <MemoPower
                           step={isActive ? subStep : 0}
-                          onAutoAdvance={isActive && !skipAnimation ? () => navigate(slide + 1) : undefined}
+                          onAutoAdvance={isActive && !skipAnimation && !isReplayingRef.current ? () => navigate(slide + 1) : undefined}
                           skipAnimation={effectiveSkip}
                           isActive={isActive}
                           onActiveCategoryChange={isActive ? handleActiveCategoryChange : undefined}
@@ -1380,7 +1373,7 @@ export function Home() {
                       {sc.kind === "refine" && (
                         <MemoRefine
                           step={isActive ? subStep : 0}
-                          onAutoAdvance={isActive && !skipAnimation ? () => navigate(slide + 1) : undefined}
+                          onAutoAdvance={isActive && !skipAnimation && !isReplayingRef.current ? () => navigate(slide + 1) : undefined}
                           skipAnimation={effectiveSkip}
                           isActive={isActive}
                           onTimelinePhase={isActive ? handleRefineTimelinePhase : undefined}
@@ -1394,7 +1387,7 @@ export function Home() {
                           step={isActive ? subStep : 0}
                           skipAnimation={effectiveSkip}
                           isActive={isActive}
-                          onAutoAdvance={isActive && !skipAnimation ? () => navigate(slide + 1) : undefined}
+                          onAutoAdvance={isActive && !skipAnimation && !isReplayingRef.current ? () => navigate(slide + 1) : undefined}
                         />
                       )}
                       {sc.kind === "execute" && <MemoExecute step={isActive ? subStep : 0} skipAnimation={effectiveSkip} isActive={isActive} onCustomerChange={isActive ? handleExecuteCustomerChange : undefined} />}

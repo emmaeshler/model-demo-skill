@@ -6,13 +6,12 @@ import {
   EASE, NAVY, TEAL, ORANGE, GREEN, PURPLE, MUTED,
   SQUARE_FACTORS, CATEGORY_LAYOUT,
   CATEGORY_TITLES, CATEGORY_NARRATION,
-  SELECTED_FACTORS,
 } from "./power-slide-data";
 import { useShareMode } from "@/lib/share-context";
 
 const RED = "#DC2626";
 
-export const DRIVER_IMPORTANCE_TOTAL_STEPS = 9;
+export const DRIVER_IMPORTANCE_TOTAL_STEPS = 7;
 
 type CategoryKey = "customer" | "product" | "order" | "market";
 const REVEAL_ORDER: CategoryKey[] = ["customer", "product", "order", "market"];
@@ -106,9 +105,7 @@ export function DriverImportanceSlide({
   onAutoAdvance?: () => void;
 }) {
   const { shareMode } = useShareMode();
-  const isVortex = step === 8;
-  const isSummary = step >= 6 && step <= 7;
-  const summaryStep = isSummary ? step - 6 : (isVortex ? 1 : -1);
+  const isDriverCards = step === 6;
   const isConsolidated = step === 5;
   const isIntro = step === 0;
   const isChart = step >= 1 && step <= 4;
@@ -135,23 +132,9 @@ export function DriverImportanceSlide({
     return () => clearTimeout(t);
   }, [actionRevealed, skipAnimation]);
 
-  const [consolidatedPhase, setConsolidatedPhase] = useState(0);
-  useEffect(() => {
-    if (!isActive || !isConsolidated) { setConsolidatedPhase(0); return; }
-    if (skipAnimation) { setConsolidatedPhase(0); return; }
-    if (shareMode) { setConsolidatedPhase(2); onAutoAdvance?.(); return; }
-    setConsolidatedPhase(0);
-    const t1 = setTimeout(() => setConsolidatedPhase(1), 1400);
-    const t2 = setTimeout(() => {
-      setConsolidatedPhase(2);
-      onAutoAdvance?.();
-    }, 2800);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, [isActive, isConsolidated, skipAnimation, onAutoAdvance, shareMode]);
-
   const removedSet = useMemo(() => {
     const set = new Set<string>();
-    if (isConsolidated) {
+    if (isConsolidated || isDriverCards) {
       for (const cat of REVEAL_ORDER) CATEGORY_REMOVALS[cat].forEach(l => set.add(l));
     } else {
       for (let i = 0; i < categoryIndex; i++) {
@@ -159,11 +142,11 @@ export function DriverImportanceSlide({
       }
     }
     return set;
-  }, [categoryIndex, isConsolidated]);
+  }, [categoryIndex, isConsolidated, isDriverCards]);
 
   const revealedSet = useMemo(
-    () => new Set(isIntro ? [] : isConsolidated ? REVEAL_ORDER : REVEAL_ORDER.slice(0, categoryIndex + 1)),
-    [isIntro, categoryIndex, isConsolidated],
+    () => new Set(isIntro ? [] : (isConsolidated || isDriverCards) ? REVEAL_ORDER : REVEAL_ORDER.slice(0, categoryIndex + 1)),
+    [isIntro, categoryIndex, isConsolidated, isDriverCards],
   );
 
   const visibleFactors = useMemo(() => {
@@ -178,7 +161,7 @@ export function DriverImportanceSlide({
 
   const [clickReady, setClickReady] = useState(!!skipAnimation);
   useEffect(() => {
-    if (!isActive || isSummary || isVortex || isConsolidated) { setClickReady(false); return; }
+    if (!isActive || isDriverCards) { setClickReady(false); return; }
     if (skipAnimation || shareMode) { setClickReady(true); return; }
     setClickReady(false);
     if (isIntro) {
@@ -190,7 +173,11 @@ export function DriverImportanceSlide({
       const t = setTimeout(() => setClickReady(true), 600);
       return () => clearTimeout(t);
     }
-  }, [isActive, isIntro, isChart, secondPhase, isSummary, isVortex, isConsolidated, skipAnimation, step]);
+    if (isConsolidated) {
+      const t = setTimeout(() => setClickReady(true), 800);
+      return () => clearTimeout(t);
+    }
+  }, [isActive, isIntro, isChart, secondPhase, isDriverCards, isConsolidated, skipAnimation, step]);
 
   function getDisposition(f: { label: string; category: string }): Disposition | null {
     const catKey = f.category as CategoryKey;
@@ -242,42 +229,33 @@ export function DriverImportanceSlide({
     c.top = startY + i * (CARD_H + CARD_GAP);
   });
 
-  const selectedSet = useMemo(() => new Set(SELECTED_FACTORS.map(f => f.label)), []);
-
-  const allChipFactors = useMemo(() => {
-    return SQUARE_FACTORS.concat(
-      SQUARE_FACTORS.some(f => f.label === MARKET_ADD_FACTOR) ? [] : [{ label: MARKET_ADD_FACTOR, category: "market" as const }]
-    );
-  }, []);
-
-  const [chipsReady, setChipsReady] = useState(!!skipAnimation);
+  // 0 = waiting, 1 = customer, 2 = product, 3 = order, 4 = market (all shown)
+  const [driverHighlight, setDriverHighlight] = useState(0);
+  const [driversDone, setDriversDone] = useState(!!skipAnimation);
+  const [driverClickReady, setDriverClickReady] = useState(!!skipAnimation);
   useEffect(() => {
-    if (!isActive || !(isSummary || isVortex)) { setChipsReady(false); return; }
-    if (skipAnimation || shareMode) { setChipsReady(true); return; }
-    setChipsReady(false);
-    const t = setTimeout(() => setChipsReady(true), 300);
+    if (!isActive || !isDriverCards) { setDriverHighlight(0); setDriversDone(false); setDriverClickReady(false); return; }
+    if (skipAnimation || shareMode) { setDriverHighlight(4); setDriversDone(true); setDriverClickReady(true); return; }
+    setDriverHighlight(0);
+    setDriversDone(false);
+    setDriverClickReady(false);
+    const timers = [
+      setTimeout(() => setDriverHighlight(1), 500),
+      setTimeout(() => setDriverHighlight(2), 1300),
+      setTimeout(() => setDriverHighlight(3), 2100),
+      setTimeout(() => setDriverHighlight(4), 2900),
+      setTimeout(() => setDriversDone(true), 3600),
+      setTimeout(() => setDriverClickReady(true), 4200),
+    ];
+    return () => timers.forEach(clearTimeout);
+  }, [isActive, isDriverCards, skipAnimation, shareMode]);
+
+  useEffect(() => {
+    if (!driverClickReady || !onAutoAdvance) return;
+    if (skipAnimation) { onAutoAdvance(); return; }
+    const t = setTimeout(onAutoAdvance, 1500);
     return () => clearTimeout(t);
-  }, [isActive, isSummary, isVortex, skipAnimation]);
-
-  const [vortexPhase, setVortexPhase] = useState(0);
-  useEffect(() => {
-    if (!isActive || !isVortex) { setVortexPhase(0); return; }
-    if (skipAnimation && onAutoAdvance) { onAutoAdvance(); return; }
-    if (shareMode) {
-      setVortexPhase(4);
-      onAutoAdvance?.();
-      return;
-    }
-    setVortexPhase(0);
-    const t1 = setTimeout(() => setVortexPhase(1), 20);
-    const t2 = setTimeout(() => setVortexPhase(2), 150);
-    const t3 = setTimeout(() => setVortexPhase(3), 350);
-    const t4 = setTimeout(() => {
-      setVortexPhase(4);
-      onAutoAdvance?.();
-    }, 500);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
-  }, [isActive, isVortex, skipAnimation, onAutoAdvance]);
+  }, [driverClickReady, onAutoAdvance, skipAnimation]);
 
   return (
     <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-7xl flex-col items-center justify-start px-6 pt-4">
@@ -288,9 +266,9 @@ export function DriverImportanceSlide({
       >
         <div className="mx-auto max-w-3xl text-center">
           <AnimatePresence mode="wait">
-            {isConsolidated && consolidatedPhase >= 1 ? (
+            {isConsolidated ? (
               <motion.div
-                key="consolidated-list"
+                key="consolidated"
                 className="flex flex-col items-center gap-2"
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -299,19 +277,6 @@ export function DriverImportanceSlide({
               >
                 <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: TEAL }}>
                   Your model factors
-                </h2>
-              </motion.div>
-            ) : isConsolidated ? (
-              <motion.div
-                key="consolidated-bars"
-                className="flex flex-col items-center gap-2"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.5, ease: EASE }}
-              >
-                <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: TEAL }}>
-                  Your refined pricing factors
                 </h2>
                 <p className="mx-auto max-w-xl text-center text-[1.05rem] leading-relaxed" style={{ color: MUTED }}>
                   13 factors refined from 22 — tuned to your business.
@@ -333,9 +298,9 @@ export function DriverImportanceSlide({
                   We analyze what matters most to you — elevating key factors, removing what doesn&rsquo;t apply, and tuning the balance.
                 </p>
               </motion.div>
-            ) : isSummary || isVortex ? (
+            ) : isDriverCards ? (
               <motion.div
-                key="summary"
+                key="driver-cards"
                 className="flex flex-col items-center gap-2"
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -343,10 +308,10 @@ export function DriverImportanceSlide({
                 transition={{ duration: 0.5, ease: EASE }}
               >
                 <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: TEAL }}>
-                  Your customized factors now feed the model
+                  Your model drivers
                 </h2>
                 <p className="mx-auto max-w-xl text-center text-[1.05rem] leading-relaxed" style={{ color: MUTED }}>
-                  Every business is different. We analyze what matters to you — adding key factors, removing what doesn&rsquo;t apply, and tuning the balance.
+                  13 factors grouped into 4 categories that drive your pricing model.
                 </p>
               </motion.div>
             ) : (
@@ -379,25 +344,6 @@ export function DriverImportanceSlide({
         style={{ transform: "translateX(calc(var(--rail-inset, 0px) * -0.5))" }}
       >
         <AnimatePresence mode="wait">
-          {isSummary || isVortex ? (
-            <motion.div
-              key="summary-content"
-              className="absolute inset-0 flex justify-center"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.5, ease: EASE }}
-            >
-              <SummaryView
-                chipFactors={allChipFactors}
-                selectedSet={selectedSet}
-                chipsReady={chipsReady}
-                showDrivers={summaryStep >= 1}
-                skipAnimation={skipAnimation}
-              />
-              {isVortex && <VortexOverlay phase={vortexPhase} />}
-            </motion.div>
-          ) : (
             <motion.div
               key="chart-content"
               className="absolute inset-0 flex justify-center"
@@ -407,8 +353,9 @@ export function DriverImportanceSlide({
                 {/* Bar chart column */}
                 <motion.div
                   className="flex-1 min-w-0"
-                  animate={{ opacity: (isConsolidated && consolidatedPhase >= 1) ? 0 : 1 }}
+                  animate={{ opacity: driversDone ? 0 : 1 }}
                   transition={{ duration: 0.5, ease: EASE }}
+                  style={{ pointerEvents: driversDone ? "none" : "auto" }}
                 >
                   <motion.div
                     className="mb-2 text-[10px] font-semibold uppercase tracking-[0.1em]"
@@ -442,7 +389,14 @@ export function DriverImportanceSlide({
                         const skelBar = isIntro;
                         const barColor = skelBar ? `${MUTED}22` : isRemove ? `${MUTED}60` : (isKeep || willBeKept) ? GREEN : color;
                         const barW = (f.value / MAX_VALUE) * BAR_MAX_W;
+
+                        const driverCatIdx = REVEAL_ORDER.indexOf(f.category as CategoryKey);
                         const opacity = skelBar ? 1
+                          : isDriverCards
+                          ? (driverHighlight === 0 ? 0.3
+                            : driverCatIdx === driverHighlight - 1 ? 1
+                            : driverCatIdx < driverHighlight ? 0.6
+                            : 0.15)
                           : hasAnnotations
                           ? (isAnnotated ? 1 : willBeRemoved && secondPhase ? 0.12 : willBeRemoved ? 1 : 0.12)
                           : (isPast ? 0.25 : 1);
@@ -602,8 +556,65 @@ export function DriverImportanceSlide({
                   </motion.p>
                 </motion.div>
 
-                {/* Annotation column */}
-                {!isConsolidated && (
+                {/* Right column: annotation cards (steps 1-4) or driver category cards (step 6) */}
+                {isDriverCards ? (<>
+                {/* Arrow */}
+                <motion.div
+                  className="shrink-0 flex items-center justify-center self-center"
+                  animate={{ opacity: driversDone ? 0 : driverHighlight >= 1 ? 0.6 : 0, scale: driverHighlight >= 1 ? 1 : 0.5 }}
+                  transition={{ duration: 0.4, ease: EASE }}
+                >
+                  <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                    <path d="M6 14h14m0 0l-5-5m5 5l-5 5" stroke={TEAL} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </motion.div>
+                <motion.div
+                  className="shrink-0 flex flex-col gap-2"
+                  animate={driversDone
+                    ? { position: "absolute" as const, left: "50%", x: "-50%", top: 0, width: 500 }
+                    : { width: 220 }
+                  }
+                  transition={{ duration: 0.6, ease: EASE }}
+                  style={{ paddingTop: driversDone ? 0 : 16 }}
+                >
+                  <AnimatePresence>
+                    {driversDone && (
+                      <motion.span
+                        className="text-[10px] font-bold uppercase tracking-[0.15em] mb-1 block"
+                        style={{ color: MUTED }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 0.7 }}
+                        transition={{ duration: 0.4, delay: 0.3 }}
+                      >
+                        4 driver categories powering your model
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                  <div className={driversDone ? "grid grid-cols-2 gap-3 auto-rows-fr" : "flex flex-col gap-2"}>
+                    {REVEAL_ORDER.map((cat, ci) => {
+                      if (ci >= driverHighlight) return null;
+                      const catFactors = visibleFactors.filter(f => f.category === cat);
+                      return (
+                        <motion.div
+                          key={cat}
+                          layout
+                          className={driversDone ? "h-full" : ""}
+                          initial={{ opacity: 0, x: 16, scale: 0.95 }}
+                          animate={{ opacity: 1, x: 0, scale: 1 }}
+                          transition={{ duration: 0.45, ease: EASE, layout: { duration: 0.5, ease: EASE } }}
+                        >
+                          <DriverCategoryCard
+                            cat={cat}
+                            factors={catFactors}
+                            color={CATEGORY_COLORS[cat]}
+                            expanded={driversDone}
+                          />
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+                </>) : !isConsolidated ? (
                 <div
                   className="w-[260px] shrink-0 relative"
                   style={{ minHeight: visibleFactors.length * ROW_H + 30 }}
@@ -624,48 +635,14 @@ export function DriverImportanceSlide({
                     ))}
                   </AnimatePresence>
                 </div>
-                )}
+                ) : null}
 
-                {/* Simple list that replaces bars during consolidated morph */}
-                <AnimatePresence>
-                  {isConsolidated && consolidatedPhase >= 1 && (
-                    <motion.div
-                      key="factor-list"
-                      className="absolute inset-0 flex justify-center pt-2"
-                      initial={{ opacity: 0, y: 16 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.5, delay: 0.15, ease: EASE }}
-                    >
-                      <div className="columns-2 gap-x-10 w-full max-w-lg">
-                        {visibleFactors.map((f, i) => (
-                          <motion.div
-                            key={f.label}
-                            className="flex items-center gap-2.5 py-1.5 break-inside-avoid"
-                            initial={{ opacity: 0, x: -12 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.35, delay: 0.2 + i * 0.04, ease: EASE }}
-                          >
-                            <span
-                              className="w-2 h-2 rounded-full shrink-0"
-                              style={{ backgroundColor: CATEGORY_COLORS[f.category] }}
-                            />
-                            <span className="text-[14px] font-semibold" style={{ color: NAVY }}>
-                              {f.label}
-                            </span>
-                          </motion.div>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
               </div>
             </motion.div>
-          )}
         </AnimatePresence>
 
         <AnimatePresence>
-          {clickReady && !isSummary && !isVortex && (
+          {(clickReady || driverClickReady) && (
             <motion.div
               className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5"
               style={{ transform: "translateX(calc(-50% + var(--rail-inset, 0px) * -0.5))" }}
@@ -689,243 +666,25 @@ export function DriverImportanceSlide({
 }
 
 
-function VortexOverlay({ phase }: { phase: number }) {
-  const drivers = useMemo(() =>
-    SELECTED_FACTORS.map((f, i) => {
-      const angle = (i / SELECTED_FACTORS.length) * Math.PI * 2 - Math.PI / 2;
-      const r = 200;
-      return {
-        label: f.label,
-        x: Math.cos(angle) * r,
-        y: Math.sin(angle) * r,
-        orbitX: Math.cos(angle + 2) * r * 0.3,
-        orbitY: Math.sin(angle + 2) * r * 0.3,
-        delay: i * 0.05,
-      };
-    }),
-  []);
-
+function DriverCategoryCard({ cat, factors, color, expanded }: { cat: string; factors: { label: string }[]; color: string; expanded?: boolean }) {
   return (
-    <motion.div
-      className="absolute inset-0 flex items-center justify-center pointer-events-none"
-      style={{ zIndex: 50 }}
+    <div
+      className={expanded ? "rounded-lg py-4 pl-5 pr-4 h-full" : "rounded-md py-2 pl-3 pr-2"}
+      style={{ borderLeft: `3px solid ${color}`, backgroundColor: `${color}08` }}
     >
-      <motion.div
-        className="absolute inset-0"
-        style={{ backgroundColor: "var(--i2p-bg, #EDF1F5)" }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: phase >= 1 ? 1 : 0 }}
-        transition={{ duration: 0.08 }}
-      />
-
-      {drivers.map((d, i) => (
-        <motion.div
-          key={i}
-          className="absolute flex items-center justify-center"
-          initial={{ x: d.x, y: d.y, opacity: 0, scale: 1 }}
-          animate={
-            phase >= 3
-              ? { x: 0, y: 0, opacity: 0, scale: 0, rotate: 540 }
-              : phase >= 2
-              ? { x: d.orbitX, y: d.orbitY, opacity: 1, scale: 1, rotate: 180 }
-              : phase >= 1
-              ? { x: d.x, y: d.y, opacity: 1, scale: 1, rotate: 0 }
-              : {}
-          }
-          transition={
-            phase >= 3
-              ? { duration: 0.15, delay: d.delay * 0.3, ease: [0.6, 0, 0.1, 1] }
-              : phase >= 2
-              ? { duration: 0.12, delay: d.delay * 0.3, ease: [0.4, 0, 0.2, 1] }
-              : { duration: 0.08, delay: d.delay * 0.3, ease: EASE }
-          }
-        >
-          <motion.span
-            className="inline-flex items-center justify-center rounded-lg px-4 py-3 text-[13px] font-bold whitespace-nowrap"
-            style={{ color: "#fff", backgroundColor: NAVY }}
-            animate={
-              phase >= 2
-                ? { width: 12, height: 12, padding: 0, fontSize: 0, borderRadius: 999, opacity: 1 }
-                : { opacity: 1 }
-            }
-            transition={
-              phase >= 2
-                ? { duration: 0.1, delay: d.delay * 0.3, ease: EASE }
-                : { duration: 0.05 }
-            }
-          >
-            {phase < 2 ? d.label : ""}
-          </motion.span>
-        </motion.div>
-      ))}
-
-      <motion.div
-        className="absolute rounded-full"
-        style={{ backgroundColor: TEAL }}
-        initial={{ width: 0, height: 0, opacity: 0 }}
-        animate={
-          phase >= 4
-            ? { width: 60, height: 60, opacity: [1, 0], scale: [1, 2.5] }
-            : phase >= 3
-            ? { width: 8, height: 8, opacity: 0.8 }
-            : {}
-        }
-        transition={
-          phase >= 4
-            ? { duration: 0.1, ease: EASE }
-            : { duration: 0.05 }
-        }
-      />
-    </motion.div>
-  );
-}
-
-function SummaryView({
-  chipFactors,
-  selectedSet,
-  chipsReady,
-  showDrivers,
-  skipAnimation,
-}: {
-  chipFactors: { label: string; category: string }[];
-  selectedSet: Set<string>;
-  chipsReady: boolean;
-  showDrivers: boolean;
-  skipAnimation?: boolean;
-}) {
-  const grouped = useMemo(() => {
-    const map: Record<string, { label: string; category: string }[]> = {};
-    for (const f of chipFactors) {
-      (map[f.category] ??= []).push(f);
-    }
-    let gi = 0;
-    return REVEAL_ORDER.map(cat => ({
-      cat,
-      factors: (map[cat] ?? []).map(f => ({ ...f, gi: gi++ })),
-    }));
-  }, [chipFactors]);
-
-  return (
-    <div className="w-full max-w-4xl flex gap-6 items-center pt-4">
-      {/* Left: chip grid */}
-      <div className="flex-1 min-w-0 max-w-[540px]">
-        <motion.span
-          className="text-[10px] font-bold uppercase tracking-[0.15em] mb-3 block"
-          style={{ color: MUTED }}
-          initial={skipAnimation ? false : { opacity: 0 }}
-          animate={{ opacity: chipsReady ? 0.7 : 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          Selected from
-        </motion.span>
-        <div className="flex flex-col gap-2.5">
-          {grouped.map(({ cat, factors }, catIdx) => (
-            <div key={cat}>
-              <motion.span
-                className="text-[11px] font-bold uppercase tracking-[0.1em] mb-1.5 block"
-                style={{ color: NAVY }}
-                initial={skipAnimation ? false : { opacity: 0, x: -20 }}
-                animate={{ opacity: chipsReady ? 1 : 0, x: chipsReady ? 0 : -20 }}
-                transition={{
-                  duration: 0.35,
-                  delay: skipAnimation ? 0 : catIdx * 0.12,
-                  ease: EASE,
-                }}
-              >
-                {cat}
-              </motion.span>
-              <div className="flex flex-wrap gap-1.5">
-                {factors.map((f) => {
-                  const isSelected = selectedSet.has(f.label);
-                  return (
-                    <motion.span
-                      key={f.label}
-                      className="inline-flex items-center rounded-full px-3 py-1 text-[12px] font-semibold"
-                      style={{
-                        border: `1.5px solid ${isSelected ? NAVY : `${MUTED}30`}`,
-                        color: isSelected ? NAVY : `${MUTED}70`,
-                        backgroundColor: isSelected ? `${NAVY}10` : "transparent",
-                      }}
-                      initial={skipAnimation ? false : { opacity: 0, x: -60 - f.gi * 8, scaleX: 1.3, scaleY: 0.7 }}
-                      animate={{
-                        opacity: chipsReady ? 1 : 0,
-                        x: chipsReady ? 0 : -60 - f.gi * 8,
-                        scaleX: chipsReady ? 1 : 1.3,
-                        scaleY: chipsReady ? 1 : 0.7,
-                      }}
-                      transition={{
-                        duration: 0.5,
-                        delay: skipAnimation ? 0 : 0.04 * f.gi,
-                        ease: EASE,
-                      }}
-                    >
-                      {f.label}
-                    </motion.span>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Arrow */}
-      <motion.div
-        className="flex flex-col items-center justify-center self-center"
-        initial={skipAnimation ? false : { opacity: 0, scale: 0.5 }}
-        animate={{ opacity: showDrivers ? 1 : 0, scale: showDrivers ? 1 : 0.5 }}
-        transition={{ duration: 0.4, ease: EASE }}
-      >
-        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-          <path
-            d="M8 16h12m0 0l-5-5m5 5l-5 5"
-            stroke={TEAL}
-            strokeWidth={2.5}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </motion.div>
-
-      {/* Right: 5 driver pills */}
-      <motion.div
-        className="w-[220px] shrink-0"
-        initial={skipAnimation ? false : { opacity: 0 }}
-        animate={{ opacity: showDrivers ? 1 : 0 }}
-        transition={{ duration: 0.4, ease: EASE }}
-      >
-        <span
-          className="text-[10px] font-bold uppercase tracking-[0.15em] mb-3 block"
-          style={{ color: NAVY }}
-        >
-          5 Model Drivers
+      <div className={`flex items-center ${expanded ? "gap-2 mb-2" : "gap-1.5 mb-1"}`}>
+        <span className={`${expanded ? "w-3 h-3" : "w-2 h-2"} rounded-full shrink-0`} style={{ backgroundColor: color }} />
+        <span className={`${expanded ? "text-[15px]" : "text-[12px]"} font-bold capitalize`} style={{ color: NAVY }}>
+          {cat}
         </span>
-        <div className="flex flex-wrap gap-2">
-          {SELECTED_FACTORS.map((f, i) => (
-            <motion.span
-              key={f.label}
-              className="inline-flex items-center justify-center rounded-lg px-4 py-3 text-[13px] font-bold"
-              style={{
-                color: "#fff",
-                backgroundColor: NAVY,
-              }}
-              initial={skipAnimation ? false : { opacity: 0, x: 30, scale: 0.9 }}
-              animate={{
-                opacity: showDrivers ? 1 : 0,
-                x: showDrivers ? 0 : 30,
-                scale: showDrivers ? 1 : 0.9,
-              }}
-              transition={{
-                duration: 0.45,
-                delay: skipAnimation ? 0 : 0.08 * i,
-                ease: EASE,
-              }}
-            >
-              {f.label}
-            </motion.span>
-          ))}
-        </div>
-      </motion.div>
+      </div>
+      <div className={`flex flex-col ${expanded ? "pl-5 gap-0.5" : "pl-[14px]"}`}>
+        {factors.map(f => (
+          <span key={f.label} className={`${expanded ? "text-[13px]" : "text-[11px]"} font-medium leading-[1.4]`} style={{ color: MUTED }}>
+            {f.label}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
