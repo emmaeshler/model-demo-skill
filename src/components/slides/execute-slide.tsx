@@ -845,8 +845,8 @@ export function ExecuteSlide({
 
                   {/* Pricing model circle */}
                   <g>
-                    {/* Shrink-in pulse ring (converge echo) */}
-                    {!skipAnimation && (
+                    {/* Shrink-in pulse ring (converge echo) — plays when drivers arrive */}
+                    {!skipAnimation && revealPhase >= 2 && (
                       <motion.circle
                         cx={MODEL_CX} cy={MODEL_CY} r={155}
                         fill="none" stroke={TEAL} strokeWidth={2}
@@ -861,36 +861,36 @@ export function ExecuteSlide({
                       cx={MODEL_CX} cy={MODEL_CY}
                       fill="white" stroke={TEAL} strokeWidth={2.5}
                       initial={skipAnimation ? { r: BOX_H / 2 } : { r: 150 }}
-                      animate={isActive ? { r: BOX_H / 2 } : { r: skipAnimation ? BOX_H / 2 : 150 }}
+                      animate={isActive
+                        ? { r: revealPhase >= 2 ? BOX_H / 2 : (skipAnimation ? BOX_H / 2 : 150) }
+                        : { r: skipAnimation ? BOX_H / 2 : 150 }}
                       transition={{ duration: 0.8, delay: (isActive && !skipAnimation) ? 0.05 : 0, ease: [0.22, 1, 0.36, 1] }}
                     />
 
-                    {/* Converge echo — shows the previous slide's content briefly */}
-                    {!skipAnimation && (
-                      <motion.g
-                        initial={{ opacity: 0.9 }}
-                        animate={{ opacity: 0 }}
-                        transition={{ duration: 0.45, delay: 0.25 }}
-                      >
-                        <text x={MODEL_CX} y={MODEL_CY - 38} textAnchor="middle"
-                          style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.18em", fill: "#5A6A78" }}>
-                          OPTIMIZED
-                        </text>
-                        <text x={MODEL_CX} y={MODEL_CY + 22} textAnchor="middle"
-                          style={{ fontSize: 54, fontWeight: 800, fill: NAVY }}>
-                          PRICE
-                        </text>
-                        <text x={MODEL_CX} y={MODEL_CY + 52} textAnchor="middle"
-                          style={{ fontSize: 16, fontWeight: 500, fill: "#5A6A78" }}>
-                          per SKU
-                        </text>
-                      </motion.g>
-                    )}
+                    {/* Converge echo — stays until Acme drivers arrive */}
+                    <motion.g
+                      initial={{ opacity: skipAnimation ? 0 : 0.9 }}
+                      animate={{ opacity: revealPhase >= 2 ? 0 : 1 }}
+                      transition={{ duration: revealPhase >= 2 ? 0.35 : 0.4 }}
+                    >
+                      <text x={MODEL_CX} y={MODEL_CY - 38} textAnchor="middle"
+                        style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.18em", fill: "#5A6A78" }}>
+                        OPTIMIZED
+                      </text>
+                      <text x={MODEL_CX} y={MODEL_CY + 22} textAnchor="middle"
+                        style={{ fontSize: 54, fontWeight: 800, fill: NAVY }}>
+                        PRICE
+                      </text>
+                      <text x={MODEL_CX} y={MODEL_CY + 52} textAnchor="middle"
+                        style={{ fontSize: 16, fontWeight: 500, fill: "#5A6A78" }}>
+                        per SKU
+                      </text>
+                    </motion.g>
 
                     <motion.g
-                      initial={skipAnimation ? false : { opacity: 0 }}
-                      animate={isActive ? { opacity: 1 } : { opacity: 0 }}
-                      transition={{ duration: 0.4, delay: isActive ? (skipAnimation ? 0.15 : 0.65) : 0 }}
+                      initial={false}
+                      animate={isActive && revealPhase >= 2 ? { opacity: 1 } : { opacity: 0 }}
+                      transition={{ duration: 0.4, delay: isActive && revealPhase >= 2 ? 0.25 : 0 }}
                     >
                       {/* Title above circle */}
                       <text x={MODEL_CX} y={MODEL_CY - 68} fontSize="14" fontWeight="700" fill={NAVY} textAnchor="middle">
@@ -915,8 +915,8 @@ export function ExecuteSlide({
                     <motion.text
                       x={MODEL_CX} y={MODEL_CY + BOX_H / 2 + 18}
                       fontSize="10" fontWeight="500" fill={TEAL} textAnchor="middle"
-                      initial={skipAnimation ? false : { opacity: 0 }}
-                      animate={isActive ? { opacity: 1 } : { opacity: 0 }}
+                      initial={false}
+                      animate={isActive && revealPhase >= 2 ? { opacity: 1 } : { opacity: 0 }}
                       transition={{ duration: 0.4, delay: isActive ? (skipAnimation ? 0.3 : 0.8) : 0 }}
                     >
                       ML-powered optimization

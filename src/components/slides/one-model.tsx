@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment } from "react";
+import { Fragment, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useShareMode } from "@/lib/share-context";
 
@@ -22,8 +22,8 @@ const STEP_NARRATIVES: Record<number, NarrativeSegment[]> = {
     { text: "Four key inputs power the ideal pricing model." },
   ],
   1: [
-    { text: "Four key inputs converge into one " },
-    { text: "unified pricing model", bold: true, underline: true, color: NAVY },
+    { text: "They converge into two complementary engines within one " },
+    { text: "pricing model", bold: true, underline: true, color: NAVY },
     { text: "." },
   ],
   2: [
@@ -120,15 +120,15 @@ function ModelVisualization({ step, isActive }: { step: number; isActive: boolea
   const H = 360;
   const CX = 660;
   const CY = 180;
-  const R = 105;
   const R_OUTER = 125;
   const R_INNER = 85;
   const ML_BG = "#4A9B6E";
   const STRAT_BG = "#4A8DB8";
+  const NAVY_INNER = "#1A6090";
   const R_ARC = R_INNER + (R_OUTER - R_INNER) * 0.75;
 
   const showCircle = step >= 1;
-  const showSplit = step >= 2;
+  const showColors = step >= 2;
 
   const CARD_W = 220;
   const CARD_H = 48;
@@ -165,7 +165,7 @@ function ModelVisualization({ step, isActive }: { step: number; isActive: boolea
       {/* ── Outer navy circle (AI Execution Layer) ── */}
       <motion.circle cx={CX} cy={CY} r={R_OUTER} fill={NAVY}
         initial={false}
-        animate={isActive && showCircle ? { scale: showSplit ? 1 : R / R_OUTER, opacity: 1 } : { scale: 0.5, opacity: 0 }}
+        animate={isActive && showCircle ? { scale: 1, opacity: 1 } : { scale: 0.5, opacity: 0 }}
         transition={{
           scale: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
           opacity: { duration: 0.5 },
@@ -173,56 +173,50 @@ function ModelVisualization({ step, isActive }: { step: number; isActive: boolea
         style={{ transformOrigin: `${CX}px ${CY}px` }}
       />
 
-      {/* ── Inner circle — ML half (top, green-tinted) ── */}
+      {/* ── Inner circle — ML half (top) ── */}
       <motion.path
         d={`M ${CX - R_INNER},${CY} A ${R_INNER},${R_INNER} 0 0,1 ${CX + R_INNER},${CY} Z`}
-        fill={ML_BG}
-        animate={{ opacity: showSplit ? 1 : 0, scale: showSplit ? 1 : 0.85 }}
+        initial={false}
+        animate={isActive && showCircle
+          ? { opacity: 1, scale: 1, fill: showColors ? ML_BG : NAVY_INNER }
+          : { opacity: 0, scale: 0.85, fill: NAVY_INNER }}
         transition={{
-          opacity: { duration: 0.6, delay: showSplit ? 0.15 : 0 },
-          scale: { duration: 0.7, delay: showSplit ? 0.15 : 0, ease: [0.22, 1, 0.36, 1] },
+          opacity: { duration: 0.6, delay: showCircle ? 0.15 : 0 },
+          scale: { duration: 0.7, delay: showCircle ? 0.15 : 0, ease: [0.22, 1, 0.36, 1] },
+          fill: { duration: 0.7, ease: "easeInOut" },
         }}
         style={{ transformOrigin: `${CX}px ${CY}px` }}
       />
-      {/* ── Inner circle — Strategic half (bottom, blue-tinted) ── */}
+      {/* ── Inner circle — Strategic half (bottom) ── */}
       <motion.path
         d={`M ${CX - R_INNER},${CY} A ${R_INNER},${R_INNER} 0 0,0 ${CX + R_INNER},${CY} Z`}
-        fill={STRAT_BG}
-        animate={{ opacity: showSplit ? 1 : 0, scale: showSplit ? 1 : 0.85 }}
+        initial={false}
+        animate={isActive && showCircle
+          ? { opacity: 1, scale: 1, fill: showColors ? STRAT_BG : NAVY_INNER }
+          : { opacity: 0, scale: 0.85, fill: NAVY_INNER }}
         transition={{
-          opacity: { duration: 0.6, delay: showSplit ? 0.15 : 0 },
-          scale: { duration: 0.7, delay: showSplit ? 0.15 : 0, ease: [0.22, 1, 0.36, 1] },
+          opacity: { duration: 0.6, delay: showCircle ? 0.15 : 0 },
+          scale: { duration: 0.7, delay: showCircle ? 0.15 : 0, ease: [0.22, 1, 0.36, 1] },
+          fill: { duration: 0.7, ease: "easeInOut" },
         }}
         style={{ transformOrigin: `${CX}px ${CY}px` }}
       />
 
-      {/* ── Dashed divider line between halves (step 1) ── */}
+      {/* ── Dashed divider line between halves ── */}
       <motion.line
         x1={CX - R_INNER + 15} y1={CY}
         x2={CX + R_INNER - 15} y2={CY}
         stroke="white" strokeWidth={1} strokeDasharray="6 4"
-        animate={{ opacity: showSplit ? 0.45 : 0 }}
-        transition={{ duration: 0.4, delay: showSplit ? 0.5 : 0 }}
+        initial={false}
+        animate={isActive && showCircle ? { opacity: 0.45 } : { opacity: 0 }}
+        transition={{ duration: 0.4, delay: showCircle ? 0.5 : 0 }}
       />
 
-      {/* ── Step 1 labels (Pricing Model / One unified engine) ── */}
-      <motion.text x={CX} y={CY - 4} fontSize="16" fontWeight="700" fill="white" textAnchor="middle"
-        initial={false}
-        animate={isActive && showCircle && !showSplit ? { opacity: 1 } : { opacity: 0 }}
-        transition={{ duration: showSplit ? 0.15 : 0.4, delay: isActive && showCircle && !showSplit ? 0.3 : 0 }}>
-        Pricing Model
-      </motion.text>
-      <motion.text x={CX} y={CY + 16} fontSize="10.5" fill="rgba(255,255,255,0.7)" textAnchor="middle"
-        initial={false}
-        animate={isActive && showCircle && !showSplit ? { opacity: 0.8 } : { opacity: 0 }}
-        transition={{ duration: showSplit ? 0.15 : 0.4, delay: isActive && showCircle && !showSplit ? 0.4 : 0 }}>
-        One unified engine
-      </motion.text>
-
-      {/* ── ML Prediction label + icon (step 1, top half of inner circle) ── */}
+      {/* ── ML Prediction label + icon (top half) ── */}
       <motion.g
-        animate={{ opacity: showSplit ? 1 : 0 }}
-        transition={{ duration: 0.5, delay: showSplit ? 0.45 : 0 }}
+        initial={false}
+        animate={isActive && showCircle ? { opacity: 1 } : { opacity: 0 }}
+        transition={{ duration: 0.5, delay: showCircle ? 0.45 : 0 }}
       >
         <g transform={`translate(${CX - 10}, ${CY - 72}) scale(1.0)`}>
           <circle cx={10} cy={4} r={3} fill="white" />
@@ -239,10 +233,11 @@ function ModelVisualization({ step, isActive }: { step: number; isActive: boolea
         </text>
       </motion.g>
 
-      {/* ── Strategic Guidance label + icon (step 1, bottom half of inner circle) ── */}
+      {/* ── Strategic Guidance label + icon (bottom half) ── */}
       <motion.g
-        animate={{ opacity: showSplit ? 1 : 0 }}
-        transition={{ duration: 0.5, delay: showSplit ? 0.45 : 0 }}
+        initial={false}
+        animate={isActive && showCircle ? { opacity: 1 } : { opacity: 0 }}
+        transition={{ duration: 0.5, delay: showCircle ? 0.45 : 0 }}
       >
         <text x={CX} y={CY + 36} fontSize="15" fontWeight="700" fill="white" textAnchor="middle">
           Strategic Guidance
@@ -259,8 +254,9 @@ function ModelVisualization({ step, isActive }: { step: number; isActive: boolea
       <motion.text
         fontSize="11.5" fontWeight="600" fill="white"
         fontStyle="italic" letterSpacing="0.08em"
-        animate={{ opacity: showSplit ? 0.9 : 0 }}
-        transition={{ duration: 0.5, delay: showSplit ? 0.7 : 0 }}>
+        initial={false}
+        animate={isActive && showCircle ? { opacity: 0.9 } : { opacity: 0 }}
+        transition={{ duration: 0.5, delay: showCircle ? 0.7 : 0 }}>
         <textPath href="#ai-text-arc" startOffset="50%" textAnchor="middle">
           AI Execution Layer
         </textPath>
@@ -269,15 +265,27 @@ function ModelVisualization({ step, isActive }: { step: number; isActive: boolea
       {/* ── Input cards & connections ── */}
       {/* Category labels */}
       <motion.text x={LEFT_X} y={label1Y} fontSize="10" fontWeight="600" letterSpacing="0.12em"
-        fill={showSplit ? ML_GREEN : NAVY}
-        initial={false} animate={isActive ? { opacity: 1 } : { opacity: 0 }}
-        transition={{ delay: isActive ? 0.15 : 0, duration: 0.4 }}>
+        initial={false}
+        animate={isActive
+          ? { opacity: 1, x: 0, fill: showColors ? ML_GREEN : NAVY }
+          : { opacity: 0, x: -30, fill: NAVY }}
+        transition={{
+          x: { duration: 0.6, delay: isActive ? 0.1 : 0, ease: [0.22, 1, 0.36, 1] },
+          opacity: { duration: 0.4, delay: isActive ? 0.1 : 0 },
+          fill: { duration: 0.5 },
+        }}>
         DATA INPUTS
       </motion.text>
       <motion.text x={LEFT_X} y={label2Y} fontSize="10" fontWeight="600" letterSpacing="0.12em"
-        fill={showSplit ? STRAT_BLUE : NAVY}
-        initial={false} animate={isActive ? { opacity: 1 } : { opacity: 0 }}
-        transition={{ delay: isActive ? 0.35 : 0, duration: 0.4 }}>
+        initial={false}
+        animate={isActive
+          ? { opacity: 1, x: 0, fill: showColors ? STRAT_BLUE : NAVY }
+          : { opacity: 0, x: -30, fill: NAVY }}
+        transition={{
+          x: { duration: 0.6, delay: isActive ? 0.55 : 0, ease: [0.22, 1, 0.36, 1] },
+          opacity: { duration: 0.4, delay: isActive ? 0.55 : 0 },
+          fill: { duration: 0.5 },
+        }}>
         EXPERTISE INPUTS
       </motion.text>
 
@@ -289,36 +297,42 @@ function ModelVisualization({ step, isActive }: { step: number; isActive: boolea
 
         const isML = inp.engine === "ml";
         const splitColor = isML ? ML_GREEN : STRAT_BLUE;
-        const cardColor = showSplit ? splitColor : NAVY;
+        const cardColor = showColors ? splitColor : NAVY;
 
-        // Step 1: all connections go to circle left edge at CY
-        const unifiedEX = CX - R;
-        const unifiedEY = CY;
-        const unifiedD = `M ${sx} ${sy} C ${sx + 80} ${sy}, ${unifiedEX - 60} ${unifiedEY}, ${unifiedEX} ${unifiedEY}`;
-        const unifiedPath = { sx, sy, cp1x: sx + 80, cp1y: sy, cp2x: unifiedEX - 60, cp2y: unifiedEY, ex: unifiedEX, ey: unifiedEY };
-
-        // Step 2: connections re-route to their engine half
         const splitTargetY = isML ? CY - ML_OFFSET : CY + STRAT_OFFSET;
         const edgeX = isML ? EDGE_LEFT_ML : EDGE_LEFT_STRAT;
         const splitEY = splitTargetY;
         const splitD = `M ${sx} ${sy} C ${sx + 80} ${sy}, ${edgeX - 60} ${splitEY}, ${edgeX} ${splitEY}`;
         const splitPath = { sx, sy, cp1x: sx + 80, cp1y: sy, cp2x: edgeX - 60, cp2y: splitEY, ex: edgeX, ey: splitEY };
 
-        const cardDelay = 0.2 + i * 0.12;
+        const groupOffset = i < 2 ? 0 : 0.45;
+        const withinGroup = i % 2;
+        const cardDelay = 0.2 + groupOffset + withinGroup * 0.15;
         const lineDelay = 0.7 + i * 0.1;
 
         return (
           <Fragment key={inp.label}>
             {/* Card */}
-            <motion.g initial={false} animate={isActive ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
-              transition={{ duration: 0.5, delay: isActive ? cardDelay : 0, ease: "easeOut" }}>
+            <motion.g
+              initial={false}
+              animate={isActive
+                ? { opacity: 1, x: 0, y: 0 }
+                : { opacity: 0, x: -50, y: 8 }}
+              transition={{
+                x: { duration: 0.7, delay: isActive ? cardDelay : 0, ease: [0.22, 1, 0.36, 1] },
+                y: { duration: 0.7, delay: isActive ? cardDelay : 0, ease: [0.22, 1, 0.36, 1] },
+                opacity: { duration: 0.45, delay: isActive ? cardDelay : 0 },
+              }}
+            >
               <motion.rect x={LEFT_X} y={cardY} width={CARD_W} height={CARD_H} rx={10}
                 fill="white"
+                initial={false}
                 animate={{ stroke: cardColor }}
                 transition={{ duration: 0.5 }}
                 strokeWidth={1.2}
               />
               <motion.text x={LEFT_X + CARD_W / 2} y={cardY + 20} fontSize="11.5" fontWeight="700" textAnchor="middle"
+                initial={false}
                 animate={{ fill: cardColor }}
                 transition={{ duration: 0.5 }}>
                 {inp.label}
@@ -328,31 +342,20 @@ function ModelVisualization({ step, isActive }: { step: number; isActive: boolea
               </foreignObject>
             </motion.g>
 
-            {/* Step 1 unified connection (fades out when split at step 2) */}
-            <motion.path d={unifiedD} fill="none" stroke={NAVY} strokeWidth={1.5} strokeLinecap="round"
+            {/* Connection to engine half */}
+            <motion.path d={splitD} fill="none" strokeWidth={1.5} strokeLinecap="round"
               initial={false}
-              animate={isActive && showCircle ? { pathLength: 1, opacity: showSplit ? 0 : 0.35 } : { pathLength: 0, opacity: 0 }}
+              animate={isActive && showCircle
+                ? { pathLength: 1, opacity: 0.4, stroke: showColors ? splitColor : NAVY }
+                : { pathLength: 0, opacity: 0, stroke: NAVY }}
               transition={{
                 pathLength: { duration: 0.7, delay: isActive && showCircle ? lineDelay : 0, ease: "easeOut" },
-                opacity: { duration: showSplit ? 0.3 : 0.7, delay: isActive && showCircle && !showSplit ? lineDelay : 0 },
+                opacity: { duration: 0.5, delay: isActive && showCircle ? lineDelay : 0 },
+                stroke: { duration: 0.5 },
               }}
             />
-            {showCircle && !showSplit && (
-              <FlowDot path={unifiedPath} color={NAVY} delay={1.4 + i * 0.3} isActive={isActive} />
-            )}
-
-            {/* Step 2 split connection (draws in when split) */}
-            <motion.path d={splitD} fill="none" strokeWidth={1.5} strokeLinecap="round"
-              stroke={splitColor}
-              initial={false}
-              animate={isActive ? { pathLength: showSplit ? 1 : 0, opacity: showSplit ? 0.45 : 0 } : { pathLength: 0, opacity: 0 }}
-              transition={{
-                pathLength: { duration: 0.8, delay: isActive && showSplit ? 0.4 + i * 0.1 : 0, ease: "easeOut" },
-                opacity: { duration: 0.4, delay: isActive && showSplit ? 0.3 : 0 },
-              }}
-            />
-            {showSplit && (
-              <FlowDot path={splitPath} color={splitColor} delay={1.2 + i * 0.3} isActive={isActive} />
+            {showCircle && (
+              <FlowDot path={splitPath} color={showColors ? splitColor : NAVY} delay={1.2 + i * 0.3} isActive={isActive} />
             )}
           </Fragment>
         );
@@ -368,9 +371,25 @@ interface OneModelSlideProps {
   onAutoAdvance?: () => void;
 }
 
+const STEP_DELAYS: Record<number, number> = {
+  0: 2000,
+  1: 2500,
+};
+
 /* ── Slide shell ── */
 
-export function OneModelSlide({ step, isActive }: OneModelSlideProps) {
+export function OneModelSlide({ step, isActive, skipAnimation, onAutoAdvance }: OneModelSlideProps) {
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  useEffect(() => {
+    clearTimeout(timerRef.current);
+    if (!isActive || skipAnimation || !onAutoAdvance) return;
+    const delay = STEP_DELAYS[step];
+    if (delay == null) return;
+    timerRef.current = setTimeout(onAutoAdvance, delay);
+    return () => clearTimeout(timerRef.current);
+  }, [step, isActive, skipAnimation, onAutoAdvance]);
+
   return (
     <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-6xl flex-col items-center justify-center px-6 pt-8 relative">
       <motion.h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: NAVY }}

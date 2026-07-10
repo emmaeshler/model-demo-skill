@@ -148,9 +148,9 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
   }
 
   return (
-    <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-7xl flex-col items-center justify-start px-6 pt-4">
+    <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-6rem)] max-w-7xl flex-col items-center justify-start px-6 pt-1">
       {/* Title */}
-      <div className="relative w-full" style={{ height: 116, flexShrink: 0, transform: "translateX(calc(var(--rail-inset, 0px) * -0.5))" }}>
+      <div className="relative w-full" style={{ height: 96, flexShrink: 0, transform: "translateX(calc(var(--rail-inset, 0px) * -0.5))" }}>
         <AnimatePresence mode="wait">
           {chartStep === 0 && (
             <motion.div

@@ -626,7 +626,7 @@ function formatElapsed(seconds: number) {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-const AUTO_ANIM_SLIDES = new Set<SlideKind>([]);
+const AUTO_ANIM_SLIDES = new Set<SlideKind>(["one-model"]);
 
 const DEFAULT_DONE_MS = 2000;
 

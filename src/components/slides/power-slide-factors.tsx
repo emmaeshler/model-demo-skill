@@ -44,7 +44,7 @@ export function FactorGrid({
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          justifyContent: customized && selectionPhase < 4 ? "flex-start" : selectionPhase >= 4 ? "flex-start" : "center",
+          justifyContent: customized && selectionPhase < 4 ? "center" : selectionPhase >= 4 ? "flex-start" : "center",
           fontFamily: "inherit",
           position: "relative",
         }}>
@@ -58,10 +58,10 @@ export function FactorGrid({
                   display: "grid",
                   gridTemplateColumns: "1fr 1fr",
                   gridTemplateRows: "1fr 1fr",
-                  columnGap: 20,
-                  rowGap: 20,
+                  columnGap: 24,
+                  rowGap: 24,
                   width: "100%",
-                  height: 440,
+                  height: 480,
                 }}
               >
                 {CATEGORY_LAYOUT.map((cat, catIdx) => {
@@ -80,7 +80,7 @@ export function FactorGrid({
                           {cat.key}
                         </motion.span>
                       )}
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center", ...(cat.key === "market" || cat.key === "order" ? { maxWidth: 330 } : {}) }}>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", ...(cat.key === "market" || cat.key === "order" ? { maxWidth: 380 } : {}) }}>
                         {chipsVisible && SQUARE_FACTORS.filter(f => f.category === cat.key).map((f, fi) => (
                             <motion.span
                               key={f.label}
@@ -90,8 +90,8 @@ export function FactorGrid({
                                 display: "inline-block",
                                 borderRadius: 16,
                                 border: `1.5px solid ${cat.color}25`,
-                                padding: "8px 14px",
-                                fontSize: 14,
+                                padding: "10px 16px",
+                                fontSize: 15,
                                 fontWeight: 500,
                                 fontFamily: "inherit",
                                 whiteSpace: "nowrap",
@@ -129,9 +129,17 @@ export function FactorGrid({
                   maxWidth: 960,
                   transformOrigin: "center center",
                 }}
-                animate={{ scale: 1, opacity: 1, gap: 18 }}
+                animate={{ scale: 1, opacity: 1, gap: 24 }}
               >
-                  {selectionPhase < 4 && CATEGORY_LAYOUT.map((cat, catIdx) => {
+                <AnimatePresence mode="popLayout">
+                  {selectionPhase < 4 ? (
+                  <motion.div
+                    key="cat-rows"
+                    style={{ display: "flex", flexDirection: "column", gap: 24, width: "100%" }}
+                    exit={{ opacity: 0, x: -50, scale: 0.92, filter: "blur(2px)" }}
+                    transition={{ duration: 0.4, ease: EASE }}
+                  >
+                  {CATEGORY_LAYOUT.map((cat, catIdx) => {
                     const catFactors = SQUARE_FACTORS.filter(f => f.category === cat.key);
                     const isActive = selectionPhase === catIdx;
                     const isPast = selectionPhase > catIdx;
@@ -145,7 +153,7 @@ export function FactorGrid({
                           alignItems: "flex-start",
                           gap: 14,
                           borderRadius: 12,
-                          padding: "8px 12px",
+                          padding: "10px 14px",
                         }}
                         initial={false}
                         animate={{
@@ -172,7 +180,7 @@ export function FactorGrid({
                           transition={{ duration: 0.4 }}
                         >
                         </motion.div>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, flex: 1 }}>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, flex: 1 }}>
                           <AnimatePresence>
                           {catFactors.map((f, fi) => {
                             const allChipActions = catActions.filter(a => a.label === f.label);
@@ -198,7 +206,7 @@ export function FactorGrid({
                                 exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.4, ease: EASE } }}
                                 style={{
                                   display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4, borderRadius: 8,
-                                  padding: "12px 20px", fontSize: 17, fontWeight: 700,
+                                  padding: "14px 24px", fontSize: 18, fontWeight: 700,
                                   fontFamily: "inherit", whiteSpace: "nowrap" as const,
                                 }}
                                 initial={{
@@ -254,8 +262,8 @@ export function FactorGrid({
                                     : (isElevated || isAdding) ? `2px solid ${TEAL}`
                                     : isLowered ? `2px solid ${PURPLE}`
                                     : `2px solid ${cat.color}25`,
-                                  padding: (isElevated || isLowered || isCrossoff) ? "12px 20px" : "10px 18px",
-                                  fontSize: (isElevated || isLowered || isCrossoff) ? 17 : 16,
+                                  padding: (isElevated || isLowered || isCrossoff) ? "14px 24px" : "12px 20px",
+                                  fontSize: (isElevated || isLowered || isCrossoff) ? 18 : 17,
                                   fontWeight: (isElevated || isLowered || isCrossoff) ? 700 : 600,
                                   fontFamily: "inherit",
                                   whiteSpace: "nowrap",
@@ -392,7 +400,7 @@ export function FactorGrid({
                       <div style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center", width: "100%", gap: 0 }}>
                         {/* Left: All factors */}
                         <motion.div
-                          style={{ display: "grid", gridTemplateColumns: "repeat(4, auto)", gap: 11, justifyContent: "start", alignContent: "start" }}
+                          style={{ display: "grid", gridTemplateColumns: "repeat(4, auto)", gap: 14, justifyContent: "start", alignContent: "start" }}
                         >
                           {SQUARE_FACTORS.map((f, fi) => {
                             const isSelected = SELECTED_FACTORS.some(sf => sf.label === f.label);
@@ -407,8 +415,8 @@ export function FactorGrid({
                                   alignItems: "center",
                                   borderRadius: 8,
                                   border: isSelected ? `1.5px solid ${TEAL}60` : `1px solid ${catColor}20`,
-                                  padding: "8px 14px",
-                                  fontSize: 14,
+                                  padding: "9px 15px",
+                                  fontSize: 15,
                                   fontWeight: isSelected ? 700 : 500,
                                   fontFamily: "inherit",
                                   whiteSpace: "nowrap",
@@ -448,8 +456,8 @@ export function FactorGrid({
                                   justifyContent: "center",
                                   borderRadius: 12,
                                   border: `2.5px solid ${TEAL}`,
-                                  padding: "14px 26px",
-                                  fontSize: 18,
+                                  padding: "16px 28px",
+                                  fontSize: 19,
                                   fontWeight: 700,
                                   fontFamily: "inherit",
                                   whiteSpace: "nowrap",
