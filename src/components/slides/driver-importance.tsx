@@ -11,7 +11,7 @@ import { useShareMode } from "@/lib/share-context";
 
 const RED = "#DC2626";
 
-export const DRIVER_IMPORTANCE_TOTAL_STEPS = 7;
+export const DRIVER_IMPORTANCE_TOTAL_STEPS = 8;
 
 type CategoryKey = "customer" | "product" | "order" | "market";
 const REVEAL_ORDER: CategoryKey[] = ["customer", "product", "order", "market"];
@@ -105,6 +105,7 @@ export function DriverImportanceSlide({
   onAutoAdvance?: () => void;
 }) {
   const { shareMode } = useShareMode();
+  const isCollapse = step === 7;
   const isDriverCards = step === 6;
   const isConsolidated = step === 5;
   const isIntro = step === 0;
@@ -134,7 +135,7 @@ export function DriverImportanceSlide({
 
   const removedSet = useMemo(() => {
     const set = new Set<string>();
-    if (isConsolidated || isDriverCards) {
+    if (isConsolidated || isDriverCards || isCollapse) {
       for (const cat of REVEAL_ORDER) CATEGORY_REMOVALS[cat].forEach(l => set.add(l));
     } else {
       for (let i = 0; i < categoryIndex; i++) {
@@ -145,8 +146,8 @@ export function DriverImportanceSlide({
   }, [categoryIndex, isConsolidated, isDriverCards]);
 
   const revealedSet = useMemo(
-    () => new Set(isIntro ? [] : (isConsolidated || isDriverCards) ? REVEAL_ORDER : REVEAL_ORDER.slice(0, categoryIndex + 1)),
-    [isIntro, categoryIndex, isConsolidated, isDriverCards],
+    () => new Set(isIntro ? [] : (isConsolidated || isDriverCards || isCollapse) ? REVEAL_ORDER : REVEAL_ORDER.slice(0, categoryIndex + 1)),
+    [isIntro, categoryIndex, isConsolidated, isDriverCards, isCollapse],
   );
 
   const visibleFactors = useMemo(() => {
@@ -161,7 +162,7 @@ export function DriverImportanceSlide({
 
   const [clickReady, setClickReady] = useState(!!skipAnimation);
   useEffect(() => {
-    if (!isActive || isDriverCards) { setClickReady(false); return; }
+    if (!isActive || isDriverCards || isCollapse) { setClickReady(false); return; }
     if (skipAnimation || shareMode) { setClickReady(true); return; }
     setClickReady(false);
     if (isIntro) {
@@ -250,12 +251,20 @@ export function DriverImportanceSlide({
     return () => timers.forEach(clearTimeout);
   }, [isActive, isDriverCards, skipAnimation, shareMode]);
 
+  const [collapsePhase, setCollapsePhase] = useState(0);
   useEffect(() => {
-    if (!driverClickReady || !onAutoAdvance) return;
-    if (skipAnimation) { onAutoAdvance(); return; }
-    const t = setTimeout(onAutoAdvance, 1500);
-    return () => clearTimeout(t);
-  }, [driverClickReady, onAutoAdvance, skipAnimation]);
+    if (!isActive || !isCollapse) { setCollapsePhase(0); return; }
+    if (skipAnimation && onAutoAdvance) { onAutoAdvance(); return; }
+    if (shareMode) { setCollapsePhase(3); onAutoAdvance?.(); return; }
+    setCollapsePhase(0);
+    const t1 = setTimeout(() => setCollapsePhase(1), 50);
+    const t2 = setTimeout(() => setCollapsePhase(2), 800);
+    const t3 = setTimeout(() => {
+      setCollapsePhase(3);
+      onAutoAdvance?.();
+    }, 2400);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [isActive, isCollapse, skipAnimation, onAutoAdvance, shareMode]);
 
   return (
     <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-7xl flex-col items-center justify-start px-6 pt-4">
@@ -266,7 +275,23 @@ export function DriverImportanceSlide({
       >
         <div className="mx-auto max-w-3xl text-center">
           <AnimatePresence mode="wait">
-            {isConsolidated ? (
+            {isCollapse ? (
+              <motion.div
+                key="collapse"
+                className="flex flex-col items-center gap-2"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.5, ease: EASE }}
+              >
+                <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: TEAL }}>
+                  One optimal price per SKU
+                </h2>
+                <p className="mx-auto max-w-xl text-center text-[1.05rem] leading-relaxed" style={{ color: MUTED }}>
+                  All your drivers, one answer.
+                </p>
+              </motion.div>
+            ) : isConsolidated ? (
               <motion.div
                 key="consolidated"
                 className="flex flex-col items-center gap-2"
@@ -344,6 +369,21 @@ export function DriverImportanceSlide({
         style={{ transform: "translateX(calc(var(--rail-inset, 0px) * -0.5))" }}
       >
         <AnimatePresence mode="wait">
+          {isCollapse ? (
+            <motion.div
+              key="collapse-content"
+              className="absolute inset-0 flex items-center justify-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, scale: 1.05, transition: { duration: 0.3 } }}
+              transition={{ duration: 0.4, ease: EASE }}
+            >
+              <CollapseView
+                phase={collapsePhase}
+                skipAnimation={skipAnimation}
+              />
+            </motion.div>
+          ) : (
             <motion.div
               key="chart-content"
               className="absolute inset-0 flex justify-center"
@@ -639,6 +679,7 @@ export function DriverImportanceSlide({
 
               </div>
             </motion.div>
+          )}
         </AnimatePresence>
 
         <AnimatePresence>
@@ -685,6 +726,57 @@ function DriverCategoryCard({ cat, factors, color, expanded }: { cat: string; fa
           </span>
         ))}
       </div>
+    </div>
+  );
+}
+
+const CIRCLE_R = 115;
+const CIRCLE_D = CIRCLE_R * 2;
+
+function CollapseView({ phase, skipAnimation }: { phase: number; skipAnimation?: boolean }) {
+  return (
+    <div className="relative flex items-center justify-center" style={{ width: CIRCLE_D + 80, height: CIRCLE_D + 80 }}>
+      {/* Pulse rings */}
+      {phase >= 2 && !skipAnimation && [0, 1].map(i => (
+        <motion.div
+          key={`pulse-${i}`}
+          className="absolute rounded-full"
+          style={{
+            width: CIRCLE_D,
+            height: CIRCLE_D,
+            border: `2px solid ${TEAL}`,
+          }}
+          initial={{ scale: 1, opacity: 0.5 }}
+          animate={{ scale: 1.35, opacity: 0 }}
+          transition={{ duration: 1.2, delay: i * 0.4, ease: "easeOut" }}
+        />
+      ))}
+
+      {/* Main circle — matches execute slide exactly */}
+      <motion.div
+        className="relative rounded-full flex items-center justify-center"
+        style={{
+          width: CIRCLE_D,
+          height: CIRCLE_D,
+          backgroundColor: "white",
+          border: `2.5px solid ${TEAL}`,
+        }}
+        initial={skipAnimation ? { scale: 1 } : { scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ duration: 0.6, type: "spring", stiffness: 180, damping: 16 }}
+      >
+        <div className="flex flex-col items-center">
+          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.18em", color: "#5A6A78" }}>
+            OPTIMIZED
+          </span>
+          <span style={{ fontSize: 38, fontWeight: 800, color: NAVY, lineHeight: 1.1 }}>
+            PRICE
+          </span>
+          <span style={{ fontSize: 13, fontWeight: 500, color: "#5A6A78" }}>
+            per SKU
+          </span>
+        </div>
+      </motion.div>
     </div>
   );
 }

@@ -136,6 +136,7 @@ const RAIL_TIMELINE: Partial<Record<number, (RailContent | null)[]>> = {
     /* 4  mkt    */ { show: "factors", engine: "strat", active: ["market"] },
     /* 5  consolidated */ { show: "factors", engine: "strat", active: ["customer", "product", "order", "market"] },
     /* 6  driver cards */ { show: "factors", engine: "strat", active: ["customer", "product", "order", "market"] },
+    /* 7  collapse → SKU */ { show: "drivers", flyIn: false },
   ],
   [EXECUTE_INDEX]: [
     /* 0  */ { show: "drivers", flyIn: false },
@@ -607,6 +608,7 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
       { index: DRIVER_IMP_INDEX, label: "Order", subStep: 3 },
       { index: DRIVER_IMP_INDEX, label: "Market", subStep: 4 },
       { index: DRIVER_IMP_INDEX, label: "5 model drivers", subStep: 6 },
+      { index: DRIVER_IMP_INDEX, label: "One optimal price", subStep: 7 },
     ],
   },
   {
@@ -677,6 +679,7 @@ export function Home() {
   const iframeSrcRef = useRef("");
   const [railEntering, setRailEntering] = useState(false);
   const isReplayingRef = useRef(false);
+  const collapseToExecuteRef = useRef(false);
   const spotlightRefinedRef = useRef(false);
   const [spotlightAdvanceReq, setSpotlightAdvanceReq] = useState(0);
   const handleSpotlightRefined = useCallback(() => { spotlightRefinedRef.current = true; }, []);
@@ -1000,6 +1003,9 @@ export function Home() {
       next.add(slide);
       return next;
     });
+    if (collapseToExecuteRef.current) {
+      requestAnimationFrame(() => { collapseToExecuteRef.current = false; });
+    }
   }, [slide]);
 
   useEffect(() => {
@@ -1249,6 +1255,9 @@ export function Home() {
           return;
         }
 
+        const isCollapseToExecute = slide === DRIVER_IMP_INDEX && subStep >= 7 && target === EXECUTE_INDEX;
+        collapseToExecuteRef.current = isCollapseToExecute;
+
         startTransition(() => {
           setSkipAnimation(goingBack);
           setSlide(target);
@@ -1345,7 +1354,7 @@ export function Home() {
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={isActive ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
-                    transition={{ duration: skipAnimation ? 0 : 0.3, ease: [0.22, 1, 0.36, 1] }}
+                    transition={{ duration: (skipAnimation || collapseToExecuteRef.current) ? 0 : 0.3, ease: [0.22, 1, 0.36, 1] }}
                     className="w-full"
                   >
                     <motion.div

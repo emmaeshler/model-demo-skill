@@ -28,7 +28,10 @@ const NOTES: Record<string, string[]> = {
   ],
   "driver-importance:6": [
     "These five drivers now feed the pricing model — each selected because it explains meaningful price variance in your data.",
-    "Click to see how the model uses them to produce an optimized price per SKU.",
+    "Click to see how they collapse into one optimal price per SKU.",
+  ],
+  "driver-importance:7": [
+    "All four driver categories converge — the model combines them into a single optimized price for each SKU.",
   ],
   "execute:0": [
     "The model produced $17.50 for SKU #A-7200 — now watch how it customizes that price for each customer.",
