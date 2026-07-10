@@ -57,8 +57,7 @@ export async function GET(req: NextRequest) {
 }
 
 function getBaseUrl(req: NextRequest): string {
-  return process.env.NEXT_PUBLIC_BASE_URL
-    || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : req.nextUrl.origin);
+  return process.env.NEXT_PUBLIC_BASE_URL || req.nextUrl.origin;
 }
 
 function getCallbackUrl(req: NextRequest): string {
