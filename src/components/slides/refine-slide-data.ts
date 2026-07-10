@@ -300,8 +300,8 @@ export const PORTFOLIO_SEGMENTS = (() => {
 
 export const HERO_SEGMENT_INDICES = [0, 1, 2, 3];
 
-const HERO_SLOT = { x: 35, y: 15, w: 200, h: 105 };
-export const HERO_VIEWBOX = "0 0 270 150";
+const HERO_SLOT = { x: 30, y: 10, w: 200, h: 90 };
+export const HERO_VIEWBOX = "0 0 260 120";
 
 export const HERO_SEGMENTS = (() => {
   const hRng = mulberry32(99);

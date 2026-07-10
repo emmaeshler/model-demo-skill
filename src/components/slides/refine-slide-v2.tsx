@@ -181,7 +181,7 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
     return () => { clearTimeout(delayTimer); clearTimeout(kpiTimer); cancelAnimationFrame(frame); };
   }, [indexPhase, skipAnimation, isActive]);
 
-  const PORTFOLIO_DELAYS = [0, 200, 1200, 2200, 2800] as const;
+  const PORTFOLIO_DELAYS = [0, 300, 2000, 3500, 4200] as const;
   const portfolioPhase = usePhaseSequence(PORTFOLIO_DELAYS, { active: isActive, skip: !!skipAnimation, enabled: chartStep === 8 });
 
   /* ── Derived state ── */
@@ -612,7 +612,7 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
           </div>
         </motion.div>
 
-        <PortfolioGrid isPortfolio={isPortfolio} isPortfolioHero={isPortfolioHero} isActive={isActive} shareMode={shareMode} />
+        <PortfolioGrid isPortfolio={isPortfolio} isPortfolioHero={isPortfolioHero} isActive={isActive} shareMode={shareMode} portfolioPhase={portfolioPhase} />
       </div>
 
       {/* KPI sidebar — spans full chart region height (timeline + chart) */}

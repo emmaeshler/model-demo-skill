@@ -136,6 +136,9 @@ const RAIL_TIMELINE: Partial<Record<number, (RailContent | null)[]>> = {
     /* 6  order* */ { show: "factors", engine: "strat", active: ["order"] },
     /* 7  mkt    */ { show: "factors", engine: "strat", active: ["market"] },
     /* 8  mkt*   */ { show: "factors", engine: "strat", active: ["market"] },
+    /* 9  summary chips */ { show: "factors", engine: "strat", active: ["customer", "product", "order", "market"] },
+    /* 10 summary drivers */ { show: "drivers", flyIn: true },
+    /* 11 vortex */ { show: "drivers", flyIn: false },
   ],
   [EXECUTE_INDEX]: [
     /* 0  */ { show: "drivers", flyIn: false },
@@ -589,6 +592,7 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
       { index: DRIVER_IMP_INDEX, label: "Product", subStep: 3 },
       { index: DRIVER_IMP_INDEX, label: "Order", subStep: 5 },
       { index: DRIVER_IMP_INDEX, label: "Market", subStep: 7 },
+      { index: DRIVER_IMP_INDEX, label: "Your model drivers", subStep: 9 },
     ],
   },
   {
@@ -1372,6 +1376,7 @@ export function Home() {
                           step={isActive ? subStep : 0}
                           skipAnimation={effectiveSkip}
                           isActive={isActive}
+                          onAutoAdvance={isActive && !skipAnimation ? () => navigate(slide + 1) : undefined}
                         />
                       )}
                       {sc.kind === "execute" && <MemoExecute step={isActive ? subStep : 0} skipAnimation={effectiveSkip} isActive={isActive} onCustomerChange={isActive ? handleExecuteCustomerChange : undefined} />}
