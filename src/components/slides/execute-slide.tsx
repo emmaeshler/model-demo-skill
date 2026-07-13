@@ -63,55 +63,58 @@ const CUSTOMERS: CustomerScenario[] = [
     label: "Acme Industrial",
     segment: "High volume · loyal",
     sliders: [
-      { label: "Sales rep", value: 0.80 },
-      { label: "Price sensitivity", value: 0.30 },
-      { label: "Competitive price point", value: 0.55 },
-      { label: "Order frequency", value: 0.82 },
-      { label: "Cost to serve", value: 0.25 },
+      { label: "Product Category", value: 0.75 },
+      { label: "Geography", value: 0.60 },
+      { label: "End Market", value: 0.85 },
+      { label: "Product Importance", value: 0.70 },
+      { label: "Order Frequency", value: 0.82 },
       { label: "Customer Tenure", value: 0.90 },
+      { label: "Competitor Pricing", value: 0.55 },
     ],
     color: NAVY,
     price: "$19.24",
     delta: "+$1.74 above peer",
     winProb: "68%",
     margin: "+9.9%",
-    narrative: "Same product, but now the model layers in the customer — strong sales relationship, high order frequency, and long tenure push the price above peer.",
+    narrative: "Same product, but now the model layers in the customer — high order frequency, long tenure, and strong end market positioning push the price above peer.",
   },
   {
     label: "MedSupply Co",
     segment: "Price-sensitive · contested",
     sliders: [
-      { label: "Sales rep", value: 0.45 },
-      { label: "Price sensitivity", value: 0.75 },
-      { label: "Competitive price point", value: 0.70 },
-      { label: "Order frequency", value: 0.45 },
-      { label: "Cost to serve", value: 0.55 },
+      { label: "Product Category", value: 0.65 },
+      { label: "Geography", value: 0.50 },
+      { label: "End Market", value: 0.55 },
+      { label: "Product Importance", value: 0.80 },
+      { label: "Order Frequency", value: 0.45 },
       { label: "Customer Tenure", value: 0.40 },
+      { label: "Competitor Pricing", value: 0.70 },
     ],
     color: TEAL,
     price: "$14.89",
     delta: "−$2.61 below list",
     winProb: "74%",
     margin: "+3.2%",
-    narrative: "Different customer, different answer — high price sensitivity and competitive pressure pull the price below list to protect win rate.",
+    narrative: "Different customer, different answer — high product importance and competitive pressure pull the price below list to protect win rate.",
   },
   {
     label: "QuickParts LLC",
     segment: "Niche need · captive",
     sliders: [
-      { label: "Sales rep", value: 0.30 },
-      { label: "Price sensitivity", value: 0.40 },
-      { label: "Competitive price point", value: 0.20 },
-      { label: "Order frequency", value: 0.22 },
-      { label: "Cost to serve", value: 0.70 },
+      { label: "Product Category", value: 0.80 },
+      { label: "Geography", value: 0.35 },
+      { label: "End Market", value: 0.70 },
+      { label: "Product Importance", value: 0.90 },
+      { label: "Order Frequency", value: 0.22 },
       { label: "Customer Tenure", value: 0.15 },
+      { label: "Competitor Pricing", value: 0.20 },
     ],
     color: SLATE,
     price: "$22.10",
     delta: "+$4.60 above peer",
     winProb: "81%",
     margin: "+5.7%",
-    narrative: "Same bearing, highest price — this buyer's niche application has few alternatives, so willingness to pay is the strongest of the three.",
+    narrative: "Same bearing, highest price — this buyer's niche application and high product importance mean few alternatives, driving the price up.",
   },
 ];
 
@@ -250,17 +253,19 @@ function FlowLabels({
 /* ── Slider ↔ Driver color mapping ──────────────────── */
 
 const SLIDER_DRIVER_DOT: Record<string, string> = {
-  "Sales rep": "#00446A",
-  "Price sensitivity": "#E56910",
-  "Competitive price point": "#2e7d32",
-  "Order frequency": "#7B5EA7",
-  "Cost to serve": "#E56910",
-  "Customer Tenure": "#21A5D5",
+  "Product Category": "#E56910",
+  "Geography": "#00446A",
+  "End Market": "#00446A",
+  "Product Importance": "#E56910",
+  "Order Frequency": "#7B5EA7",
+  "Customer Tenure": "#00446A",
+  "Competitor Pricing": "#2e7d32",
 };
 
 const RAIL_DRIVER_LABELS = new Set([
-  "Sales rep", "Price sensitivity", "Competitive price point",
-  "Order frequency", "Cost to serve",
+  "Product Category", "Geography", "End Market",
+  "Product Importance", "Order Frequency", "Customer Tenure",
+  "Competitor Pricing",
 ]);
 
 /* ── Profile card with sliders (SVG) ─────────────────── */
@@ -271,7 +276,7 @@ function ProfileCard({ cust, flyFromRail }: { cust: CustomerScenario; flyFromRai
   const cx = PROFILE_X + PROFILE_W / 2;
   const SLIDER_X = PROFILE_X + 16;
   const SLIDER_W = PROFILE_W - 32;
-  const SPACING = 36;
+  const SPACING = 32;
 
   return (
     <motion.g
@@ -695,6 +700,7 @@ export function ExecuteSlide({
   const hasInteracted = useRef(false);
   const initialRevealDone = useRef(skipAnimation);
   const didCollapse = useRef(!!fromCollapse);
+  if (fromCollapse) didCollapse.current = true;
   const cust = CUSTOMERS[selected];
 
   useEffect(() => {
@@ -710,6 +716,7 @@ export function ExecuteSlide({
       setSelected(0);
       hasInteracted.current = false;
       initialRevealDone.current = false;
+      didCollapse.current = false;
       return;
     }
     if (isPresenter) {

@@ -15,7 +15,7 @@ const COMPLEXITY_ITEMS = [
 ];
 
 const KEY_INPUTS = [
-  { icon: "👤", label: "Customer", items: ["End market", "Customer importance"] },
+  { icon: "👤", label: "Customer", items: ["End Market", "Customer importance"] },
   { icon: "📦", label: "Product", items: ["Key material", "Finish material", "Thickness", "Hardware", "Quantity"] },
   { icon: "📋", label: "Deal Context", items: ["Leadtime", "Plant capacity"] },
 ];

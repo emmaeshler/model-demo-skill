@@ -77,7 +77,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
   }, [isActive, selectionPhase, actionRevealed, skipAnimation]);
 
   const rawHint = CATEGORY_ACTION_HINTS[selectionPhase];
-  const currentHint = rawHint ? (Array.isArray(rawHint) ? rawHint[selectionPhase === 0 ? customerActionStep : 0] : rawHint) : null;
+  const currentHint = rawHint ? (Array.isArray(rawHint) ? rawHint[0] : rawHint) : null;
 
   useEffect(() => {
     if (!onActiveCategoryChange) return;
@@ -237,7 +237,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                     ))}
                   </h2>
                   <motion.p className="mx-auto mt-1 max-w-2xl text-center text-[1.05rem] leading-relaxed" style={{ color: MUTED }} initial={skipAnimation ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: skipAnimation ? 0.15 : 0.7 }}>
-                    Five tailored drivers — drawn from the factors that matter most to you — feed the model to arrive at{" "}
+                    Seven tailored drivers — drawn from the factors that matter most to you — feed the model to arrive at{" "}
                     <motion.span style={{ fontWeight: 600 }} initial={skipAnimation ? { color: TEAL } : { color: MUTED }} animate={{ color: TEAL }} transition={{ duration: 0.6, delay: skipAnimation ? 0 : 1.2 }}>
                       the right price
                     </motion.span>

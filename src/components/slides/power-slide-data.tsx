@@ -80,24 +80,25 @@ export const SQUARE_VERTS = {
 };
 
 export const SQUARE_FACTORS: { label: string; category: "product" | "market" | "customer" | "order"; emphasis?: "highlight" | "crossoff" | "deemphasize" }[] = [
-  { label: "Product mix", category: "product" },
+  { label: "Product Category", category: "product" },
   { label: "Product family", category: "product" },
-  { label: "Product specialization", category: "product" },
+  { label: "Product Specialization", category: "product" },
   { label: "Cost to serve", category: "product" },
   { label: "Willingness to pay", category: "product" },
   { label: "Price sensitivity", category: "product" },
+  { label: "Product Importance", category: "product" },
   { label: "Market share", category: "market" },
   { label: "Commodity index", category: "market" },
   { label: "Industry trends", category: "market" },
   { label: "Competitor activity", category: "market" },
-  { label: "Competitive price point", category: "market" },
+  { label: "Competitor Pricing", category: "market" },
+  { label: "End Market", category: "customer" },
+  { label: "Sales Rep", category: "customer" },
+  { label: "Geography", category: "customer" },
+  { label: "Customer size", category: "customer" },
+  { label: "Customer Tenure", category: "customer" },
   { label: "Customer channel", category: "customer" },
-  { label: "End market", category: "customer" },
-  { label: "Sales rep", category: "customer" },
-  { label: "Region", category: "customer" },
-  { label: "Size of customer", category: "customer" },
-  { label: "Customer tenure", category: "customer" },
-  { label: "Order frequency", category: "order" },
+  { label: "Order Frequency", category: "order" },
   { label: "Order size", category: "order" },
   { label: "Lead time", category: "order" },
   { label: "Payment terms", category: "order" },
@@ -127,31 +128,31 @@ export const CATEGORY_TITLES = [
 ];
 
 export const CATEGORY_NARRATION = [
-  "Who is the customer — channel, region, size, tenure, and sales relationship.",
-  "What's being sold — mix, family, specialization, cost, and price sensitivity.",
+  "Who is the customer — geography, tenure, size, channel, and sales relationship.",
+  "What's being sold — category, family, specialization, cost, and price sensitivity.",
   "How orders behave — frequency, size, lead time, terms, and seasonality.",
-  "Where you compete — price points, share, commodities, and competitive dynamics.",
+  "Where you compete — share, commodities, trends, and competitive dynamics.",
 ];
 
 export const SELECTED_FACTORS = [
-  { label: "End market", color: NAVY, weight: 4, note: "Weighted ↑" },
-  { label: "Product specialization", color: ORANGE, weight: 3, note: "" },
-  { label: "Competitive price point", color: GREEN, weight: 3, note: "Added" },
-  { label: "Order frequency", color: PURPLE, weight: 2, note: "" },
-  { label: "Product mix", color: ORANGE, weight: 3, note: "" },
+  { label: "Product Category", color: ORANGE, weight: 4, note: "" },
+  { label: "Geography", color: NAVY, weight: 3, note: "" },
+  { label: "End Market", color: NAVY, weight: 4, note: "" },
+  { label: "Product Importance", color: ORANGE, weight: 3, note: "Added" },
+  { label: "Order Frequency", color: PURPLE, weight: 2, note: "" },
+  { label: "Customer Tenure", color: NAVY, weight: 3, note: "" },
+  { label: "Competitor Pricing", color: GREEN, weight: 2, note: "Added" },
 ];
 
 export const CATEGORY_ACTIONS: Record<string, { label: string; action: "elevate" | "remove" | "lower" | "add"; step?: number }[]> = {
   customer: [
-    { label: "Sales rep", action: "remove", step: 0 },
-    { label: "End market", action: "elevate", step: 1 },
+    { label: "Sales Rep", action: "remove" },
   ],
   product: [
-    { label: "Product specialization", action: "elevate" },
-    { label: "Product mix", action: "elevate" },
+    { label: "Product Importance", action: "add" },
   ],
   market: [
-    { label: "Competitive price point", action: "add" },
+    { label: "Competitor Pricing", action: "add" },
   ],
   order: [
     { label: "Seasonality", action: "lower" },
@@ -160,13 +161,10 @@ export const CATEGORY_ACTIONS: Record<string, { label: string; action: "elevate"
 
 type ActionHint = { icon: string; color: string; headline: string; detail: string };
 export const CATEGORY_ACTION_HINTS: (ActionHint | ActionHint[])[] = [
-  [
-    { icon: "×", color: TEAL, headline: "Remove a factor", detail: "Sales rep doesn't seem like a meaningful driver — take it out." },
-    { icon: "↑", color: TEAL, headline: "Weight it higher", detail: "End market is a key driver for this client — weight it higher." },
-  ],
-  { icon: "↑", color: TEAL, headline: "Emphasize key factors", detail: "Product specialization and product mix are key profitability drivers — weight them higher." },
+  { icon: "×", color: TEAL, headline: "Remove a factor", detail: "Sales Rep is behavioral — it doesn't belong in the model." },
+  { icon: "+", color: TEAL, headline: "Add a factor", detail: "Product Importance indicates price sensitivity for a product within a customer." },
   { icon: "↓", color: PURPLE, headline: "Lower its weight", detail: "Seasonality has minimal impact for this customer — dial it down." },
-  { icon: "+", color: GREEN, headline: "Add a factor", detail: "Competitive intelligence is critical in this market — add it to the model." },
+  { icon: "+", color: GREEN, headline: "Add a factor", detail: "Competitor Pricing is low weight, but adds a final positioning check." },
 ];
 
 export const FEED_NUDGE_Y = [130, 35, -170, -75];
@@ -235,7 +233,7 @@ export const SUBTITLES = [
   "That's 36 million unique price points — far too many for any team to set manually. The model finds the patterns hiding inside.",
   "We look at pricing factors across four dimensions — tailored to what matters for your business.",
   "Every business is different. We analyze what matters to you — adding key factors, removing what doesn't apply, and tuning the balance.",
-  "Five tailored drivers — drawn from the factors that matter most to you — feed the model to arrive at the right price for every SKU.",
+  "Seven tailored drivers — drawn from the factors that matter most to you — feed the model to arrive at the right price for every SKU.",
 ];
 
 /* ─── Pre-compute dot positions ─── */

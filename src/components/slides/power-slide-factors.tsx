@@ -465,7 +465,7 @@ export function FactorGrid({
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.4, delay: 0.3, ease: EASE }}
                           >
-                            5 Model Drivers
+                            7 Model Drivers
                           </motion.span>
                           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                             {SELECTED_FACTORS.map((sf, si) => (

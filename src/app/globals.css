@@ -145,3 +145,12 @@
 .animate-fade-in {
   animation: fade-in 0.25s ease-out both;
 }
+
+.preview-mode *,
+.preview-mode *::before,
+.preview-mode *::after {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+}

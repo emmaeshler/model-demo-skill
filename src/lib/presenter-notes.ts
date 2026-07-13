@@ -27,7 +27,7 @@ const NOTES: Record<string, string[]> = {
     "Every past pricing decision — win or loss — teaches the model about price sensitivity.",
   ],
   "driver-importance:6": [
-    "These five drivers now feed the pricing model — each selected because it explains meaningful price variance in your data.",
+    "These seven drivers now feed the pricing model — each selected because it explains meaningful price variance in your data.",
     "Click to see how they collapse into one optimal price per SKU.",
   ],
   "driver-importance:7": [
@@ -86,4 +86,37 @@ const NOTES: Record<string, string[]> = {
 
 export function getPresenterNotes(kind: string, subStep: number): string[] {
   return NOTES[`${kind}:${subStep}`] ?? NOTES[kind] ?? [];
+}
+
+const TRANSITION_HINTS: Record<string, string> = {
+  "intro": "Opens with the four key inputs — data, market signals, expertise, and benchmarks.",
+  "one-model:0": "Opens with the four key inputs — data, market signals, expertise, and benchmarks.",
+  "one-model:1": "The four inputs converge into one unified pricing model.",
+  "one-model:2": "The model splits into ML and Strategic Guidance engines — each input re-routes to the right side.",
+  "power:0": "Transitions to the Power section. A scatter plot of 36M price points appears.",
+  "power:1": "The scatter plot highlights four data dimensions. The dimension cards appear below the chart.",
+  "driver-importance:0": "Dimensions become pricing factors on the left rail — keeps context visible while exploring each category.",
+  "driver-importance:1": "Spotlights Customer factors — the rail highlights the customer category.",
+  "driver-importance:2": "Spotlights Product factors.",
+  "driver-importance:3": "Spotlights Order factors.",
+  "driver-importance:4": "Spotlights Market factors.",
+  "driver-importance:5": "All factors appear together — the model's full input set.",
+  "driver-importance:6": "Factors distill into 7 model drivers that explain the most price variance.",
+  "driver-importance:7": "Drivers collapse into one optimized price per SKU — transitions to Execute.",
+  "execute:0": "The Execute section: one optimized price per SKU, then adjusted for each customer's profile.",
+  "execute:1": "Customer comparison view — click chips to see how different profiles shift the recommendation.",
+  "refine:0": "Transitions to Refine. Strategic guidance meets the demand curve.",
+  "refine:1": "The calibrated demand curve appears — price vs. volume built from win/loss history.",
+  "refine:2": "QuickParts appears on the curve — the model detects it's underpriced.",
+  "refine:3": "Acme's curve — a subtler margin opportunity with a rising win rate.",
+  "refine:4": "MedSupply is at risk from a competitor — the model lowers price to defend.",
+  "refine:5": "All three customers snap to the curve — optimized prices appear.",
+  "refine:6": "The curve adapts over time as the market moves.",
+  "refine:7": "Zooms out to show segment-level models — each customer–market combination gets its own.",
+  "refine:8": "Full portfolio view — 247 segments monitored and recalibrated continuously.",
+  "end": "Closing slide — thank you and next steps.",
+};
+
+export function getTransitionHint(kind: string, subStep: number): string {
+  return TRANSITION_HINTS[`${kind}:${subStep}`] ?? TRANSITION_HINTS[kind] ?? "";
 }

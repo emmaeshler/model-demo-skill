@@ -6,7 +6,7 @@ import { AnimatePresence, motion, MotionConfig } from "framer-motion";
 import { type NavGroup, SlideNav, AudienceTopBar } from "@/components/slide-nav";
 import { useMode } from "@/lib/mode-context";
 import { useShareMode } from "@/lib/share-context";
-import { getPresenterNotes } from "@/lib/presenter-notes";
+import { getPresenterNotes, getTransitionHint } from "@/lib/presenter-notes";
 import { cn } from "@/lib/utils";
 import { OneModelSlide, ONE_MODEL_TOTAL_STEPS } from "@/components/slides/one-model";
 import { PowerSlide, POWER_TOTAL_STEPS } from "@/components/slides/power-slide";
@@ -81,11 +81,13 @@ const FACTOR_CATEGORIES: { key: CategoryKey; label: string; color: string; tint:
 ];
 
 const DRIVER_RAIL_ITEMS: { label: string; color: string; tint: string }[] = [
-  { label: "End market", color: "#00446A", tint: "rgba(0,68,106,0.08)" },
-  { label: "Product specialization", color: "#E56910", tint: "rgba(229,105,16,0.08)" },
-  { label: "Competitive price point", color: "#2e7d32", tint: "rgba(46,125,50,0.08)" },
-  { label: "Order frequency", color: "#7B5EA7", tint: "rgba(123,94,167,0.08)" },
-  { label: "Product mix", color: "#E56910", tint: "rgba(229,105,16,0.08)" },
+  { label: "Product Category", color: "#E56910", tint: "rgba(229,105,16,0.08)" },
+  { label: "Geography", color: "#00446A", tint: "rgba(0,68,106,0.08)" },
+  { label: "End Market", color: "#00446A", tint: "rgba(0,68,106,0.08)" },
+  { label: "Product Importance", color: "#E56910", tint: "rgba(229,105,16,0.08)" },
+  { label: "Order Frequency", color: "#7B5EA7", tint: "rgba(123,94,167,0.08)" },
+  { label: "Customer Tenure", color: "#00446A", tint: "rgba(0,68,106,0.08)" },
+  { label: "Competitor Pricing", color: "#2e7d32", tint: "rgba(46,125,50,0.08)" },
 ];
 
 const ENGINE_ITEMS: { key: "ml" | "strat"; label: string; color: string; tint: string }[] = [
@@ -210,11 +212,13 @@ function ModelStatusRail({
   const [flyX] = useState(() => typeof window !== "undefined" ? window.innerWidth * 0.52 : 700);
   const [flyH] = useState(() => typeof window !== "undefined" ? window.innerHeight : 800);
   const driverFlyOffsets: { x: number; y: number }[] = useMemo(() => [
-    { x: flyX * 1.55, y: -flyH * 0.20 },  // End market — top card
-    { x: flyX * 1.55, y: -flyH * 0.10 },  // Product specialization
-    { x: flyX * 1.55, y:  0 },             // Competitive price point — center card
-    { x: flyX * 1.55, y:  flyH * 0.10 },  // Order frequency
-    { x: flyX * 1.55, y:  flyH * 0.20 },  // Product mix — bottom card
+    { x: flyX * 1.55, y: -flyH * 0.27 },  // Product Category
+    { x: flyX * 1.55, y: -flyH * 0.18 },  // Geography
+    { x: flyX * 1.55, y: -flyH * 0.09 },  // End Market
+    { x: flyX * 1.55, y:  0 },             // Product Importance — center
+    { x: flyX * 1.55, y:  flyH * 0.09 },  // Order Frequency
+    { x: flyX * 1.55, y:  flyH * 0.18 },  // Customer Tenure
+    { x: flyX * 1.55, y:  flyH * 0.27 },  // Competitor Pricing
   ], [flyX, flyH]);
 
   const mlActive = engineFocus === "both" || engineFocus === "ml";
@@ -608,7 +612,7 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
       { index: DRIVER_IMP_INDEX, label: "Order", subStep: 3 },
       { index: DRIVER_IMP_INDEX, label: "Market", subStep: 4 },
       { index: DRIVER_IMP_INDEX, label: "Your model factors", subStep: 5 },
-      { index: DRIVER_IMP_INDEX, label: "5 model drivers", subStep: 6 },
+      { index: DRIVER_IMP_INDEX, label: "7 model drivers", subStep: 6 },
       { index: DRIVER_IMP_INDEX, label: "One optimal price", subStep: 7 },
     ],
   },
@@ -662,6 +666,7 @@ export function Home() {
   const [subStep, setSubStep] = useState(0);
   const [animationDone, setAnimationDone] = useState(false);
   const [isAudience, setIsAudience] = useState(false);
+  const [isPreview, setIsPreview] = useState(false);
   const [presenting, setPresenting] = useState(false);
   const [skipAnimation, setSkipAnimation] = useState(false);
   const [slideReplayKeys, setSlideReplayKeys] = useState<number[]>(() => SLIDES.map(() => 0));
@@ -695,6 +700,8 @@ export function Home() {
   const [timerRunning, setTimerRunning] = useState(false);
   const [clockTime, setClockTime] = useState("");
   const timerStartRef = useRef(0);
+  const previewContainerRef = useRef<HTMLDivElement>(null);
+  const [previewScale, setPreviewScale] = useState(1);
   const total = SLIDES.length;
 
   const presenterSkipped = useMemo(
@@ -713,7 +720,7 @@ export function Home() {
   const notes = getPresenterNotes(config?.kind ?? "", subStep);
   const railCfg = RAIL_CONFIG[`${slide}-${subStep}`] ?? null;
   const currentRailType: RailType = railCfg?.rail ?? null;
-  const railVisible = currentRailType !== null;
+  const railVisible = currentRailType !== null && !isPreview;
   const engineFocus: EngineFocus = railCfg?.engine ?? null;
   const staticActiveCategories = railCfg?.categories ?? [];
   const activeCategories = (slide === POWER_INDEX && dynamicActiveCategories && dynamicActiveCategories.length > 0)
@@ -1064,14 +1071,23 @@ export function Home() {
       setSlide(s);
       setSubStep(ss);
     }
+    if (params.get("preview") === "true") {
+      setIsPreview(true);
+      document.documentElement.classList.add("preview-mode");
+      const s = parseInt(params.get("slide") || "0", 10);
+      const ss = parseInt(params.get("subStep") || "0", 10);
+      setSlide(s);
+      setSubStep(ss);
+      setSkipAnimation(true);
+    }
     if (params.get("skipAnimation") === "true") {
       setSkipAnimation(true);
     }
   }, []);
 
-  // BroadcastChannel: presenter broadcasts, audience listens
+  // BroadcastChannel: presenter broadcasts, audience/preview listens
   useEffect(() => {
-    if (isAudience) {
+    if (isAudience || isPreview) {
       const ch = new BroadcastChannel("ml-explainer-sync");
       ch.onmessage = (e: MessageEvent) => {
         if (e.data?.type === "navigate") {
@@ -1089,7 +1105,7 @@ export function Home() {
       channelRef.current = ch;
       return () => { ch.close(); channelRef.current = null; };
     }
-  }, [isAudience, mode, presenting]);
+  }, [isAudience, isPreview, mode, presenting]);
 
   // Broadcast navigation state to audience window
   useEffect(() => {
@@ -1098,9 +1114,8 @@ export function Home() {
 
   const startPresenting = useCallback(() => {
     const base = window.location.origin + window.location.pathname;
-    const qs = `?audience=true&mode=self&slide=${slide}&subStep=${subStep}`;
-    audienceWindowRef.current = window.open(base + qs, "audience-view") ?? null;
-    iframeSrcRef.current = base + qs;
+    audienceWindowRef.current = window.open(base + `?audience=true&mode=self&slide=${slide}&subStep=${subStep}`, "audience-view") ?? null;
+    iframeSrcRef.current = base + `?preview=true&mode=self&slide=${slide}&subStep=${subStep}`;
     setPresenting(true);
     timerStartRef.current = Date.now();
     setPresentElapsed(0);
@@ -1145,6 +1160,22 @@ export function Home() {
     setPresentElapsed(0);
   }, []);
 
+  useEffect(() => {
+    const el = previewContainerRef.current;
+    if (!el || !presenting) return;
+    const IFRAME_W = 1920;
+    const IFRAME_H = 1080;
+    const update = () => {
+      const cw = el.clientWidth;
+      const ch = el.clientHeight;
+      setPreviewScale(Math.min(cw / IFRAME_W, ch / IFRAME_H));
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [presenting]);
+
   const currentClickIndex = useMemo(
     () => allClickSteps.findIndex((s) => s.slideIndex === slide && s.stepIndex === subStep),
     [allClickSteps, slide, subStep],
@@ -1153,8 +1184,13 @@ export function Home() {
   const nextPosition = useMemo(() => {
     if (currentClickIndex < 0 || currentClickIndex >= allClickSteps.length - 1) return null;
     const next = allClickSteps[currentClickIndex + 1];
-    return { slideIndex: next.slideIndex, stepIndex: next.stepIndex };
+    return { slideIndex: next.slideIndex, stepIndex: next.stepIndex, kind: next.kind };
   }, [allClickSteps, currentClickIndex]);
+
+  const transitionHint = useMemo(() => {
+    if (!nextPosition) return "";
+    return getTransitionHint(nextPosition.kind, nextPosition.stepIndex);
+  }, [nextPosition]);
 
   useEffect(() => {
     spotlightRefinedRef.current = false;
@@ -1344,9 +1380,10 @@ export function Home() {
 
       <main
         className={cn(
-          "flex min-h-[var(--slide-h,100vh)] flex-col items-center justify-start overflow-x-hidden pt-14 transition-[padding-left] duration-300",
+          "flex min-h-[var(--slide-h,100vh)] flex-col items-center justify-start overflow-x-hidden transition-[padding-left] duration-300",
+          isPreview ? "" : "pt-14",
           railVisible ? "pl-[140px]" : "",
-          isAudience ? "" : "pb-16",
+          isAudience || isPreview ? "" : "pb-16",
         )}
         style={{ "--rail-inset": railVisible ? "140px" : "0px" } as React.CSSProperties}
       >
@@ -1364,10 +1401,13 @@ export function Home() {
                 pointerEvents: isActive ? "auto" : "none",
               }}
             >
-              <MotionConfig reducedMotion={isActive ? (skipAnimation ? "always" : "never") : "always"}>
+              <MotionConfig
+                reducedMotion={isActive ? (skipAnimation ? "always" : "never") : "always"}
+                {...(isPreview ? { transition: { duration: 0 } } : {})}
+              >
                 <div key={slideReplayKeys[i]}>
                   <motion.div
-                    initial={(collapseToExecuteRef.current && isActive) ? false : { opacity: 0, y: 10 }}
+                    initial={isPreview ? false : (collapseToExecuteRef.current && isActive) ? false : { opacity: 0, y: 10 }}
                     animate={isActive ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
                     transition={{ duration: (skipAnimation || collapseToExecuteRef.current) ? 0 : 0.3, ease: [0.22, 1, 0.36, 1] }}
                     className="w-full"
@@ -1430,7 +1470,7 @@ export function Home() {
 
       <AnimatePresence>
       {(() => {
-        if (!railCfg) return null;
+        if (!railCfg || isPreview) return null;
         if (railCfg.rail === "mini-exec") return (
           <MiniExecuteConnector
             key="mini-exec"
@@ -1457,7 +1497,7 @@ export function Home() {
       </AnimatePresence>
 
 
-      {isAudience ? (
+      {!isPreview && (isAudience ? (
         <AudienceTopBar
           groups={displayNavGroups}
           current={slide}
@@ -1478,7 +1518,7 @@ export function Home() {
           showReplay={skipAnimation}
           onReplay={handleReplay}
         />
-      )}
+      ))}
 
       {/* Slide sorter overlay */}
       {slideSorterOpen && (
@@ -1779,10 +1819,11 @@ export function Home() {
           <div className="flex min-h-0 flex-1">
             {/* Left: Current slide + progress */}
             <div className="flex flex-1 flex-col p-4" data-wt="p-slide-preview">
-              <div className={cn("relative flex-1 overflow-hidden rounded-xl border", darkMode ? "border-white/10 bg-[#06283D]" : "border-black/10 bg-[#06283D]")}>
+              <div ref={previewContainerRef} className={cn("relative flex-1 overflow-hidden rounded-xl border", darkMode ? "border-white/10 bg-[#06283D]" : "border-black/10 bg-[#06283D]")}>
                 <iframe
                   src={iframeSrcRef.current}
-                  className="pointer-events-none absolute inset-0 h-full w-full border-0"
+                  className="pointer-events-none absolute border-0"
+                  style={{ width: "1920px", height: "1080px", transform: `scale(${previewScale})`, transformOrigin: "top left" }}
                   title="Slide Preview"
                   onLoad={() => {
                     channelRef.current?.postMessage({ type: "navigate", slide, subStep });
@@ -1830,7 +1871,7 @@ export function Home() {
                   {nextPosition ? (
                     <iframe
                       key={`${nextPosition.slideIndex}-${nextPosition.stepIndex}`}
-                      src={`${window.location.origin}${window.location.pathname}?audience=true&mode=self&slide=${nextPosition.slideIndex}&subStep=${nextPosition.stepIndex}&skipAnimation=true`}
+                      src={`${window.location.origin}${window.location.pathname}?preview=true&mode=self&slide=${nextPosition.slideIndex}&subStep=${nextPosition.stepIndex}`}
                       className="pointer-events-none absolute border-0"
                       style={{ width: "1280px", height: "800px", transform: "scale(0.272)", transformOrigin: "top left" }}
                       title="Next Slide Preview"
@@ -1841,6 +1882,11 @@ export function Home() {
                     </div>
                   )}
                 </div>
+                {transitionHint && (
+                  <p className={cn("mt-2 text-[11px] font-medium leading-snug", darkMode ? "text-white/50" : "text-gray-500")}>
+                    {transitionHint}
+                  </p>
+                )}
               </div>
 
               {/* Speaker notes */}
