@@ -108,8 +108,8 @@ interface InputCard {
 }
 
 const INPUTS: InputCard[] = [
-  { label: "Internal Historical Data", subtitle: "Transaction & customer history", engine: "ml" },
-  { label: "External Environmental Data", subtitle: "Market sentiment & macro signals", engine: "ml" },
+  { label: "Internal Data", subtitle: "Transaction & customer history", engine: "ml" },
+  { label: "External Data", subtitle: "Market sentiment & macro signals", engine: "ml" },
   { label: "In-House Knowledge", subtitle: "Business realities & objectives", engine: "strat" },
   { label: "Industry Expertise", subtitle: "Benchmarks, drivers & paradigms", engine: "strat" },
 ];

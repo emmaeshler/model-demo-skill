@@ -444,9 +444,9 @@ const OV_OUT_H = 52;
 const OV_OUT_X = 600;
 
 const OV_INPUTS = [
-  { label: "Internal Historical Data", sub: "The 36M transactions scanned for patterns", section: 0, color: ML_GREEN },
+  { label: "Internal Data", sub: "The 36M transactions scanned for patterns", section: 0, color: ML_GREEN },
   { label: "In-House Knowledge", sub: "Business rules that shape strategic guidance", section: 0, color: STRAT_BLUE },
-  { label: "External Environmental Data", sub: "Market signals driving competitive position", section: 1, color: ML_GREEN },
+  { label: "External Data", sub: "Market signals driving competitive position", section: 1, color: ML_GREEN },
   { label: "Industry Expertise", sub: "Benchmarks behind the pricing drivers", section: 1, color: STRAT_BLUE },
 ];
 
@@ -678,12 +678,14 @@ export function ExecuteSlide({
   skipAnimation,
   onCustomerChange,
   isActive,
+  fromCollapse,
 }: {
   step: number;
   onAnimationDone?: () => void;
   skipAnimation?: boolean;
   onCustomerChange?: (customer: string) => void;
   isActive: boolean;
+  fromCollapse?: boolean;
 }) {
   const { mode } = useMode();
   const { shareMode } = useShareMode();
@@ -692,6 +694,7 @@ export function ExecuteSlide({
   const [revealPhase, setRevealPhase] = useState(skipAnimation ? 4 : 1);
   const hasInteracted = useRef(false);
   const initialRevealDone = useRef(skipAnimation);
+  const didCollapse = useRef(!!fromCollapse);
   const cust = CUSTOMERS[selected];
 
   useEffect(() => {
@@ -779,10 +782,10 @@ export function ExecuteSlide({
   return (
         <motion.div
           key="action"
-          initial={skipAnimation ? false : { opacity: 0, y: 16 }}
+          initial={(skipAnimation || didCollapse.current) ? false : { opacity: 0, y: 16 }}
           animate={isActive ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
           exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: didCollapse.current ? 0 : 0.5, ease: [0.22, 1, 0.36, 1] }}
           className={`mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-7xl flex-col items-center justify-start px-6 relative ${isPresenter ? "pt-2" : "pt-8"}`}
         >
           {/* Title */}
@@ -792,10 +795,10 @@ export function ExecuteSlide({
                 key={`reveal-title-${revealPhase <= 1 ? 1 : revealPhase >= 4 ? 4 : revealPhase}`}
                 className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
                 style={{ color: NAVY }}
-                initial={skipAnimation ? false : { opacity: 0, y: 12 }}
+                initial={skipAnimation ? false : { opacity: 0, y: didCollapse.current ? 0 : 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.4 }}
+                transition={{ duration: didCollapse.current ? 0.6 : 0.4, delay: didCollapse.current ? 0.15 : 0 }}
               >
                 {revealPhase <= 1
                   ? "Applying the optimized price at the customer order level"
@@ -812,9 +815,9 @@ export function ExecuteSlide({
           <div style={{ transform: "translateX(calc(var(--rail-inset, 0px) * -0.5))" }}>
             <motion.div
               className={`flex min-h-[3rem] items-center justify-center px-4 ${isPresenter ? "mb-1" : "mb-4"}`}
-              initial={skipAnimation ? false : { opacity: 0, y: 6 }}
+              initial={skipAnimation ? false : { opacity: 0, y: didCollapse.current ? 0 : 6 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.5 }}
+              transition={{ duration: didCollapse.current ? 0.6 : 0.4, delay: didCollapse.current ? 0.25 : 0.5 }}
             >
             <AnimatePresence mode="wait">
               <motion.p
@@ -831,7 +834,7 @@ export function ExecuteSlide({
                   : revealPhase === 2
                     ? "The model weighs each factor to calculate Acme’s calibrated price."
                     : revealPhase === 3
-                      ? <>{cust.price} — sales relationship, order frequency, and tenure push the price <span style={{ fontWeight: 700, color: "#2e7d32" }}>{cust.delta}</span>.</>
+                      ? <>{cust.price} — sales relationship, order frequency, and tenure push the price{" "}<span style={{ fontWeight: 700, color: "#2e7d32", whiteSpace: "nowrap" }}>{cust.delta}</span>.</>
                       : cust.narrative}
               </motion.p>
             </AnimatePresence>
@@ -857,67 +860,71 @@ export function ExecuteSlide({
                       />
                     )}
 
-                    <motion.circle
-                      cx={MODEL_CX} cy={MODEL_CY}
-                      fill="white" stroke={TEAL} strokeWidth={2.5}
-                      initial={{ r: BOX_H / 2 }}
-                      animate={{ r: BOX_H / 2 }}
-                    />
+                    <g>
+                      <motion.circle
+                        cx={MODEL_CX} cy={MODEL_CY}
+                        fill="white" stroke={TEAL} strokeWidth={2.5}
+                        initial={{ r: BOX_H / 2 }}
+                        animate={{ r: BOX_H / 2 }}
+                      />
 
-                    {/* Converge echo — stays until Acme drivers arrive */}
-                    <motion.g
-                      initial={{ opacity: skipAnimation ? 0 : 0.9 }}
-                      animate={{ opacity: revealPhase >= 2 ? 0 : 1 }}
-                      transition={{ duration: revealPhase >= 2 ? 0.35 : 0.4 }}
-                    >
-                      <text x={MODEL_CX} y={MODEL_CY - 28} textAnchor="middle"
-                        style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.18em", fill: "#5A6A78" }}>
-                        OPTIMIZED
-                      </text>
-                      <text x={MODEL_CX} y={MODEL_CY + 14} textAnchor="middle"
-                        style={{ fontSize: 38, fontWeight: 800, fill: NAVY }}>
-                        PRICE
-                      </text>
-                      <text x={MODEL_CX} y={MODEL_CY + 36} textAnchor="middle"
-                        style={{ fontSize: 13, fontWeight: 500, fill: "#5A6A78" }}>
-                        per SKU
-                      </text>
-                    </motion.g>
+                      {/* Converge echo — stays until Acme drivers arrive */}
+                      <motion.g
+                        initial={{ opacity: (skipAnimation && !didCollapse.current) ? 0 : 0.9 }}
+                        animate={{ opacity: revealPhase >= 2 ? 0 : 1 }}
+                        transition={{ duration: revealPhase >= 2 ? 0.35 : 0.4 }}
+                      >
+                        <text x={MODEL_CX} y={MODEL_CY - 28} textAnchor="middle"
+                          style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.18em", fill: "#5A6A78" }}>
+                          OPTIMIZED
+                        </text>
+                        <text x={MODEL_CX} y={MODEL_CY + 14} textAnchor="middle"
+                          style={{ fontSize: 38, fontWeight: 800, fill: NAVY }}>
+                          PRICE
+                        </text>
+                        <text x={MODEL_CX} y={MODEL_CY + 36} textAnchor="middle"
+                          style={{ fontSize: 13, fontWeight: 500, fill: "#5A6A78" }}>
+                          per SKU
+                        </text>
+                      </motion.g>
 
-                    <motion.g
-                      initial={false}
-                      animate={isActive && revealPhase >= 2 ? { opacity: 1 } : { opacity: 0 }}
-                      transition={{ duration: 0.4, delay: isActive && revealPhase >= 2 ? 0.25 : 0 }}
-                    >
-                      {/* Title above circle */}
-                      <text x={MODEL_CX} y={MODEL_CY - 68} fontSize="14" fontWeight="700" fill={NAVY} textAnchor="middle">
-                        Pricing model
-                      </text>
+                      <motion.g
+                        initial={false}
+                        animate={isActive && revealPhase >= 2 ? { opacity: 1 } : { opacity: 0 }}
+                        transition={{ duration: 0.4, delay: isActive && revealPhase >= 2 ? 0.25 : 0 }}
+                      >
+                        {/* Chip above circle */}
+                        <rect x={MODEL_CX - 58} y={MODEL_CY - 82} width={116} height={26} rx={13} fill={NAVY} />
+                        <text x={MODEL_CX} y={MODEL_CY - 64} fontSize="12" fontWeight="700" fill="white" textAnchor="middle">
+                          Pricing model
+                        </text>
 
-                      {/* Center SKU circle — filled blue */}
-                      <circle cx={MODEL_CX} cy={MODEL_CY} r={58} fill={NAVY} />
-                      <text x={MODEL_CX} y={MODEL_CY - 14} fontSize="9" fontWeight="600" fill="rgba(255,255,255,0.7)" textAnchor="middle">
-                        SKU #A-7200
-                      </text>
-                      <text x={MODEL_CX} y={MODEL_CY + 12} fontSize="24" fontWeight="800" fill="white" textAnchor="middle">
-                        {LIST_PRICE}
-                      </text>
-                      <text x={MODEL_CX} y={MODEL_CY + 28} fontSize="7.5" fontWeight="500" fill="rgba(255,255,255,0.65)" textAnchor="middle">
-                        customer order list price
-                      </text>
+                        <text x={MODEL_CX} y={MODEL_CY - 28} textAnchor="middle"
+                          style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.18em", fill: "#5A6A78" }}>
+                          OPTIMIZED SKU
+                        </text>
+                        <text x={MODEL_CX} y={MODEL_CY + 14} textAnchor="middle"
+                          style={{ fontSize: 38, fontWeight: 800, fill: NAVY }}>
+                          PRICE
+                        </text>
+                        <text x={MODEL_CX} y={MODEL_CY + 36} textAnchor="middle"
+                          style={{ fontSize: 12, fontWeight: 500, fill: "#5A6A78" }}>
+                          SKU #A-7200
+                        </text>
 
-                    </motion.g>
+                      </motion.g>
 
-                    {/* Subtitle below outer circle */}
-                    <motion.text
-                      x={MODEL_CX} y={MODEL_CY + BOX_H / 2 + 18}
-                      fontSize="10" fontWeight="500" fill={TEAL} textAnchor="middle"
-                      initial={false}
-                      animate={isActive && revealPhase >= 2 ? { opacity: 1 } : { opacity: 0 }}
-                      transition={{ duration: 0.4, delay: isActive ? (skipAnimation ? 0.3 : 0.8) : 0 }}
-                    >
-                      ML-powered optimization
-                    </motion.text>
+                      {/* Subtitle below outer circle */}
+                      <motion.text
+                        x={MODEL_CX} y={MODEL_CY + BOX_H / 2 + 18}
+                        fontSize="10" fontWeight="500" fill={TEAL} textAnchor="middle"
+                        initial={false}
+                        animate={isActive && revealPhase >= 2 ? { opacity: 1 } : { opacity: 0 }}
+                        transition={{ duration: 0.4, delay: isActive ? (skipAnimation ? 0.3 : 0.8) : 0 }}
+                      >
+                        ML-powered optimization
+                      </motion.text>
+                    </g>
 
                   </g>
 
@@ -933,7 +940,7 @@ export function ExecuteSlide({
                         <motion.g
                           initial={skipAnimation ? false : { opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.5, delay: 0.3 }}
+                          transition={{ duration: 0.5, delay: didCollapse.current ? 0.5 : 0.3 }}
                         >
                           <rect x={PROFILE_X} y={MODEL_CY - PROFILE_BOX_H / 2} width={PROFILE_W} height={PROFILE_BOX_H}
                             rx={14} fill="white" stroke={GREY} strokeWidth={1.2} strokeDasharray="6 4" opacity={0.6} />
@@ -974,7 +981,7 @@ export function ExecuteSlide({
                         <motion.g
                           initial={skipAnimation ? false : { opacity: 0, x: 20 }}
                           animate={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.5, delay: 0.4 }}
+                          transition={{ duration: 0.5, delay: didCollapse.current ? 0.6 : 0.4 }}
                         >
                           <rect x={RESULT_CARD_X} y={MODEL_CY - PROFILE_BOX_H / 2} width={RESULT_CARD_W} height={PROFILE_BOX_H}
                             rx={14} fill="white" stroke={GREY} strokeWidth={1.2} strokeDasharray="6 4" opacity={0.6} />

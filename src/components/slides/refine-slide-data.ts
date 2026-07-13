@@ -251,6 +251,11 @@ export const PORTFOLIO_SEGMENTS = (() => {
     "DeepCore – Mining Ops.", "PetroFlow – Petrochemical", "MicroPin – Electronics",
     "PackRight – Packaging", "PrecisionCo – Precision", "StructurePro – Structural",
     "HydraForce – Hydraulic", "WindPower – Wind Energy", "AgriChain – Agriculture",
+    "VoltEdge – Power Dist.", "ClearCoat – Ind. Coatings", "TitanGrip – Fasteners",
+    "AquaPure – Water Treat.", "FiberLink – Fiber Optics", "ChemFlow – Spec. Chem.",
+    "ProWeld – Welding Supply", "GeoTech – Geotech Equip.", "BrightSteel – Steel Fab.",
+    "CoolAir – Refrigeration", "SpectraLens – Optics MRO", "CoreDrill – Drilling Ops.",
+    "AlphaValve – Valve Dist.", "NexGen Parts – Gen. Ind.",
   ];
   const features: PortfolioFeature[] = [
     "scatter", "delta", "price-dot", "live", "plain", "scatter",
@@ -258,6 +263,10 @@ export const PORTFOLIO_SEGMENTS = (() => {
     "plain", "scatter", "price-dot", "delta", "live", "scatter",
     "delta", "price-dot", "plain", "scatter", "live", "price-dot",
     "plain", "scatter", "delta", "live", "price-dot", "plain",
+    "live", "scatter", "delta", "price-dot", "plain", "delta",
+    "scatter", "live", "plain", "price-dot", "delta", "scatter",
+    "price-dot", "plain", "live", "scatter", "delta", "live",
+    "plain", "scatter",
   ];
   const deltas = [
     "+1.8%", "-0.4%", "+3.2%", "+0.9%", "-1.1%", "+2.4%",
@@ -265,6 +274,10 @@ export const PORTFOLIO_SEGMENTS = (() => {
     "-0.5%", "+1.9%", "-0.2%", "+3.1%", "+0.8%", "-1.3%",
     "+2.0%", "-0.6%", "+1.4%", "+0.7%", "-0.3%", "+2.5%",
     "+1.1%", "-0.8%", "+1.6%", "+0.4%", "-1.0%", "+2.2%",
+    "+0.5%", "-0.3%", "+2.8%", "+1.3%", "-0.9%", "+1.7%",
+    "-0.6%", "+3.0%", "+0.2%", "-1.2%", "+2.1%", "-0.4%",
+    "+1.5%", "+0.8%", "-0.7%", "+2.3%", "+0.6%", "-0.5%",
+    "+1.9%", "-0.2%",
   ];
   return names.map((name, i) => {
     const steepness = 2 + pRng() * 10;

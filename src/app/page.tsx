@@ -1351,7 +1351,7 @@ export function Home() {
               <MotionConfig reducedMotion={isActive ? (skipAnimation ? "always" : "never") : "always"}>
                 <div key={slideReplayKeys[i]}>
                   <motion.div
-                    initial={{ opacity: 0, y: 10 }}
+                    initial={(collapseToExecuteRef.current && isActive) ? false : { opacity: 0, y: 10 }}
                     animate={isActive ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
                     transition={{ duration: (skipAnimation || collapseToExecuteRef.current) ? 0 : 0.3, ease: [0.22, 1, 0.36, 1] }}
                     className="w-full"
@@ -1398,7 +1398,7 @@ export function Home() {
                           onAutoAdvance={isActive && !skipAnimation && !isReplayingRef.current ? () => navigate(slide + 1) : undefined}
                         />
                       )}
-                      {sc.kind === "execute" && <MemoExecute step={isActive ? subStep : 0} skipAnimation={effectiveSkip} isActive={isActive} onCustomerChange={isActive ? handleExecuteCustomerChange : undefined} />}
+                      {sc.kind === "execute" && <MemoExecute step={isActive ? subStep : 0} skipAnimation={effectiveSkip} isActive={isActive} onCustomerChange={isActive ? handleExecuteCustomerChange : undefined} fromCollapse={collapseToExecuteRef.current} />}
                       {sc.kind === "end" && <EndSlide onRestart={() => navigate(0)} />}
                     </motion.div>
                   </motion.div>
@@ -2054,11 +2054,82 @@ function IntroSlide({ isActive }: { isActive: boolean }) {
 
 /* ── End Slide ────────────────────────────────────────────────── */
 
+function DesignIcon() {
+  return (
+    <svg viewBox="0 0 48 48" className="size-10">
+      <rect x="2" y="6" width="12" height="6" rx="2" fill="#3A7D44" opacity={0.7} />
+      <rect x="2" y="15" width="12" height="6" rx="2" fill="#3A7D44" opacity={0.5} />
+      <rect x="2" y="27" width="12" height="6" rx="2" fill="#2A7BA5" opacity={0.7} />
+      <rect x="2" y="36" width="12" height="6" rx="2" fill="#2A7BA5" opacity={0.5} />
+      <path d="M14 9 C22 9, 22 24, 26 24" stroke="#3A7D44" strokeWidth="1.2" fill="none" opacity={0.4} />
+      <path d="M14 18 C22 18, 22 24, 26 24" stroke="#3A7D44" strokeWidth="1.2" fill="none" opacity={0.4} />
+      <path d="M14 30 C22 30, 22 24, 26 24" stroke="#2A7BA5" strokeWidth="1.2" fill="none" opacity={0.4} />
+      <path d="M14 39 C22 39, 22 24, 26 24" stroke="#2A7BA5" strokeWidth="1.2" fill="none" opacity={0.4} />
+      <circle cx="36" cy="24" r="11" fill="none" stroke="#00446A" strokeWidth="2" />
+      <path d="M25 24 h22" stroke="white" strokeWidth="1" strokeDasharray="2 1.5" />
+      <circle cx="36" cy="19" r="4" fill="#4A9B6E" opacity={0.6} />
+      <circle cx="36" cy="29" r="4" fill="#4A8DB8" opacity={0.6} />
+    </svg>
+  );
+}
+
+function PowerIcon() {
+  return (
+    <svg viewBox="0 0 48 48" className="size-10">
+      <line x1="6" y1="42" x2="6" y2="4" stroke="#00446A" strokeWidth="1.5" opacity={0.3} />
+      <line x1="6" y1="42" x2="44" y2="42" stroke="#00446A" strokeWidth="1.5" opacity={0.3} />
+      <circle cx="14" cy="14" r="2.5" fill="#00446A" opacity={0.7} />
+      <circle cx="20" cy="20" r="2.5" fill="#00446A" opacity={0.5} />
+      <circle cx="30" cy="12" r="2.5" fill="#E56910" opacity={0.7} />
+      <circle cx="36" cy="18" r="2.5" fill="#E56910" opacity={0.5} />
+      <circle cx="12" cy="30" r="2.5" fill="#2e7d32" opacity={0.7} />
+      <circle cx="22" cy="34" r="2.5" fill="#2e7d32" opacity={0.5} />
+      <circle cx="34" cy="30" r="2.5" fill="#7B5EA7" opacity={0.7} />
+      <circle cx="40" cy="36" r="2.5" fill="#7B5EA7" opacity={0.5} />
+      <circle cx="18" cy="26" r="1.8" fill="#00446A" opacity={0.3} />
+      <circle cx="26" cy="24" r="1.8" fill="#E56910" opacity={0.3} />
+      <circle cx="38" cy="10" r="1.8" fill="#2e7d32" opacity={0.3} />
+      <circle cx="28" cy="38" r="1.8" fill="#7B5EA7" opacity={0.3} />
+    </svg>
+  );
+}
+
+function ExecuteIcon() {
+  return (
+    <svg viewBox="0 0 48 48" className="size-10">
+      <rect x="2" y="14" width="13" height="20" rx="2.5" fill="#00446A" fillOpacity={0.1} stroke="#00446A" strokeWidth="1" strokeOpacity={0.3} />
+      <rect x="5" y="19" width="7" height="1.5" rx="0.75" fill="#E56910" opacity={0.6} />
+      <rect x="5" y="23" width="5" height="1.5" rx="0.75" fill="#E56910" opacity={0.4} />
+      <rect x="5" y="27" width="8" height="1.5" rx="0.75" fill="#E56910" opacity={0.5} />
+      <path d="M15 24 C20 24, 20 24, 22 24" stroke="#21A5D5" strokeWidth="1" fill="none" opacity={0.4} />
+      <circle cx="27" cy="24" r="5" fill="none" stroke="#21A5D5" strokeWidth="1.5" opacity={0.6} />
+      <circle cx="27" cy="24" r="2" fill="#21A5D5" opacity={0.3} />
+      <path d="M32 24 C34 24, 34 24, 35 24" stroke="#21A5D5" strokeWidth="1" fill="none" opacity={0.4} />
+      <rect x="35" y="16" width="11" height="16" rx="2.5" fill="#00446A" fillOpacity={0.1} stroke="#00446A" strokeWidth="1" strokeOpacity={0.3} />
+      <text x="40.5" y="25" textAnchor="middle" fontSize="5.5" fontWeight="700" fill="#E56910" opacity={0.8}>$</text>
+    </svg>
+  );
+}
+
+function RefineIcon() {
+  return (
+    <svg viewBox="0 0 48 48" className="size-10">
+      <line x1="6" y1="42" x2="6" y2="4" stroke="#00446A" strokeWidth="1.5" opacity={0.3} />
+      <line x1="6" y1="42" x2="44" y2="42" stroke="#00446A" strokeWidth="1.5" opacity={0.3} />
+      <path d="M8 12 C14 13, 20 22, 28 30 C32 34, 38 38, 42 39" stroke="#00446A" strokeWidth="2" fill="none" opacity={0.6} />
+      <path d="M8 10 C14 11, 20 18, 28 26 C32 30, 38 34, 42 36" stroke="#21A5D5" strokeWidth="1.5" fill="none" strokeDasharray="3 2" opacity={0.4} />
+      <circle cx="16" cy="16" r="2.5" fill="#C27A3A" opacity={0.7} />
+      <circle cx="28" cy="28" r="2.5" fill="#4A8FA8" opacity={0.7} />
+      <circle cx="38" cy="37" r="2.5" fill="#4A8A5C" opacity={0.7} />
+    </svg>
+  );
+}
+
 const END_RECAP = [
-  { num: "1", title: "Design", desc: "One model built around your business — your data, your factors, your rules." },
-  { num: "2", title: "Power", desc: "ML finds pricing patterns across millions of transactions humans can't see." },
-  { num: "3", title: "Execute", desc: "SKU-level prices tailored to each customer, delivered where your team works." },
-  { num: "4", title: "Refine", desc: "The model continuously recalibrates as costs, competition, and markets shift." },
+  { section: "Design", title: "Your Model", desc: "One model built around your business — your data, your factors, your rules.", Icon: DesignIcon },
+  { section: "Power", title: "Searching Transactions", desc: "ML finds pricing patterns across millions of transactions humans can't see.", Icon: PowerIcon },
+  { section: "Execute", title: "Pricing Decisions", desc: "SKU-level prices tailored to each customer, delivered where your team works.", Icon: ExecuteIcon },
+  { section: "Refine", title: "Continuous Learning", desc: "The model continuously recalibrates as costs, competition, and markets shift.", Icon: RefineIcon },
 ];
 
 function EndSlide({ onRestart }: { onRestart: () => void }) {
@@ -2074,12 +2145,22 @@ function EndSlide({ onRestart }: { onRestart: () => void }) {
         Questions? Let&apos;s discuss how this model can work for your business.
       </p>
 
-      <div className="mt-10 grid w-full max-w-3xl grid-cols-4 gap-4">
-        {END_RECAP.map((item) => (
-          <div key={item.num} className="rounded-xl px-4 py-4 text-left" style={{ backgroundColor: "#00446A08", border: "1px solid #00446A0F" }}>
-            <span className="text-xs font-bold tracking-widest" style={{ color: "#21A5D5" }}>{item.num}</span>
-            <h3 className="mt-1 text-sm font-bold" style={{ color: "#00446A" }}>{item.title}</h3>
-            <p className="mt-1.5 text-[0.8rem] font-medium leading-snug" style={{ color: "#5A6A78" }}>{item.desc}</p>
+      <div className="mt-10 flex w-full max-w-4xl items-stretch justify-center">
+        {END_RECAP.map((item, i) => (
+          <div key={item.section} className="flex items-stretch">
+            <div className="flex w-52 flex-col rounded-xl px-4 py-5 text-left" style={{ backgroundColor: "#00446A08", border: "1px solid #00446A0F" }}>
+              <item.Icon />
+              <span className="mt-3 text-[10px] font-bold tracking-[0.15em] uppercase" style={{ color: "#21A5D5" }}>{item.section}</span>
+              <h3 className="mt-0.5 text-sm font-bold" style={{ color: "#00446A" }}>{item.title}</h3>
+              <p className="mt-1.5 text-[0.8rem] font-medium leading-snug" style={{ color: "#5A6A78" }}>{item.desc}</p>
+            </div>
+            {i < END_RECAP.length - 1 && (
+              <div className="flex shrink-0 items-center px-2">
+                <svg viewBox="0 0 24 24" className="size-5 text-[#00446A]/20">
+                  <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+            )}
           </div>
         ))}
       </div>

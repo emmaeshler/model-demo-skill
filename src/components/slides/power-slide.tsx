@@ -110,7 +110,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
   useEffect(() => {
     if (!isActive) { setScanCardCount(0); setDriversRevealed(false); return; }
     if (chartStep !== 1) { setScanCardCount(chartStep > 1 ? 4 : 0); setDriversRevealed(chartStep > 2); return; }
-    if (skipAnimation) { setScanCardCount(4); setDriversRevealed(true); return; }
+    if (skipAnimation) { setScanCardCount(4); setDriversRevealed(false); return; }
     setScanCardCount(0);
     setDriversRevealed(false);
     const s1 = setTimeout(() => setScanCardCount(1), 600);

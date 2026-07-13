@@ -142,8 +142,8 @@ export function PortfolioGrid({ isPortfolio, isPortfolioHero, isActive, shareMod
     : portfolioPhase >= 2 ? 5
     : 4;
   const visibleCount = isPortfolioHero ? 4
-    : portfolioPhase >= 3 ? 30
-    : portfolioPhase >= 2 ? 15
+    : portfolioPhase >= 3 ? 50
+    : portfolioPhase >= 2 ? 20
     : 8;
   const isHero = isPortfolioHero;
   const isLarge = isHero;
@@ -226,7 +226,7 @@ export function PortfolioGrid({ isPortfolio, isPortfolioHero, isActive, shareMod
             animate={{ opacity: portfolioPhase >= 4 ? 1 : 0 }}
             transition={{ duration: 0.5 }}
           >
-            Showing 30 of <span style={{ color: NAVY, fontWeight: 700 }}>247 segments</span> monitored continuously
+            Showing 50 of <span style={{ color: NAVY, fontWeight: 700 }}>247 segments</span> monitored continuously
           </motion.p>
         </motion.div>
       )}

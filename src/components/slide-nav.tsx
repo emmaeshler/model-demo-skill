@@ -331,7 +331,7 @@ export function TopBar({
                 <div key={gi} ref={groupActive ? activeGroupRef : undefined} className="mb-1.5 last:mb-0">
                   <button
                     onClick={() => {
-                      if (groupActive) {
+                      if (groupActive || group.slides.length <= 1) {
                         handleNavigate(
                           group.slides[0].index,
                           group.slides[0].subStep ?? 0,
