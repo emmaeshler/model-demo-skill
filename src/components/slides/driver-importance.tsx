@@ -210,19 +210,20 @@ export function DriverImportanceSlide({
       const t = setTimeout(() => setClickReady(true), 600);
       return () => clearTimeout(t);
     }
-    if (step === 5) {
-      const t = setTimeout(() => setClickReady(true), 800);
-      return () => clearTimeout(t);
-    }
   }, [isActive, isIntro, introPhase, isChart, secondPhase, isDrivers, isCollapse, skipAnimation, step]);
 
-  /* Auto-advance through category steps (1→2→3→4→5) */
+  /* Auto-advance through category steps (1→2→3→4→5) and consolidated (5→6) */
   useEffect(() => {
-    if (!isActive || !isChart || !onAutoAdvance) return;
-    if (!secondPhase) return;
-    const t = setTimeout(() => onAutoAdvance(), 3200);
-    return () => clearTimeout(t);
-  }, [isActive, isChart, secondPhase, onAutoAdvance]);
+    if (!isActive || !onAutoAdvance) return;
+    if (isChart && secondPhase) {
+      const t = setTimeout(() => onAutoAdvance(), 1800);
+      return () => clearTimeout(t);
+    }
+    if (step === 5) {
+      const t = setTimeout(() => onAutoAdvance(), 600);
+      return () => clearTimeout(t);
+    }
+  }, [isActive, isChart, secondPhase, step, onAutoAdvance]);
 
   function getDisposition(f: { label: string; category: string }): Disposition | null {
     const catKey = f.category as CategoryKey;
@@ -837,7 +838,7 @@ export function DriverImportanceSlide({
         </AnimatePresence>
 
         <AnimatePresence>
-          {((clickReady && !isChart) || driverClickReady) && (
+          {((clickReady && !isChart && step !== 5) || driverClickReady) && (
             <motion.div
               className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5"
               style={{ transform: "translateX(calc(-50% + var(--rail-inset, 0px) * -0.5))" }}
