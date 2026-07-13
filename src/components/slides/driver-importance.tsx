@@ -420,7 +420,9 @@ export function DriverImportanceSlide({
                       className="text-center text-[22px] font-bold leading-snug sm:text-2xl"
                       style={{ color: narrative.color }}
                     >
-                      {narrative.headline}
+                      <span style={{ borderBottom: `2.5px solid ${narrative.color}`, paddingBottom: 2 }}>
+                        {narrative.headline}
+                      </span>
                     </h2>
                     <p className="mx-auto max-w-xl text-center text-[15px] font-medium leading-relaxed" style={{ color: NAVY, opacity: 0.7 }}>
                       {narrative.detail}
@@ -552,24 +554,20 @@ export function DriverImportanceSlide({
                 >
                   <LayoutGroup>
                     <div className="flex flex-col relative">
-                      <motion.span
-                        className="absolute font-semibold uppercase"
-                        style={{
-                          color: MUTED,
-                          fontSize: 9,
-                          letterSpacing: "0.1em",
-                          writingMode: "vertical-rl",
-                          transform: "rotate(180deg)",
-                          left: isConsolidated ? 210 : 162,
-                          top: 4,
-                          opacity: 0,
-                        }}
-                        initial={skipAnimation ? { opacity: 0.35 } : { opacity: 0 }}
-                        animate={{ opacity: 0.35 }}
-                        transition={{ duration: 0.4, delay: 0.5 }}
+                      <motion.div
+                        className="flex items-center mb-1"
+                        style={{ paddingLeft: isConsolidated ? 220 : 170 }}
+                        initial={skipAnimation ? { opacity: 0.4 } : { opacity: 0 }}
+                        animate={{ opacity: 0.4 }}
+                        transition={{ duration: 0.4, delay: skipAnimation ? 0 : 0.5 }}
                       >
-                        Variance %
-                      </motion.span>
+                        <span
+                          className="font-semibold uppercase"
+                          style={{ color: MUTED, fontSize: 9, letterSpacing: "0.1em" }}
+                        >
+                          Variance %
+                        </span>
+                      </motion.div>
                       <AnimatePresence>
                       {visibleFactors.map((f, i) => {
                         const disposition = getDisposition(f);
