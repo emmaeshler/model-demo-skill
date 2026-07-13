@@ -4,8 +4,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import {
   EASE, NAVY, TEAL, ORANGE, GREEN, PURPLE, MUTED,
-  SQUARE_FACTORS, CATEGORY_LAYOUT,
-  CATEGORY_TITLES, CATEGORY_NARRATION,
+  SQUARE_FACTORS,
 } from "./power-slide-data";
 import { useShareMode } from "@/lib/share-context";
 
@@ -110,9 +109,7 @@ const FINAL_DRIVERS = [
   { label: "Competitor Pricing", category: "market", value: 1.6 },
 ];
 
-const BAR_MAX_W = 340;
-const ROW_H = 20;
-const HEADER_H = 10;
+const BAR_MAX_W = 480;
 
 type Disposition = "keep" | "remove" | "add";
 
@@ -294,7 +291,7 @@ export function DriverImportanceSlide({
       {/* Title */}
       <div
         className="relative w-full"
-        style={{ height: 90, flexShrink: 0, transform: "translateX(calc(var(--rail-inset, 0px) * -0.5))" }}
+        style={{ height: isChart ? 130 : 90, flexShrink: 0, transform: "translateX(calc(var(--rail-inset, 0px) * -0.5))", transition: "height 0.4s ease" }}
       >
         <div className="mx-auto max-w-3xl text-center">
           <AnimatePresence mode="wait">
@@ -411,15 +408,39 @@ export function DriverImportanceSlide({
                 exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.3 }}
               >
-                <h2
-                  className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
-                  style={{ color: CATEGORY_LAYOUT[categoryIndex].color }}
-                >
-                  {CATEGORY_TITLES[categoryIndex]}
-                </h2>
-                <span className="text-[0.95rem] leading-relaxed" style={{ color: MUTED }}>
-                  {CATEGORY_NARRATION[categoryIndex]}
-                </span>
+                {narrative && (
+                  <>
+                    <span
+                      className="text-[11px] font-bold uppercase tracking-[0.14em]"
+                      style={{ color: `${narrative.color}90` }}
+                    >
+                      {narrative.supertitle}
+                    </span>
+                    <h2
+                      className="text-center text-[22px] font-bold leading-snug sm:text-2xl"
+                      style={{ color: narrative.color }}
+                    >
+                      {narrative.headline}
+                    </h2>
+                    <p className="mx-auto max-w-xl text-center text-[15px] font-medium leading-relaxed" style={{ color: NAVY, opacity: 0.7 }}>
+                      {narrative.detail}
+                    </p>
+                    <AnimatePresence>
+                      {secondPhase && (
+                        <motion.p
+                          className="mx-auto max-w-lg text-center text-[13px] font-medium leading-relaxed"
+                          style={{ color: MUTED, borderTop: `1px dashed ${MUTED}30`, paddingTop: 8, marginTop: 4 }}
+                          initial={{ opacity: 0, y: 4 }}
+                          animate={{ opacity: 0.55, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.4, ease: EASE }}
+                        >
+                          {narrative.dismissLine}
+                        </motion.p>
+                      )}
+                    </AnimatePresence>
+                  </>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -810,26 +831,7 @@ export function DriverImportanceSlide({
                     )}
                   </AnimatePresence>
                 </motion.div>
-                </>) : !isConsolidated ? (
-                <div
-                  className="w-[320px] shrink-0 flex flex-col justify-center"
-                  style={{ minHeight: visibleFactors.length * ROW_H + 30 }}
-                >
-                  <AnimatePresence mode="wait">
-                    {hasAnnotations && narrative && (
-                      <motion.div
-                        key={`narrative-${categoryIndex}`}
-                        initial={{ opacity: 0, x: 16 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: 16 }}
-                        transition={{ duration: 0.45, delay: 0.3, ease: EASE }}
-                      >
-                        <NarrativeBlock narrative={narrative} showDismiss={secondPhase} />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-                ) : null}
+                </>) : null}
 
               </div>
             </motion.div>
@@ -954,34 +956,3 @@ function CollapseView({ phase, skipAnimation }: { phase: number; skipAnimation?:
   );
 }
 
-function NarrativeBlock({ narrative, showDismiss }: { narrative: CategoryNarrative; showDismiss: boolean }) {
-  return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <span
-          className="text-[11px] font-bold uppercase tracking-[0.14em] mb-2 block"
-          style={{ color: `${narrative.color}90` }}
-        >
-          {narrative.supertitle}
-        </span>
-        <h3 className="text-[20px] font-bold leading-snug mb-3" style={{ color: narrative.color }}>
-          {narrative.headline}
-        </h3>
-        <p className="text-[15px] font-medium leading-relaxed" style={{ color: NAVY, opacity: 0.7 }}>
-          {narrative.detail}
-        </p>
-      </div>
-      {showDismiss && (
-        <motion.p
-          className="text-[13px] font-medium leading-relaxed"
-          style={{ color: MUTED, borderTop: `1px dashed ${MUTED}30`, paddingTop: 12 }}
-          initial={{ opacity: 0, y: 4 }}
-          animate={{ opacity: 0.55, y: 0 }}
-          transition={{ duration: 0.4, ease: EASE }}
-        >
-          {narrative.dismissLine}
-        </motion.p>
-      )}
-    </div>
-  );
-}
