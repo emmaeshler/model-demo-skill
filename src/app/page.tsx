@@ -1068,12 +1068,12 @@ export function Home() {
       };
       return () => ch.close();
     }
-    if (mode === "presenter") {
+    if (mode === "presenter" || presenting) {
       const ch = new BroadcastChannel("ml-explainer-sync");
       channelRef.current = ch;
       return () => { ch.close(); channelRef.current = null; };
     }
-  }, [isAudience, mode]);
+  }, [isAudience, mode, presenting]);
 
   // Broadcast navigation state to audience window
   useEffect(() => {
@@ -1129,17 +1129,16 @@ export function Home() {
     setPresentElapsed(0);
   }, []);
 
-  const nextPosition = useMemo(() => {
-    let next = slide + 1;
-    while (presenterSkipped.has(next) && next < total) next++;
-    if (next >= total) return null;
-    return { slideIndex: next, stepIndex: 0 };
-  }, [slide, presenterSkipped, total]);
-
   const currentClickIndex = useMemo(
     () => allClickSteps.findIndex((s) => s.slideIndex === slide && s.stepIndex === subStep),
     [allClickSteps, slide, subStep],
   );
+
+  const nextPosition = useMemo(() => {
+    if (currentClickIndex < 0 || currentClickIndex >= allClickSteps.length - 1) return null;
+    const next = allClickSteps[currentClickIndex + 1];
+    return { slideIndex: next.slideIndex, stepIndex: next.stepIndex };
+  }, [allClickSteps, currentClickIndex]);
 
   useEffect(() => {
     spotlightRefinedRef.current = false;
@@ -1456,7 +1455,7 @@ export function Home() {
           groups={displayNavGroups}
           onNavigate={navigate}
           animationDone={animationDone}
-          onStartPresenting={mode === "presenter" ? startPresenting : undefined}
+          onStartPresenting={startPresenting}
           onAnimationGlossary={() => setGlossaryOpen(true)}
           onSlideSorter={() => setSlideSorterOpen(true)}
           onHowItWorks={() => setWalkthroughOpen(true)}
@@ -1641,7 +1640,7 @@ export function Home() {
       {walkthroughOpen && (
         <WalkthroughOverlay
           onClose={() => setWalkthroughOpen(false)}
-          onStartPresenting={mode === "presenter" ? startPresenting : undefined}
+          onStartPresenting={startPresenting}
           onEndPresenting={endPresenting}
         />
       )}
@@ -1812,16 +1811,17 @@ export function Home() {
                   Next slide
                 </h3>
                 <div className={cn("relative aspect-[16/10] overflow-hidden rounded-lg border", darkMode ? "border-white/10 bg-[#06283D]" : "border-black/10 bg-gray-900")}>
-                  <div className={cn("absolute inset-0 flex items-center justify-center text-sm", darkMode ? "text-white/30" : "text-white/40")}>
-                    {nextPosition ? "Preview unavailable" : "End of presentation"}
-                  </div>
-                  {nextPosition && (
-                    <img
-                      src={`/slide-thumbnails/slide-${nextPosition.slideIndex}-${nextPosition.stepIndex}.jpg`}
-                      alt="Next slide"
-                      className="relative h-full w-full object-cover"
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                  {nextPosition ? (
+                    <iframe
+                      key={`${nextPosition.slideIndex}-${nextPosition.stepIndex}`}
+                      src={`${window.location.origin}${window.location.pathname}?audience=true&mode=self&slide=${nextPosition.slideIndex}&subStep=${nextPosition.stepIndex}&skipAnimation=true`}
+                      className="pointer-events-none absolute inset-0 h-full w-full border-0"
+                      title="Next Slide Preview"
                     />
+                  ) : (
+                    <div className={cn("absolute inset-0 flex items-center justify-center text-sm", darkMode ? "text-white/30" : "text-white/40")}>
+                      End of presentation
+                    </div>
                   )}
                 </div>
               </div>

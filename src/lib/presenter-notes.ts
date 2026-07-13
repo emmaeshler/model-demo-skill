@@ -34,12 +34,12 @@ const NOTES: Record<string, string[]> = {
     "All four driver categories converge — the model combines them into a single optimized price for each SKU.",
   ],
   "execute:0": [
-    "The model produced $17.50 for SKU #A-7200 — now watch how it customizes that price for each customer.",
-    "Click to see how different customer profiles shift the recommendation.",
+    "Here's where the model output meets the real world — it starts with one optimized price per SKU, then adjusts for each customer.",
+    "Watch how a customer's profile feeds into the model and produces a tailored price.",
   ],
   "execute:1": [
     "Same product, same list price — but each customer gets a different answer.",
-    "Acme's high volume and deep relationship push the price above peer.",
+    "Acme's strong sales relationship, high order frequency, and long tenure push the price above peer.",
     "Click the customer chips to compare how different profiles shift the recommendation.",
   ],
   "refine:0": [
