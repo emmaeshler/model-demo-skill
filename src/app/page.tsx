@@ -134,7 +134,7 @@ const RAIL_TIMELINE: Partial<Record<number, (RailContent | null)[]>> = {
     /* 2  prod   */ { show: "factors", engine: "strat", active: ["product"] },
     /* 3  order  */ { show: "factors", engine: "strat", active: ["order"] },
     /* 4  mkt    */ { show: "factors", engine: "strat", active: ["market"] },
-    /* 5  consolidated */ { show: "factors", engine: "strat", active: ["customer", "product", "order", "market"] },
+    /* 5  consolidated factors */ { show: "factors", engine: "strat", active: ["customer", "product", "order", "market"] },
     /* 6  driver cards */ { show: "factors", engine: "strat", active: ["customer", "product", "order", "market"] },
     /* 7  collapse → SKU */ { show: "drivers", flyIn: false },
   ],
@@ -607,6 +607,7 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
       { index: DRIVER_IMP_INDEX, label: "Product", subStep: 2 },
       { index: DRIVER_IMP_INDEX, label: "Order", subStep: 3 },
       { index: DRIVER_IMP_INDEX, label: "Market", subStep: 4 },
+      { index: DRIVER_IMP_INDEX, label: "Your model factors", subStep: 5 },
       { index: DRIVER_IMP_INDEX, label: "5 model drivers", subStep: 6 },
       { index: DRIVER_IMP_INDEX, label: "One optimal price", subStep: 7 },
     ],
@@ -994,6 +995,21 @@ export function Home() {
       requestAnimationFrame(() => setReady(true));
     });
     return () => cancelAnimationFrame(frame);
+  }, []);
+
+  useEffect(() => {
+    if (document.fullscreenElement) return;
+    const enter = () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+    };
+    document.addEventListener("click", enter, { once: true });
+    document.addEventListener("keydown", enter, { once: true });
+    return () => {
+      document.removeEventListener("click", enter);
+      document.removeEventListener("keydown", enter);
+    };
   }, []);
 
   useEffect(() => {
@@ -1815,7 +1831,8 @@ export function Home() {
                     <iframe
                       key={`${nextPosition.slideIndex}-${nextPosition.stepIndex}`}
                       src={`${window.location.origin}${window.location.pathname}?audience=true&mode=self&slide=${nextPosition.slideIndex}&subStep=${nextPosition.stepIndex}&skipAnimation=true`}
-                      className="pointer-events-none absolute inset-0 h-full w-full border-0"
+                      className="pointer-events-none absolute border-0"
+                      style={{ width: "1280px", height: "800px", transform: "scale(0.272)", transformOrigin: "top left" }}
                       title="Next Slide Preview"
                     />
                   ) : (

@@ -119,8 +119,11 @@ export function TopBar({
   const activeGroupRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (open && activeGroupRef.current) {
-      activeGroupRef.current.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    if (open) {
+      setExpandedGroups(new Set());
+      requestAnimationFrame(() => {
+        activeGroupRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      });
     }
   }, [open]);
 
@@ -313,7 +316,7 @@ export function TopBar({
           ref={panelRef}
           className="fixed top-[49px] left-1/2 z-50 w-full max-w-md -translate-x-1/2 rounded-b-xl border border-t-0 border-white/10 bg-[#06283D]/95 shadow-lg backdrop-blur-md"
         >
-          <div className="max-h-[60vh] overflow-y-auto p-3">
+          <div className="max-h-[calc(100vh-120px)] overflow-y-auto p-3">
             {groups.map((group, gi) => {
               const groupDone = group.slides.every(
                 (s) =>
@@ -325,13 +328,13 @@ export function TopBar({
               );
               const groupActive = gi === currentGroupIndex;
 
-              const isExpanded = groupActive || expandedGroups.has(gi);
+              const isExpanded = expandedGroups.size > 0 ? expandedGroups.has(gi) : groupActive;
 
               return (
                 <div key={gi} ref={groupActive ? activeGroupRef : undefined} className="mb-1.5 last:mb-0">
                   <button
                     onClick={() => {
-                      if (groupActive || group.slides.length <= 1) {
+                      if (group.slides.length <= 1) {
                         handleNavigate(
                           group.slides[0].index,
                           group.slides[0].subStep ?? 0,
@@ -378,7 +381,7 @@ export function TopBar({
                         </span>
                       )}
                     </div>
-                    {!groupActive && group.slides.length > 1 && (
+                    {group.slides.length > 1 && (
                       <ChevronDown
                         className={cn(
                           "ml-auto size-3 shrink-0 text-white/30 transition-transform",

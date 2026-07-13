@@ -15,10 +15,10 @@ export const BASE_Y = CURVE_SLOT.y + CURVE_SLOT.h;
 export const BASELINE_KPI = { winRate: 62, priceAdoption: 71, marginImpact: 1.8 };
 export const TOTAL_MONTHS = 18;
 export const TIMELINE_EVENTS = [
-  { month: 4, label: "Steel +8%", factor: "The model reprices upward to protect margin — a few low-margin deals fall away.", steepness: 5, shift: -12, kpi: { winRate: 59, priceAdoption: 76, marginImpact: 2.1 } },
-  { month: 8, label: "Freight −6%", factor: "The model splits the savings — it lowers price to win share and keeps the rest as margin.", steepness: 5, shift: -6, kpi: { winRate: 66, priceAdoption: 80, marginImpact: 2.4 } },
-  { month: 12, label: "Resin +12%", factor: "The model reprices within hours — margin holds (+0.1) even as win rate dips.", steepness: 5, shift: -30, kpi: { winRate: 63, priceAdoption: 84, marginImpact: 2.5 } },
-  { month: 16, label: "Labor +5%", factor: "The model absorbs the cost shift and rebalances — adoption holds as prices adjust.", steepness: 5, shift: -18, kpi: { winRate: 61, priceAdoption: 86, marginImpact: 2.7 } },
+  { month: 4, label: "Capacity +8%", factor: "The model reprices upward to protect margin — a few low-margin deals fall away.", steepness: 5, shift: -12, kpi: { winRate: 59, priceAdoption: 76, marginImpact: 2.1 } },
+  { month: 8, label: "Shortage −6%", factor: "The model splits the savings — it lowers price to win share and keeps the rest as margin.", steepness: 5, shift: -6, kpi: { winRate: 66, priceAdoption: 80, marginImpact: 2.4 } },
+  { month: 12, label: "Industry +12%", factor: "The model reprices within hours — margin holds (+0.1) even as win rate dips.", steepness: 5, shift: -30, kpi: { winRate: 63, priceAdoption: 84, marginImpact: 2.5 } },
+  { month: 16, label: "Demand +5%", factor: "The model absorbs the cost shift and rebalances — adoption holds as prices adjust.", steepness: 5, shift: -18, kpi: { winRate: 61, priceAdoption: 86, marginImpact: 2.7 } },
 ];
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -222,7 +222,7 @@ export const STEP_CONTEXT: Record<number, { title: string; body: string }> = {
   },
   6: {
     title: "The market moves. The model moves with it.",
-    body: "Price indices — published benchmarks for costs like steel, freight, or labor — feed the model continuously. When costs shift, the model reprices, and every recommendation stays current.",
+    body: "Price indices — published benchmarks for capacity, shortage, and industry trends — feed the model continuously. When costs shift, the model reprices, and every recommendation stays current.",
   },
   7: {
     title: "Every customer–market combination gets its own model",
@@ -256,6 +256,9 @@ export const PORTFOLIO_SEGMENTS = (() => {
     "ProWeld – Welding Supply", "GeoTech – Geotech Equip.", "BrightSteel – Steel Fab.",
     "CoolAir – Refrigeration", "SpectraLens – Optics MRO", "CoreDrill – Drilling Ops.",
     "AlphaValve – Valve Dist.", "NexGen Parts – Gen. Ind.",
+    "SolidPipe – Pipeline Eng.", "LaserCut – CNC Fab.",
+    "TrueGauge – Instruments", "IronClad – Metal Svcs.",
+    "BlueWave – Marine Sys.", "VertexAir – Ventilation",
   ];
   const features: PortfolioFeature[] = [
     "scatter", "delta", "price-dot", "live", "plain", "scatter",

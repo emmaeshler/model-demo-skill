@@ -860,7 +860,12 @@ export function ExecuteSlide({
                       />
                     )}
 
-                    <g>
+                    <motion.g
+                      initial={didCollapse.current ? { scale: 1.6, y: 55 } : false}
+                      animate={{ scale: 1, y: 0 }}
+                      transition={didCollapse.current ? { duration: 0.8, ease: [0.22, 1, 0.36, 1] } : { duration: 0 }}
+                      style={{ transformOrigin: `${MODEL_CX}px ${MODEL_CY}px` }}
+                    >
                       <motion.circle
                         cx={MODEL_CX} cy={MODEL_CY}
                         fill="white" stroke={TEAL} strokeWidth={2.5}
@@ -924,7 +929,7 @@ export function ExecuteSlide({
                       >
                         ML-powered optimization
                       </motion.text>
-                    </g>
+                    </motion.g>
 
                   </g>
 
