@@ -10,12 +10,16 @@ import { useShareMode } from "@/lib/share-context";
 
 export const DRIVER_IMPORTANCE_TOTAL_STEPS = 5;
 
+const SOFT_ORANGE = "#D4893A";
+
 type CategoryKey = "customer" | "product" | "order" | "market";
+
+const SOFT_PURPLE = "#9B8BBF";
 
 const CATEGORY_COLORS: Record<string, string> = {
   customer: NAVY,
-  product: ORANGE,
-  order: PURPLE,
+  product: SOFT_ORANGE,
+  order: SOFT_PURPLE,
   market: GREEN,
 };
 
@@ -40,7 +44,7 @@ const EXAMPLE_STEPS: ExampleStep[] = [
     headline: "Sales Rep",
     detail: "Behavioral, not a pricing driver — the model stays focused on structural patterns.",
     dismissLine: "Variance explained by who sells, not what's sold.",
-    color: NAVY,
+    color: TEAL,
     action: "remove",
     highlight: ["Sales Rep"],
     remove: new Set(["Sales Rep"]),
@@ -64,7 +68,7 @@ const EXAMPLE_STEPS: ExampleStep[] = [
     headline: "Competitor Pricing",
     detail: "A final positioning check — keeping the model's price in a competitive range.",
     dismissLine: "A market guardrail that sharpens the final price.",
-    color: GREEN,
+    color: TEAL,
     action: "add",
     highlight: ["Competitor Pricing"],
     remove: new Set(),
@@ -88,9 +92,9 @@ const IMPORTANCE: Record<string, number> = {
   "Customer channel": 3.4,
   "Cost to serve": 3.0,
   "Market share": 2.6,
-  "Willingness to pay": 2.2,
-  "Industry trends": 1.8,
-  "Commodity index": 1.6,
+  "Willingness to pay": 2.0,
+  "Industry trends": 2.0,
+  "Commodity index": 2.0,
   "Lead time": 1.4,
   "Contract type": 1.2,
   "Payment terms": 1.0,
@@ -137,15 +141,7 @@ const ALL_FACTORS = SQUARE_FACTORS
   });
 
 const MAX_VALUE = Math.max(...ALL_FACTORS.map(f => f.value));
-const FINAL_DRIVERS = [
-  { label: "Product Category", category: "product", value: 15.2 },
-  { label: "Geography", category: "customer", value: 13.6 },
-  { label: "End Market", category: "customer", value: 10.4 },
-  { label: "Product Importance", category: "product", value: 5.0 },
-  { label: "Order Frequency", category: "order", value: 8.8 },
-  { label: "Customer Tenure", category: "customer", value: 7.6 },
-  { label: "Competitor Pricing", category: "market", value: 3.2 },
-];
+
 
 type DriverAdjustment = {
   label: string;
@@ -156,14 +152,23 @@ type DriverAdjustment = {
 };
 
 const DRIVER_ADJUSTMENTS: DriverAdjustment[] = [
-  { label: "Sales Rep", action: "remove", color: NAVY, icon: "✕", reason: "Behavioral, not a structural pricing driver" },
-  { label: "Product Category", action: "emphasized", color: ORANGE, icon: "★", reason: "Strongest product-level signal" },
+  { label: "Sales Rep", action: "remove", color: MUTED, icon: "✕", reason: "Behavioral, not a structural pricing driver" },
+  { label: "Product Category", action: "emphasized", color: SOFT_ORANGE, icon: "★", reason: "Strongest product-level signal" },
   { label: "Geography", action: "emphasized", color: NAVY, icon: "★", reason: "Regional pricing patterns" },
   { label: "End Market", action: "emphasized", color: NAVY, icon: "★", reason: "Industry-level price segmentation" },
-  { label: "Order Frequency", action: "emphasized", color: PURPLE, icon: "★", reason: "Correlates with loyalty and price tolerance" },
+  { label: "Order Frequency", action: "emphasized", color: SOFT_PURPLE, icon: "★", reason: "Correlates with loyalty and price tolerance" },
   { label: "Customer Tenure", action: "emphasized", color: NAVY, icon: "★", reason: "Long-term relationship pricing signal" },
-  { label: "Product Importance", action: "elevate", color: ORANGE, icon: "↑", reason: "Hidden signal for price sensitivity" },
-  { label: "Competitor Pricing", action: "add", color: TEAL, icon: "+", reason: "Final positioning check for competitiveness" },
+  { label: "Product Importance", action: "elevate", color: SOFT_ORANGE, icon: "↑", reason: "Hidden signal for price sensitivity" },
+  { label: "Competitor Pricing", action: "add", color: GREEN, icon: "+", reason: "Final positioning check for competitiveness" },
+];
+
+type BeforeRisk = { icon: string; title: string; detail: React.ReactNode };
+
+const BEFORE_RISKS: BeforeRisk[] = [
+  { icon: "👤", title: "Sales Rep drives pricing", detail: <>Who sells it matters more than what&rsquo;s sold — <b>prices shift with headcount, not market reality.</b></> },
+  { icon: "📉", title: "Hidden signals stay buried", detail: <>Product Importance sits near the bottom — <b>a key sensitivity signal the model doesn&rsquo;t surface.</b></> },
+  { icon: "🔇", title: "No competitive check", detail: <>Without Competitor Pricing, <b>the model sets prices blind to the market.</b></> },
+  { icon: "⚖️", title: "Noise outweighs signal", detail: <>22 untuned factors dilute the drivers that actually explain <b>price variation.</b></> },
 ];
 
 const BAR_MAX_W = 480;
@@ -243,7 +248,18 @@ export function DriverImportanceSlide({
   const ELEVATED_VALUE = 5.0;
   const ELEVATED_POSITION = 8; // after Product Specialization
 
-  const productElevated = exampleIndex > 1 || (exampleIndex === 1 && secondPhase);
+  const productValueGrown = exampleIndex > 1 || (exampleIndex === 1 && secondPhase);
+
+  const [elevatedMoved, setElevatedMoved] = useState(!!skipAnimation);
+  useEffect(() => {
+    if (!secondPhase || exampleIndex !== 1) { setElevatedMoved(exampleIndex > 1); return; }
+    if (skipAnimation || shareMode) { setElevatedMoved(true); return; }
+    setElevatedMoved(false);
+    const t = setTimeout(() => setElevatedMoved(true), 900);
+    return () => clearTimeout(t);
+  }, [secondPhase, exampleIndex, skipAnimation, shareMode]);
+
+  const productElevated = exampleIndex > 1 || (exampleIndex === 1 && elevatedMoved);
 
   const isLastExample = exampleIndex === 2;
   const showToggle = isLastExample && storedPhase;
@@ -254,7 +270,7 @@ export function DriverImportanceSlide({
   const showBefore = showToggle && compareMode === "before";
 
   const visibleFactors = useMemo(() => {
-    if (showBefore) return ALL_FACTORS;
+    if (showBefore) return ALL_FACTORS.filter(f => f.label !== "Competitor Pricing");
     if (isCollapse) {
       const allRemovals = new Set<string>();
       for (const ex of EXAMPLE_STEPS) ex.remove.forEach(l => allRemovals.add(l));
@@ -270,26 +286,33 @@ export function DriverImportanceSlide({
       if (f.label === "Competitor Pricing" && !competitorRevealed) return false;
       return true;
     });
+    if (productValueGrown) {
+      factors = factors.map(f =>
+        f.label === "Product Importance" ? { ...f, value: ELEVATED_VALUE } : f
+      );
+    }
     if (productElevated) {
       const pi = factors.find(f => f.label === "Product Importance");
       if (pi) {
         factors = factors.filter(f => f.label !== "Product Importance");
-        const elevated = { ...pi, value: ELEVATED_VALUE };
-        factors.splice(ELEVATED_POSITION, 0, elevated);
+        factors.splice(ELEVATED_POSITION, 0, pi);
       }
     }
     return factors;
-  }, [isCollapse, exampleIndex, actionRevealed, productElevated, showBefore]);
+  }, [isCollapse, exampleIndex, actionRevealed, productValueGrown, productElevated, showBefore]);
 
-  const [introPhase, setIntroPhase] = useState(skipAnimation ? 3 : 0);
+  const [introPhase, setIntroPhase] = useState(skipAnimation ? 5 : 0);
   useEffect(() => {
-    if (!isActive || !isIntro) { setIntroPhase(skipAnimation ? 3 : 0); return; }
-    if (skipAnimation || shareMode) { setIntroPhase(3); return; }
+    if (!isActive || !isIntro) { setIntroPhase(skipAnimation ? 5 : 0); return; }
+    if (skipAnimation || shareMode) { setIntroPhase(5); autoAdvanceRef.current?.(); return; }
     setIntroPhase(0);
     const timers = [
       setTimeout(() => setIntroPhase(1), 800),
       setTimeout(() => setIntroPhase(2), 2000),
       setTimeout(() => setIntroPhase(3), 3200),
+      setTimeout(() => setIntroPhase(4), 4400),
+      setTimeout(() => setIntroPhase(5), 6400),
+      setTimeout(() => autoAdvanceRef.current?.(), 7200),
     ];
     return () => timers.forEach(clearTimeout);
   }, [isActive, isIntro, skipAnimation, shareMode]);
@@ -299,11 +322,7 @@ export function DriverImportanceSlide({
     if (!isActive || isCollapse) { setClickReady(false); return; }
     if (skipAnimation || shareMode) { setClickReady(true); return; }
     setClickReady(false);
-    if (isIntro) {
-      if (introPhase < 3) return;
-      const t = setTimeout(() => setClickReady(true), 800);
-      return () => clearTimeout(t);
-    }
+    if (isIntro) return;
     if (isChart) {
       if (!storedPhase) return;
       const t = setTimeout(() => setClickReady(true), 600);
@@ -412,14 +431,14 @@ export function DriverImportanceSlide({
                       {" "}to your business
                     </h2>
                   </div>
-                  {/* Chart title — fades in at phase 2 */}
+                  {/* Chart title — fades in at phase 2, out at phase 4 */}
                   <div
                     className="absolute inset-x-0 top-0 flex flex-col items-center gap-2"
                     style={{
-                      opacity: introPhase >= 2 ? 1 : 0,
-                      transform: introPhase >= 2 ? "translateY(0)" : "translateY(12px)",
+                      opacity: introPhase >= 4 ? 0 : introPhase >= 2 ? 1 : 0,
+                      transform: introPhase >= 4 ? "translateY(-12px)" : introPhase >= 2 ? "translateY(0)" : "translateY(12px)",
                       transition: "opacity 0.5s ease-out, transform 0.5s ease-out",
-                      pointerEvents: introPhase >= 2 ? "auto" : "none",
+                      pointerEvents: introPhase >= 2 && introPhase < 4 ? "auto" : "none",
                     }}
                   >
                     <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: NAVY }}>
@@ -435,6 +454,31 @@ export function DriverImportanceSlide({
                       }}
                     >
                       Elevating what matters, removing what doesn&rsquo;t.
+                    </p>
+                  </div>
+                  {/* Tuning title — fades in at phase 4 */}
+                  <div
+                    className="absolute inset-x-0 top-0 flex flex-col items-center gap-2"
+                    style={{
+                      opacity: introPhase >= 4 ? 1 : 0,
+                      transform: introPhase >= 4 ? "translateY(0)" : "translateY(12px)",
+                      transition: "opacity 0.5s ease-out, transform 0.5s ease-out",
+                      pointerEvents: introPhase >= 4 ? "auto" : "none",
+                    }}
+                  >
+                    <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: TEAL }}>
+                      Let&rsquo;s tune the model to your business
+                    </h2>
+                    <p
+                      className="mx-auto max-w-2xl text-center text-[1.05rem] leading-relaxed whitespace-nowrap"
+                      style={{
+                        color: MUTED,
+                        opacity: introPhase >= 4 ? 1 : 0,
+                        transform: introPhase >= 4 ? "translateY(0)" : "translateY(6px)",
+                        transition: "opacity 0.4s 0.2s, transform 0.4s 0.2s",
+                      }}
+                    >
+                      Tuning which factors drive your pricing model.
                     </p>
                   </div>
                 </div>
@@ -505,14 +549,14 @@ export function DriverImportanceSlide({
                 transition={{ duration: 0.8, ease: EASE }}
                 style={{ transformOrigin: "center 50%" }}
               >
-                <div style={{ width: 340 }}>
+                <div style={{ width: 380 }}>
                   <span
                     className="text-[10px] font-bold uppercase tracking-[0.15em] mb-2 block"
                     style={{ color: MUTED, opacity: 0.7 }}
                   >
                     Model adjustments
                   </span>
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-1.5">
                     {DRIVER_ADJUSTMENTS.map((adj) => (
                       <AdjustmentCard key={adj.label} adj={adj} />
                     ))}
@@ -623,12 +667,11 @@ export function DriverImportanceSlide({
                           : isAfterUnused ? `${MUTED}30`
                           : isRemove ? `${MUTED}60`
                           : isPastRemoved ? `${MUTED}30`
-                          : isAdd ? TEAL
-                          : (isKeep || willBeKept) ? GREEN
-                          : showColor ? color
+                          : (isAdd || isKeep || willBeKept || showColor) ? TEAL
                           : `${MUTED}40`;
                         const effectiveBarMax = BAR_MAX_W;
-                        const barW = (f.value / MAX_VALUE) * effectiveBarMax;
+                        const tunedValue = f.value;
+                        const barW = (tunedValue / MAX_VALUE) * effectiveBarMax;
 
                         const opacity = showBefore ? 1
                           : isAfterRemoved ? 0.55
@@ -658,18 +701,16 @@ export function DriverImportanceSlide({
                             }}
                           >
                             <motion.span
-                              className={`shrink-0 text-right pr-3 relative inline-flex justify-end ${isConsolidated ? "text-[17px]" : "text-[13px]"}`}
+                              className="shrink-0 text-right pr-3 relative inline-flex justify-end text-[13px]"
                               style={{
-                                width: isConsolidated ? 220 : 170,
+                                width: 170,
                                 color: showBefore ? MUTED
                                   : isAfterRemoved ? `${MUTED}80`
                                   : isAfterHighlight ? adjEntry.color
                                   : isAfterUnused ? `${MUTED}70`
                                   : isPastRemoved ? `${MUTED}60`
                                   : (isRemove || (willBeRemoved && secondPhase)) ? `${MUTED}80`
-                                  : isAdd ? TEAL
-                                  : (isKeep || willBeKept) ? GREEN
-                                  : showColor ? color
+                                  : (isAdd || isKeep || willBeKept || showColor) ? TEAL
                                   : MUTED,
                                 fontWeight: showBefore ? 500
                                   : isAfterHighlight ? 700
@@ -677,30 +718,12 @@ export function DriverImportanceSlide({
                                 transition: "color 0.4s, font-weight 0.4s",
                               }}
                             >
-                              <span className="relative inline-block">
-                                {f.label}
-                                <AnimatePresence>
-                                  {!showBefore && !isAfterRemoved && (isRemove || isPastRemoved) && (
-                                    <motion.span
-                                      className="absolute left-0 right-0 top-1/2"
-                                      style={{
-                                        height: 0,
-                                        borderTop: `1px dashed ${MUTED}60`,
-                                        transformOrigin: "left",
-                                      }}
-                                      initial={isPastRemoved ? { scaleX: 1 } : { scaleX: 0 }}
-                                      animate={{ scaleX: 1 }}
-                                      exit={{ scaleX: 0 }}
-                                      transition={{ duration: isPastRemoved ? 0 : 0.35, delay: isPastRemoved ? 0 : 0.3, ease: EASE }}
-                                    />
-                                  )}
-                                </AnimatePresence>
-                              </span>
+                              {f.label}
                             </motion.span>
 
                             <div className="relative flex items-center" style={{ flex: 1, height: "100%" }}>
                               <motion.div
-                                className={isConsolidated ? "rounded-r-md overflow-hidden relative" : "rounded-r-sm overflow-hidden relative"}
+                                className="rounded-r-sm overflow-hidden relative"
                                 style={{ height: "100%" }}
                                 initial={skipAnimation ? { width: barW, backgroundColor: barColor } : { width: 0, backgroundColor: barColor }}
                                 animate={{ width: barW, backgroundColor: barColor }}
@@ -716,7 +739,7 @@ export function DriverImportanceSlide({
                                     key={`icon-${f.label}-${disposition ?? "past"}`}
                                     className="ml-1.5 inline-flex items-center justify-center rounded-full shrink-0"
                                     style={{
-                                      width: isAdd ? 20 : 16, height: isAdd ? 20 : 16,
+                                      width: isAdd ? 28 : 16, height: isAdd ? 28 : 16,
                                       backgroundColor:
                                         isPastKept && !isAnnotated ? `${GREEN}20`
                                         : isAdd ? TEAL
@@ -724,7 +747,7 @@ export function DriverImportanceSlide({
                                       color:
                                         isPastKept && !isAnnotated ? GREEN
                                         : "#fff",
-                                      fontSize: isAdd ? 13 : 9, fontWeight: 900, lineHeight: 1,
+                                      fontSize: isAdd ? 18 : 9, fontWeight: 900, lineHeight: 1,
                                     }}
                                     initial={{ opacity: 0, scale: 0 }}
                                     animate={{ opacity: (isPastKept && !isAnnotated) ? 0.6 : 1, scale: 1 }}
@@ -740,18 +763,25 @@ export function DriverImportanceSlide({
                                 )}
                               </AnimatePresence>
                             </div>
-                            {isAfterRemoved && !showBefore && (
-                              <span
-                                className="absolute top-1/2 pointer-events-none"
-                                style={{
-                                  left: 0,
-                                  width: 170 + barW + 8,
-                                  height: 0,
-                                  borderTop: "2px solid #2a2a2a",
-                                  zIndex: 10,
-                                }}
-                              />
-                            )}
+                            <AnimatePresence>
+                              {!showBefore && (isRemove || isPastRemoved || isAfterRemoved) && (
+                                <motion.span
+                                  className="absolute top-1/2 pointer-events-none"
+                                  style={{
+                                    left: 40,
+                                    right: 0,
+                                    height: 0,
+                                    borderTop: `1.5px dashed ${MUTED}60`,
+                                    transformOrigin: "left",
+                                    zIndex: 10,
+                                  }}
+                                  initial={isPastRemoved || isAfterRemoved ? { scaleX: 1 } : { scaleX: 0 }}
+                                  animate={{ scaleX: 1 }}
+                                  exit={{ scaleX: 0 }}
+                                  transition={{ duration: isPastRemoved || isAfterRemoved ? 0 : 0.5, delay: isPastRemoved || isAfterRemoved ? 0 : 0.3, ease: EASE }}
+                                />
+                              )}
+                            </AnimatePresence>
                           </motion.div>
                         );
                       })}
@@ -760,23 +790,85 @@ export function DriverImportanceSlide({
                   </LayoutGroup>
 
                   <motion.p
-                    className={`mt-3 font-medium leading-relaxed ${isConsolidated ? "text-[12px]" : "text-[11px]"}`}
-                    style={{ color: isConsolidated ? `${NAVY}90` : `${MUTED}90`, paddingLeft: isConsolidated ? 228 : 178 }}
+                    className="mt-3 font-medium leading-relaxed text-[11px]"
+                    style={{ color: `${MUTED}90`, paddingLeft: 178 }}
                     initial={skipAnimation ? false : { opacity: 0 }}
-                    animate={{ opacity: isConsolidated ? 0.7 : 0.5 }}
-                    transition={{ duration: 0.5, delay: skipAnimation ? 0 : 0.8 }}
+                    animate={{ opacity: showToggle ? 0 : 0.5 }}
+                    transition={{ duration: 0.3 }}
                   >
                     * Percentage of explainable variance — how much each factor contributes to the model&rsquo;s pricing accuracy.
                   </motion.p>
                 </motion.div>
 
-                {/* Right column: stored examples (chart steps) or final drivers (consolidated) */}
-                {isChart && !showBefore && (
-                  <div className="shrink-0 flex flex-col pt-6" style={{ width: 280 }}>
+                {/* Right column: crossfade between before risks / after adjustments / example cards */}
+                {isChart && showToggle ? (
+                  <AnimatePresence mode="wait">
+                    {showBefore ? (
+                      <motion.div
+                        key="before-risks"
+                        className="shrink-0 flex flex-col pt-6"
+                        style={{ width: 310 }}
+                        initial={{ opacity: 0, x: 30 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.35, ease: EASE }}
+                      >
+                        <span
+                          className="text-[10px] font-bold uppercase tracking-[0.15em] mb-2 block"
+                          style={{ color: `${MUTED}80` }}
+                        >
+                          Without tuning
+                        </span>
+                        <div className="flex flex-col gap-2">
+                          {BEFORE_RISKS.map((risk, i) => (
+                            <motion.div
+                              key={risk.title}
+                              initial={{ opacity: 0, x: 16 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ duration: 0.3, delay: i * 0.06, ease: EASE }}
+                            >
+                              <BeforeRiskCard risk={risk} />
+                            </motion.div>
+                          ))}
+                        </div>
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="after-adjustments"
+                        className="shrink-0 flex flex-col pt-6"
+                        style={{ width: 310 }}
+                        initial={{ opacity: 0, x: 30 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.35, ease: EASE }}
+                      >
+                        <span
+                          className="text-[10px] font-bold uppercase tracking-[0.15em] mb-2 block"
+                          style={{ color: MUTED, opacity: 0.5 }}
+                        >
+                          Model adjustments
+                        </span>
+                        <div className="flex flex-col gap-1.5">
+                          {DRIVER_ADJUSTMENTS.map((adj, i) => (
+                            <motion.div
+                              key={adj.label}
+                              initial={{ opacity: 0, x: 16 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ duration: 0.3, delay: i * 0.04, ease: EASE }}
+                            >
+                              <AdjustmentCard adj={adj} />
+                            </motion.div>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                ) : isChart && !showBefore ? (
+                  <div className="shrink-0 flex flex-col pt-6" style={{ width: 310 }}>
                     <AnimatePresence>
                       {(exampleIndex > 0 || storedPhase) && (
                         <motion.span
-                          className="text-[10px] font-bold uppercase tracking-[0.15em] mb-3 block"
+                          className="text-[10px] font-bold uppercase tracking-[0.15em] mb-2 block shrink-0"
                           style={{ color: MUTED }}
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 0.5 }}
@@ -787,62 +879,32 @@ export function DriverImportanceSlide({
                         </motion.span>
                       )}
                     </AnimatePresence>
-                    <AnimatePresence mode="wait">
-                      {showToggle && compareMode === "after" ? (
-                        <motion.div
-                          key="adj-cards"
-                          className="flex flex-col gap-2"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          transition={{ duration: 0.3 }}
-                        >
-                          {DRIVER_ADJUSTMENTS.map((adj, i) => (
-                            <motion.div
-                              key={adj.label}
-                              initial={{ opacity: 0, x: 20, scale: 0.95 }}
-                              animate={{ opacity: 1, x: 0, scale: 1 }}
-                              transition={{ duration: 0.4, delay: i * 0.05, ease: EASE }}
-                            >
-                              <AdjustmentCard adj={adj} />
-                            </motion.div>
-                          ))}
-                        </motion.div>
-                      ) : (
-                        <motion.div
-                          key="example-cards"
-                          className="flex flex-col gap-2.5"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          transition={{ duration: 0.3 }}
-                        >
-                          {EXAMPLE_STEPS.map((ex, ei) => {
-                            const isPrior = ei < exampleIndex;
-                            const isCurrent = ei === exampleIndex && storedPhase;
-                            const show = isPrior || isCurrent;
-                            if (!show) return null;
-                            return (
-                              <motion.div
-                                key={ex.headline}
-                                initial={{ opacity: 0, x: 30, scale: 0.95 }}
-                                animate={{ opacity: 1, x: 0, scale: 1 }}
-                                transition={{ duration: 0.45, ease: EASE }}
-                              >
-                                <ExampleCard example={ex} />
-                              </motion.div>
-                            );
-                          })}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                    <div className="flex flex-col gap-2.5">
+                      {EXAMPLE_STEPS.map((ex, ei) => {
+                        const isPrior = ei < exampleIndex;
+                        const isCurrent = ei === exampleIndex && storedPhase;
+                        const show = isPrior || isCurrent;
+                        if (!show) return null;
+                        return (
+                          <motion.div
+                            key={ex.headline}
+                            initial={{ opacity: 0, x: 30, scale: 0.95 }}
+                            animate={{ opacity: 1, x: 0, scale: 1 }}
+                            transition={{ duration: 0.45, ease: EASE }}
+                          >
+                            <ExampleCard example={ex} />
+                          </motion.div>
+                        );
+                      })}
+                    </div>
                   </div>
-                )}
+                ) : null}
 
               </div>
             </motion.div>
           )}
         </AnimatePresence>
+
 
         <AnimatePresence>
           {showToggle && (
@@ -886,7 +948,7 @@ export function DriverImportanceSlide({
         </AnimatePresence>
 
         <AnimatePresence>
-          {(clickReady || driverClickReady) && (
+          {clickReady && (
             <motion.div
               className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5"
               style={{ transform: "translateX(calc(-50% + var(--rail-inset, 0px) * -0.5))" }}
@@ -910,59 +972,6 @@ export function DriverImportanceSlide({
 }
 
 
-function DriverCategoryCard({ cat, factors, color, expanded }: { cat: string; factors: { label: string }[]; color: string; expanded?: boolean }) {
-  return (
-    <div
-      className={expanded ? "rounded-lg py-4 pl-5 pr-4 h-full" : "rounded-md py-2 pl-3 pr-2"}
-      style={{ borderLeft: `3px solid ${color}`, backgroundColor: `${color}08` }}
-    >
-      <div className={`flex items-center ${expanded ? "gap-2 mb-2" : "gap-1.5 mb-1"}`}>
-        <span className={`${expanded ? "w-3 h-3" : "w-2 h-2"} rounded-full shrink-0`} style={{ backgroundColor: color }} />
-        <span className={`${expanded ? "text-[15px]" : "text-[12px]"} font-bold capitalize`} style={{ color: NAVY }}>
-          {cat}
-        </span>
-      </div>
-      <div className={`flex flex-col ${expanded ? "pl-5 gap-0.5" : "pl-[14px]"}`}>
-        {factors.map(f => (
-          <span key={f.label} className={`${expanded ? "text-[13px]" : "text-[11px]"} font-medium leading-[1.4]`} style={{ color: MUTED }}>
-            {f.label}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function DriverCard({ label, category, color, compact }: { label: string; category: string; color: string; compact?: boolean }) {
-  if (compact) {
-    return (
-      <div
-        className="rounded-md py-2 pl-3 pr-2 flex items-center gap-2"
-        style={{ borderLeft: `3px solid ${color}`, backgroundColor: `${color}08` }}
-      >
-        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
-        <span className="text-[13px] font-bold" style={{ color: NAVY }}>{label}</span>
-        <span className="text-[9px] font-semibold uppercase tracking-[0.1em] capitalize ml-auto" style={{ color: MUTED }}>{category}</span>
-      </div>
-    );
-  }
-  return (
-    <div
-      className="rounded-lg py-4 pl-5 pr-4"
-      style={{ borderLeft: `3px solid ${color}`, backgroundColor: `${color}08` }}
-    >
-      <div className="flex items-center gap-2 mb-1.5">
-        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
-        <span className="text-[10px] font-semibold uppercase tracking-[0.1em] capitalize" style={{ color: MUTED }}>
-          {category}
-        </span>
-      </div>
-      <span className="text-[15px] font-bold block" style={{ color: NAVY }}>
-        {label}
-      </span>
-    </div>
-  );
-}
 
 const ALL_ACTION_LABELS: Record<ExampleAction | "emphasized", string> = {
   remove: "Removed",
@@ -972,14 +981,11 @@ const ALL_ACTION_LABELS: Record<ExampleAction | "emphasized", string> = {
 };
 
 function ExampleCard({ example }: { example: ExampleStep }) {
-  const bgColor = example.action === "remove" ? `${MUTED}08`
-    : `${example.color}08`;
-  const borderColor = example.action === "remove" ? `${MUTED}40`
-    : example.color;
-  const iconBg = example.action === "remove" ? `${MUTED}20`
-    : `${example.color}18`;
-  const iconColor = example.action === "remove" ? MUTED
-    : example.color;
+  const isRemove = example.action === "remove";
+  const borderColor = isRemove ? `${MUTED}40` : TEAL;
+  const bgColor = isRemove ? `${MUTED}08` : `${TEAL}08`;
+  const iconBg = isRemove ? `${MUTED}20` : `${TEAL}18`;
+  const iconColor = isRemove ? MUTED : TEAL;
 
   return (
     <div
@@ -994,14 +1000,12 @@ function ExampleCard({ example }: { example: ExampleStep }) {
           {example.icon}
         </span>
         <div className="min-w-0">
-          <span className="text-[10px] font-bold uppercase tracking-[0.1em] block" style={{
-            color: example.action === "remove" ? MUTED : example.color,
-          }}>
+          <span className="text-[10px] font-bold uppercase tracking-[0.1em] block" style={{ color: iconColor }}>
             {ALL_ACTION_LABELS[example.action]}
           </span>
           <span className="text-[14px] font-bold block leading-tight" style={{
-            color: example.action === "remove" ? MUTED : NAVY,
-            textDecoration: example.action === "remove" ? "line-through" : "none",
+            color: isRemove ? MUTED : NAVY,
+            textDecoration: isRemove ? "line-through" : "none",
           }}>
             {example.headline}
           </span>
@@ -1012,33 +1016,42 @@ function ExampleCard({ example }: { example: ExampleStep }) {
 }
 
 function AdjustmentCard({ adj }: { adj: DriverAdjustment }) {
-  const isEmphasized = adj.action === "emphasized";
   return (
     <div
-      className="rounded-lg py-2.5 pl-4 pr-3"
-      style={{ borderLeft: `3px solid ${adj.color}`, backgroundColor: `${adj.color}08` }}
+      className="rounded-md py-1.5 pl-3 pr-2.5"
+      style={{ borderLeft: `3px solid ${adj.color}`, backgroundColor: `${adj.color}06` }}
     >
-      <div className="flex items-center gap-2.5">
-        <span
-          className="shrink-0 inline-flex items-center justify-center rounded-full font-bold"
-          style={{
-            width: 20, height: 20,
-            fontSize: isEmphasized ? 9 : 11,
-            backgroundColor: `${adj.color}18`,
-            color: adj.color,
-          }}
-        >
-          {adj.icon}
+      <div className="flex items-center gap-2">
+        <span className="text-[11px] font-bold uppercase tracking-wide whitespace-nowrap" style={{ color: adj.color }}>
+          {ALL_ACTION_LABELS[adj.action]}
         </span>
+        <span className="text-[11px] font-medium" style={{ color: `${MUTED}50` }}>|</span>
+        <span className="text-[13px] font-bold whitespace-nowrap" style={{ color: NAVY, textDecoration: adj.action === "remove" ? "line-through" : "none" }}>
+          {adj.label}
+        </span>
+      </div>
+      <p className="text-[10px] font-medium leading-tight mt-0.5" style={{ color: MUTED }}>
+        {adj.reason}
+      </p>
+    </div>
+  );
+}
+
+function BeforeRiskCard({ risk }: { risk: BeforeRisk }) {
+  const WARN = "#C0392B";
+  return (
+    <div
+      className="rounded-md py-2 pl-3 pr-2.5"
+      style={{ backgroundColor: `${WARN}06`, borderLeft: `3px solid ${WARN}40` }}
+    >
+      <div className="flex items-start gap-2">
+        <span className="text-[13px] leading-none mt-0.5">{risk.icon}</span>
         <div className="min-w-0">
-          <span className="text-[9px] font-bold uppercase tracking-[0.1em] block" style={{ color: adj.color }}>
-            {ALL_ACTION_LABELS[adj.action]}
+          <span className="text-[12px] font-bold block leading-tight" style={{ color: NAVY }}>
+            {risk.title}
           </span>
-          <span className="text-[13px] font-bold block leading-tight" style={{ color: NAVY, textDecoration: adj.action === "remove" ? "line-through" : "none" }}>
-            {adj.label}
-          </span>
-          <span className="text-[10px] font-medium block leading-tight mt-0.5" style={{ color: MUTED }}>
-            {adj.reason}
+          <span className="text-[10px] font-medium block leading-snug mt-0.5 [&_b]:font-semibold [&_b]:text-[var(--b-color)]" style={{ color: MUTED, "--b-color": NAVY } as React.CSSProperties}>
+            {risk.detail}
           </span>
         </div>
       </div>

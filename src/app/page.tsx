@@ -1300,7 +1300,7 @@ export function Home() {
           return;
         }
 
-        const isCollapseToExecute = slide === DRIVER_IMP_INDEX && subStep >= 7 && target === EXECUTE_INDEX;
+        const isCollapseToExecute = slide === DRIVER_IMP_INDEX && subStep >= 4 && target === EXECUTE_INDEX;
         collapseToExecuteRef.current = isCollapseToExecute;
 
         startTransition(() => {
