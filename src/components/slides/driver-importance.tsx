@@ -93,12 +93,43 @@ const IMPORTANCE: Record<string, number> = {
   "Competitor activity": 0.2,
 };
 
+const FACTOR_ORDER = [
+  "Product Category",
+  "Geography",
+  "Sales Rep",
+  "End Market",
+  "Order Frequency",
+  "Customer Tenure",
+  "Product Specialization",
+  "Seasonality",
+  "Order size",
+  "Product family",
+  "Customer size",
+  "Customer channel",
+  "Cost to serve",
+  "Market share",
+  "Willingness to pay",
+  "Industry trends",
+  "Commodity index",
+  "Lead time",
+  "Contract type",
+  "Payment terms",
+  "Price sensitivity",
+  "Competitor activity",
+  "Product Importance",
+  "Competitor Pricing",
+];
+
 const ALL_FACTORS = SQUARE_FACTORS
   .filter(f => f.label in IMPORTANCE)
   .map(f => ({ label: f.label, category: f.category, value: IMPORTANCE[f.label] ?? 0 }))
-  .sort((a, b) => b.value - a.value);
+  .sort((a, b) => {
+    const ai = FACTOR_ORDER.indexOf(a.label);
+    const bi = FACTOR_ORDER.indexOf(b.label);
+    return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+  });
 
-const MAX_VALUE = ALL_FACTORS[0].value;
+const MAX_VALUE = Math.max(...ALL_FACTORS.map(f => f.value));
 const FINAL_DRIVERS = [
   { label: "Product Category", category: "product", value: 11.8 },
   { label: "Geography", category: "customer", value: 10.4 },
