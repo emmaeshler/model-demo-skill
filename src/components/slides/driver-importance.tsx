@@ -11,6 +11,7 @@ import { useShareMode } from "@/lib/share-context";
 export const DRIVER_IMPORTANCE_TOTAL_STEPS = 5;
 
 const SOFT_ORANGE = "#D4893A";
+const DRIVER_HIGHLIGHT = "#2E86AB";
 
 type CategoryKey = "customer" | "product" | "order" | "market";
 
@@ -153,13 +154,13 @@ type DriverAdjustment = {
 
 const DRIVER_ADJUSTMENTS: DriverAdjustment[] = [
   { label: "Sales Rep", action: "remove", color: MUTED, icon: "✕", reason: "Behavioral, not a structural pricing driver" },
-  { label: "Product Category", action: "emphasized", color: SOFT_ORANGE, icon: "★", reason: "Strongest product-level signal" },
-  { label: "Geography", action: "emphasized", color: NAVY, icon: "★", reason: "Regional pricing patterns" },
-  { label: "End Market", action: "emphasized", color: NAVY, icon: "★", reason: "Industry-level price segmentation" },
-  { label: "Order Frequency", action: "emphasized", color: SOFT_PURPLE, icon: "★", reason: "Correlates with loyalty and price tolerance" },
-  { label: "Customer Tenure", action: "emphasized", color: NAVY, icon: "★", reason: "Long-term relationship pricing signal" },
-  { label: "Product Importance", action: "elevate", color: SOFT_ORANGE, icon: "↑", reason: "Hidden signal for price sensitivity" },
-  { label: "Competitor Pricing", action: "add", color: GREEN, icon: "+", reason: "Final positioning check for competitiveness" },
+  { label: "Product Category", action: "emphasized", color: DRIVER_HIGHLIGHT, icon: "★", reason: "Strongest product-level signal" },
+  { label: "Geography", action: "emphasized", color: DRIVER_HIGHLIGHT, icon: "★", reason: "Regional pricing patterns" },
+  { label: "End Market", action: "emphasized", color: DRIVER_HIGHLIGHT, icon: "★", reason: "Industry-level price segmentation" },
+  { label: "Order Frequency", action: "emphasized", color: DRIVER_HIGHLIGHT, icon: "★", reason: "Correlates with loyalty and price tolerance" },
+  { label: "Customer Tenure", action: "emphasized", color: DRIVER_HIGHLIGHT, icon: "★", reason: "Long-term relationship pricing signal" },
+  { label: "Product Importance", action: "elevate", color: DRIVER_HIGHLIGHT, icon: "↑", reason: "Hidden signal for price sensitivity" },
+  { label: "Competitor Pricing", action: "add", color: DRIVER_HIGHLIGHT, icon: "+", reason: "Final positioning check for competitiveness" },
 ];
 
 type BeforeRisk = { icon: string; title: string; detail: React.ReactNode };
@@ -255,7 +256,7 @@ export function DriverImportanceSlide({
     if (!secondPhase || exampleIndex !== 1) { setElevatedMoved(exampleIndex > 1); return; }
     if (skipAnimation || shareMode) { setElevatedMoved(true); return; }
     setElevatedMoved(false);
-    const t = setTimeout(() => setElevatedMoved(true), 900);
+    const t = setTimeout(() => setElevatedMoved(true), 1600);
     return () => clearTimeout(t);
   }, [secondPhase, exampleIndex, skipAnimation, shareMode]);
 
@@ -312,10 +313,18 @@ export function DriverImportanceSlide({
       setTimeout(() => setIntroPhase(3), 3200),
       setTimeout(() => setIntroPhase(4), 4400),
       setTimeout(() => setIntroPhase(5), 6400),
-      setTimeout(() => autoAdvanceRef.current?.(), 7200),
     ];
     return () => timers.forEach(clearTimeout);
   }, [isActive, isIntro, skipAnimation, shareMode]);
+
+  const barsSettled = useRef(!!skipAnimation);
+  useEffect(() => {
+    if (!isChart) { barsSettled.current = !!skipAnimation; return; }
+    if (skipAnimation) { barsSettled.current = true; return; }
+    barsSettled.current = false;
+    const t = setTimeout(() => { barsSettled.current = true; }, 1200);
+    return () => clearTimeout(t);
+  }, [step, isChart, skipAnimation]);
 
   const [clickReady, setClickReady] = useState(!!skipAnimation);
   useEffect(() => {
@@ -351,15 +360,11 @@ export function DriverImportanceSlide({
   useEffect(() => {
     if (!isCollapse) { setCollapsePhase(0); return; }
     if (!isActive) return;
-    if (skipAnimation) { autoAdvanceRef.current?.(); return; }
-    if (shareMode) { setCollapsePhase(3); autoAdvanceRef.current?.(); return; }
+    if (skipAnimation || shareMode) { setCollapsePhase(3); return; }
     setCollapsePhase(0);
     const t1 = setTimeout(() => setCollapsePhase(1), 400);
     const t2 = setTimeout(() => setCollapsePhase(2), 1200);
-    const t3 = setTimeout(() => {
-      setCollapsePhase(3);
-      autoAdvanceRef.current?.();
-    }, 2800);
+    const t3 = setTimeout(() => setCollapsePhase(3), 2800);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, [isActive, isCollapse, skipAnimation, shareMode]);
 
@@ -431,19 +436,40 @@ export function DriverImportanceSlide({
                       {" "}to your business
                     </h2>
                   </div>
-                  {/* Chart title — fades in at phase 2, out at phase 4 */}
+                  {/* Chart title — fades in at phase 2, headline swaps at phase 4 */}
                   <div
                     className="absolute inset-x-0 top-0 flex flex-col items-center gap-2"
                     style={{
-                      opacity: introPhase >= 4 ? 0 : introPhase >= 2 ? 1 : 0,
-                      transform: introPhase >= 4 ? "translateY(-12px)" : introPhase >= 2 ? "translateY(0)" : "translateY(12px)",
+                      opacity: introPhase >= 2 ? 1 : 0,
+                      transform: introPhase >= 2 ? "translateY(0)" : "translateY(12px)",
                       transition: "opacity 0.5s ease-out, transform 0.5s ease-out",
-                      pointerEvents: introPhase >= 2 && introPhase < 4 ? "auto" : "none",
+                      pointerEvents: introPhase >= 2 ? "auto" : "none",
                     }}
                   >
-                    <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: NAVY }}>
-                      Pricing factors across four dimensions
-                    </h2>
+                    <div className="relative w-full" style={{ height: 36 }}>
+                      <h2
+                        className="absolute inset-x-0 text-center text-2xl font-bold tracking-tight sm:text-3xl"
+                        style={{
+                          color: NAVY,
+                          opacity: introPhase >= 4 ? 0 : 1,
+                          transform: introPhase >= 4 ? "translateY(-10px)" : "translateY(0)",
+                          transition: "opacity 0.5s ease-out, transform 0.5s ease-out",
+                        }}
+                      >
+                        Pricing factors across four dimensions
+                      </h2>
+                      <h2
+                        className="absolute inset-x-0 text-center text-2xl font-bold tracking-tight sm:text-3xl"
+                        style={{
+                          color: TEAL,
+                          opacity: introPhase >= 4 ? 1 : 0,
+                          transform: introPhase >= 4 ? "translateY(0)" : "translateY(10px)",
+                          transition: "opacity 0.5s ease-out, transform 0.5s ease-out",
+                        }}
+                      >
+                        Let&rsquo;s tune the model to your business
+                      </h2>
+                    </div>
                     <p
                       className="mx-auto max-w-2xl text-center text-[1.05rem] leading-relaxed whitespace-nowrap"
                       style={{
@@ -454,31 +480,6 @@ export function DriverImportanceSlide({
                       }}
                     >
                       Elevating what matters, removing what doesn&rsquo;t.
-                    </p>
-                  </div>
-                  {/* Tuning title — fades in at phase 4 */}
-                  <div
-                    className="absolute inset-x-0 top-0 flex flex-col items-center gap-2"
-                    style={{
-                      opacity: introPhase >= 4 ? 1 : 0,
-                      transform: introPhase >= 4 ? "translateY(0)" : "translateY(12px)",
-                      transition: "opacity 0.5s ease-out, transform 0.5s ease-out",
-                      pointerEvents: introPhase >= 4 ? "auto" : "none",
-                    }}
-                  >
-                    <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: TEAL }}>
-                      Let&rsquo;s tune the model to your business
-                    </h2>
-                    <p
-                      className="mx-auto max-w-2xl text-center text-[1.05rem] leading-relaxed whitespace-nowrap"
-                      style={{
-                        color: MUTED,
-                        opacity: introPhase >= 4 ? 1 : 0,
-                        transform: introPhase >= 4 ? "translateY(0)" : "translateY(6px)",
-                        transition: "opacity 0.4s 0.2s, transform 0.4s 0.2s",
-                      }}
-                    >
-                      Tuning which factors drive your pricing model.
                     </p>
                   </div>
                 </div>
@@ -728,13 +729,13 @@ export function DriverImportanceSlide({
                                 initial={skipAnimation ? { width: barW, backgroundColor: barColor } : { width: 0, backgroundColor: barColor }}
                                 animate={{ width: barW, backgroundColor: barColor }}
                                 transition={{
-                                  width: { duration: skipAnimation ? 0 : 0.5, delay: skipAnimation ? 0 : 0.15 + i * 0.03, ease: EASE },
+                                  width: { duration: skipAnimation ? 0 : 0.5, delay: skipAnimation ? 0 : barsSettled.current ? 0 : 0.15 + i * 0.03, ease: EASE },
                                   backgroundColor: { duration: 0.4, ease: EASE },
                                 }}
                               />
 
                               <AnimatePresence>
-                                {!showBefore && ((isKeep || isAdd) || isPastKept) && (
+                                {!showBefore && !isAfterHighlight && ((isKeep || isAdd) || isPastKept) && (
                                   <motion.span
                                     key={`icon-${f.label}-${disposition ?? "past"}`}
                                     className="ml-1.5 inline-flex items-center justify-center rounded-full shrink-0"

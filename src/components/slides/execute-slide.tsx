@@ -682,6 +682,7 @@ export function ExecuteSlide({
   step,
   skipAnimation,
   onCustomerChange,
+  onHideRail,
   isActive,
   fromCollapse,
 }: {
@@ -689,6 +690,7 @@ export function ExecuteSlide({
   onAnimationDone?: () => void;
   skipAnimation?: boolean;
   onCustomerChange?: (customer: string) => void;
+  onHideRail?: () => void;
   isActive: boolean;
   fromCollapse?: boolean;
 }) {
@@ -731,6 +733,10 @@ export function ExecuteSlide({
       initialRevealDone.current = true;
     }
   }, [revealPhase]);
+
+  useEffect(() => {
+    if (isActive && revealPhase >= 2) onHideRail?.();
+  }, [isActive, revealPhase, onHideRail]);
 
   useEffect(() => {
     if (!isActive) return;

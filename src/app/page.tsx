@@ -687,6 +687,8 @@ export function Home() {
   const handleActiveCategoryChange = useCallback((cats: string[]) => setDynamicActiveCategories(cats as CategoryKey[]), []);
   const [executeCustomer, setExecuteCustomer] = useState("Acme");
   const handleExecuteCustomerChange = useCallback((c: string) => setExecuteCustomer(c), []);
+  const [executeRailHidden, setExecuteRailHidden] = useState(false);
+  const handleExecuteHideRail = useCallback(() => setExecuteRailHidden(true), []);
   const [refineTimelinePhase, setRefineTimelinePhase] = useState(0);
   const handleRefineTimelinePhase = useCallback((phase: number) => setRefineTimelinePhase(phase), []);
   const prevRailVisibleRef = useRef(false);
@@ -714,7 +716,7 @@ export function Home() {
   const notes = getPresenterNotes(config?.kind ?? "", subStep);
   const railCfg = RAIL_CONFIG[`${slide}-${subStep}`] ?? null;
   const currentRailType: RailType = railCfg?.rail ?? null;
-  const railVisible = currentRailType !== null && !isPreview;
+  const railVisible = currentRailType !== null && !isPreview && !(slide === EXECUTE_INDEX && executeRailHidden);
   const engineFocus: EngineFocus = railCfg?.engine ?? null;
   const staticActiveCategories = railCfg?.categories ?? [];
   const activeCategories = (slide === POWER_INDEX && dynamicActiveCategories && dynamicActiveCategories.length > 0)
@@ -1206,6 +1208,10 @@ export function Home() {
   }, [slide, subStep, mode, isAudience, skipAnimation]);
 
   useEffect(() => {
+    if (slide !== EXECUTE_INDEX) setExecuteRailHidden(false);
+  }, [slide]);
+
+  useEffect(() => {
     if (railVisible && !prevRailVisibleRef.current && !skipAnimation) {
       setRailEntering(true);
       const t = setTimeout(() => setRailEntering(false), 700);
@@ -1448,7 +1454,7 @@ export function Home() {
                           onAutoAdvance={isActive && !skipAnimation && !isReplayingRef.current ? () => navigate(slide + 1) : undefined}
                         />
                       )}
-                      {sc.kind === "execute" && <MemoExecute step={isActive ? subStep : 0} skipAnimation={effectiveSkip} isActive={isActive} onCustomerChange={isActive ? handleExecuteCustomerChange : undefined} fromCollapse={collapseToExecuteRef.current} />}
+                      {sc.kind === "execute" && <MemoExecute step={isActive ? subStep : 0} skipAnimation={effectiveSkip} isActive={isActive} onCustomerChange={isActive ? handleExecuteCustomerChange : undefined} onHideRail={isActive ? handleExecuteHideRail : undefined} fromCollapse={collapseToExecuteRef.current} />}
                       {sc.kind === "end" && <EndSlide onRestart={() => navigate(0)} />}
                     </motion.div>
                   </motion.div>
