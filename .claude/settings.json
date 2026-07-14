@@ -4,7 +4,9 @@
       "Bash(git show *)",
       "Skill(update-config)",
       "Skill(update-config:*)",
-      "Bash(kill 53285 54876 61773 64064)"
+      "Bash(kill 53285 54876 61773 64064)",
+      "Bash(grep -n \"price\\\\|Price\\\\|\\\\$1[0-9]\\\\|\\\\$2[0-9]\" /Users/emmaeshler/ml-explainer/src/components/slides/execute-slide.tsx)",
+      "Bash(grep -rn \"price\\\\|Price\\\\|\\\\$1[0-9]\\\\|\\\\$2[0-9]\" /Users/emmaeshler/ml-explainer/src/components/slides/refine-slide-v2.tsx)"
     ],
     "additionalDirectories": [
       "/tmp",

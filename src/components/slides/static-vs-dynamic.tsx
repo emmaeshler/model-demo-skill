@@ -17,7 +17,7 @@ const CUSTOMERS = [
   { label: "A2: $19.24", t: 0.18, color: NAVY },
   { label: "A: $17.96", t: 0.28, color: NAVY },
   { label: "B: $16.73", t: 0.38, color: TEAL },
-  { label: "B2: $14.89", t: 0.52, color: ORANGE },
+  { label: "B2: $18.40", t: 0.52, color: ORANGE },
 ];
 
 const TREE_LEVELS = [

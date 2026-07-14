@@ -135,10 +135,11 @@ const RAIL_TIMELINE: Partial<Record<number, (RailContent | null)[]>> = {
     /* 1  remove sales rep */ { show: "factors", engine: "strat", active: ["customer"] },
     /* 2  elevate product importance */ { show: "factors", engine: "strat", active: ["product"] },
     /* 3  add competitor pricing */ { show: "factors", engine: "strat", active: ["customer", "product", "order", "market"] },
-    /* 4  collapse → SKU */ { show: "drivers", flyIn: false },
+    /* 4  your model drivers */ { show: "factors", engine: "strat", active: ["customer", "product", "order", "market"] },
+    /* 5  collapse → SKU */ { show: "drivers", flyIn: false },
   ],
   [EXECUTE_INDEX]: [
-    /* 0  */ { show: "drivers", flyIn: false },
+    /* 0  */ null,
     /* 1  */ null,
     /* 2  */ null,
     /* 3  */ null,
@@ -443,8 +444,8 @@ const RAIL_CUSTOMERS = [
     timelinePrices: ["$24.20", "$25.90", "$25.10", "$28.10"] },
   { label: "Acme Industrial", price: "$19.24", newPrice: "$19.80", change: "+$0.56", dot: CUSTOMER_DOT_COLORS.Acme, reason: "Win rate climbing — margin available",
     timelinePrices: ["$19.80", "$21.10", "$20.40", "$22.80"] },
-  { label: "MedSupply Co", price: "$14.89", newPrice: "$14.50", change: "−$0.39", dot: CUSTOMER_DOT_COLORS.MedSupply, reason: "New entrant undercutting — defend deal",
-    timelinePrices: ["$14.50", "$15.60", "$15.10", "$16.80"] },
+  { label: "MedSupply Co", price: "$18.40", newPrice: "$17.95", change: "−$0.45", dot: CUSTOMER_DOT_COLORS.MedSupply, reason: "New entrant undercutting — defend deal",
+    timelinePrices: ["$17.95", "$19.10", "$18.60", "$20.30"] },
 ];
 
 const RAIL_CUSTOMER_TO_REFINE_STEP: Record<number, number> = Object.fromEntries(
@@ -607,7 +608,8 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
       { index: DRIVER_IMP_INDEX, label: "Remove Sales Rep", subStep: 1 },
       { index: DRIVER_IMP_INDEX, label: "Elevate Product Importance", subStep: 2 },
       { index: DRIVER_IMP_INDEX, label: "Add Competitor Pricing", subStep: 3 },
-      { index: DRIVER_IMP_INDEX, label: "One optimal price", subStep: 4 },
+      { index: DRIVER_IMP_INDEX, label: "Your model drivers", subStep: 4 },
+      { index: DRIVER_IMP_INDEX, label: "One optimal price", subStep: 5 },
     ],
   },
   {
@@ -687,8 +689,6 @@ export function Home() {
   const handleActiveCategoryChange = useCallback((cats: string[]) => setDynamicActiveCategories(cats as CategoryKey[]), []);
   const [executeCustomer, setExecuteCustomer] = useState("Acme");
   const handleExecuteCustomerChange = useCallback((c: string) => setExecuteCustomer(c), []);
-  const [executeRailHidden, setExecuteRailHidden] = useState(false);
-  const handleExecuteHideRail = useCallback(() => setExecuteRailHidden(true), []);
   const [refineTimelinePhase, setRefineTimelinePhase] = useState(0);
   const handleRefineTimelinePhase = useCallback((phase: number) => setRefineTimelinePhase(phase), []);
   const prevRailVisibleRef = useRef(false);
@@ -716,7 +716,7 @@ export function Home() {
   const notes = getPresenterNotes(config?.kind ?? "", subStep);
   const railCfg = RAIL_CONFIG[`${slide}-${subStep}`] ?? null;
   const currentRailType: RailType = railCfg?.rail ?? null;
-  const railVisible = currentRailType !== null && !isPreview && !(slide === EXECUTE_INDEX && executeRailHidden);
+  const railVisible = currentRailType !== null && !isPreview;
   const engineFocus: EngineFocus = railCfg?.engine ?? null;
   const staticActiveCategories = railCfg?.categories ?? [];
   const activeCategories = (slide === POWER_INDEX && dynamicActiveCategories && dynamicActiveCategories.length > 0)
@@ -1208,10 +1208,6 @@ export function Home() {
   }, [slide, subStep, mode, isAudience, skipAnimation]);
 
   useEffect(() => {
-    if (slide !== EXECUTE_INDEX) setExecuteRailHidden(false);
-  }, [slide]);
-
-  useEffect(() => {
     if (railVisible && !prevRailVisibleRef.current && !skipAnimation) {
       setRailEntering(true);
       const t = setTimeout(() => setRailEntering(false), 700);
@@ -1306,7 +1302,7 @@ export function Home() {
           return;
         }
 
-        const isCollapseToExecute = slide === DRIVER_IMP_INDEX && subStep >= 4 && target === EXECUTE_INDEX;
+        const isCollapseToExecute = slide === DRIVER_IMP_INDEX && subStep >= 5 && target === EXECUTE_INDEX;
         collapseToExecuteRef.current = isCollapseToExecute;
 
         startTransition(() => {
@@ -1454,7 +1450,7 @@ export function Home() {
                           onAutoAdvance={isActive && !skipAnimation && !isReplayingRef.current ? () => navigate(slide + 1) : undefined}
                         />
                       )}
-                      {sc.kind === "execute" && <MemoExecute step={isActive ? subStep : 0} skipAnimation={effectiveSkip} isActive={isActive} onCustomerChange={isActive ? handleExecuteCustomerChange : undefined} onHideRail={isActive ? handleExecuteHideRail : undefined} fromCollapse={collapseToExecuteRef.current} />}
+                      {sc.kind === "execute" && <MemoExecute step={isActive ? subStep : 0} skipAnimation={effectiveSkip} isActive={isActive} onCustomerChange={isActive ? handleExecuteCustomerChange : undefined} fromCollapse={collapseToExecuteRef.current} />}
                       {sc.kind === "end" && <EndSlide onRestart={() => navigate(0)} />}
                     </motion.div>
                   </motion.div>

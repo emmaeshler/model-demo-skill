@@ -8,10 +8,10 @@ import {
 } from "./power-slide-data";
 import { useShareMode } from "@/lib/share-context";
 
-export const DRIVER_IMPORTANCE_TOTAL_STEPS = 5;
+export const DRIVER_IMPORTANCE_TOTAL_STEPS = 6;
 
 const SOFT_ORANGE = "#D4893A";
-const DRIVER_HIGHLIGHT = "#2E86AB";
+const DRIVER_HIGHLIGHT = NAVY;
 
 type CategoryKey = "customer" | "product" | "order" | "market";
 
@@ -150,17 +150,18 @@ type DriverAdjustment = {
   color: string;
   icon: string;
   reason: string;
+  category: string;
 };
 
 const DRIVER_ADJUSTMENTS: DriverAdjustment[] = [
-  { label: "Sales Rep", action: "remove", color: MUTED, icon: "✕", reason: "Behavioral, not a structural pricing driver" },
-  { label: "Product Category", action: "emphasized", color: DRIVER_HIGHLIGHT, icon: "★", reason: "Strongest product-level signal" },
-  { label: "Geography", action: "emphasized", color: DRIVER_HIGHLIGHT, icon: "★", reason: "Regional pricing patterns" },
-  { label: "End Market", action: "emphasized", color: DRIVER_HIGHLIGHT, icon: "★", reason: "Industry-level price segmentation" },
-  { label: "Order Frequency", action: "emphasized", color: DRIVER_HIGHLIGHT, icon: "★", reason: "Correlates with loyalty and price tolerance" },
-  { label: "Customer Tenure", action: "emphasized", color: DRIVER_HIGHLIGHT, icon: "★", reason: "Long-term relationship pricing signal" },
-  { label: "Product Importance", action: "elevate", color: DRIVER_HIGHLIGHT, icon: "↑", reason: "Hidden signal for price sensitivity" },
-  { label: "Competitor Pricing", action: "add", color: DRIVER_HIGHLIGHT, icon: "+", reason: "Final positioning check for competitiveness" },
+  { label: "Sales Rep", action: "remove", color: MUTED, icon: "✕", reason: "Behavioral, not a structural pricing driver", category: "Customer" },
+  { label: "Product Category", action: "emphasized", color: DRIVER_HIGHLIGHT, icon: "★", reason: "Strongest product-level signal", category: "Product" },
+  { label: "Geography", action: "emphasized", color: DRIVER_HIGHLIGHT, icon: "★", reason: "Regional pricing patterns", category: "Customer" },
+  { label: "End Market", action: "emphasized", color: DRIVER_HIGHLIGHT, icon: "★", reason: "Industry-level price segmentation", category: "Customer" },
+  { label: "Order Frequency", action: "emphasized", color: DRIVER_HIGHLIGHT, icon: "★", reason: "Correlates with loyalty and price tolerance", category: "Order" },
+  { label: "Customer Tenure", action: "emphasized", color: DRIVER_HIGHLIGHT, icon: "★", reason: "Long-term relationship pricing signal", category: "Customer" },
+  { label: "Product Importance", action: "elevate", color: DRIVER_HIGHLIGHT, icon: "↑", reason: "Hidden signal for price sensitivity", category: "Product" },
+  { label: "Competitor Pricing", action: "add", color: DRIVER_HIGHLIGHT, icon: "+", reason: "Final positioning check for competitiveness", category: "Market" },
 ];
 
 type BeforeRisk = { icon: string; title: string; detail: React.ReactNode };
@@ -190,21 +191,22 @@ export function DriverImportanceSlide({
   const { shareMode } = useShareMode();
   const autoAdvanceRef = useRef(onAutoAdvance);
   autoAdvanceRef.current = onAutoAdvance;
-  const isCollapse = step === 4;
+  const isCollapse = step === 5;
   const isIntro = step === 0;
-  const isChart = step >= 1 && step <= 3;
-  const exampleIndex = isChart ? step - 1 : -1;
-  const activeExample = isChart ? EXAMPLE_STEPS[exampleIndex] : null;
+  const isChart = step >= 1 && step <= 4;
+  const isDriverSummary = step === 4;
+  const exampleIndex = isChart ? Math.min(step - 1, 2) : -1;
+  const activeExample = isChart && !isDriverSummary ? EXAMPLE_STEPS[exampleIndex] : null;
 
   /* Auto-phase 1: after bars animate in, reveal keep/add annotations */
   const [actionRevealed, setActionRevealed] = useState(!!skipAnimation && isChart);
   useEffect(() => {
     if (!isActive || !isChart) { setActionRevealed(false); return; }
-    if (skipAnimation || shareMode) { setActionRevealed(true); return; }
+    if (skipAnimation || shareMode || isDriverSummary) { setActionRevealed(true); return; }
     setActionRevealed(false);
     const t = setTimeout(() => setActionRevealed(true), 1200);
     return () => clearTimeout(t);
-  }, [isActive, step, skipAnimation, isChart]);
+  }, [isActive, step, skipAnimation, isChart, isDriverSummary]);
 
   /* Phase 2: secondPhase (900ms after phase 1) → apply action */
   const [secondPhase, setSecondPhase] = useState(!!skipAnimation);
@@ -262,12 +264,21 @@ export function DriverImportanceSlide({
 
   const productElevated = exampleIndex > 1 || (exampleIndex === 1 && elevatedMoved);
 
+  const [competitorOvershoot, setCompetitorOvershoot] = useState(false);
+  useEffect(() => {
+    if (step !== 3 || !actionRevealed) { setCompetitorOvershoot(false); return; }
+    if (skipAnimation || shareMode) return;
+    setCompetitorOvershoot(true);
+    const t = setTimeout(() => setCompetitorOvershoot(false), 1200);
+    return () => clearTimeout(t);
+  }, [step, actionRevealed, skipAnimation, shareMode]);
+
   const isLastExample = exampleIndex === 2;
-  const showToggle = isLastExample && storedPhase;
+  const showToggle = isDriverSummary;
   const [compareMode, setCompareMode] = useState<"after" | "before">("after");
   useEffect(() => {
-    if (!isLastExample || !storedPhase) setCompareMode("after");
-  }, [isLastExample, storedPhase]);
+    if (!isDriverSummary) setCompareMode("after");
+  }, [isDriverSummary]);
   const showBefore = showToggle && compareMode === "before";
 
   const visibleFactors = useMemo(() => {
@@ -493,30 +504,30 @@ export function DriverImportanceSlide({
                 exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.3 }}
               >
-                {narrative && (
+                {(narrative || isDriverSummary) && (
                   <>
                     <h2
                       className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
-                      style={{ color: showBefore ? NAVY : showToggle && compareMode === "after" ? TEAL : narrative.color, transition: "color 0.3s" }}
+                      style={{ color: showBefore ? NAVY : showToggle ? NAVY : narrative?.color ?? NAVY, transition: "color 0.3s" }}
                     >
-                      {showBefore ? "Pricing factors across four dimensions" : showToggle && compareMode === "after" ? "Your model drivers" : narrative.supertitle}
+                      {showBefore ? "Pricing factors across four dimensions" : showToggle ? "Your model drivers" : narrative?.supertitle ?? ""}
                     </h2>
                     <motion.p
                       className="mx-auto max-w-2xl text-center text-[1.05rem] font-medium leading-relaxed whitespace-nowrap"
                       style={{
                         color: showBefore ? MUTED
-                          : showToggle && compareMode === "after" ? MUTED
-                          : storedPhase ? narrative.color
+                          : showToggle ? MUTED
+                          : storedPhase ? (narrative?.color ?? MUTED)
                           : MUTED,
                         transition: "color 0.4s",
                       }}
                       initial={skipAnimation ? false : { opacity: 0, y: 4 }}
-                      animate={{ opacity: actionRevealed ? (storedPhase && !showToggle ? 0.9 : 0.7) : 0, y: actionRevealed ? 0 : 4 }}
+                      animate={{ opacity: isDriverSummary ? 0.7 : actionRevealed ? (storedPhase && !showToggle ? 0.9 : 0.7) : 0, y: isDriverSummary ? 0 : actionRevealed ? 0 : 4 }}
                       transition={{ duration: 0.4, ease: EASE }}
                     >
                       {showBefore ? "22 factors before model tuning."
-                        : showToggle && compareMode === "after" ? "7 drivers refined from 22 — tuned to your business."
-                        : narrative.detail}
+                        : showToggle ? "7 drivers refined from 22 — tuned to your business."
+                        : narrative?.detail ?? ""}
                     </motion.p>
                   </>
                 )}
@@ -671,7 +682,7 @@ export function DriverImportanceSlide({
                           : (isAdd || isKeep || willBeKept || showColor) ? TEAL
                           : `${MUTED}40`;
                         const effectiveBarMax = BAR_MAX_W;
-                        const tunedValue = f.value;
+                        const tunedValue = f.label === "Competitor Pricing" && competitorOvershoot ? 12.0 : f.value;
                         const barW = (tunedValue / MAX_VALUE) * effectiveBarMax;
 
                         const opacity = showBefore ? 1
@@ -1019,9 +1030,15 @@ function ExampleCard({ example }: { example: ExampleStep }) {
 function AdjustmentCard({ adj }: { adj: DriverAdjustment }) {
   return (
     <div
-      className="rounded-md py-1.5 pl-3 pr-2.5"
+      className="rounded-md py-1.5 pl-3 pr-2.5 relative"
       style={{ borderLeft: `3px solid ${adj.color}`, backgroundColor: `${adj.color}06` }}
     >
+      <span
+        className="absolute top-1.5 right-2 rounded-full px-2 py-[1px] text-[9px] font-semibold uppercase tracking-wide"
+        style={{ backgroundColor: `${MUTED}12`, color: MUTED }}
+      >
+        {adj.category}
+      </span>
       <div className="flex items-center gap-2">
         <span className="text-[11px] font-bold uppercase tracking-wide whitespace-nowrap" style={{ color: adj.color }}>
           {ALL_ACTION_LABELS[adj.action]}

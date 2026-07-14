@@ -38,7 +38,7 @@ const SCENARIOS: Scenario[] = [
     response: { volume: "Down", winRate: "Down" },
     adjustment: "–",
     newId: "B2",
-    newPrice: "$14.89",
+    newPrice: "$18.40",
     newTraits: ["Strategic Customer", "Specialized Product", "Low Product Mix", "Healthcare End Market", "38% Win Rate"],
   },
 ];

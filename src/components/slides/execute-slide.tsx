@@ -73,10 +73,10 @@ const CUSTOMERS: CustomerScenario[] = [
     ],
     color: NAVY,
     price: "$19.24",
-    delta: "+$1.74 above peer",
+    delta: "+$1.74 above Historical Average",
     winProb: "68%",
     margin: "+9.9%",
-    narrative: "Same product, but now the model layers in the customer — high order frequency, long tenure, and strong end market positioning push the price above peer.",
+    narrative: "Same product, but now the model layers in the customer — high order frequency, long tenure, and strong end market positioning push the price above Historical Average.",
   },
   {
     label: "MedSupply Co",
@@ -91,11 +91,11 @@ const CUSTOMERS: CustomerScenario[] = [
       { label: "Competitor Pricing", value: 0.70 },
     ],
     color: TEAL,
-    price: "$14.89",
-    delta: "−$2.61 below list",
+    price: "$18.40",
+    delta: "+$0.90 above Historical Average",
     winProb: "74%",
     margin: "+3.2%",
-    narrative: "Different customer, different answer — high product importance and competitive pressure pull the price below list to protect win rate.",
+    narrative: "Different customer, different answer — high product importance and competitive pressure keep the price closer to Historical Average to protect win rate.",
   },
   {
     label: "QuickParts LLC",
@@ -111,7 +111,7 @@ const CUSTOMERS: CustomerScenario[] = [
     ],
     color: SLATE,
     price: "$22.10",
-    delta: "+$4.60 above peer",
+    delta: "+$4.60 above Historical Average",
     winProb: "81%",
     margin: "+5.7%",
     narrative: "Same bearing, highest price — this buyer's niche application and high product importance mean few alternatives, driving the price up.",
@@ -682,7 +682,6 @@ export function ExecuteSlide({
   step,
   skipAnimation,
   onCustomerChange,
-  onHideRail,
   isActive,
   fromCollapse,
 }: {
@@ -690,7 +689,6 @@ export function ExecuteSlide({
   onAnimationDone?: () => void;
   skipAnimation?: boolean;
   onCustomerChange?: (customer: string) => void;
-  onHideRail?: () => void;
   isActive: boolean;
   fromCollapse?: boolean;
 }) {
@@ -733,10 +731,6 @@ export function ExecuteSlide({
       initialRevealDone.current = true;
     }
   }, [revealPhase]);
-
-  useEffect(() => {
-    if (isActive && revealPhase >= 2) onHideRail?.();
-  }, [isActive, revealPhase, onHideRail]);
 
   useEffect(() => {
     if (!isActive) return;
