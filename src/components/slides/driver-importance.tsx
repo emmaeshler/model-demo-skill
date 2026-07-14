@@ -8,10 +8,9 @@ import {
 } from "./power-slide-data";
 import { useShareMode } from "@/lib/share-context";
 
-export const DRIVER_IMPORTANCE_TOTAL_STEPS = 8;
+export const DRIVER_IMPORTANCE_TOTAL_STEPS = 7;
 
 type CategoryKey = "customer" | "product" | "order" | "market";
-const REVEAL_ORDER: CategoryKey[] = ["customer", "product", "order", "market"];
 
 const CATEGORY_COLORS: Record<string, string> = {
   customer: NAVY,
@@ -20,77 +19,85 @@ const CATEGORY_COLORS: Record<string, string> = {
   market: GREEN,
 };
 
-const CATEGORY_REMOVALS: Record<CategoryKey, Set<string>> = {
-  customer: new Set(["Sales Rep", "Customer size", "Customer channel"]),
-  product: new Set(["Product family", "Product Specialization", "Cost to serve", "Willingness to pay", "Price sensitivity"]),
-  order: new Set(["Order size", "Lead time", "Contract type", "Seasonality", "Payment terms"]),
-  market: new Set(["Market share", "Commodity index", "Industry trends", "Competitor activity"]),
-};
+type ExampleAction = "remove" | "elevate" | "add";
 
-interface CategoryNarrative {
+interface ExampleStep {
   supertitle: string;
   headline: string;
   detail: string;
-  color: string;
   dismissLine: string;
+  color: string;
+  action: ExampleAction;
+  highlight: string[];
+  remove: Set<string>;
+  add: string[];
+  icon: string;
 }
 
-const CATEGORY_NARRATIVES: CategoryNarrative[] = [
+const EXAMPLE_STEPS: ExampleStep[] = [
   {
-    supertitle: "Keeping these factors",
-    headline: "End Market, Geography & Customer Tenure",
-    detail: "These attributes explain price variance — they stay to drive segmentation.",
+    supertitle: "Removing a factor",
+    headline: "Sales Rep",
+    detail: "Behavioral, not a pricing driver — removing it keeps the model focused on structural patterns.",
+    dismissLine: "Variance explained by who sells, not what's sold.",
     color: NAVY,
-    dismissLine: "Sales Rep is behavioral — not a pricing driver. Removing the rest.",
+    action: "remove",
+    highlight: ["Sales Rep"],
+    remove: new Set(["Sales Rep"]),
+    add: [],
+    icon: "✕",
   },
   {
-    supertitle: "Adding a factor",
+    supertitle: "Elevating a factor",
     headline: "Product Importance",
-    detail: "Captures how price-sensitive a product is within a customer. Product Category also stays.",
+    detail: "Captures how price-sensitive a product is within a customer — a hidden signal worth surfacing.",
+    dismissLine: "Adds precision to the product dimension of the model.",
     color: TEAL,
-    dismissLine: "The remaining product factors add noise, not signal.",
-  },
-  {
-    supertitle: "Keeping this factor",
-    headline: "Order Frequency",
-    detail: "How often a customer orders correlates with loyalty and price tolerance — the strongest order-level signal.",
-    color: PURPLE,
-    dismissLine: "Other order attributes are too noisy for this model.",
+    action: "elevate",
+    highlight: ["Product Importance"],
+    remove: new Set(),
+    add: ["Product Importance"],
+    icon: "↑",
   },
   {
     supertitle: "Adding a factor",
     headline: "Competitor Pricing",
     detail: "Low variance, but acts as a final positioning check — keeping the model's price in a competitive range.",
+    dismissLine: "A market guardrail that sharpens the final price.",
     color: GREEN,
-    dismissLine: "The remaining market factors don't move the needle here.",
+    action: "add",
+    highlight: ["Competitor Pricing"],
+    remove: new Set(),
+    add: ["Competitor Pricing"],
+    icon: "+",
   },
 ];
 
 const IMPORTANCE: Record<string, number> = {
-  "Sales Rep": 15.2,
-  "End Market": 13.6,
-  "Product Category": 11.8,
-  "Geography": 10.4,
-  "Customer Tenure": 8.8,
-  "Order Frequency": 7.6,
+  "Product Category": 15.2,
+  "Geography": 13.6,
+  "Sales Rep": 11.8,
+  "End Market": 10.4,
+  "Order Frequency": 8.8,
+  "Customer Tenure": 7.6,
   "Product Specialization": 6.4,
-  "Customer size": 5.8,
-  "Customer channel": 5.0,
-  "Product Importance": 4.6,
-  "Seasonality": 4.0,
-  "Product family": 3.4,
-  "Order size": 3.0,
-  "Cost to serve": 2.6,
-  "Market share": 2.2,
-  "Willingness to pay": 1.8,
-  "Competitor Pricing": 1.6,
-  "Industry trends": 1.4,
-  "Commodity index": 1.2,
-  "Lead time": 1.0,
-  "Contract type": 0.8,
-  "Payment terms": 0.6,
-  "Price sensitivity": 0.4,
-  "Competitor activity": 0.2,
+  "Seasonality": 5.8,
+  "Order size": 5.0,
+  "Product family": 4.6,
+  "Customer size": 4.0,
+  "Customer channel": 3.4,
+  "Cost to serve": 3.0,
+  "Market share": 2.6,
+  "Willingness to pay": 2.2,
+  "Industry trends": 1.8,
+  "Commodity index": 1.6,
+  "Lead time": 1.4,
+  "Contract type": 1.2,
+  "Payment terms": 1.0,
+  "Price sensitivity": 0.8,
+  "Competitor activity": 0.6,
+  "Product Importance": 0.4,
+  "Competitor Pricing": 0.2,
 };
 
 const FACTOR_ORDER = [
@@ -131,13 +138,13 @@ const ALL_FACTORS = SQUARE_FACTORS
 
 const MAX_VALUE = Math.max(...ALL_FACTORS.map(f => f.value));
 const FINAL_DRIVERS = [
-  { label: "Product Category", category: "product", value: 11.8 },
-  { label: "Geography", category: "customer", value: 10.4 },
-  { label: "End Market", category: "customer", value: 13.6 },
-  { label: "Product Importance", category: "product", value: 4.6 },
-  { label: "Order Frequency", category: "order", value: 7.6 },
-  { label: "Customer Tenure", category: "customer", value: 8.8 },
-  { label: "Competitor Pricing", category: "market", value: 1.6 },
+  { label: "Product Category", category: "product", value: 15.2 },
+  { label: "Geography", category: "customer", value: 13.6 },
+  { label: "End Market", category: "customer", value: 10.4 },
+  { label: "Product Importance", category: "product", value: 0.4 },
+  { label: "Order Frequency", category: "order", value: 8.8 },
+  { label: "Customer Tenure", category: "customer", value: 7.6 },
+  { label: "Competitor Pricing", category: "market", value: 0.2 },
 ];
 
 const BAR_MAX_W = 480;
@@ -158,13 +165,13 @@ export function DriverImportanceSlide({
   const { shareMode } = useShareMode();
   const autoAdvanceRef = useRef(onAutoAdvance);
   autoAdvanceRef.current = onAutoAdvance;
-  const isCollapse = step === 7;
-  const isConsolidated = step === 5 || step === 6;
-  const isDrivers = step === 6;
+  const isCollapse = step === 6;
+  const isConsolidated = step === 4 || step === 5;
+  const isDrivers = step === 5;
   const isIntro = step === 0;
-  const isChart = step >= 1 && step <= 4;
-  const categoryIndex = isChart ? step - 1 : -1;
-  const activeCategory = isChart ? REVEAL_ORDER[categoryIndex] : null;
+  const isChart = step >= 1 && step <= 3;
+  const exampleIndex = isChart ? step - 1 : -1;
+  const activeExample = isChart ? EXAMPLE_STEPS[exampleIndex] : null;
 
   /* Auto-phase 1: after bars animate in, reveal keep/add annotations */
   const [actionRevealed, setActionRevealed] = useState(!!skipAnimation && isChart);
@@ -176,7 +183,7 @@ export function DriverImportanceSlide({
     return () => clearTimeout(t);
   }, [isActive, step, skipAnimation, isChart]);
 
-  /* Phase 2: secondPhase (900ms after phase 1) → remove items (or market keep) */
+  /* Phase 2: secondPhase (900ms after phase 1) → apply action */
   const [secondPhase, setSecondPhase] = useState(!!skipAnimation);
   useEffect(() => {
     if (!actionRevealed) { setSecondPhase(false); return; }
@@ -186,32 +193,50 @@ export function DriverImportanceSlide({
     return () => clearTimeout(t);
   }, [actionRevealed, skipAnimation]);
 
+  /* Phase 3: storedPhase (800ms after phase 2) → factor slides to right panel */
+  const [storedPhase, setStoredPhase] = useState(!!skipAnimation);
+  useEffect(() => {
+    if (!secondPhase) { setStoredPhase(false); return; }
+    if (skipAnimation || shareMode) { setStoredPhase(true); return; }
+    setStoredPhase(false);
+    const t = setTimeout(() => setStoredPhase(true), 800);
+    return () => clearTimeout(t);
+  }, [secondPhase, skipAnimation]);
+
   const removedSet = useMemo(() => {
     const set = new Set<string>();
     if (isConsolidated || isCollapse) {
-      for (const cat of REVEAL_ORDER) CATEGORY_REMOVALS[cat].forEach(l => set.add(l));
+      for (const ex of EXAMPLE_STEPS) ex.remove.forEach(l => set.add(l));
     } else {
-      for (let i = 0; i < categoryIndex; i++) {
-        CATEGORY_REMOVALS[REVEAL_ORDER[i]].forEach(l => set.add(l));
+      for (let i = 0; i < exampleIndex; i++) {
+        EXAMPLE_STEPS[i].remove.forEach(l => set.add(l));
       }
     }
     return set;
-  }, [categoryIndex, isConsolidated, isCollapse]);
+  }, [exampleIndex, isConsolidated, isCollapse]);
+
+  const pastKeptSet = useMemo(() => {
+    const set = new Set<string>();
+    for (let i = 0; i < exampleIndex; i++) {
+      for (const l of EXAMPLE_STEPS[i].add) set.add(l);
+    }
+    return set;
+  }, [exampleIndex]);
 
   const visibleFactors = useMemo(() => {
     if (isConsolidated || isCollapse) {
       const allRemovals = new Set<string>();
-      for (const cat of REVEAL_ORDER) CATEGORY_REMOVALS[cat].forEach(l => allRemovals.add(l));
+      for (const ex of EXAMPLE_STEPS) ex.remove.forEach(l => allRemovals.add(l));
       return ALL_FACTORS.filter(f => !allRemovals.has(f.label));
     }
-    const productRevealed = categoryIndex >= 1 && (categoryIndex > 1 || actionRevealed);
-    const marketRevealed = categoryIndex === 3 && actionRevealed;
+    const productRevealed = exampleIndex >= 1 && (exampleIndex > 1 || actionRevealed);
+    const competitorRevealed = exampleIndex >= 2 && (exampleIndex > 2 || actionRevealed);
     return ALL_FACTORS.filter(f => {
       if (f.label === "Product Importance" && !productRevealed) return false;
-      if (f.label === "Competitor Pricing" && !marketRevealed) return false;
+      if (f.label === "Competitor Pricing" && !competitorRevealed) return false;
       return true;
     });
-  }, [isConsolidated, isCollapse, categoryIndex, actionRevealed]);
+  }, [isConsolidated, isCollapse, exampleIndex, actionRevealed]);
 
   const [introPhase, setIntroPhase] = useState(skipAnimation ? 3 : 0);
   useEffect(() => {
@@ -237,33 +262,31 @@ export function DriverImportanceSlide({
       return () => clearTimeout(t);
     }
     if (isChart) {
-      if (!secondPhase) return;
+      if (!storedPhase) return;
       const t = setTimeout(() => setClickReady(true), 600);
       return () => clearTimeout(t);
     }
-  }, [isActive, isIntro, introPhase, isChart, secondPhase, isDrivers, isCollapse, skipAnimation, step]);
+  }, [isActive, isIntro, introPhase, isChart, storedPhase, isDrivers, isCollapse, skipAnimation, step]);
 
-  /* Auto-advance through category steps (1→2→3→4→5) and consolidated (5→6) */
+  /* Auto-advance through example steps (1→2→3→4) and consolidated (4→5) */
   useEffect(() => {
     if (!isActive || !onAutoAdvance) return;
-    if (isChart && secondPhase) {
-      const t = setTimeout(() => onAutoAdvance(), 1800);
+    if (isChart && storedPhase) {
+      const t = setTimeout(() => onAutoAdvance(), 1200);
       return () => clearTimeout(t);
     }
-    if (step === 5) {
+    if (step === 4) {
       const t = setTimeout(() => onAutoAdvance(), 600);
       return () => clearTimeout(t);
     }
   }, [isActive, isChart, secondPhase, step, onAutoAdvance]);
 
   function getDisposition(f: { label: string; category: string }): Disposition | null {
-    const catKey = f.category as CategoryKey;
-    const catStep = REVEAL_ORDER.indexOf(catKey);
-    if (catStep !== categoryIndex || !actionRevealed) return null;
-    if (CATEGORY_REMOVALS[catKey].has(f.label)) return secondPhase ? "remove" : null;
-    if (catKey === "product" && f.label === "Product Importance") return "add";
-    if (catKey === "market" && f.label === "Competitor Pricing") return "add";
-    return "keep";
+    if (!activeExample || !actionRevealed) return null;
+    if (activeExample.remove.has(f.label)) return secondPhase ? "remove" : null;
+    if (activeExample.add.includes(f.label)) return "add";
+    if (activeExample.highlight.includes(f.label) && !activeExample.remove.has(f.label)) return "keep";
+    return null;
   }
 
   const annotated = visibleFactors
@@ -272,7 +295,7 @@ export function DriverImportanceSlide({
 
   const hasAnnotations = annotated.length > 0;
 
-  const narrative = categoryIndex >= 0 ? CATEGORY_NARRATIVES[categoryIndex] : null;
+  const narrative = exampleIndex >= 0 ? EXAMPLE_STEPS[exampleIndex] : null;
 
   // Driver cards animation — runs as auto-phase of consolidated step
   // 0 = waiting, 1 = customer, 2 = product, 3 = order, 4 = market (all shown)
@@ -433,7 +456,7 @@ export function DriverImportanceSlide({
               </motion.div>
             ) : (
               <motion.div
-                key={`cat-${categoryIndex}`}
+                key={`example-${exampleIndex}`}
                 className="flex flex-col items-center gap-1"
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -604,22 +627,19 @@ export function DriverImportanceSlide({
                       {visibleFactors.map((f, i) => {
                         const disposition = getDisposition(f);
                         const color = CATEGORY_COLORS[f.category] ?? MUTED;
-                        const catStep = REVEAL_ORDER.indexOf(f.category as CategoryKey);
-                        const isPast = catStep < categoryIndex;
-                        const isFuture = isChart && catStep > categoryIndex;
-                        const isPastRemoved = isPast && removedSet.has(f.label);
+                        const isPastRemoved = removedSet.has(f.label);
+                        const isPastKept = pastKeptSet.has(f.label);
                         const isAnnotated = disposition !== null;
 
                         const isRemove = disposition === "remove";
                         const isKeep = disposition === "keep";
                         const isAdd = disposition === "add";
 
-                        const catKey = f.category as CategoryKey;
-                        const isCurrentCat = isChart && catStep === categoryIndex;
-                        const isActiveCategory = catKey === activeCategory && actionRevealed;
-                        const willBeRemoved = isActiveCategory && CATEGORY_REMOVALS[catKey]?.has(f.label);
-                        const willBeKept = isActiveCategory && !CATEGORY_REMOVALS[catKey]?.has(f.label) && !isAdd;
-                        const showColor = isCurrentCat || isConsolidated;
+                        const isHighlighted = isChart && activeExample && actionRevealed &&
+                          (activeExample.highlight.includes(f.label) || activeExample.add.includes(f.label));
+                        const willBeRemoved = isChart && activeExample && actionRevealed && activeExample.remove.has(f.label);
+                        const willBeKept = isHighlighted && !isAdd;
+                        const showColor = isHighlighted || isConsolidated;
 
                         const barColor = isRemove ? `${MUTED}60`
                           : isPastRemoved ? `${MUTED}30`
@@ -630,14 +650,13 @@ export function DriverImportanceSlide({
                         const effectiveBarMax = showDriverCards ? BAR_MAX_W : isConsolidated ? 520 : BAR_MAX_W;
                         const barW = (f.value / MAX_VALUE) * effectiveBarMax;
 
-                        const driverCatIdx = REVEAL_ORDER.indexOf(f.category as CategoryKey);
+                        const DRIVER_CAT_ORDER: CategoryKey[] = ["customer", "product", "order", "market"];
+                        const driverCatIdx = DRIVER_CAT_ORDER.indexOf(f.category as CategoryKey);
                         const opacity = showDriverCards
                           ? (driverCatIdx === driverHighlight - 1 ? 1
                             : driverCatIdx < driverHighlight ? 0.6
                             : 0.15)
                           : isPastRemoved ? 0.15
-                          : isPast ? 0.5
-                          : isFuture ? 0.2
                           : isAnnotated ? 1
                           : willBeRemoved && secondPhase ? 0.12
                           : willBeRemoved ? 1
@@ -670,7 +689,7 @@ export function DriverImportanceSlide({
                                   : (isKeep || willBeKept) ? GREEN
                                   : showColor ? color
                                   : MUTED,
-                                fontWeight: (isAnnotated || willBeKept || (willBeRemoved && secondPhase)) ? 700 : isCurrentCat ? 600 : 500,
+                                fontWeight: (isAnnotated || willBeKept || (willBeRemoved && secondPhase)) ? 700 : isHighlighted ? 600 : 500,
                                 transition: "color 0.4s, font-weight 0.4s",
                               }}
                             >
@@ -707,42 +726,24 @@ export function DriverImportanceSlide({
                                 }}
                               />
 
-                              <motion.span
-                                className={`ml-2 font-semibold shrink-0 ${isConsolidated ? "text-[15px]" : "text-[12px]"}`}
-                                style={{
-                                  color: isPastRemoved ? `${MUTED}60`
-                                    : (isRemove || (willBeRemoved && secondPhase)) ? `${MUTED}80`
-                                    : isAdd ? TEAL
-                                    : (isKeep || willBeKept) ? GREEN
-                                    : showColor ? color
-                                    : MUTED,
-                                  transition: "color 0.4s",
-                                }}
-                                initial={skipAnimation ? false : { opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ duration: 0.3, delay: skipAnimation ? 0 : 0.3 + i * 0.03 }}
-                              >
-                                {f.value}
-                              </motion.span>
-
                               <AnimatePresence>
-                                {((isKeep || isAdd) || (isPast && !isPastRemoved)) && (
+                                {((isKeep || isAdd) || isPastKept) && (
                                   <motion.span
                                     key={`icon-${f.label}-${disposition ?? "past"}`}
                                     className="ml-1.5 inline-flex items-center justify-center rounded-full shrink-0"
                                     style={{
                                       width: isAdd ? 20 : 16, height: isAdd ? 20 : 16,
                                       backgroundColor:
-                                        isPast && !isAnnotated ? `${GREEN}20`
+                                        isPastKept && !isAnnotated ? `${GREEN}20`
                                         : isAdd ? TEAL
                                         : `${GREEN}`,
                                       color:
-                                        isPast && !isAnnotated ? GREEN
+                                        isPastKept && !isAnnotated ? GREEN
                                         : "#fff",
                                       fontSize: isAdd ? 13 : 9, fontWeight: 900, lineHeight: 1,
                                     }}
                                     initial={{ opacity: 0, scale: 0 }}
-                                    animate={{ opacity: (isPast && !isAnnotated) ? 0.6 : 1, scale: 1 }}
+                                    animate={{ opacity: (isPastKept && !isAnnotated) ? 0.6 : 1, scale: 1 }}
                                     exit={{ opacity: 0, scale: 0 }}
                                     transition={
                                       isAnnotated
@@ -773,7 +774,43 @@ export function DriverImportanceSlide({
                   </motion.p>
                 </motion.div>
 
-                {/* Right column: annotation cards (steps 1-4) or driver category cards (consolidated auto-phase) */}
+                {/* Right column: stored examples (chart steps) or driver category cards (consolidated) */}
+                {(isChart || isConsolidated) && !showDriverCards && (
+                  <div className="shrink-0 flex flex-col pt-6" style={{ width: 260 }}>
+                    <AnimatePresence>
+                      {(isChart ? exampleIndex > 0 || storedPhase : true) && (
+                        <motion.span
+                          className="text-[10px] font-bold uppercase tracking-[0.15em] mb-3 block"
+                          style={{ color: MUTED }}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 0.5 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          Model adjustments
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                    <div className="flex flex-col gap-2.5">
+                      {EXAMPLE_STEPS.map((ex, ei) => {
+                        const isPrior = ei < exampleIndex;
+                        const isCurrent = ei === exampleIndex && storedPhase;
+                        const show = isConsolidated || isPrior || isCurrent;
+                        if (!show) return null;
+                        return (
+                          <motion.div
+                            key={ex.headline}
+                            initial={{ opacity: 0, x: 30, scale: 0.95 }}
+                            animate={{ opacity: 1, x: 0, scale: 1 }}
+                            transition={{ duration: 0.45, ease: EASE }}
+                          >
+                            <ExampleCard example={ex} />
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
                 {showDriverCards ? (<>
                 {/* Arrow */}
                 <motion.div
@@ -838,7 +875,7 @@ export function DriverImportanceSlide({
                         className="flex flex-col gap-2"
                         exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.3 } }}
                       >
-                        {REVEAL_ORDER.map((cat, ci) => {
+                        {(["customer", "product", "order", "market"] as CategoryKey[]).map((cat, ci) => {
                           if (ci >= driverHighlight) return null;
                           const catFactors = visibleFactors.filter(f => f.category === cat);
                           return (
@@ -869,7 +906,7 @@ export function DriverImportanceSlide({
         </AnimatePresence>
 
         <AnimatePresence>
-          {((clickReady && !isChart && step !== 5) || driverClickReady) && (
+          {((clickReady && !isChart && step !== 4) || driverClickReady) && (
             <motion.div
               className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5"
               style={{ transform: "translateX(calc(-50% + var(--rail-inset, 0px) * -0.5))" }}
@@ -931,6 +968,52 @@ function DriverCard({ label, category, color }: { label: string; category: strin
       <span className="text-[15px] font-bold block" style={{ color: NAVY }}>
         {label}
       </span>
+    </div>
+  );
+}
+
+const ACTION_LABELS: Record<ExampleAction, string> = {
+  remove: "Removed",
+  elevate: "Elevated",
+  add: "Added",
+};
+
+function ExampleCard({ example }: { example: ExampleStep }) {
+  const bgColor = example.action === "remove" ? `${MUTED}08`
+    : `${example.color}08`;
+  const borderColor = example.action === "remove" ? `${MUTED}40`
+    : example.color;
+  const iconBg = example.action === "remove" ? `${MUTED}20`
+    : `${example.color}18`;
+  const iconColor = example.action === "remove" ? MUTED
+    : example.color;
+
+  return (
+    <div
+      className="rounded-lg py-3 pl-4 pr-3"
+      style={{ borderLeft: `3px solid ${borderColor}`, backgroundColor: bgColor }}
+    >
+      <div className="flex items-center gap-2.5">
+        <span
+          className="shrink-0 inline-flex items-center justify-center rounded-full text-[11px] font-bold"
+          style={{ width: 22, height: 22, backgroundColor: iconBg, color: iconColor }}
+        >
+          {example.icon}
+        </span>
+        <div className="min-w-0">
+          <span className="text-[10px] font-bold uppercase tracking-[0.1em] block" style={{
+            color: example.action === "remove" ? MUTED : example.color,
+          }}>
+            {ACTION_LABELS[example.action]}
+          </span>
+          <span className="text-[14px] font-bold block leading-tight" style={{
+            color: example.action === "remove" ? MUTED : NAVY,
+            textDecoration: example.action === "remove" ? "line-through" : "none",
+          }}>
+            {example.headline}
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

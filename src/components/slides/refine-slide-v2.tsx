@@ -565,18 +565,19 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
               return <line key={`rsg-h${i}`} x1={CURVE_SLOT.x} y1={y} x2={CURVE_SLOT.x + CURVE_SLOT.w} y2={y} stroke={NAVY} strokeWidth={0.5} strokeDasharray="3 5" opacity={0.07} />;
             })}
             <path
-              d={`M ${CURVE_SLOT.x} ${CURVE_SLOT.y + 8} Q ${CURVE_SLOT.x + CURVE_SLOT.w * 0.25} ${CURVE_SLOT.y + CURVE_SLOT.h * 0.35} ${CURVE_SLOT.x + CURVE_SLOT.w * 0.5} ${CURVE_SLOT.y + CURVE_SLOT.h * 0.65} T ${CURVE_SLOT.x + CURVE_SLOT.w} ${BASE_Y - 8}`}
+              d={curve.d}
               fill="none" stroke={NAVY} strokeWidth={2} strokeDasharray="6 4" opacity={0.14}
             />
             {[
-              [0.08, 0.15], [0.12, 0.22], [0.18, 0.35], [0.25, 0.30], [0.15, 0.50],
-              [0.35, 0.48], [0.42, 0.55], [0.50, 0.62], [0.30, 0.70], [0.55, 0.58],
-              [0.62, 0.72], [0.70, 0.78], [0.78, 0.82], [0.85, 0.88], [0.92, 0.90],
-              [0.22, 0.60], [0.45, 0.45], [0.68, 0.68], [0.38, 0.80], [0.75, 0.75],
-              [0.05, 0.40], [0.28, 0.55], [0.52, 0.50], [0.65, 0.85], [0.88, 0.82],
-            ].map(([tx, ty], i) => (
-              <circle key={`rsg-d${i}`} cx={CURVE_SLOT.x + tx * CURVE_SLOT.w} cy={CURVE_SLOT.y + ty * CURVE_SLOT.h} r={1.8} fill={NAVY} opacity={0.09} />
-            ))}
+              [0.03, -4], [0.05, 12], [0.08, -10], [0.10, 20], [0.06, 35],
+              [0.14, -8], [0.12, 28], [0.18, 15], [0.16, -5], [0.20, 32],
+              [0.25, 8], [0.22, -12], [0.30, 18], [0.35, -6], [0.28, 25],
+              [0.42, 12], [0.50, -4], [0.45, 20], [0.55, 8], [0.60, 15],
+              [0.65, -8], [0.70, 10], [0.75, 5], [0.82, -5], [0.90, 8],
+            ].map(([t, offsetY], i) => {
+              const pt = curve.sampleAt(t);
+              return <circle key={`rsg-d${i}`} cx={pt.x} cy={Math.max(CURVE_SLOT.y + 2, Math.min(BASE_Y - 2, pt.y + offsetY))} r={1.8} fill={NAVY} opacity={0.09} />;
+            })}
           </svg>
         </motion.div>
 

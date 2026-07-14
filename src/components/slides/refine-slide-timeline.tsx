@@ -35,7 +35,7 @@ export function TimelineStrip({
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 3L4.5 7L8.5 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </motion.button>
-        <div style={{ transform: "translateX(calc(var(--rail-inset, 0px) * -0.5))" }}>
+        <div style={{ transform: "translateX(calc((200px - 24px) / 2 + var(--rail-inset, 0px) * -0.5))" }}>
           <AnimatePresence mode="wait">
             <motion.div
               key={`event-${indexPhase}`}
@@ -145,7 +145,7 @@ export function TimelineStrip({
           transition={{ duration: 0.6, ease: "easeOut" }}
         />
         <div className="absolute" style={{ top: "50%", marginTop: 14, left: 0, right: 0 }}>
-          <span className="absolute text-[10px] font-medium" style={{ left: 0, color: MUTED }}>{getMonthLabel(0)}</span>
+          <span className="absolute text-[10px] font-medium" style={{ left: 0, color: indexPhase === 0 ? STRAT_BLUE : MUTED }}>Starting</span>
           {TIMELINE_EVENTS.map((event, i) => {
             const pos = (event.month / TOTAL_MONTHS) * 100;
             const isActive = indexPhase === i + 1 && indexMorphProgress >= 1;
@@ -156,7 +156,7 @@ export function TimelineStrip({
                 style={{ left: `${pos}%`, transform: "translateX(-50%)", color: isActive ? STRAT_BLUE : MUTED }}
                 onClick={(e) => { e.stopPropagation(); setIndexPhase(i + 1); }}
               >
-                {getMonthLabel(event.month)}
+                {event.dotLabel}
               </span>
             );
           })}
