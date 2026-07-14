@@ -67,8 +67,8 @@ const NOTES: Record<string, string[]> = {
     "Different segments, different calibrated prices — that's the power of dynamic pricing.",
   ],
   "refine:6": [
-    "When all customers are optimized together, the portfolio effect is powerful.",
-    "Some prices go up, some go down — but total margin improves significantly.",
+    "The model doesn't just react to external indices — it reads win rate, price adoption, and margin together.",
+    "Each evolution is driven by all four signals, not just the cost change.",
   ],
   "refine:7": [
     "Every customer–end market combination gets its own model.",
@@ -111,7 +111,7 @@ const TRANSITION_HINTS: Record<string, string> = {
   "refine:3": "Acme's curve — a subtler margin opportunity with a rising win rate.",
   "refine:4": "MedSupply is at risk from a competitor — the model lowers price to defend.",
   "refine:5": "All three customers snap to the curve — optimized prices appear.",
-  "refine:6": "The curve adapts over time as the market moves.",
+  "refine:6": "The curve adapts over time — external indices, win rate, adoption, and margin all feed each evolution.",
   "refine:7": "Zooms out to show segment-level models — each customer–market combination gets its own.",
   "refine:8": "Full portfolio view — 247 segments monitored and recalibrated continuously.",
   "end": "Closing slide — thank you and next steps.",

@@ -247,6 +247,17 @@ export function RefineChart({
 
         return (
           <g key={seg.label} onClick={isActive ? onSpotClick : undefined} style={{ cursor: isActive ? "pointer" : "default" }}>
+            {/* Subtle horizontal price line to Y-axis */}
+            {(isActive || isPast) && !isAllToCurve && (
+              <motion.line
+                x1={CURVE_SLOT.x} x2={pt.x - (isAllToCurve ? 4 : 8)}
+                stroke={seg.dotColor} strokeWidth={1} strokeDasharray="3 3"
+                initial={{ opacity: 0, y1: belowY, y2: belowY }}
+                animate={{ opacity: isAllToCurve ? 0.2 : 0.35, y1: targetCy, y2: targetCy }}
+                transition={{ opacity: { duration: 0.4, delay: 0.3 }, y1: { duration: 1.0, ease: EASE }, y2: { duration: 1.0, ease: EASE } }}
+              />
+            )}
+
             {/* Dashed line from dot to curve position */}
             {isActive && (
               <motion.line

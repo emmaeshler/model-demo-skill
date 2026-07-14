@@ -91,11 +91,11 @@ const CUSTOMERS: CustomerScenario[] = [
       { label: "Competitor Pricing", value: 0.70 },
     ],
     color: TEAL,
-    price: "$18.40",
-    delta: "+$0.90 above Historical Average",
+    price: "$16.60",
+    delta: "−$0.90 below Historical Average",
     winProb: "74%",
-    margin: "+3.2%",
-    narrative: "Different customer, different answer — high product importance and competitive pressure keep the price closer to Historical Average to protect win rate.",
+    margin: "−1.2%",
+    narrative: "Different customer, different answer — high product importance and competitive pressure push the price below Historical Average to protect win rate.",
   },
   {
     label: "QuickParts LLC",
@@ -312,10 +312,12 @@ function ProfileCard({ cust, flyFromRail }: { cust: CustomerScenario; flyFromRai
         const isRailDriver = RAIL_DRIVER_LABELS.has(s.label);
         const shouldFlyIn = flyFromRail && isRailDriver && !shareMode;
         const isExtraDriver = flyFromRail && !isRailDriver && !shareMode;
+        const isCompetitor = s.label === "Competitor Pricing";
 
         const flyDelay = 0.12 + si * 0.08;
         const normalDelay = 0.15 + si * 0.06;
         const extraDelay = 0.75;
+        const barDelay = shouldFlyIn ? flyDelay + 0.45 : isExtraDriver ? extraDelay + 0.15 : normalDelay + 0.1;
 
         return (
           <motion.g
@@ -344,21 +346,21 @@ function ProfileCard({ cust, flyFromRail }: { cust: CustomerScenario; flyFromRai
             <rect x={SLIDER_X} y={sy + 6} width={SLIDER_W} height={6} rx={3} fill="#E8ECF0" />
             <motion.rect
               x={SLIDER_X} y={sy + 6} height={6} rx={3} fill={dotColor || ORANGE}
-              initial={{ width: 0 }}
+              initial={shareMode ? false : { width: isCompetitor ? SLIDER_W : 0 }}
               animate={{ width: SLIDER_W * s.value }}
               transition={{
-                duration: 0.5,
-                delay: shouldFlyIn ? flyDelay + 0.45 : isExtraDriver ? extraDelay + 0.15 : normalDelay + 0.1,
+                duration: isCompetitor ? 0.7 : 0.5,
+                delay: barDelay,
                 ease: "easeOut",
               }}
             />
             <motion.circle
               cy={sy + 9} r={5} fill="white" stroke={dotColor || ORANGE} strokeWidth={2}
-              initial={{ cx: SLIDER_X }}
+              initial={shareMode ? false : { cx: isCompetitor ? SLIDER_X + SLIDER_W : SLIDER_X }}
               animate={{ cx: SLIDER_X + SLIDER_W * s.value }}
               transition={{
-                duration: 0.5,
-                delay: shouldFlyIn ? flyDelay + 0.45 : isExtraDriver ? extraDelay + 0.15 : normalDelay + 0.1,
+                duration: isCompetitor ? 0.7 : 0.5,
+                delay: barDelay,
                 ease: "easeOut",
               }}
             />
@@ -682,6 +684,7 @@ export function ExecuteSlide({
   step,
   skipAnimation,
   onCustomerChange,
+  hideRailRef,
   isActive,
   fromCollapse,
 }: {
@@ -689,6 +692,7 @@ export function ExecuteSlide({
   onAnimationDone?: () => void;
   skipAnimation?: boolean;
   onCustomerChange?: (customer: string) => void;
+  hideRailRef?: { current: () => void };
   isActive: boolean;
   fromCollapse?: boolean;
 }) {
@@ -730,7 +734,10 @@ export function ExecuteSlide({
     if (revealPhase >= 2 && !initialRevealDone.current) {
       initialRevealDone.current = true;
     }
-  }, [revealPhase]);
+    if (isActive && revealPhase >= 2 && hideRailRef) {
+      hideRailRef.current();
+    }
+  }, [revealPhase, isActive, hideRailRef]);
 
   useEffect(() => {
     if (!isActive) return;
@@ -805,7 +812,7 @@ export function ExecuteSlide({
                 initial={skipAnimation ? false : { opacity: 0, y: didCollapse.current ? 0 : 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: didCollapse.current ? 0.6 : 0.4, delay: didCollapse.current ? 0.15 : 0 }}
+                transition={{ duration: didCollapse.current ? 0.5 : 0.4, delay: didCollapse.current ? 0.35 : 0 }}
               >
                 {revealPhase <= 1
                   ? "Applying the optimized price at the customer order level"
@@ -824,7 +831,7 @@ export function ExecuteSlide({
               className={`flex min-h-[3rem] items-center justify-center px-4 ${isPresenter ? "mb-1" : "mb-4"}`}
               initial={skipAnimation ? false : { opacity: 0, y: didCollapse.current ? 0 : 6 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: didCollapse.current ? 0.6 : 0.4, delay: didCollapse.current ? 0.25 : 0.5 }}
+              transition={{ duration: didCollapse.current ? 0.5 : 0.4, delay: didCollapse.current ? 0.45 : 0.5 }}
             >
             <AnimatePresence mode="wait">
               <motion.p
@@ -841,7 +848,7 @@ export function ExecuteSlide({
                   : revealPhase === 2
                     ? "The model weighs each factor to calculate Acme’s calibrated price."
                     : revealPhase === 3
-                      ? <>{cust.price} — sales relationship, order frequency, and tenure push the price{" "}<span style={{ fontWeight: 700, color: "#2e7d32", whiteSpace: "nowrap" }}>{cust.delta}</span>.</>
+                      ? <>{cust.price} — sales relationship, order frequency, and tenure push the price{" "}<span style={{ fontWeight: 700, color: cust.price > LIST_PRICE ? "#2e7d32" : "#c62828", whiteSpace: "nowrap" }}>{cust.delta}</span>.</>
                       : cust.narrative}
               </motion.p>
             </AnimatePresence>
@@ -868,9 +875,9 @@ export function ExecuteSlide({
                     )}
 
                     <motion.g
-                      initial={didCollapse.current ? { scale: 1.6, y: 55 } : false}
+                      initial={didCollapse.current ? { scale: 1.15, y: 12 } : false}
                       animate={{ scale: 1, y: 0 }}
-                      transition={didCollapse.current ? { duration: 0.8, ease: [0.22, 1, 0.36, 1] } : { duration: 0 }}
+                      transition={didCollapse.current ? { duration: 0.5, delay: 0.5, ease: [0.22, 1, 0.36, 1] } : { duration: 0 }}
                       style={{ transformOrigin: `${MODEL_CX}px ${MODEL_CY}px` }}
                     >
                       <motion.circle
@@ -952,7 +959,7 @@ export function ExecuteSlide({
                         <motion.g
                           initial={skipAnimation ? false : { opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.5, delay: didCollapse.current ? 0.5 : 0.3 }}
+                          transition={{ duration: 0.5, delay: didCollapse.current ? 0.55 : 0.3 }}
                         >
                           <rect x={PROFILE_X} y={MODEL_CY - PROFILE_BOX_H / 2} width={PROFILE_W} height={PROFILE_BOX_H}
                             rx={14} fill="white" stroke={GREY} strokeWidth={1.2} strokeDasharray="6 4" opacity={0.6} />
@@ -993,7 +1000,7 @@ export function ExecuteSlide({
                         <motion.g
                           initial={skipAnimation ? false : { opacity: 0, x: 20 }}
                           animate={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.5, delay: didCollapse.current ? 0.6 : 0.4 }}
+                          transition={{ duration: 0.5, delay: didCollapse.current ? 0.65 : 0.4 }}
                         >
                           <rect x={RESULT_CARD_X} y={MODEL_CY - PROFILE_BOX_H / 2} width={RESULT_CARD_W} height={PROFILE_BOX_H}
                             rx={14} fill="white" stroke={GREY} strokeWidth={1.2} strokeDasharray="6 4" opacity={0.6} />

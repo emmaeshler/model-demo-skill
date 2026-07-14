@@ -139,7 +139,7 @@ const RAIL_TIMELINE: Partial<Record<number, (RailContent | null)[]>> = {
     /* 5  collapse → SKU */ { show: "drivers", flyIn: false },
   ],
   [EXECUTE_INDEX]: [
-    /* 0  */ null,
+    /* 0  */ { show: "drivers", flyIn: false },
     /* 1  */ null,
     /* 2  */ null,
     /* 3  */ null,
@@ -682,6 +682,8 @@ export function Home() {
   const [railEntering, setRailEntering] = useState(false);
   const isReplayingRef = useRef(false);
   const collapseToExecuteRef = useRef(false);
+  const [morphOutSlide, setMorphOutSlide] = useState<number | null>(null);
+  const morphOutStepRef = useRef(0);
   const spotlightRefinedRef = useRef(false);
   const [spotlightAdvanceReq, setSpotlightAdvanceReq] = useState(0);
   const handleSpotlightRefined = useCallback(() => { spotlightRefinedRef.current = true; }, []);
@@ -689,6 +691,8 @@ export function Home() {
   const handleActiveCategoryChange = useCallback((cats: string[]) => setDynamicActiveCategories(cats as CategoryKey[]), []);
   const [executeCustomer, setExecuteCustomer] = useState("Acme");
   const handleExecuteCustomerChange = useCallback((c: string) => setExecuteCustomer(c), []);
+  const [executeRailHidden, setExecuteRailHidden] = useState(false);
+  const executeHideRailRef = useRef(() => setExecuteRailHidden(true));
   const [refineTimelinePhase, setRefineTimelinePhase] = useState(0);
   const handleRefineTimelinePhase = useCallback((phase: number) => setRefineTimelinePhase(phase), []);
   const prevRailVisibleRef = useRef(false);
@@ -716,7 +720,7 @@ export function Home() {
   const notes = getPresenterNotes(config?.kind ?? "", subStep);
   const railCfg = RAIL_CONFIG[`${slide}-${subStep}`] ?? null;
   const currentRailType: RailType = railCfg?.rail ?? null;
-  const railVisible = currentRailType !== null && !isPreview;
+  const railVisible = currentRailType !== null && !isPreview && !(slide === EXECUTE_INDEX && executeRailHidden);
   const engineFocus: EngineFocus = railCfg?.engine ?? null;
   const staticActiveCategories = railCfg?.categories ?? [];
   const activeCategories = (slide === POWER_INDEX && dynamicActiveCategories && dynamicActiveCategories.length > 0)
@@ -1208,6 +1212,7 @@ export function Home() {
   }, [slide, subStep, mode, isAudience, skipAnimation]);
 
   useEffect(() => {
+    if (slide !== EXECUTE_INDEX) setExecuteRailHidden(false);
     if (railVisible && !prevRailVisibleRef.current && !skipAnimation) {
       setRailEntering(true);
       const t = setTimeout(() => setRailEntering(false), 700);
@@ -1230,6 +1235,7 @@ export function Home() {
   const navigate = useCallback(
     (index: number, targetSubStep?: number) => {
       isReplayingRef.current = false;
+      if (morphOutSlide !== null) setMorphOutSlide(null);
       // Skip over presenter-hidden slides
       let target = index;
       if (targetSubStep === undefined && presenterSkipped.has(target)) {
@@ -1304,6 +1310,10 @@ export function Home() {
 
         const isCollapseToExecute = slide === DRIVER_IMP_INDEX && subStep >= 5 && target === EXECUTE_INDEX;
         collapseToExecuteRef.current = isCollapseToExecute;
+        if (isCollapseToExecute) {
+          setMorphOutSlide(slide);
+          morphOutStepRef.current = subStep;
+        }
 
         startTransition(() => {
           setSkipAnimation(goingBack);
@@ -1313,7 +1323,7 @@ export function Home() {
         });
       }
     },
-    [total, slide, subStep, subStepConfig, presenterSkipped, refineTimelinePhase],
+    [total, slide, subStep, subStepConfig, presenterSkipped, refineTimelinePhase, morphOutSlide],
   );
 
   useEffect(() => {
@@ -1386,27 +1396,40 @@ export function Home() {
         <div className="relative w-full">
         {SLIDES.map((sc, i) => {
           const isActive = i === slide;
-          if (!isActive && !visited.has(i)) return null;
+          const isMorphingOut = i === morphOutSlide;
+          if (!isActive && !isMorphingOut && !visited.has(i)) return null;
           const effectiveSkip = !isActive || skipAnimation;
           return (
             <div
               key={i}
-              className={cn("w-full", !isActive && "absolute inset-0 overflow-hidden")}
+              className={cn("w-full", !isActive && !isMorphingOut && "absolute inset-0 overflow-hidden")}
               style={{
-                visibility: isActive ? "visible" : "hidden",
+                visibility: (isActive || isMorphingOut) ? "visible" : "hidden",
                 pointerEvents: isActive ? "auto" : "none",
+                ...(isMorphingOut ? { position: "absolute" as const, inset: 0, zIndex: 10, overflow: "hidden" } : {}),
               }}
             >
               <MotionConfig
-                reducedMotion={isActive ? (skipAnimation ? "always" : "never") : "always"}
+                reducedMotion={(isActive || isMorphingOut) ? (skipAnimation ? "always" : "never") : "always"}
                 {...(isPreview ? { transition: { duration: 0 } } : {})}
               >
                 <div key={slideReplayKeys[i]}>
                   <motion.div
                     initial={isPreview ? false : (collapseToExecuteRef.current && isActive) ? false : { opacity: 0, y: 10 }}
-                    animate={isActive ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
-                    transition={{ duration: (skipAnimation || collapseToExecuteRef.current) ? 0 : 0.3, ease: [0.22, 1, 0.36, 1] }}
+                    animate={
+                      isActive ? { opacity: 1, y: 0, scale: 1 } :
+                      isMorphingOut ? { opacity: 0, scale: 0.55, y: -40 } :
+                      { opacity: 0, y: 10 }
+                    }
+                    transition={{
+                      duration: isMorphingOut ? 0.65 : (skipAnimation || collapseToExecuteRef.current) ? 0 : 0.3,
+                      ease: isMorphingOut ? [0.4, 0, 0.2, 1] : [0.22, 1, 0.36, 1],
+                    }}
+                    onAnimationComplete={() => {
+                      if (isMorphingOut) setMorphOutSlide(null);
+                    }}
                     className="w-full"
+                    style={isMorphingOut ? { transformOrigin: "50% 58%" } : undefined}
                   >
                     <motion.div
                       animate={{ opacity: railEntering ? 0 : 1 }}
@@ -1444,13 +1467,13 @@ export function Home() {
                       )}
                       {sc.kind === "driver-importance" && (
                         <MemoDriverImportance
-                          step={isActive ? subStep : 0}
+                          step={isMorphingOut ? morphOutStepRef.current : (isActive ? subStep : 0)}
                           skipAnimation={effectiveSkip}
-                          isActive={isActive}
+                          isActive={isActive || isMorphingOut}
                           onAutoAdvance={isActive && !skipAnimation && !isReplayingRef.current ? () => navigate(slide + 1) : undefined}
                         />
                       )}
-                      {sc.kind === "execute" && <MemoExecute step={isActive ? subStep : 0} skipAnimation={effectiveSkip} isActive={isActive} onCustomerChange={isActive ? handleExecuteCustomerChange : undefined} fromCollapse={collapseToExecuteRef.current} />}
+                      {sc.kind === "execute" && <MemoExecute step={isActive ? subStep : 0} skipAnimation={effectiveSkip} isActive={isActive} onCustomerChange={isActive ? handleExecuteCustomerChange : undefined} hideRailRef={executeHideRailRef} fromCollapse={collapseToExecuteRef.current} />}
                       {sc.kind === "end" && <EndSlide onRestart={() => navigate(0)} />}
                     </motion.div>
                   </motion.div>
@@ -1466,7 +1489,7 @@ export function Home() {
 
       <AnimatePresence>
       {(() => {
-        if (!railCfg || isPreview) return null;
+        if (!railCfg || isPreview || !railVisible) return null;
         if (railCfg.rail === "mini-exec") return (
           <MiniExecuteConnector
             key="mini-exec"

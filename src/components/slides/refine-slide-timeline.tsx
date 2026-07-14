@@ -77,7 +77,7 @@ export function TimelineStrip({
                     </span>
                   </div>
                   <span className="mt-1 text-[13px] font-medium" style={{ color: MUTED }}>
-                    Your day 1 baseline — and where the model prices from here.
+                    Baseline win rate, adoption, and margin — the starting signals the model learns from.
                   </span>
                 </>
               )}

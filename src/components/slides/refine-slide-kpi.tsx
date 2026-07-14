@@ -13,9 +13,23 @@ interface KpiSidebarProps {
 export function KpiSidebar({ indexPhase, currentKpi, kpiDelta, kpiRevealed }: KpiSidebarProps) {
   return (
     <div className="flex flex-col justify-center gap-2 px-3 pt-3 h-full">
+      <AnimatePresence>
+        {indexPhase === 0 && (
+          <motion.p
+            className="text-[11px] font-medium leading-snug px-1 pb-1"
+            style={{ color: MUTED }}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 0.8, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
+          >
+            Market factors + these signals drive each evolution of the model.
+          </motion.p>
+        )}
+      </AnimatePresence>
       {/* Win rate */}
       <div className="rounded-xl px-3.5 py-2" style={{ backgroundColor: `${NAVY}05` }}>
-        <div className="text-[11px] font-semibold tracking-wide" style={{ color: MUTED }}>Win rate</div>
+        <div className="text-[11px] font-semibold tracking-wide" style={{ color: MUTED }}>Win rate signal</div>
         <div className="text-[22px] font-bold tabular-nums leading-tight mt-0.5" style={{ color: NAVY }}>
           {Math.round(currentKpi.winRate)}%
         </div>
@@ -50,7 +64,7 @@ export function KpiSidebar({ indexPhase, currentKpi, kpiDelta, kpiRevealed }: Kp
 
       {/* Price adoption */}
       <div className="rounded-xl px-3.5 py-2" style={{ backgroundColor: `${NAVY}05` }}>
-        <div className="text-[11px] font-semibold tracking-wide" style={{ color: MUTED }}>Price adoption</div>
+        <div className="text-[11px] font-semibold tracking-wide" style={{ color: MUTED }}>Price adoption signal</div>
         <div className="text-[22px] font-bold tabular-nums leading-tight mt-0.5" style={{ color: NAVY }}>
           {Math.round(currentKpi.priceAdoption)}%
         </div>

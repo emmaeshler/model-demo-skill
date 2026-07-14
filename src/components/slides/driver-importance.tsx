@@ -292,7 +292,7 @@ export function DriverImportanceSlide({
       );
     }
     const productRevealed = exampleIndex >= 1 && (exampleIndex > 1 || actionRevealed);
-    const competitorRevealed = exampleIndex >= 2 && (exampleIndex > 2 || actionRevealed);
+    const competitorRevealed = exampleIndex >= 2;
     let factors = ALL_FACTORS.filter(f => {
       if (f.label === "Product Importance" && !productRevealed) return false;
       if (f.label === "Competitor Pricing" && !competitorRevealed) return false;

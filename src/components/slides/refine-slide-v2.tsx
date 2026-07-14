@@ -21,7 +21,7 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
   const { shareMode } = useShareMode();
 
   const curve = useMemo(() => {
-    const raw = makeCurve(CURVE_SLOT, 5);
+    const raw = makeCurve(CURVE_SLOT, 8);
     const n = 64;
     const navyPts = Array.from({ length: n + 1 }, (_, i) => {
       const pt = raw.sampleAt(i / n);

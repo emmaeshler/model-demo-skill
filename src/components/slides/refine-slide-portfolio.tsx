@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  NAVY, MUTED, GREEN, RED, STRAT_BLUE,
+  NAVY, MUTED, GREEN, RED, STRAT_BLUE, ORANGE,
   PORTFOLIO_SEGMENTS,
   HERO_SEGMENTS, HERO_VIEWBOX,
 } from "./refine-slide-data";
@@ -80,11 +80,11 @@ function HeroCardContent({ seg, delay, isActive, shareMode }: {
         <motion.path d={seg.d} fill="none" stroke={NAVY} strokeWidth={2.5} strokeLinecap="round" opacity={0.7} initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.9, delay: curveDelay, ease: "easeOut" }} />
         <motion.line x1={seg.pricePt.x} y1={slot.y} x2={seg.pricePt.x} y2={slot.y + slot.h} stroke={STRAT_BLUE} strokeWidth={0.8} strokeDasharray="4 3" initial={{ opacity: 0 }} animate={{ opacity: 0.3 }} transition={{ delay: detailDelay + 0.5, duration: 0.4 }} />
         <motion.line x1={slot.x} y1={seg.pricePt.y} x2={slot.x + slot.w} y2={seg.pricePt.y} stroke={STRAT_BLUE} strokeWidth={0.8} strokeDasharray="4 3" initial={{ opacity: 0 }} animate={{ opacity: 0.3 }} transition={{ delay: detailDelay + 0.5, duration: 0.4 }} />
-        <motion.circle cx={seg.pricePt.x} cy={seg.pricePt.y} r={6} fill={STRAT_BLUE} initial={{ opacity: 0, scale: 0 }} animate={{ opacity: isActive ? [0.15, 0.3, 0.15] : 0.2, scale: 1 }} transition={{ delay: detailDelay + 0.6, duration: isActive && !shareMode ? 2.5 : 0.4, repeat: isActive && !shareMode ? Infinity : 0, ease: "easeInOut" }} />
-        <motion.circle cx={seg.pricePt.x} cy={seg.pricePt.y} r={3} fill={STRAT_BLUE} initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 0.8, scale: 1 }} transition={{ delay: detailDelay + 0.6, duration: 0.3 }} />
+        <motion.circle cx={seg.pricePt.x} cy={seg.pricePt.y} r={6} fill={ORANGE} initial={{ opacity: 0, scale: 0 }} animate={{ opacity: isActive ? [0.15, 0.3, 0.15] : 0.2, scale: 1 }} transition={{ delay: detailDelay + 0.6, duration: isActive && !shareMode ? 2.5 : 0.4, repeat: isActive && !shareMode ? Infinity : 0, ease: "easeInOut" }} />
+        <motion.circle cx={seg.pricePt.x} cy={seg.pricePt.y} r={3} fill={ORANGE} initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 0.9, scale: 1 }} transition={{ delay: detailDelay + 0.6, duration: 0.3 }} />
         <motion.g initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: detailDelay + 0.7, duration: 0.3 }}>
-          <rect x={seg.pricePt.x + 6} y={seg.pricePt.y - 10} width={46} height={16} rx={3} fill={STRAT_BLUE} opacity={0.12} />
-          <text x={seg.pricePt.x + 29} y={seg.pricePt.y + 1} textAnchor="middle" style={{ fontSize: 8, fontWeight: 700, fill: STRAT_BLUE }}>Optimal</text>
+          <rect x={seg.pricePt.x + 6} y={seg.pricePt.y - 10} width={46} height={16} rx={3} fill={ORANGE} opacity={0.15} />
+          <text x={seg.pricePt.x + 29} y={seg.pricePt.y + 1} textAnchor="middle" style={{ fontSize: 8, fontWeight: 700, fill: ORANGE }}>Optimal</text>
         </motion.g>
       </svg>
       <div className="text-xs font-semibold mt-0.5" style={{ color: `${NAVY}CC` }}>

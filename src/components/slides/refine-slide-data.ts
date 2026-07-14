@@ -15,9 +15,9 @@ export const BASE_Y = CURVE_SLOT.y + CURVE_SLOT.h;
 export const BASELINE_KPI = { winRate: 62, priceAdoption: 71, marginImpact: 1.8 };
 export const TOTAL_MONTHS = 18;
 export const TIMELINE_EVENTS = [
-  { month: 6, label: "Steel +8%", dotLabel: "Steel", factor: "Steel index rises — the model reprices upward to protect margin.", steepness: 5, shift: -12, kpi: { winRate: 59, priceAdoption: 76, marginImpact: 2.1 } },
-  { month: 12, label: "Freight −6%", dotLabel: "Freight", factor: "Freight costs drop — the model splits the savings between price and margin.", steepness: 5, shift: -6, kpi: { winRate: 66, priceAdoption: 80, marginImpact: 2.4 } },
-  { month: 18, label: "Industry +12%", dotLabel: "Industry", factor: "Industry-wide increase — the model reprices within hours, margin holds.", steepness: 5, shift: -30, kpi: { winRate: 63, priceAdoption: 84, marginImpact: 2.5 } },
+  { month: 6, label: "Steel +8%", dotLabel: "Steel", factor: "Steel index rises — combined with declining win rates, the model reprices upward to protect margin.", steepness: 5, shift: -12, kpi: { winRate: 59, priceAdoption: 76, marginImpact: 2.1 } },
+  { month: 12, label: "Freight −6%", dotLabel: "Freight", factor: "Freight costs drop and adoption climbs — the model splits the savings between price and margin.", steepness: 5, shift: -6, kpi: { winRate: 66, priceAdoption: 80, marginImpact: 2.4 } },
+  { month: 18, label: "Industry +12%", dotLabel: "Industry", factor: "Industry-wide increase — win rate holds, adoption is high, so the model reprices confidently.", steepness: 5, shift: -30, kpi: { winRate: 63, priceAdoption: 84, marginImpact: 2.5 } },
 ];
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -133,7 +133,7 @@ export const SEGMENT_HIGHLIGHTS = [
   {
     t: 0.12,
     label: "QuickParts",
-    offsetY: 28,
+    offsetY: -18,
     oldPrice: "$22.10",
     newPrice: "$24.20",
     change: "+$2.10",
@@ -148,7 +148,7 @@ export const SEGMENT_HIGHLIGHTS = [
   {
     t: 0.35,
     label: "Acme",
-    offsetY: 24,
+    offsetY: 6,
     oldPrice: "$19.24",
     newPrice: "$19.80",
     change: "+$0.56",
@@ -163,7 +163,7 @@ export const SEGMENT_HIGHLIGHTS = [
   {
     t: 0.72,
     label: "MedSupply",
-    offsetY: -22,
+    offsetY: -18,
     oldPrice: "$18.40",
     newPrice: "$17.95",
     change: "−$0.45",
@@ -221,7 +221,7 @@ export const STEP_CONTEXT: Record<number, { title: string; body: string }> = {
   },
   6: {
     title: "The market moves. The model moves with it.",
-    body: "Price indices — published benchmarks for capacity, shortage, and industry trends — feed the model continuously. When costs shift, the model reprices, and every recommendation stays current.",
+    body: "External indices, win rates, price adoption, and margin — the model reads all four signals to decide when and how to reprice.",
   },
   7: {
     title: "Every customer–market combination gets its own model",
