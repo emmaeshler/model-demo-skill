@@ -3,7 +3,8 @@
     "allow": [
       "Bash(git show *)",
       "Skill(update-config)",
-      "Skill(update-config:*)"
+      "Skill(update-config:*)",
+      "Bash(kill 53285 54876 61773 64064)"
     ],
     "additionalDirectories": [
       "/tmp",

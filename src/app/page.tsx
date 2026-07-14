@@ -134,10 +134,8 @@ const RAIL_TIMELINE: Partial<Record<number, (RailContent | null)[]>> = {
     /* 0  intro  */ { show: "factors", engine: "strat", active: [] },
     /* 1  remove sales rep */ { show: "factors", engine: "strat", active: ["customer"] },
     /* 2  elevate product importance */ { show: "factors", engine: "strat", active: ["product"] },
-    /* 3  add competitor pricing */ { show: "factors", engine: "strat", active: ["market"] },
-    /* 4  consolidated factors */ { show: "factors", engine: "strat", active: ["customer", "product", "order", "market"] },
-    /* 5  driver cards */ { show: "factors", engine: "strat", active: ["customer", "product", "order", "market"] },
-    /* 6  collapse → SKU */ { show: "drivers", flyIn: false },
+    /* 3  add competitor pricing */ { show: "factors", engine: "strat", active: ["customer", "product", "order", "market"] },
+    /* 4  collapse → SKU */ { show: "drivers", flyIn: false },
   ],
   [EXECUTE_INDEX]: [
     /* 0  */ { show: "drivers", flyIn: false },
@@ -609,9 +607,7 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
       { index: DRIVER_IMP_INDEX, label: "Remove Sales Rep", subStep: 1 },
       { index: DRIVER_IMP_INDEX, label: "Elevate Product Importance", subStep: 2 },
       { index: DRIVER_IMP_INDEX, label: "Add Competitor Pricing", subStep: 3 },
-      { index: DRIVER_IMP_INDEX, label: "Your model factors", subStep: 4 },
-      { index: DRIVER_IMP_INDEX, label: "7 model drivers", subStep: 5 },
-      { index: DRIVER_IMP_INDEX, label: "One optimal price", subStep: 6 },
+      { index: DRIVER_IMP_INDEX, label: "One optimal price", subStep: 4 },
     ],
   },
   {
