@@ -274,18 +274,15 @@ export function TopBar({
                       Slide Sorter
                     </button>
                   )}
-                  <div className="group/wt relative">
-                    <button
-                      disabled
-                      className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-white/30 cursor-not-allowed"
-                    >
-                      <PlayCircle className="size-3.5" />
-                      Self Walkthrough
-                    </button>
-                    <div className="pointer-events-none absolute right-full top-1/2 mr-2 -translate-y-1/2 rounded-lg border border-white/10 bg-[#06283D] px-3 py-2 text-[11px] font-medium leading-relaxed text-white/60 opacity-0 shadow-xl transition-opacity group-hover/wt:opacity-100 w-52">
-                      A self-paced version for clients to walk through on their own. Will also be available as a download. Currently under construction.
-                    </div>
-                  </div>
+                  <a
+                    href="/Self Walkthrough - INSIGHT2PROFIT.html"
+                    download="Self Walkthrough - INSIGHT2PROFIT.html"
+                    onClick={() => setKebabOpen(false)}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                  >
+                    <PlayCircle className="size-3.5" />
+                    Self Walkthrough
+                  </a>
                   {onHowItWorks && (
                     <button
                       onClick={() => { onHowItWorks(); setKebabOpen(false); }}

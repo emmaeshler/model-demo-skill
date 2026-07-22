@@ -813,70 +813,75 @@ export function DriverImportanceSlide({
                 </motion.div>
 
                 {/* Right column: crossfade between before risks / after adjustments / example cards */}
+                <AnimatePresence mode="wait">
                 {isChart && showToggle ? (
-                  <AnimatePresence mode="wait">
-                    {showBefore ? (
-                      <motion.div
-                        key="before-risks"
-                        className="shrink-0 flex flex-col pt-6"
-                        style={{ width: 310 }}
-                        initial={{ opacity: 0, x: 30 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        transition={{ duration: 0.35, ease: EASE }}
+                  showBefore ? (
+                    <motion.div
+                      key="before-risks"
+                      className="shrink-0 flex flex-col pt-6"
+                      style={{ width: 310 }}
+                      initial={{ opacity: 0, x: 30 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ duration: 0.35, ease: EASE }}
+                    >
+                      <span
+                        className="text-[10px] font-bold uppercase tracking-[0.15em] mb-2 block"
+                        style={{ color: `${MUTED}80` }}
                       >
-                        <span
-                          className="text-[10px] font-bold uppercase tracking-[0.15em] mb-2 block"
-                          style={{ color: `${MUTED}80` }}
-                        >
-                          Without tuning
-                        </span>
-                        <div className="flex flex-col gap-2">
-                          {BEFORE_RISKS.map((risk, i) => (
-                            <motion.div
-                              key={risk.title}
-                              initial={{ opacity: 0, x: 16 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ duration: 0.3, delay: i * 0.06, ease: EASE }}
-                            >
-                              <BeforeRiskCard risk={risk} />
-                            </motion.div>
-                          ))}
-                        </div>
-                      </motion.div>
-                    ) : (
-                      <motion.div
-                        key="after-adjustments"
-                        className="shrink-0 flex flex-col pt-6"
-                        style={{ width: 310 }}
-                        initial={{ opacity: 0, x: 30 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        transition={{ duration: 0.35, ease: EASE }}
+                        Without tuning
+                      </span>
+                      <div className="flex flex-col gap-2">
+                        {BEFORE_RISKS.map((risk, i) => (
+                          <motion.div
+                            key={risk.title}
+                            initial={{ opacity: 0, x: 16 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.3, delay: i * 0.06, ease: EASE }}
+                          >
+                            <BeforeRiskCard risk={risk} />
+                          </motion.div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="after-adjustments"
+                      className="shrink-0 flex flex-col pt-6"
+                      style={{ width: 310 }}
+                      initial={{ opacity: 0, x: 30 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ duration: 0.35, ease: EASE }}
+                    >
+                      <span
+                        className="text-[10px] font-bold uppercase tracking-[0.15em] mb-2 block"
+                        style={{ color: MUTED, opacity: 0.5 }}
                       >
-                        <span
-                          className="text-[10px] font-bold uppercase tracking-[0.15em] mb-2 block"
-                          style={{ color: MUTED, opacity: 0.5 }}
-                        >
-                          Model adjustments
-                        </span>
-                        <div className="flex flex-col gap-1.5">
-                          {DRIVER_ADJUSTMENTS.map((adj, i) => (
-                            <motion.div
-                              key={adj.label}
-                              initial={{ opacity: 0, x: 16 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ duration: 0.3, delay: i * 0.04, ease: EASE }}
-                            >
-                              <AdjustmentCard adj={adj} />
-                            </motion.div>
-                          ))}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                        Model adjustments
+                      </span>
+                      <div className="flex flex-col gap-1.5">
+                        {DRIVER_ADJUSTMENTS.map((adj, i) => (
+                          <motion.div
+                            key={adj.label}
+                            initial={{ opacity: 0, x: 16 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.3, delay: i * 0.04, ease: EASE }}
+                          >
+                            <AdjustmentCard adj={adj} />
+                          </motion.div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )
                 ) : isChart && !showBefore ? (
-                  <div className="shrink-0 flex flex-col pt-6" style={{ width: 310 }}>
+                  <motion.div
+                    key="example-cards"
+                    className="shrink-0 flex flex-col pt-6"
+                    style={{ width: 310 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.3, ease: EASE }}
+                  >
                     <AnimatePresence>
                       {(exampleIndex > 0 || storedPhase) && (
                         <motion.span
@@ -909,8 +914,9 @@ export function DriverImportanceSlide({
                         );
                       })}
                     </div>
-                  </div>
+                  </motion.div>
                 ) : null}
+                </AnimatePresence>
 
               </div>
             </motion.div>
