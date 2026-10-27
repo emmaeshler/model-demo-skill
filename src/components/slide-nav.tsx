@@ -94,7 +94,7 @@ export function TopBar({
 }: SlideNavProps) {
   const { shareMode, toggleShareMode } = useShareMode();
   const [open, setOpen] = useState(false);
-  const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set());
+  const [expandedGroups, setExpandedGroups] = useState<Set<number | -1>>(new Set());
   const panelRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -348,7 +348,7 @@ export function TopBar({
                         } else {
                           setExpandedGroups((prev) => {
                             if (prev.has(gi)) {
-                              return new Set();
+                              return new Set([-1]);
                             } else {
                               return new Set([gi]);
                             }
