@@ -3,7 +3,7 @@
 import { memo, startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, ChevronDown, X, LayoutGrid, ZoomIn, ZoomOut, Sun, Moon, Pause, Play, RotateCcw, FileDown } from "lucide-react";
 import { AnimatePresence, motion, MotionConfig } from "framer-motion";
-import { type NavGroup, SlideNav, AudienceTopBar, SIDEBAR_WIDTH } from "@/components/slide-nav";
+import { type NavGroup, SlideNav, AudienceTopBar } from "@/components/slide-nav";
 import { useMode } from "@/lib/mode-context";
 import { useShareMode } from "@/lib/share-context";
 import { getPresenterNotes, getTransitionHint } from "@/lib/presenter-notes";
@@ -229,8 +229,7 @@ function ModelStatusRail({
 
   return (
     <motion.div
-      className="fixed top-1/2 z-40 flex w-[130px] -translate-y-1/2 flex-col gap-3 rounded-r-xl bg-white/95 px-3 py-4 shadow-md ring-1 ring-black/[0.06] backdrop-blur-sm"
-      style={{ left: SIDEBAR_WIDTH }}
+      className="fixed left-0 top-1/2 z-40 flex w-[130px] -translate-y-1/2 flex-col gap-3 rounded-r-xl bg-white/95 px-3 py-4 shadow-md ring-1 ring-black/[0.06] backdrop-blur-sm"
       initial={{ x: -140 }}
       animate={{ x: 0 }}
       exit={{ x: -140, transition: { duration: 0.3, ease: [0.4, 0, 1, 1] } }}
@@ -483,10 +482,9 @@ function MiniExecuteConnector({ refineStep, flyIn = false, onSelectCustomer, tim
   return (
     <motion.div
       className={cn(
-        "fixed top-1/2 z-40 flex w-[130px] -translate-y-1/2 flex-col rounded-r-xl px-3 py-4",
+        "fixed left-0 top-1/2 z-40 flex w-[130px] -translate-y-1/2 flex-col rounded-r-xl px-3 py-4",
         !flyIn && "bg-white/95 shadow-md ring-1 ring-black/[0.06] backdrop-blur-sm",
       )}
-      style={{ left: SIDEBAR_WIDTH }}
       initial={{ x: flyIn ? 0 : -140 }}
       animate={{ x: 0 }}
       exit={{ x: -140, transition: { duration: 0.3, ease: [0.4, 0, 1, 1] } }}
@@ -1390,13 +1388,11 @@ export function Home() {
       <main
         className={cn(
           "flex min-h-[var(--slide-h,100vh)] flex-col items-center justify-start overflow-x-hidden transition-[padding-left] duration-300",
-          isPreview ? "" : isAudience ? "pt-14" : "",
+          isPreview ? "" : "pt-14",
+          railVisible ? "pl-[140px]" : "",
           isAudience || isPreview ? "" : "pb-16",
         )}
-        style={{
-          paddingLeft: isPreview ? 0 : isAudience ? (railVisible ? 140 : 0) : SIDEBAR_WIDTH + (railVisible ? 140 : 0),
-          "--rail-inset": railVisible ? "140px" : "0px",
-        } as React.CSSProperties}
+        style={{ "--rail-inset": railVisible ? "140px" : "0px" } as React.CSSProperties}
       >
         <div className="relative w-full">
         {SLIDES.map((sc, i) => {

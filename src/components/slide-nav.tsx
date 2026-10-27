@@ -93,7 +93,9 @@ export function TopBar({
   onHowItWorks,
 }: SlideNavProps) {
   const { shareMode, toggleShareMode } = useShareMode();
+  const [open, setOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set());
+  const panelRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
@@ -103,6 +105,10 @@ export function TopBar({
     document.addEventListener("fullscreenchange", onFsChange);
     return () => document.removeEventListener("fullscreenchange", onFsChange);
   }, []);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const [kebabOpen, setKebabOpen] = useState(false);
+  const kebabRef = useRef<HTMLDivElement>(null);
+  const kebabBtnRef = useRef<HTMLButtonElement>(null);
 
   const currentGroup =
     groups.find((g) =>
@@ -116,198 +122,322 @@ export function TopBar({
   const currentGroupIndex = groups.indexOf(currentGroup!);
   const activeGroupRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    if (open) {
+      setExpandedGroups(new Set());
+      requestAnimationFrame(() => {
+        activeGroupRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      });
+    }
+  }, [open]);
+
   const handleNavigate = useCallback(
     (index: number, subStep?: number) => {
       onNavigate(index, subStep);
+      setOpen(false);
     },
     [onNavigate],
   );
 
+  useEffect(() => {
+    if (!open) return;
+    function onClickOutside(e: MouseEvent) {
+      if (
+        panelRef.current &&
+        !panelRef.current.contains(e.target as Node) &&
+        triggerRef.current &&
+        !triggerRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false);
+      }
+    }
+    function onEscape(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    document.addEventListener("keydown", onEscape);
+    return () => {
+      document.removeEventListener("mousedown", onClickOutside);
+      document.removeEventListener("keydown", onEscape);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!kebabOpen) return;
+    function onClickOutside(e: MouseEvent) {
+      if (
+        kebabRef.current &&
+        !kebabRef.current.contains(e.target as Node) &&
+        kebabBtnRef.current &&
+        !kebabBtnRef.current.contains(e.target as Node)
+      ) {
+        setKebabOpen(false);
+      }
+    }
+    function onEscape(e: KeyboardEvent) {
+      if (e.key === "Escape") setKebabOpen(false);
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    document.addEventListener("keydown", onEscape);
+    return () => {
+      document.removeEventListener("mousedown", onClickOutside);
+      document.removeEventListener("keydown", onEscape);
+    };
+  }, [kebabOpen]);
+
   return (
-    <aside
-      className="fixed left-0 top-0 bottom-0 z-50 flex flex-col border-r border-white/10 bg-[#06283D]/95 backdrop-blur-md"
-      style={{ width: SIDEBAR_WIDTH }}
-    >
-      {/* Logo */}
-      <button
-        onClick={() => onNavigate(0)}
-        className="flex shrink-0 items-center gap-2 border-b border-white/10 px-4 py-3 text-sm font-bold tracking-tight text-white/90 transition-colors hover:bg-white/10"
-        aria-label="Go to first slide"
-      >
-        <InsightIcon className="size-5 shrink-0" />
-        {presentationTitle}
-      </button>
-
-      {/* Nav groups */}
-      <div className="flex-1 overflow-y-auto p-2">
-        {groups.map((group, gi) => {
-          const groupDone = group.slides.every(
-            (s) =>
-              s.index < current ||
-              (s.index === current &&
-                s.subStep !== undefined &&
-                currentSubStep !== undefined &&
-                s.subStep < currentSubStep),
-          );
-          const groupActive = gi === currentGroupIndex;
-
-          const isExpanded = expandedGroups.size > 0 ? expandedGroups.has(gi) : groupActive;
-
-          return (
-            <div key={gi} ref={groupActive ? activeGroupRef : undefined} className="mb-1 last:mb-0">
-              <button
-                onClick={() => {
-                  if (group.slides.length <= 1) {
-                    handleNavigate(
-                      group.slides[0].index,
-                      group.slides[0].subStep ?? 0,
-                    );
-                  } else {
-                    setExpandedGroups((prev) => {
-                      if (prev.has(gi)) {
-                        return new Set();
-                      } else {
-                        return new Set([gi]);
-                      }
-                    });
-                  }
-                }}
-                className={cn(
-                  "flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left transition-colors",
-                  groupActive
-                    ? "bg-white/15 text-white"
-                    : groupDone
-                      ? "text-white/50 hover:bg-white/10"
-                      : "text-white/70 hover:bg-white/10",
-                )}
-              >
-                <span
-                  className={cn(
-                    "flex size-4.5 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold",
-                    groupActive
-                      ? "bg-white text-[#06283D]"
-                      : groupDone
-                        ? "bg-white/20 text-white/60"
-                        : "bg-white/10 text-white/40",
-                  )}
-                >
-                  {groupDone ? <Check className="size-2.5" /> : gi + 1}
-                </span>
-                <div className="flex min-w-0 flex-1 flex-col">
-                  <span className="text-xs font-bold">{group.label}</span>
-                  {group.subtitle && (
-                    <span className={cn(
-                      "text-[10px] font-medium leading-tight",
-                      groupActive ? "text-white/60" : groupDone ? "text-white/30" : "text-white/40",
-                    )}>
-                      {group.subtitle}
-                    </span>
-                  )}
-                </div>
-                {group.slides.length > 1 && (
-                  <ChevronDown
-                    className={cn(
-                      "ml-auto size-3 shrink-0 text-white/30 transition-transform",
-                      isExpanded && "rotate-180",
-                    )}
-                  />
-                )}
-              </button>
-              <AnimatePresence initial={false}>
-                {isExpanded && group.slides.length > 1 && (
-                  <motion.div
-                    key={`sub-${gi}`}
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                    className="ml-6 overflow-hidden"
-                  >
-                    <div className="mt-0.5 space-y-0.5">
-                      {group.slides.map((s, si) => {
-                        const isSlideActive =
-                          s.index === current &&
-                          (s.subStep === undefined || s.subStep === currentSubStep);
-                        return (
-                          <button
-                            key={si}
-                            onClick={() => handleNavigate(s.index, s.subStep)}
-                            className={cn(
-                              "w-full rounded px-2 py-1 text-left text-[11px] font-semibold transition-colors",
-                              isSlideActive
-                                ? "border-l-2 border-white/80 bg-white/10 pl-1.5 text-white"
-                                : "text-white/60 hover:bg-white/5 hover:text-white/80",
-                            )}
-                          >
-                            {s.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Action buttons */}
-      <div className="flex shrink-0 flex-col gap-1.5 border-t border-white/10 p-3">
-        <button
-          onClick={toggleShareMode}
-          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium text-white/70 transition-colors hover:bg-white/10"
-          data-wt="teams-toggle"
-        >
-          <div
-            className={cn(
-              "relative h-4 w-7 shrink-0 rounded-full transition-colors duration-200",
-              shareMode ? "bg-teal-500" : "bg-white/20",
-            )}
+    <>
+      <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-[#06283D]/90 backdrop-blur-md">
+        <div className="flex items-center px-4 py-2.5">
+          <button
+            onClick={() => onNavigate(0)}
+            className="flex shrink-0 items-center gap-2 rounded-md px-2 py-1 text-sm font-bold tracking-tight text-white/90 transition-colors hover:bg-white/10"
+            aria-label="Go to first slide"
           >
-            <div
+            <InsightIcon className="size-5 shrink-0" />
+            {presentationTitle}
+          </button>
+
+          <button
+            ref={triggerRef}
+            onClick={() => setOpen(!open)}
+            className={cn(
+              "flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors",
+              open
+                ? "border-white/30 bg-white/10 text-white"
+                : "border-white/15 text-white/70 hover:border-white/30 hover:bg-white/10 hover:text-white",
+            )}
+            data-wt="nav-dropdown"
+          >
+            {currentGroup?.label ?? ""}
+            <ChevronDown
               className={cn(
-                "absolute top-0.5 size-3 rounded-full bg-white shadow-sm transition-transform duration-200",
-                shareMode ? "translate-x-3.5" : "translate-x-0.5",
+                "size-3.5 text-white/40 transition-transform",
+                open && "rotate-180",
               )}
             />
+          </button>
+
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            <button
+              onClick={toggleShareMode}
+              className="flex items-center gap-2 whitespace-nowrap rounded-md border border-white/15 px-2.5 py-1 text-xs font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/10"
+              data-wt="teams-toggle"
+            >
+              <span className={shareMode ? "text-teal-200" : ""}>{isFullscreen ? "Teams" : "I'm Sharing This On Teams"}</span>
+              <div
+                className={cn(
+                  "relative h-4 w-7 rounded-full transition-colors duration-200",
+                  shareMode ? "bg-teal-500" : "bg-white/20",
+                )}
+              >
+                <div
+                  className={cn(
+                    "absolute top-0.5 size-3 rounded-full bg-white shadow-sm transition-transform duration-200",
+                    shareMode ? "translate-x-3.5" : "translate-x-0.5",
+                  )}
+                />
+              </div>
+            </button>
+            {onStartPresenting && (
+              <button
+                onClick={onStartPresenting}
+                className={cn(
+                  "flex items-center gap-1.5 whitespace-nowrap rounded-md border border-white/15 text-xs font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white",
+                  isFullscreen ? "p-1.5" : "px-2.5 py-1",
+                )}
+                title="Open Presenter Mode"
+                data-wt="presenter-mode"
+              >
+                <MonitorPlay className="size-3.5" />
+                {!isFullscreen && "Open Presenter Mode"}
+              </button>
+            )}
+            <FullPageButton isFullscreen={isFullscreen} compact={isFullscreen} />
+            <DownloadLink compact={isFullscreen} />
+            <div className="relative" data-wt="kebab">
+              <button
+                ref={kebabBtnRef}
+                onClick={() => setKebabOpen(!kebabOpen)}
+                className="group relative flex items-center rounded-md border border-white/15 p-1.5 text-white/70 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white"
+                aria-label="More options"
+              >
+                <MoreVertical className="size-3.5" />
+              </button>
+              {kebabOpen && (
+                <div
+                  ref={kebabRef}
+                  className="absolute right-0 top-full mt-1.5 min-w-[180px] rounded-lg border border-white/10 bg-[#06283D]/95 py-1 shadow-xl backdrop-blur-md"
+                >
+                  {onSlideSorter && (
+                    <button
+                      onClick={() => { onSlideSorter(); setKebabOpen(false); }}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                    >
+                      <LayoutGrid className="size-3.5" />
+                      Slide Sorter
+                    </button>
+                  )}
+                  <a
+                    href="/Self Walkthrough - INSIGHT2PROFIT.html"
+                    download="Self Walkthrough - INSIGHT2PROFIT.html"
+                    onClick={() => setKebabOpen(false)}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                  >
+                    <PlayCircle className="size-3.5" />
+                    Self Walkthrough
+                  </a>
+                  {onHowItWorks && (
+                    <button
+                      onClick={() => { onHowItWorks(); setKebabOpen(false); }}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                    >
+                      <HelpCircle className="size-3.5" />
+                      How It Works
+                    </button>
+                  )}
+                  {onAnimationGlossary && (
+                    <button
+                      onClick={() => { onAnimationGlossary(); setKebabOpen(false); }}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                    >
+                      <BookOpen className="size-3.5" />
+                      Animation Glossary
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-          <span className={cn("truncate", shareMode && "text-teal-200")}>Sharing on Teams</span>
-        </button>
-        <div className="flex items-center gap-1.5">
-          {onStartPresenting && (
-            <button
-              onClick={onStartPresenting}
-              className="flex items-center gap-1.5 rounded-md border border-white/15 p-1.5 text-white/70 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white"
-              title="Open Presenter Mode"
-              data-wt="presenter-mode"
-            >
-              <MonitorPlay className="size-3.5" />
-            </button>
-          )}
-          <FullPageButton isFullscreen={isFullscreen} compact />
-          <DownloadLink compact />
-          {onSlideSorter && (
-            <button
-              onClick={onSlideSorter}
-              className="flex items-center gap-1.5 rounded-md border border-white/15 p-1.5 text-white/70 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white"
-              title="Slide Sorter"
-            >
-              <LayoutGrid className="size-3.5" />
-            </button>
-          )}
-          {onHowItWorks && (
-            <button
-              onClick={onHowItWorks}
-              className="flex items-center gap-1.5 rounded-md border border-white/15 p-1.5 text-white/70 transition-colors hover:border-white/30 hover:bg-white/10 hover:text-white"
-              title="How It Works"
-            >
-              <HelpCircle className="size-3.5" />
-            </button>
-          )}
         </div>
-      </div>
-    </aside>
+      </header>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            ref={panelRef}
+            className="fixed left-0 top-[49px] bottom-0 z-50 w-[260px] border-r border-white/10 bg-[#06283D]/95 shadow-xl backdrop-blur-md"
+            initial={{ x: -260 }}
+            animate={{ x: 0 }}
+            exit={{ x: -260 }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <div className="h-full overflow-y-auto p-3">
+              {groups.map((group, gi) => {
+                const groupDone = group.slides.every(
+                  (s) =>
+                    s.index < current ||
+                    (s.index === current &&
+                      s.subStep !== undefined &&
+                      currentSubStep !== undefined &&
+                      s.subStep < currentSubStep),
+                );
+                const groupActive = gi === currentGroupIndex;
+
+                const isExpanded = expandedGroups.size > 0 ? expandedGroups.has(gi) : groupActive;
+
+                return (
+                  <div key={gi} ref={groupActive ? activeGroupRef : undefined} className="mb-1.5 last:mb-0">
+                    <button
+                      onClick={() => {
+                        if (group.slides.length <= 1) {
+                          handleNavigate(
+                            group.slides[0].index,
+                            group.slides[0].subStep ?? 0,
+                          );
+                        } else {
+                          setExpandedGroups((prev) => {
+                            if (prev.has(gi)) {
+                              return new Set();
+                            } else {
+                              return new Set([gi]);
+                            }
+                          });
+                        }
+                      }}
+                      className={cn(
+                        "flex w-full items-center gap-2 rounded-md px-3 py-2 text-left transition-colors",
+                        groupActive
+                          ? "bg-white/15 text-white"
+                          : groupDone
+                            ? "text-white/50 hover:bg-white/10"
+                            : "text-white/70 hover:bg-white/10",
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold",
+                          groupActive
+                            ? "bg-white text-[#06283D]"
+                            : groupDone
+                              ? "bg-white/20 text-white/60"
+                              : "bg-white/10 text-white/40",
+                        )}
+                      >
+                        {groupDone ? <Check className="size-3" /> : gi + 1}
+                      </span>
+                      <div className="flex min-w-0 flex-1 flex-col">
+                        <span className="text-sm font-bold">{group.label}</span>
+                        {group.subtitle && (
+                          <span className={cn(
+                            "text-[11px] font-medium leading-tight",
+                            groupActive ? "text-white/60" : groupDone ? "text-white/30" : "text-white/40",
+                          )}>
+                            {group.subtitle}
+                          </span>
+                        )}
+                      </div>
+                      {group.slides.length > 1 && (
+                        <ChevronDown
+                          className={cn(
+                            "ml-auto size-3 shrink-0 text-white/30 transition-transform",
+                            isExpanded && "rotate-180",
+                          )}
+                        />
+                      )}
+                    </button>
+                    <AnimatePresence initial={false}>
+                      {isExpanded && group.slides.length > 1 && (
+                        <motion.div
+                          key={`sub-${gi}`}
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                          className="ml-7 overflow-hidden"
+                        >
+                          <div className="mt-0.5 space-y-0.5">
+                            {group.slides.map((s, si) => {
+                              const isSlideActive =
+                                s.index === current &&
+                                (s.subStep === undefined || s.subStep === currentSubStep);
+                              return (
+                                <button
+                                  key={si}
+                                  onClick={() => handleNavigate(s.index, s.subStep)}
+                                  className={cn(
+                                    "w-full rounded px-2.5 py-1 text-left text-xs font-semibold transition-colors",
+                                    isSlideActive
+                                      ? "border-l-2 border-white/80 bg-white/10 pl-2 text-white"
+                                      : "text-white/60 hover:bg-white/5 hover:text-white/80",
+                                  )}
+                                >
+                                  {s.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
 
@@ -331,7 +461,7 @@ export function BottomBar({
     ) ?? groups.find((g) => g.slides.some((s) => s.index === current));
 
   return (
-    <nav className="fixed bottom-0 right-0 z-50 border-t border-white/10 bg-[#06283D]/90 backdrop-blur-md" style={{ left: SIDEBAR_WIDTH }} data-wt="bottom-nav">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-[#06283D]/90 backdrop-blur-md" data-wt="bottom-nav">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-2.5">
         <div className="flex shrink-0 items-center gap-1">
           <Button
