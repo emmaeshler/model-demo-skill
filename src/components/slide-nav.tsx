@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useShareMode } from "@/lib/share-context";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { InsightLogo } from "@/components/insight-logo";
+import { InsightIcon } from "@/components/insight-logo";
 export interface NavGroup {
   label: string;
   subtitle?: string;
@@ -188,10 +188,11 @@ export function TopBar({
         <div className="flex items-center px-4 py-2.5">
           <button
             onClick={() => onNavigate(0)}
-            className="flex shrink-0 items-center rounded-md px-2 py-1 transition-colors hover:bg-white/10"
+            className="flex shrink-0 items-center gap-2 rounded-md px-2 py-1 text-sm font-bold tracking-tight text-white/90 transition-colors hover:bg-white/10"
             aria-label="Go to first slide"
           >
-            <InsightLogo className="h-4 w-auto" />
+            <InsightIcon className="size-5 shrink-0" />
+            {presentationTitle}
           </button>
 
           <button
@@ -534,8 +535,9 @@ export function AudienceTopBar({
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-[#06283D]/90 backdrop-blur-md">
       <div className="mx-auto flex max-w-5xl items-center px-4 py-2.5">
-        <div className="flex items-center px-2 py-1">
-          <InsightLogo className="h-4 w-auto" />
+        <div className="flex items-center gap-2 px-2 py-1 text-sm font-bold tracking-tight text-white/90">
+          <InsightIcon className="size-5 shrink-0" />
+          {presentationTitle}
         </div>
 
         <span className="px-3 py-1.5 text-sm font-medium text-white/70">
