@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useShareMode } from "@/lib/share-context";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { InsightLogo } from "@/components/insight-logo";
 export interface NavGroup {
   label: string;
   subtitle?: string;
@@ -187,16 +188,10 @@ export function TopBar({
         <div className="flex items-center px-4 py-2.5">
           <button
             onClick={() => onNavigate(0)}
-            className="flex shrink-0 items-center gap-2 rounded-md px-2 py-1 text-sm font-bold tracking-tight text-white/90 transition-colors hover:bg-white/10"
+            className="flex shrink-0 items-center rounded-md px-2 py-1 transition-colors hover:bg-white/10"
             aria-label="Go to first slide"
           >
-            <svg viewBox="0 0 36 36" className="size-5 shrink-0" aria-hidden="true">
-              <rect x="0" y="0" width="15" height="15" rx="2" fill="#EF8B1D" />
-              <rect x="19" y="0" width="15" height="15" rx="2" fill="#E56910" />
-              <rect x="0" y="19" width="15" height="15" rx="2" fill="#00446A" />
-              <rect x="19" y="19" width="15" height="15" rx="2" fill="#E56910" />
-            </svg>
-            {presentationTitle}
+            <InsightLogo className="h-4 w-auto" />
           </button>
 
           <button
@@ -539,14 +534,8 @@ export function AudienceTopBar({
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-[#06283D]/90 backdrop-blur-md">
       <div className="mx-auto flex max-w-5xl items-center px-4 py-2.5">
-        <div className="flex items-center gap-2 px-2 py-1 text-sm font-bold tracking-tight text-white/90">
-          <svg viewBox="0 0 36 36" className="size-5 shrink-0" aria-hidden="true">
-            <rect x="0" y="0" width="15" height="15" rx="2" fill="#EF8B1D" />
-            <rect x="19" y="0" width="15" height="15" rx="2" fill="#E56910" />
-            <rect x="0" y="19" width="15" height="15" rx="2" fill="#00446A" />
-            <rect x="19" y="19" width="15" height="15" rx="2" fill="#E56910" />
-          </svg>
-          {presentationTitle}
+        <div className="flex items-center px-2 py-1">
+          <InsightLogo className="h-4 w-auto" />
         </div>
 
         <span className="px-3 py-1.5 text-sm font-medium text-white/70">

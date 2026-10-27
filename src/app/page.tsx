@@ -15,6 +15,7 @@ import { RefineSlideV2, REFINE_V2_TOTAL_STEPS } from "@/components/slides/refine
 import { DriverImportanceSlide, DRIVER_IMPORTANCE_TOTAL_STEPS } from "@/components/slides/driver-importance";
 import { AnimationGlossary } from "@/components/animation-glossary";
 import { WalkthroughOverlay } from "@/components/walkthrough-overlay";
+import { InsightLogo } from "@/components/insight-logo";
 
 const MemoOneModel = memo(OneModelSlide);
 const MemoPower = memo(PowerSlide);
@@ -1980,11 +1981,11 @@ export function Home() {
 
 function I2PLogoMark({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 36 36" className={className} aria-hidden="true">
-      <rect x="0" y="0" width="15" height="15" rx="2" fill="#EF8B1D" />
-      <rect x="19" y="0" width="15" height="15" rx="2" fill="#E56910" />
-      <rect x="0" y="19" width="15" height="15" rx="2" fill="#00446A" />
-      <rect x="19" y="19" width="15" height="15" rx="2" fill="#E56910" />
+    <svg viewBox="0 0 49 47" className={className} aria-hidden="true">
+      <path d="M21.6448 26.4249H8V41H21.6448V26.4249Z" fill="white" />
+      <path d="M21.6448 6H8V20.5751H21.6448V6Z" fill="#E56910" />
+      <path d="M40.8588 26.4249H27.2141V41H40.8588V26.4249Z" fill="#E56910" />
+      <path d="M40.8588 6H27.2141V20.5751H40.8588V6Z" fill="#E56910" />
     </svg>
   );
 }
@@ -2107,11 +2108,8 @@ function IntroSlide({ isActive }: { isActive: boolean }) {
       <IntroBackdrop />
 
       <div className="relative z-10 mx-auto max-w-3xl">
-        <div className="mb-8 flex items-center justify-center gap-3">
-          <I2PLogoMark className="size-8" />
-          <span className="text-sm font-semibold tracking-[0.2em] text-white/60 uppercase">
-            Insight2Profit
-          </span>
+        <div className="mb-8 flex items-center justify-center">
+          <InsightLogo className="h-7 w-auto" />
         </div>
 
         <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">
