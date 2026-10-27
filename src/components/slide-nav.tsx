@@ -360,8 +360,8 @@ export function TopBar({
                         groupActive
                           ? "bg-white/15 text-white"
                           : groupDone
-                            ? "text-white/50 hover:bg-white/10"
-                            : "text-white/70 hover:bg-white/10",
+                            ? "text-white/70 hover:bg-white/10"
+                            : "text-white/80 hover:bg-white/10",
                       )}
                     >
                       <span
@@ -370,8 +370,8 @@ export function TopBar({
                           groupActive
                             ? "bg-white text-[#06283D]"
                             : groupDone
-                              ? "bg-white/20 text-white/60"
-                              : "bg-white/10 text-white/40",
+                              ? "bg-white/25 text-white/70"
+                              : "bg-white/15 text-white/60",
                         )}
                       >
                         {groupDone ? <Check className="size-3" /> : gi + 1}
@@ -381,7 +381,7 @@ export function TopBar({
                         {group.subtitle && (
                           <span className={cn(
                             "text-[11px] font-medium leading-tight",
-                            groupActive ? "text-white/60" : groupDone ? "text-white/30" : "text-white/40",
+                            groupActive ? "text-white/70" : groupDone ? "text-white/50" : "text-white/60",
                           )}>
                             {group.subtitle}
                           </span>
@@ -419,7 +419,7 @@ export function TopBar({
                                     "w-full rounded px-2.5 py-1 text-left text-xs font-semibold transition-colors",
                                     isSlideActive
                                       ? "border-l-2 border-white/80 bg-white/10 pl-2 text-white"
-                                      : "text-white/60 hover:bg-white/5 hover:text-white/80",
+                                      : "text-white/70 hover:bg-white/5 hover:text-white/90",
                                   )}
                                 >
                                   {s.label}
