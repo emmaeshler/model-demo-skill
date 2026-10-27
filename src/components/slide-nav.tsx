@@ -390,7 +390,7 @@ export function TopBar({
                       {group.slides.length > 1 && (
                         <ChevronDown
                           className={cn(
-                            "ml-auto size-3 shrink-0 text-white/30 transition-transform",
+                            "ml-auto size-4 shrink-0 text-white/60 transition-transform",
                             isExpanded && "rotate-180",
                           )}
                         />
