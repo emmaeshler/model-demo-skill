@@ -321,7 +321,7 @@ export function TopBar({
         {open && (
           <motion.div
             ref={panelRef}
-            className="fixed left-0 top-[49px] bottom-0 z-50 w-[260px] border-r border-white/10 bg-[#06283D]/95 shadow-xl backdrop-blur-md"
+            className="fixed left-0 top-[49px] bottom-[49px] z-50 w-[260px] border-r border-white/10 bg-[#06283D]/95 shadow-xl backdrop-blur-md"
             initial={{ x: -260 }}
             animate={{ x: 0 }}
             exit={{ x: -260 }}
