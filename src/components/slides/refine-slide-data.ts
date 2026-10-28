@@ -200,8 +200,8 @@ export const STEP_CONTEXT: Record<number, { title: string; body: string }> = {
     body: "Every transaction, seen together, forms a market curve — and every price gets refined against it.",
   },
   1: {
-    title: "Your market curve",
-    body: "The model builds a price–volume relationship from your historical win/loss data.",
+    title: "Together, they form your market curve",
+    body: "A price–volume relationship built from your historical win/loss data.",
   },
   2: {
     title: "QuickParts",
