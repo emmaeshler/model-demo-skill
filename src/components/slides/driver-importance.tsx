@@ -314,13 +314,12 @@ export function DriverImportanceSlide({
   }, [isCollapse, exampleIndex, actionRevealed, productValueGrown, productElevated, showBefore]);
 
   const [introPhase, setIntroPhase] = useState(skipAnimation ? 5 : 0);
-  const [introReady, setIntroReady] = useState(!isIntro || !!skipAnimation);
+  const introEffectRanRef = useRef(false);
   useEffect(() => {
-    if (!isActive || !isIntro) { setIntroPhase(0); setIntroReady(true); return; }
-    if (skipAnimation || shareMode) { setIntroPhase(5); setIntroReady(true); autoAdvanceRef.current?.(); return; }
-    setIntroReady(false);
+    if (!isActive || !isIntro) { setIntroPhase(0); introEffectRanRef.current = false; return; }
+    if (skipAnimation || shareMode) { setIntroPhase(5); introEffectRanRef.current = true; autoAdvanceRef.current?.(); return; }
+    introEffectRanRef.current = true;
     setIntroPhase(0);
-    const readyFrame = requestAnimationFrame(() => setIntroReady(true));
     const timers = [
       setTimeout(() => setIntroPhase(1), 400),
       setTimeout(() => setIntroPhase(2), 800),
@@ -328,7 +327,7 @@ export function DriverImportanceSlide({
       setTimeout(() => setIntroPhase(4), 1600),
       setTimeout(() => setIntroPhase(5), 2200),
     ];
-    return () => { cancelAnimationFrame(readyFrame); timers.forEach(clearTimeout); };
+    return () => { introEffectRanRef.current = false; timers.forEach(clearTimeout); };
   }, [isActive, isIntro, skipAnimation, shareMode]);
 
   const barsSettled = useRef(!!skipAnimation);
@@ -385,7 +384,7 @@ export function DriverImportanceSlide({
   return (
     <div
       className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-7xl flex-col items-center justify-start px-6 pl-16 pt-4"
-      style={isIntro && !skipAnimation && !introReady ? { visibility: "hidden" } : undefined}
+      style={isActive && isIntro && !skipAnimation && !introEffectRanRef.current ? { visibility: "hidden" } : undefined}
     >
       {/* Title */}
       <div
