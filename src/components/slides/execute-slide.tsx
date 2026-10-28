@@ -452,7 +452,7 @@ const OV_OUT_X = 600;
 
 const OV_INPUTS = [
   { label: "Internal Data", sub: "Millions of transactions scanned for patterns", section: 0, color: ML_GREEN },
-  { label: "In-House Knowledge", sub: "Business rules that shape strategic guidance", section: 0, color: STRAT_BLUE },
+  { label: "Business Objectives", sub: "Business rules that shape strategic guidance", section: 0, color: STRAT_BLUE },
   { label: "External Data", sub: "Market signals driving competitive position", section: 1, color: ML_GREEN },
   { label: "Industry Expertise", sub: "Benchmarks behind the pricing drivers", section: 1, color: STRAT_BLUE },
 ];

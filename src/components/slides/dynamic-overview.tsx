@@ -34,7 +34,7 @@ const INPUTS: InputNode[] = [
   { label: "Internal Data", subtitle: "Transaction history", color: NAVY, y: 28 },
   { label: "External Data", subtitle: "Market signals", color: ORANGE, y: 98 },
   { label: "Industry Expertise", subtitle: "I2P benchmarks & drivers", color: GREEN, y: 168 },
-  { label: "In-House Knowledge", subtitle: "Your rules & strategy", color: TEAL, y: 238 },
+  { label: "Business Objectives", subtitle: "Your rules & strategy", color: TEAL, y: 238 },
 ];
 
 const INPUT_X = 15;
