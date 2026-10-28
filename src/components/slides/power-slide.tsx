@@ -24,7 +24,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
 
   const stepSelectionPhase = step < 2 ? -1 : step === 2 ? -1 : step <= 6 ? step - 3 : 5;
 
-  const INTRO_DELAYS = [0, 1600, 2500, 3700, 4200, 5100] as const;
+  const INTRO_DELAYS = [0, 300, 600, 1000, 1400, 1800] as const;
   const introPhase = usePhaseSequence(INTRO_DELAYS, { active: isActive, skip: !!skipAnimation, enabled: chartStep === 0 });
 
   const [selectionPhase, setSelectionPhase] = useState(chartStep > 5 || (skipAnimation && chartStep > 5) ? 5 : stepSelectionPhase);
