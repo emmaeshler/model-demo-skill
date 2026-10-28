@@ -298,7 +298,7 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
               transition={{ duration: 0.25 }}
             >
               <motion.h2
-                className="text-center text-3xl font-bold tracking-tight sm:text-4xl"
+                className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
                 style={{ color: STRAT_BLUE }}
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
