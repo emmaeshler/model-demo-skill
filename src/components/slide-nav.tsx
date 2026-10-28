@@ -327,8 +327,8 @@ export function TopBar({
             exit={{ x: -260 }}
             transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="flex h-full flex-col overflow-y-auto p-3">
-              <div className="flex-1">
+            <div className="flex h-full flex-col">
+              <div className="flex-1 overflow-y-auto p-3">
               {groups.map((group, gi) => {
                 const groupDone = group.slides.every(
                   (s) =>
@@ -440,7 +440,7 @@ export function TopBar({
                 );
               })}
               </div>
-              <div className="mt-3 border-t border-white/10 pt-3 text-center text-[11px] font-medium tracking-wide text-white/40">
+              <div className="shrink-0 border-t border-white/10 px-3 py-2.5 text-center text-[11px] font-medium tracking-wide text-white/40">
                 V2 · Oct 28, 2026
               </div>
             </div>
