@@ -590,7 +590,7 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: "1 | Design",
+    label: "Design",
     subtitle: "One model built around your business",
     slides: [
       { index: ONE_MODEL_INDEX, label: "Four key inputs", subStep: 0 },
@@ -605,9 +605,7 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
       { index: POWER_INDEX, label: "Millions of price points", subStep: 0 },
       { index: POWER_INDEX, label: "Finding patterns", subStep: 1 },
       { index: DRIVER_IMP_INDEX, label: "Pricing factors", subStep: 0 },
-      { index: DRIVER_IMP_INDEX, label: "Remove Sales Rep", subStep: 1 },
-      { index: DRIVER_IMP_INDEX, label: "Elevate Product Importance", subStep: 2 },
-      { index: DRIVER_IMP_INDEX, label: "Add Competitor Pricing", subStep: 3 },
+      { index: DRIVER_IMP_INDEX, label: "Model tuning", subStep: 1 },
       { index: DRIVER_IMP_INDEX, label: "Your model drivers", subStep: 4 },
     ],
   },
@@ -616,9 +614,7 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
     subtitle: "SKU-level prices tailored to each customer",
     slides: [
       { index: EXECUTE_INDEX, label: "Execute", subStep: 0 },
-      { index: EXECUTE_INDEX, label: "Acme Industrial", subStep: 1 },
-      { index: EXECUTE_INDEX, label: "MedSupply Co", subStep: 2 },
-      { index: EXECUTE_INDEX, label: "QuickParts LLC", subStep: 3 },
+      { index: EXECUTE_INDEX, label: "Customer walkthrough", subStep: 1 },
     ],
   },
   {
@@ -626,9 +622,7 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
     subtitle: "Optimizing prices along the demand curve",
     slides: [
       { index: REFINE_INDEX, label: "Your market curve", subStep: 0 },
-      { index: REFINE_INDEX, label: "QuickParts: underpriced", subStep: 1 },
-      { index: REFINE_INDEX, label: "Acme: rising win rate", subStep: 2 },
-      { index: REFINE_INDEX, label: "MedSupply: at risk", subStep: 3 },
+      { index: REFINE_INDEX, label: "Customer spotlights", subStep: 1 },
       { index: REFINE_INDEX, label: "Prices snap to the curve", subStep: 4 },
       { index: REFINE_INDEX, label: "The curve adapts", subStep: 5 },
       { index: REFINE_INDEX, label: "Segment models", subStep: 6 },
