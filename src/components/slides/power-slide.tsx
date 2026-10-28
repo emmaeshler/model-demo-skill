@@ -24,7 +24,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
 
   const stepSelectionPhase = step < 2 ? -1 : step === 2 ? -1 : step <= 6 ? step - 3 : 5;
 
-  const INTRO_DELAYS = [0, 300, 600, 1000, 1400, 1800] as const;
+  const INTRO_DELAYS = [0, 600, 1000, 1500, 1900, 2300] as const;
   const introPhase = usePhaseSequence(INTRO_DELAYS, { active: isActive, skip: !!skipAnimation, enabled: chartStep === 0 });
 
   const [selectionPhase, setSelectionPhase] = useState(chartStep > 5 || (skipAnimation && chartStep > 5) ? 5 : stepSelectionPhase);
@@ -172,8 +172,8 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                   style={{
                     color: NAVY,
                     opacity: introPhase >= 1 ? 1 : 0,
-                    transform: introPhase >= 1 ? "translateY(0)" : "translateY(8px)",
-                    transition: "opacity 0.5s ease-out, transform 0.5s ease-out",
+                    transform: introPhase >= 1 ? "translateY(0)" : "translateY(14px)",
+                    transition: "opacity 0.7s ease-out, transform 0.7s ease-out",
                   }}
                 >
                   You have millions of unique price points
@@ -183,8 +183,8 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                   style={{
                     color: MUTED,
                     opacity: introPhase >= 1 ? 1 : 0,
-                    transform: introPhase >= 1 ? "translateY(0)" : "translateY(6px)",
-                    transition: introPhase >= 1 ? "opacity 0.4s 0.15s, transform 0.4s 0.15s" : "opacity 0.3s, transform 0.3s",
+                    transform: introPhase >= 1 ? "translateY(0)" : "translateY(10px)",
+                    transition: introPhase >= 1 ? "opacity 0.6s 0.2s ease-out, transform 0.6s 0.2s ease-out" : "opacity 0.3s, transform 0.3s",
                   }}
                 >
                   Far too many for any team to set manually&nbsp;— the&nbsp;model finds&nbsp;the&nbsp;patterns.

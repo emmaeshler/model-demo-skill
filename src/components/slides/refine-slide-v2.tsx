@@ -15,7 +15,7 @@ import { RefineChart } from "./refine-slide-chart";
 import { KpiSidebar } from "./refine-slide-kpi";
 import { PortfolioGrid } from "./refine-slide-portfolio";
 
-export const REFINE_V2_TOTAL_STEPS = 9;
+export const REFINE_V2_TOTAL_STEPS = 8;
 
 export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, onTimelinePhase, requestedPhase, advanceRequest, onSpotlightRefined }: { step: number; onAutoAdvance?: () => void; skipAnimation?: boolean; isActive: boolean; onTimelinePhase?: (phase: number) => void; requestedPhase?: number; advanceRequest?: number; onSpotlightRefined?: () => void }) {
   const { shareMode } = useShareMode();
@@ -81,8 +81,8 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
   const introPhase = usePhaseSequence(INTRO_DELAYS, { active: isActive, skip: !!skipAnimation, enabled: chartStep === 0 });
 
   /* ── Spotlight auto-animation (steps 3-5) ── */
-  const isSpotlight = chartStep >= 2 && chartStep <= 4;
-  const spotlightIdx = isSpotlight ? chartStep - 2 : -1;
+  const isSpotlight = chartStep >= 1 && chartStep <= 3;
+  const spotlightIdx = isSpotlight ? chartStep - 1 : -1;
 
   const [spotPhase, setSpotPhase] = useState(0);
   const spotRefinedForStep = useRef(-1);
@@ -118,7 +118,7 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
   const [indexPhase, setIndexPhase] = useState(0);
   useEffect(() => {
     if (!isActive) { setIndexPhase(0); setIndexIntroPhase(0); return; }
-    if (chartStep !== 6) { setIndexPhase(0); setIndexIntroPhase(0); return; }
+    if (chartStep !== 5) { setIndexPhase(0); setIndexIntroPhase(0); return; }
     if (skipAnimation) { setIndexPhase(TIMELINE_EVENTS.length); setIndexIntroPhase(2); return; }
     setIndexIntroPhase(0);
     const t1 = setTimeout(() => setIndexIntroPhase(1), 600);
@@ -182,14 +182,14 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
   }, [indexPhase, skipAnimation, isActive]);
 
   const PORTFOLIO_DELAYS = [0, 600, 2200, 3800, 4500] as const;
-  const portfolioPhase = usePhaseSequence(PORTFOLIO_DELAYS, { active: isActive, skip: !!skipAnimation, enabled: chartStep === 8 });
+  const portfolioPhase = usePhaseSequence(PORTFOLIO_DELAYS, { active: isActive, skip: !!skipAnimation, enabled: chartStep === 7 });
 
   /* ── Derived state ── */
-  const showCurve = chartStep >= 1;
-  const isAllToCurve = chartStep >= 5;
-  const isIndexShift = chartStep === 6;
-  const isPortfolioHero = chartStep === 7;
-  const isPortfolio = chartStep === 8;
+  const showCurve = true;
+  const isAllToCurve = chartStep >= 4;
+  const isIndexShift = chartStep === 5;
+  const isPortfolioHero = chartStep === 6;
+  const isPortfolio = chartStep === 7;
   const activeIndexCurve = isIndexShift && indexPhase > 0 ? curve.indexCurves[indexPhase - 1] : null;
   const currentEvent = indexPhase > 0 ? TIMELINE_EVENTS[indexPhase - 1] : null;
 
@@ -246,7 +246,7 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
     };
   }, [isIndexShift, indexPhase]);
 
-  const dotOpacityBase = chartStep === 1 ? 0.15 : isSpotlight ? 0 : isIndexShift ? 0.35 : 1;
+  const dotOpacityBase = chartStep === 0 ? 0.15 : isSpotlight ? 0 : isIndexShift ? 0.35 : 1;
   const isLifted = spotPhase >= 1;
 
   const heading = isPortfolio
