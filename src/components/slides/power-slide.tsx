@@ -166,55 +166,29 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
             >
-              <div className="relative w-full" style={{ height: 80 }}>
-                <div
-                  className="absolute inset-x-0 top-0 flex flex-col items-center gap-1"
+              <div className="flex flex-col items-center gap-2">
+                <h2
+                  className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
                   style={{
-                    opacity: introPhase >= 3 ? 0 : 1,
-                    transform: introPhase >= 3 ? "translateY(-12px)" : "translateY(0)",
-                    transition: "opacity 0.4s ease-in-out, transform 0.4s ease-in-out",
-                    pointerEvents: introPhase >= 3 ? "none" : "auto",
-                  }}
-                >
-                  <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: NAVY }}>
-                    You have 2,400 accounts
-                  </h2>
-                  <h2
-                    className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
-                    style={{
-                      color: NAVY,
-                      opacity: introPhase >= 1 ? 1 : 0,
-                      transform: introPhase >= 1 ? "translateY(0)" : "translateY(8px)",
-                      transition: "opacity 0.5s, transform 0.5s",
-                    }}
-                  >
-                    each with up to 15,000 SKUs
-                  </h2>
-                </div>
-                <div
-                  className="absolute inset-x-0 top-0 flex flex-col items-center gap-2"
-                  style={{
-                    opacity: introPhase >= 3 ? 1 : 0,
-                    transform: introPhase >= 3 ? "translateY(0)" : "translateY(12px)",
+                    color: NAVY,
+                    opacity: introPhase >= 1 ? 1 : 0,
+                    transform: introPhase >= 1 ? "translateY(0)" : "translateY(8px)",
                     transition: "opacity 0.5s ease-out, transform 0.5s ease-out",
-                    pointerEvents: introPhase >= 3 ? "auto" : "none",
                   }}
                 >
-                  <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: TEAL }}>
-                    Millions of unique price points
-                  </h2>
-                  <p
-                    className="mx-auto max-w-lg text-center text-[1.05rem] leading-relaxed"
-                    style={{
-                      color: MUTED,
-                      opacity: introPhase >= 3 ? 1 : 0,
-                      transform: introPhase >= 3 ? "translateY(0)" : "translateY(6px)",
-                      transition: introPhase >= 3 ? "opacity 0.4s 0.15s, transform 0.4s 0.15s" : "opacity 0.3s, transform 0.3s",
-                    }}
-                  >
-                    Far too many for any team to set manually&nbsp;— the&nbsp;model finds&nbsp;the&nbsp;patterns.
-                  </p>
-                </div>
+                  You have millions of unique price points
+                </h2>
+                <p
+                  className="mx-auto max-w-lg text-center text-[1.05rem] font-medium leading-relaxed"
+                  style={{
+                    color: MUTED,
+                    opacity: introPhase >= 1 ? 1 : 0,
+                    transform: introPhase >= 1 ? "translateY(0)" : "translateY(6px)",
+                    transition: introPhase >= 1 ? "opacity 0.4s 0.15s, transform 0.4s 0.15s" : "opacity 0.3s, transform 0.3s",
+                  }}
+                >
+                  Far too many for any team to set manually&nbsp;— the&nbsp;model finds&nbsp;the&nbsp;patterns.
+                </p>
               </div>
             </motion.div>
           )}
