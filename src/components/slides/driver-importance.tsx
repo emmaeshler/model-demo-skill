@@ -8,7 +8,7 @@ import {
 } from "./power-slide-data";
 import { useShareMode } from "@/lib/share-context";
 
-export const DRIVER_IMPORTANCE_TOTAL_STEPS = 6;
+export const DRIVER_IMPORTANCE_TOTAL_STEPS = 5;
 
 const SOFT_ORANGE = "#D4893A";
 const DRIVER_HIGHLIGHT = NAVY;

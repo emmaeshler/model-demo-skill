@@ -610,7 +610,6 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
       { index: DRIVER_IMP_INDEX, label: "Elevate Product Importance", subStep: 2 },
       { index: DRIVER_IMP_INDEX, label: "Add Competitor Pricing", subStep: 3 },
       { index: DRIVER_IMP_INDEX, label: "Your model drivers", subStep: 4 },
-      { index: DRIVER_IMP_INDEX, label: "One optimal price", subStep: 5 },
     ],
   },
   {
@@ -1321,7 +1320,7 @@ export function Home() {
           return;
         }
 
-        const isCollapseToExecute = slide === DRIVER_IMP_INDEX && subStep >= 5 && target === EXECUTE_INDEX;
+        const isCollapseToExecute = slide === DRIVER_IMP_INDEX && subStep >= 4 && target === EXECUTE_INDEX;
         collapseToExecuteRef.current = isCollapseToExecute;
         if (isCollapseToExecute) {
           setMorphOutSlide(slide);
