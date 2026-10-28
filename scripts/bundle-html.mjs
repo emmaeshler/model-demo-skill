@@ -129,7 +129,25 @@ while ((m = inlineStyleRe.exec(indexHtml)) !== null) {
   }
 }
 
-const allCss = cssBlocks.join("\n");
+let allCss = cssBlocks.join("\n");
+
+// ── Fix variable font @font-face declarations ──
+// Next.js generates duplicate @font-face blocks for variable fonts (one per
+// declared weight) all pointing to the same file. When base64-inlined the
+// browser may not engage the wght axis, rendering at the font's default weight.
+// Deduplicate: keep one @font-face per unique src with font-weight: 100 900.
+allCss = allCss.replace(
+  /(@font-face\{font-family:(Raleway|Geist Mono);font-style:normal;)font-weight:\d+;(font-display:swap;src:url\(data:font\/woff2;base64,[A-Za-z0-9+/=]+\)[^}]*\})/g,
+  (match, prefix, family, rest) => `${prefix}font-weight:100 900;${rest}`
+);
+// Remove duplicate @font-face blocks that are now identical
+const seenFontFaces = new Set();
+allCss = allCss.replace(/@font-face\{[^}]+\}/g, (block) => {
+  if (seenFontFaces.has(block)) return "";
+  seenFontFaces.add(block);
+  return block;
+});
+
 console.log(`  CSS total: ${(allCss.length / 1024).toFixed(0)} KB`);
 
 // Extract html class from index.html (font variable classes)
