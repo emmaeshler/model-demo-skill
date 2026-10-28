@@ -710,13 +710,21 @@ export function Home() {
   }, [mode]);
 
   const { currentPage, totalPages } = useMemo(() => {
-    let page = 1;
-    for (let s = 0; s < slide; s++) page += Math.max(subStepConfig[s] ?? 0, 1);
-    page += subStep;
-    let tp = 0;
-    for (let s = 0; s < total; s++) tp += Math.max(subStepConfig[s] ?? 0, 1);
-    return { currentPage: page, totalPages: tp };
-  }, [slide, subStep, total, subStepConfig]);
+    const flatNav = navGroups.flatMap(g => g.slides);
+    const totalPages = flatNav.length;
+    let currentPage = 1;
+    for (let i = flatNav.length - 1; i >= 0; i--) {
+      const item = flatNav[i];
+      if (
+        item.index < slide ||
+        (item.index === slide && (item.subStep ?? 0) <= subStep)
+      ) {
+        currentPage = i + 1;
+        break;
+      }
+    }
+    return { currentPage, totalPages };
+  }, [slide, subStep, navGroups]);
 
   const maxSteps = subStepConfig[slide] ?? 0;
   const hasSubSteps = maxSteps > 0;
