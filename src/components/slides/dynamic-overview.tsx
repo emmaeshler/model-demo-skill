@@ -13,7 +13,7 @@ const GRAY_BORDER = "#CBD5DE";
 const MUTED = "#5A6A78";
 const FEEDBACK = "#8A9AAA";
 
-export const OVERVIEW_TOTAL_STEPS = 5;
+export const DYNAMIC_OVERVIEW_TOTAL_STEPS = 5;
 
 const STEP_NARRATIVES = [
   "Four inputs converge into one model — continuously learning from outcomes.",

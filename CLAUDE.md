@@ -28,7 +28,7 @@ There is also an auth-gated login flow (`/login`) that hits an external auth ser
 
 ### Slide System
 
-[page.tsx](src/app/page.tsx) is the presentation engine. It manages `slide` (0–8) and `subStep` (0–N) state, keyboard navigation, and presenter/audience sync.
+[page.tsx](src/app/page.tsx) is the presentation engine. It manages `slide` (0–6) and `subStep` (0–N) state, keyboard navigation, and presenter/audience sync.
 
 Each slide kind maps to a component in [src/components/slides/](src/components/slides/). Slides export a `*_TOTAL_STEPS` constant that `page.tsx` imports into `SUB_STEP_CONFIG` to know how many sub-steps each slide has. When adding steps to a slide, update the exported constant — `page.tsx` reads it automatically.
 
