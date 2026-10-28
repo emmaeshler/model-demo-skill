@@ -230,7 +230,7 @@ export const TITLES = [
 ];
 
 export const SUBTITLES = [
-  "That's 36 million unique price points — far too many for any team to set manually. The model finds the patterns hiding inside.",
+  "That's millions of unique price points — far too many for any team to set manually. The model finds the patterns hiding inside.",
   "We look at pricing factors across four dimensions — tailored to what matters for your business.",
   "Every business is different. We analyze what matters to you — adding key factors, removing what doesn't apply, and tuning the balance.",
   "Seven tailored drivers — drawn from the factors that matter most to you — feed the model to arrive at the right price for every SKU.",

@@ -451,7 +451,7 @@ const OV_OUT_H = 52;
 const OV_OUT_X = 600;
 
 const OV_INPUTS = [
-  { label: "Internal Data", sub: "The 36M transactions scanned for patterns", section: 0, color: ML_GREEN },
+  { label: "Internal Data", sub: "Millions of transactions scanned for patterns", section: 0, color: ML_GREEN },
   { label: "In-House Knowledge", sub: "Business rules that shape strategic guidance", section: 0, color: STRAT_BLUE },
   { label: "External Data", sub: "Market signals driving competitive position", section: 1, color: ML_GREEN },
   { label: "Industry Expertise", sub: "Benchmarks behind the pricing drivers", section: 1, color: STRAT_BLUE },
@@ -723,10 +723,10 @@ export function ExecuteSlide({
       didCollapse.current = false;
       return;
     }
-    if (isPresenter) {
-      setRevealPhase(skipAnimation ? 4 : Math.min(step + 1, 4));
+    if (step >= 1) {
+      setRevealPhase(4);
     } else {
-      setRevealPhase(skipAnimation ? selfMaxPhase : (step >= 1 ? 4 : 1));
+      setRevealPhase(skipAnimation ? selfMaxPhase : 1);
     }
   }, [step, skipAnimation, isPresenter, selfMaxPhase, isActive]);
 
@@ -741,18 +741,14 @@ export function ExecuteSlide({
 
   useEffect(() => {
     if (!isActive) return;
-    if (revealPhase !== 4) return;
-    if (selected !== 0) return;
-    if (hasInteracted.current) return;
-    if (step >= 3) return;
-    const t = setTimeout(() => setSelected(1), 800);
-    return () => clearTimeout(t);
-  }, [revealPhase, selected, isActive, step]);
+    if (step >= 1 && step <= CUSTOMERS.length) {
+      setSelected(step - 1);
+    }
+  }, [step, isActive]);
 
   useEffect(() => {
     if (!isActive) return;
-    if (isPresenter) return;
-    if (revealPhase >= selfMaxPhase) return;
+    if (step > 0 || revealPhase >= selfMaxPhase) return;
     function onKey(e: KeyboardEvent) {
       if (e.key === "ArrowRight" || e.key === "ArrowDown") {
         e.preventDefault();
@@ -767,7 +763,7 @@ export function ExecuteSlide({
     }
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [revealPhase, isPresenter, isActive]);
+  }, [revealPhase, step, isActive]);
 
   const inCurvePath = () => {
     const sy = MODEL_CY;

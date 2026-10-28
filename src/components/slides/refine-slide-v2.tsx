@@ -335,7 +335,7 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ duration: 0.6, ease: "easeOut" }}
                     >
-                      Now the model looks at all of them at once
+                      Now we look across all your transactions
                     </motion.h2>
                   )}
                 </AnimatePresence>
@@ -347,8 +347,8 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
                 animate={{ opacity: introPhase >= 4 ? 1 : 0, y: introPhase >= 4 ? 0 : 6 }}
                 transition={{ duration: 0.4 }}
               >
-                Thousands of transactions, seen together,{" "}
-                <span className="font-bold" style={{ color: NAVY, whiteSpace: "nowrap", textDecoration: "underline", textDecorationColor: STRAT_BLUE, textUnderlineOffset: "4px", textDecorationThickness: "2px" }}>reveal the shape of your market</span>
+                All your transactions, seen together,{" "}
+                <span className="font-bold" style={{ color: NAVY, whiteSpace: "nowrap", textDecoration: "underline", textDecorationColor: STRAT_BLUE, textUnderlineOffset: "4px", textDecorationThickness: "2px" }}>form a market curve</span>
                 &nbsp;— and every price gets refined against&nbsp;it.
               </motion.p>
             </motion.div>

@@ -201,7 +201,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                   }}
                 >
                   <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: TEAL }}>
-                    36 million unique price points
+                    Millions of unique price points
                   </h2>
                   <p
                     className="mx-auto max-w-lg text-center text-[1.05rem] leading-relaxed"

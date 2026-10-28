@@ -411,88 +411,29 @@ export function DriverImportanceSlide({
                 exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.3, ease: "easeInOut" }}
               >
-                <div className="relative w-full" style={{ height: 80 }}>
-                  {/* Lines 1 & 2 — reveal then crossfade out */}
-                  <div
-                    className="absolute inset-x-0 top-0 flex flex-col items-center gap-1"
+                <div className="flex flex-col items-center gap-2">
+                  <h2
+                    className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
                     style={{
-                      opacity: introPhase >= 2 ? 0 : 1,
-                      transform: introPhase >= 2 ? "translateY(-12px)" : "translateY(0)",
-                      transition: "opacity 0.4s ease-in-out, transform 0.4s ease-in-out",
-                      pointerEvents: introPhase >= 2 ? "none" : "auto",
-                    }}
-                  >
-                    <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: NAVY }}>
-                      We look across{" "}
-                      <span style={{ color: TEAL }}>22 pricing factors</span>
-                    </h2>
-                    <h2
-                      className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
-                      style={{
-                        color: NAVY,
-                        opacity: introPhase >= 1 ? 1 : 0,
-                        transform: introPhase >= 1 ? "translateY(0)" : "translateY(8px)",
-                        transition: "opacity 0.5s, transform 0.5s",
-                      }}
-                    >
-                      and{" "}
-                      <span
-                        style={{
-                          borderBottom: `2px solid ${TEAL}`,
-                          paddingBottom: 2,
-                        }}
-                      >
-                        tune the model
-                      </span>
-                      {" "}to your business
-                    </h2>
-                  </div>
-                  {/* Chart title — fades in at phase 2, headline swaps at phase 4 */}
-                  <div
-                    className="absolute inset-x-0 top-0 flex flex-col items-center gap-2"
-                    style={{
-                      opacity: introPhase >= 2 ? 1 : 0,
-                      transform: introPhase >= 2 ? "translateY(0)" : "translateY(12px)",
+                      color: NAVY,
+                      opacity: introPhase >= 1 ? 1 : 0,
+                      transform: introPhase >= 1 ? "translateY(0)" : "translateY(8px)",
                       transition: "opacity 0.5s ease-out, transform 0.5s ease-out",
-                      pointerEvents: introPhase >= 2 ? "auto" : "none",
                     }}
                   >
-                    <div className="relative w-full" style={{ height: 36 }}>
-                      <h2
-                        className="absolute inset-x-0 text-center text-2xl font-bold tracking-tight sm:text-3xl"
-                        style={{
-                          color: NAVY,
-                          opacity: introPhase >= 4 ? 0 : 1,
-                          transform: introPhase >= 4 ? "translateY(-10px)" : "translateY(0)",
-                          transition: "opacity 0.5s ease-out, transform 0.5s ease-out",
-                        }}
-                      >
-                        Pricing factors across four dimensions
-                      </h2>
-                      <h2
-                        className="absolute inset-x-0 text-center text-2xl font-bold tracking-tight sm:text-3xl"
-                        style={{
-                          color: TEAL,
-                          opacity: introPhase >= 4 ? 1 : 0,
-                          transform: introPhase >= 4 ? "translateY(0)" : "translateY(10px)",
-                          transition: "opacity 0.5s ease-out, transform 0.5s ease-out",
-                        }}
-                      >
-                        Let&rsquo;s tune the model to your business
-                      </h2>
-                    </div>
-                    <p
-                      className="mx-auto max-w-2xl text-center text-[1.05rem] leading-relaxed whitespace-nowrap"
-                      style={{
-                        color: MUTED,
-                        opacity: introPhase >= 2 ? 1 : 0,
-                        transform: introPhase >= 2 ? "translateY(0)" : "translateY(6px)",
-                        transition: introPhase >= 2 ? "opacity 0.4s 0.15s, transform 0.4s 0.15s" : "opacity 0.3s, transform 0.3s",
-                      }}
-                    >
-                      Elevating what matters, removing what doesn&rsquo;t.
-                    </p>
-                  </div>
+                    Pricing factors across four dimensions
+                  </h2>
+                  <p
+                    className="mx-auto max-w-2xl text-center text-[1.05rem] font-medium leading-relaxed"
+                    style={{
+                      color: MUTED,
+                      opacity: introPhase >= 1 ? 1 : 0,
+                      transform: introPhase >= 1 ? "translateY(0)" : "translateY(6px)",
+                      transition: introPhase >= 1 ? "opacity 0.4s 0.15s, transform 0.4s 0.15s" : "opacity 0.3s, transform 0.3s",
+                    }}
+                  >
+                    Tuned to your business — elevating what matters, removing what doesn&rsquo;t.
+                  </p>
                 </div>
               </motion.div>
             ) : (

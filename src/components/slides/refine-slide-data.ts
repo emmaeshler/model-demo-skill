@@ -133,7 +133,7 @@ export const SEGMENT_HIGHLIGHTS = [
   {
     t: 0.12,
     label: "QuickParts",
-    offsetY: -18,
+    offsetY: 22,
     oldPrice: "$22.10",
     newPrice: "$24.20",
     change: "+$2.10",
@@ -142,7 +142,7 @@ export const SEGMENT_HIGHLIGHTS = [
     shortReason: "No competition",
     beforeBody: "No competition in this niche, but cost increases aren't reflected in the price.",
     afterTitle: "Adjusted +$2.10",
-    afterBody: "Cost pressure passes through — price moves to the calibrated curve.",
+    afterBody: "Cost pressure passes through — price moves to the market curve.",
     marketSignal: "Cost pressure, no competition",
   },
   {
@@ -196,11 +196,11 @@ export const LEGEND_ITEMS = (() => {
 
 export const STEP_CONTEXT: Record<number, { title: string; body: string }> = {
   0: {
-    title: "Now the model looks at all of them at once",
-    body: "Thousands of transactions, seen together, reveal the shape of your market — and every price gets refined against it.",
+    title: "Now we look across all your transactions",
+    body: "Every transaction, seen together, forms a market curve — and every price gets refined against it.",
   },
   1: {
-    title: "Your calibrated curve",
+    title: "Your market curve",
     body: "The model builds a price–volume relationship from your historical win/loss data.",
   },
   2: {

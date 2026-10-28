@@ -140,7 +140,7 @@ export function RefineChart({
           animate={{ opacity: chartStep >= 2 ? 0 : 0.5 }}
           transition={{ delay: 0.8, duration: 0.5 }}
         >
-          Calibrated curve
+          Market curve
         </motion.text>
       )}
 
