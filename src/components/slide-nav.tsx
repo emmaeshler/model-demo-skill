@@ -30,6 +30,11 @@ interface SlideNavProps {
   onSlideSorter?: () => void;
   onAnimationGlossary?: () => void;
   onHowItWorks?: () => void;
+  currentPage?: number;
+  totalPages?: number;
+  editingPage?: boolean;
+  onEditingPageChange?: (editing: boolean) => void;
+  onJumpToPage?: (page: number) => void;
   darkMode?: boolean;
   onToggleDark?: () => void;
 }
@@ -455,6 +460,11 @@ export function BottomBar({
   animationDone,
   showReplay,
   onReplay,
+  currentPage,
+  totalPages,
+  editingPage,
+  onEditingPageChange,
+  onJumpToPage,
 }: SlideNavProps) {
   const currentGroup =
     groups.find((g) =>
@@ -492,29 +502,36 @@ export function BottomBar({
           )}
         </div>
 
-        {currentGroup && currentGroup.slides.length > 1 && (
-          <div className="flex items-center gap-2">
-            {currentGroup.slides.map((slide) => {
-              const isActive =
-                slide.index === current &&
-                (slide.subStep === undefined ||
-                  slide.subStep === currentSubStep);
-              return (
-                <button
-                  key={`${slide.index}-${slide.subStep ?? ""}`}
-                  onClick={() => onNavigate(slide.index, slide.subStep)}
-                  className={cn(
-                    "size-2 rounded-full transition-all",
-                    isActive
-                      ? "scale-125 bg-white"
-                      : "bg-white/30 hover:bg-white/50",
-                  )}
-                  aria-label={slide.label}
+        <span className="flex items-center gap-2 text-xs text-white/40">
+          <span className="font-medium">{currentGroup?.label || ""}</span>
+          {currentPage !== undefined && totalPages !== undefined && (
+            editingPage ? (
+              <span className="flex items-center font-mono opacity-60">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  className="w-6 bg-transparent text-right text-xs text-white outline-none border-b border-white/30"
+                  defaultValue={currentPage}
+                  autoFocus
+                  onFocus={(e) => e.target.select()}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") { onJumpToPage?.(parseInt((e.target as HTMLInputElement).value)); onEditingPageChange?.(false); }
+                    if (e.key === "Escape") onEditingPageChange?.(false);
+                  }}
+                  onBlur={(e) => { onJumpToPage?.(parseInt(e.target.value)); onEditingPageChange?.(false); }}
                 />
-              );
-            })}
-          </div>
-        )}
+                /{totalPages}
+              </span>
+            ) : (
+              <button
+                onClick={() => onEditingPageChange?.(true)}
+                className="font-mono opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
+              >
+                {currentPage}/{totalPages}
+              </button>
+            )
+          )}
+        </span>
 
         <Button
           variant="ghost"

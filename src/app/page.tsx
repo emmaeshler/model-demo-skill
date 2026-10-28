@@ -703,6 +703,7 @@ export function Home() {
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const [previewScale, setPreviewScale] = useState(1);
   const total = SLIDES.length;
+  const [editingPage, setEditingPage] = useState(false);
 
   const presenterSkipped = useMemo(
     () => new Set<number>(),
@@ -713,6 +714,15 @@ export function Home() {
     if (mode !== "presenter") return SUB_STEP_CONFIG;
     return { ...SUB_STEP_CONFIG, [EXECUTE_INDEX]: EXECUTE_PRESENTER_STEPS };
   }, [mode]);
+
+  const { currentPage, totalPages } = useMemo(() => {
+    let page = 1;
+    for (let s = 0; s < slide; s++) page += Math.max(subStepConfig[s] ?? 0, 1);
+    page += subStep;
+    let tp = 0;
+    for (let s = 0; s < total; s++) tp += Math.max(subStepConfig[s] ?? 0, 1);
+    return { currentPage: page, totalPages: tp };
+  }, [slide, subStep, total, subStepConfig]);
 
   const maxSteps = subStepConfig[slide] ?? 0;
   const hasSubSteps = maxSteps > 0;
@@ -1326,6 +1336,19 @@ export function Home() {
     [total, slide, subStep, subStepConfig, presenterSkipped, refineTimelinePhase, morphOutSlide],
   );
 
+  const jumpToPage = useCallback((targetPage: number) => {
+    if (isNaN(targetPage) || targetPage < 1 || targetPage > totalPages) return;
+    let page = 1;
+    for (let s = 0; s < total; s++) {
+      const steps = Math.max(subStepConfig[s] ?? 0, 1);
+      if (targetPage < page + steps) {
+        navigate(s, targetPage - page);
+        return;
+      }
+      page += steps;
+    }
+  }, [total, totalPages, subStepConfig, navigate]);
+
   useEffect(() => {
     if (isAudience) return;
     function onKey(e: KeyboardEvent) {
@@ -1536,6 +1559,11 @@ export function Home() {
           onHowItWorks={() => setWalkthroughOpen(true)}
           showReplay={skipAnimation}
           onReplay={handleReplay}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          editingPage={editingPage}
+          onEditingPageChange={setEditingPage}
+          onJumpToPage={jumpToPage}
         />
       ))}
 
