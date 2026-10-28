@@ -122,13 +122,20 @@ export function RefineChart({
           fill="none" stroke={NAVY} strokeLinecap="round"
           initial={isSpotlight ? { pathLength: 1, opacity: 0 } : { pathLength: 0, opacity: 0 }}
           animate={{
-            pathLength: 1,
-            opacity: isSpotlight ? (spotlightIdx === 1 ? 1 : 0.15) : 1,
+            pathLength: chartStep === 0 ? (introPhase >= 3 ? 1 : 0) : 1,
+            opacity: isSpotlight
+              ? (spotlightIdx === 1 ? 1 : 0.15)
+              : chartStep === 0
+                ? (introPhase >= 3 ? 1 : 0)
+                : 1,
             strokeWidth: isSpotlight && spotlightIdx === 1 ? 3 : 2,
           }}
           transition={isSpotlight ? {
             opacity: { duration: 0.5, delay: 0.25, ease: "easeOut" },
             strokeWidth: { duration: 0.3 },
+          } : chartStep === 0 ? {
+            pathLength: { duration: 1.2, ease: EASE },
+            opacity: { duration: 0.8, ease: "easeOut" },
           } : { duration: 1, ease: "easeOut" }}
         />
       )}
@@ -141,8 +148,8 @@ export function RefineChart({
           fontWeight="700" fill={NAVY} textAnchor="middle"
           style={{ fontFamily: "inherit" }}
           initial={{ opacity: 0 }}
-          animate={{ opacity: chartStep >= 1 ? 0 : 0.5 }}
-          transition={{ delay: 0.8, duration: 0.5 }}
+          animate={{ opacity: chartStep >= 1 ? 0 : introPhase >= 4 ? 0.5 : 0 }}
+          transition={{ duration: 0.5 }}
         >
           Market curve
         </motion.text>

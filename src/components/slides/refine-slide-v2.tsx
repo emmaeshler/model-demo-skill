@@ -77,7 +77,7 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
 
   const chartStep = step;
 
-  const INTRO_DELAYS = [0, 400, 1600, 2800, 3800, 4700, 5600] as const;
+  const INTRO_DELAYS = [0, 250, 700, 1200, 1800, 2200, 2600] as const;
   const introPhase = usePhaseSequence(INTRO_DELAYS, { active: isActive, skip: !!skipAnimation, enabled: chartStep === 0 });
 
   /* ── Spotlight auto-animation (steps 3-5) ── */
