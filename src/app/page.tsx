@@ -599,7 +599,7 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: "2 | Power",
+    label: "Power",
     subtitle: "How the ML model finds pricing patterns",
     slides: [
       { index: POWER_INDEX, label: "Millions of price points", subStep: 0 },
@@ -610,7 +610,7 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: "3 | Execute",
+    label: "Execute",
     subtitle: "SKU-level prices tailored to each customer",
     slides: [
       { index: EXECUTE_INDEX, label: "Execute", subStep: 0 },
@@ -618,7 +618,7 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: "4 | Refine",
+    label: "Refine",
     subtitle: "Optimizing prices along the demand curve",
     slides: [
       { index: REFINE_INDEX, label: "Your market curve", subStep: 0 },
