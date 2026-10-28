@@ -198,6 +198,10 @@ export function TopBar({
             {presentationTitle}
           </button>
 
+          <span className="mx-2 rounded bg-white/10 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-white/50">
+            V2 · Oct 28, 2026
+          </span>
+
           <button
             ref={triggerRef}
             onClick={() => setOpen(!open)}

@@ -617,8 +617,7 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
     label: "3 | Execute",
     subtitle: "SKU-level prices tailored to each customer",
     slides: [
-      { index: EXECUTE_INDEX, label: "Optimized price per SKU", subStep: 0 },
-      { index: EXECUTE_INDEX, label: "Acme walkthrough", subStep: 1 },
+      { index: EXECUTE_INDEX, label: "Execute", subStep: 0 },
     ],
   },
   {
