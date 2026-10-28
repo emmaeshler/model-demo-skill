@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { BLUE, ORANGE, GREEN, NAVY, MUTED } from "./hub-spoke-diagram";
+import { BLUE, ORANGE, GREEN, NAVY } from "./hub-spoke-diagram";
 
 const stagger = {
   hidden: { opacity: 0 },

@@ -4,9 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { makeParabolaPath } from "./demand-curve";
 
-const NAVY = "#00446A";
 const ORANGE = "#E56910";
-const GREEN = "#2e7d32";
 const TEAL = "#21A5D5";
 const MUTED = "#5A6A78";
 

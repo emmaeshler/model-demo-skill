@@ -17,8 +17,6 @@ interface ChevronPipelineProps {
 }
 
 export function ChevronPipeline({ activeStep, reachedStep }: ChevronPipelineProps) {
-  const activeIdx = activeStep ? STEPS.indexOf(activeStep) : -1;
-
   return (
     <div className="flex w-full">
       {STEPS.map((step, i) => {

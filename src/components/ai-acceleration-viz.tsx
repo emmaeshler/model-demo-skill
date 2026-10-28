@@ -204,12 +204,6 @@ function MonthTicks() {
   );
 }
 
-function GoLiveFlag({ x, y, label, color }: { x: number; y: number; label: string; color: string }) {
-  return (
-    <text x={x} y={y} fontSize="10" fontWeight="600" fontStyle="italic" fill={color} textAnchor="middle">{label}</text>
-  );
-}
-
 /* ─── Step 2: Model lifecycle (traditional) ─── */
 
 const MODEL_PHASES = [

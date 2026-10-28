@@ -1,15 +1,14 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useShareMode } from "@/lib/share-context";
 import { usePhaseSequence } from "@/lib/anim";
 import {
-  EASE, NAVY, TEAL, MUTED, PLOT, PLOT_W, PLOT_H, PLOT_CX, PLOT_CY,
+  EASE, NAVY, TEAL, MUTED, PLOT, PLOT_W, PLOT_H,
   Y_TICKS, X_TICKS, yForTick, xForTick, DRIVERS,
   SPOTLIGHTS, TITLES, SUBTITLES, SWEEP_DURATION,
-  CATEGORY_LAYOUT, CATEGORY_TITLES, CATEGORY_NARRATION, CATEGORY_ACTION_HINTS,
-  DOTS, BASE_PRICE, PRICE_SATELLITES,
+  DOTS,
 } from "./power-slide-data";
 import { DotField } from "./power-slide-dots";
 import { FactorGrid } from "./power-slide-factors";
@@ -76,9 +75,6 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
     return () => clearTimeout(t);
   }, [isActive, selectionPhase, actionRevealed, skipAnimation]);
 
-  const rawHint = CATEGORY_ACTION_HINTS[selectionPhase];
-  const currentHint = rawHint ? (Array.isArray(rawHint) ? rawHint[0] : rawHint) : null;
-
   useEffect(() => {
     if (!onActiveCategoryChange) return;
     if (!isActive) { onActiveCategoryChange([]); return; }
@@ -96,14 +92,6 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
   const convergeReady = chartStep >= 3;
   const allAbsorbed = chartStep >= 3;
   const absorbedCount = chartStep >= 3 ? 4 : 0;
-
-  const convergingPrice = useMemo(() => {
-    let total = BASE_PRICE;
-    for (let i = 0; i < absorbedCount; i++) {
-      total += PRICE_SATELLITES[i].value;
-    }
-    return `$${total.toFixed(2)}`;
-  }, [absorbedCount]);
 
   const [scanCardCount, setScanCardCount] = useState(chartStep > 1 || !!skipAnimation ? 4 : 0);
   const [driversRevealed, setDriversRevealed] = useState(chartStep > 2 || !!skipAnimation);

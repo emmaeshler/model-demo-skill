@@ -11,7 +11,6 @@ import {
 
 const NAVY = "#00446A";
 const ORANGE = "#E56910";
-const TEAL = "#21A5D5";
 const MUTED = "#5A6A78";
 
 const SLOT = { x: 40, y: 20, w: 360, h: 200 };

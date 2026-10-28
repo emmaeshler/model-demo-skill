@@ -46,7 +46,7 @@ export function RefineChart({
   chartStep, showCurve, isAllToCurve, isIndexShift, isSpotlight, spotlightIdx,
   spotPhase, isLifted, dotOpacityBase, introPhase,
   activeIndexCurve, indexMorphFrom, indexMorphProgress, indexPhase,
-  timelineTargetMonth, shareMode, isActive, skipAnimation,
+  timelineTargetMonth, shareMode, isActive,
   onSpotClick,
 }: RefineChartProps) {
   return (

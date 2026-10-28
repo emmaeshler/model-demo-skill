@@ -91,11 +91,6 @@ const DRIVER_RAIL_ITEMS: { label: string; color: string; tint: string }[] = [
   { label: "Competitor Pricing", color: "#2e7d32", tint: "rgba(46,125,50,0.08)" },
 ];
 
-const ENGINE_ITEMS: { key: "ml" | "strat"; label: string; color: string; tint: string }[] = [
-  { key: "ml", label: "ML Prediction", color: ML_GREEN, tint: "rgba(58,125,68,0.08)" },
-  { key: "strat", label: "Strategic Guidance", color: STRAT_BLUE, tint: "rgba(42,123,165,0.08)" },
-];
-
 type RailType = "model" | "mini-exec" | null;
 
 /* ── Rail config (compiled from timeline) ──────────────────── */
@@ -111,8 +106,6 @@ interface RailStepConfig {
   activeCustomer?: number;
   refineStepForCustomer?: number;
 }
-
-const ALL_CATS: CategoryKey[] = ["customer", "product", "order", "market"];
 
 /* ── Rail timeline ──────────────────────────────────────────
    Each slide maps to an ordered array of rail states (index = subStep).
@@ -938,7 +931,6 @@ export function Home() {
     }
 
     // ── Slide detail pages ──
-    let globalNum = 0;
     for (let gi = 0; gi < grouped.length; gi++) {
       const group = grouped[gi];
       const rgb = SECTION_COLORS[group.label] ?? [100, 116, 139];
@@ -964,7 +956,6 @@ export function Home() {
       // One page per slide
       for (let si = 0; si < group.steps.length; si++) {
         const cs = group.steps[si];
-        globalNum++;
         pdf.addPage();
 
         // Slim colored title line
@@ -1233,8 +1224,6 @@ export function Home() {
     }
     prevRailVisibleRef.current = railVisible;
   }, [railVisible, skipAnimation]);
-
-  const markAnimationDone = useCallback(() => setAnimationDone(true), []);
 
   const handleReplay = useCallback(() => {
     isReplayingRef.current = true;
@@ -1809,7 +1798,7 @@ export function Home() {
                     : "border-black/15 bg-black/5 text-gray-600 hover:border-black/30 hover:bg-black/10",
                 )}
               >
-                <span className={shareMode ? "text-teal-400" : ""}>I'm Sharing This On Teams</span>
+                <span className={shareMode ? "text-teal-400" : ""}>I&apos;m Sharing This On Teams</span>
                 <div
                   className={cn(
                     "relative h-4 w-7 rounded-full transition-colors duration-200",
@@ -2008,17 +1997,6 @@ export function Home() {
 
 /* ── Intro Slide ──────────────────────────────────────────────── */
 
-function I2PLogoMark({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 49 47" className={className} aria-hidden="true">
-      <path d="M21.6448 26.4249H8V41H21.6448V26.4249Z" fill="white" />
-      <path d="M21.6448 6H8V20.5751H21.6448V6Z" fill="#E56910" />
-      <path d="M40.8588 26.4249H27.2141V41H40.8588V26.4249Z" fill="#E56910" />
-      <path d="M40.8588 6H27.2141V20.5751H40.8588V6Z" fill="#E56910" />
-    </svg>
-  );
-}
-
 function IntroBackdrop() {
   return (
     <svg
@@ -2095,40 +2073,7 @@ function IntroBackdrop() {
   );
 }
 
-const MODEL_WORDS = ["Design", "Power", "Execute", "Refine"];
-
-
-function RotatingWord({ isActive }: { isActive: boolean }) {
-  const [index, setIndex] = useState(0);
-
-  useEffect(() => {
-    if (!isActive) return;
-    setIndex(0);
-    const timer = setInterval(() => {
-      setIndex((i) => (i + 1) % MODEL_WORDS.length);
-    }, 2500);
-    return () => clearInterval(timer);
-  }, [isActive]);
-
-  return (
-    <span className="relative inline-flex flex-col items-start overflow-hidden align-bottom" style={{ height: "1.15em" }}>
-      <AnimatePresence mode="wait">
-        <motion.span
-          key={MODEL_WORDS[index]}
-          initial={{ y: "100%", opacity: 0 }}
-          animate={{ y: "0%", opacity: 1 }}
-          exit={{ y: "-100%", opacity: 0 }}
-          transition={{ duration: 0.2, ease: "easeInOut" }}
-          className="inline-block whitespace-nowrap"
-        >
-          {MODEL_WORDS[index]}
-        </motion.span>
-      </AnimatePresence>
-      <span className="absolute -bottom-0.5 left-0 h-1 w-full rounded-full bg-[#E56910]" />
-    </span>
-  );
-}
-
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function IntroSlide({ isActive }: { isActive: boolean }) {
   const { mode } = useMode();
 

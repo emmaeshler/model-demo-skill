@@ -3,8 +3,6 @@
 import { motion } from "framer-motion";
 
 const NAVY = "#00446a";
-const ORANGE = "#D97C14";
-const GREEN = "#2e7d32";
 const MUTED = "#7a7570";
 
 interface BarData {

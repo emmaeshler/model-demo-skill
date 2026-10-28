@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import { ChevronPipeline } from "./chevron-pipeline";
 
 const NAVY = "#00446A";
-const ORANGE = "#E56910";
 const TEAL = "#21A5D5";
 const GREEN = "#2e7d32";
 const RED = "#c62828";

@@ -4,54 +4,6 @@ import { DealCardsHero } from "@/components/visuals/deal-cards-hero";
 import { RegionScatterVisual } from "@/components/visuals/region-scatter";
 import { AttributeGridVisual } from "@/components/visuals/attribute-grid";
 
-const P = "#00446a";
-const O = "#D97C14";
-const G = "#2e7d32";
-const BLUE = "#1B4F8A";
-
-function ScatterVisual() {
-  const regionColors = [O, P, G, BLUE];
-  const regionLabels = ["CA", "PNW", "SW", "GP"];
-  const dots: { x: number; y: number; r: number }[] = [];
-  let seed = 42;
-  function rand() {
-    seed = (seed * 16807 + 0) % 2147483647;
-    return seed / 2147483647;
-  }
-  for (let i = 0; i < 80; i++) {
-    dots.push({ x: 30 + rand() * 380, y: 15 + rand() * 120, r: i });
-  }
-
-  return (
-    <svg viewBox="0 0 440 175" className="w-full" role="img" aria-label="Scatter plot of 80 dots representing deal prices — same product, wildly different prices, with color-coded regions emerging">
-      <line x1="25" y1="10" x2="25" y2="145" stroke="#e0e0e0" strokeWidth="1" />
-      <line x1="25" y1="145" x2="420" y2="145" stroke="#e0e0e0" strokeWidth="1" />
-      <text x="10" y="80" fontSize="9" fill="rgba(0,0,0,0.35)" textAnchor="middle" transform="rotate(-90,10,80)">Price</text>
-      <text x="222" y="158" fontSize="9" fill="rgba(0,0,0,0.35)" textAnchor="middle">Deals</text>
-
-      {dots.map((d, i) => (
-        <circle
-          key={i}
-          cx={d.x}
-          cy={d.y}
-          r="4"
-          fill={regionColors[i % 4]}
-          opacity={0.55}
-        />
-      ))}
-
-      <g>
-        {regionLabels.map((label, i) => (
-          <g key={i}>
-            <circle cx={100 + i * 90} cy={170} r="4" fill={regionColors[i]} opacity="0.7" />
-            <text x={108 + i * 90} y="173" fontSize="8" fill="rgba(0,0,0,0.5)">{label}</text>
-          </g>
-        ))}
-      </g>
-    </svg>
-  );
-}
-
 /* ── Low depth: Visual hero ── */
 export function DDILow() {
   return (

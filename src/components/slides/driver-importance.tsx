@@ -3,26 +3,14 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import {
-  EASE, NAVY, TEAL, ORANGE, GREEN, PURPLE, MUTED,
+  EASE, NAVY, TEAL, GREEN, MUTED,
   SQUARE_FACTORS,
 } from "./power-slide-data";
 import { useShareMode } from "@/lib/share-context";
 
 export const DRIVER_IMPORTANCE_TOTAL_STEPS = 5;
 
-const SOFT_ORANGE = "#D4893A";
 const DRIVER_HIGHLIGHT = NAVY;
-
-type CategoryKey = "customer" | "product" | "order" | "market";
-
-const SOFT_PURPLE = "#9B8BBF";
-
-const CATEGORY_COLORS: Record<string, string> = {
-  customer: NAVY,
-  product: SOFT_ORANGE,
-  order: SOFT_PURPLE,
-  market: GREEN,
-};
 
 type ExampleAction = "remove" | "elevate" | "add";
 
@@ -273,7 +261,6 @@ export function DriverImportanceSlide({
     return () => clearTimeout(t);
   }, [step, actionRevealed, skipAnimation, shareMode]);
 
-  const isLastExample = exampleIndex === 2;
   const showToggle = isDriverSummary;
   const [compareMode, setCompareMode] = useState<"after" | "before">("after");
   useEffect(() => {
@@ -598,7 +585,6 @@ export function DriverImportanceSlide({
                       <AnimatePresence>
                       {visibleFactors.map((f, i) => {
                         const disposition = getDisposition(f);
-                        const color = CATEGORY_COLORS[f.category] ?? MUTED;
                         const isPastRemoved = removedSet.has(f.label);
                         const isPastKept = pastKeptSet.has(f.label);
                         const isAnnotated = disposition !== null;

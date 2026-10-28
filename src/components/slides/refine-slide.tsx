@@ -585,7 +585,6 @@ export function RefineSlide({ step, onAutoAdvance, skipAnimation, isActive, onTi
 
   const spotlightAfterLine = isSpotlight && spotPhase >= 1 ? SEGMENT_HIGHLIGHTS[spotlightIdx].afterBody : null;
 
-  const activeHighlight = isSpotlight ? SEGMENT_HIGHLIGHTS[spotlightIdx] : null;
   const isLifted = spotPhase >= 1;
 
   return (

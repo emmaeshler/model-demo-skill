@@ -6,7 +6,6 @@ import { makeCurve } from "./demand-curve";
 
 const NAVY = "#00446A";
 const ORANGE = "#E56910";
-const MUTED = "#5A6A78";
 
 const SLOT = { x: 30, y: 15, w: 350, h: 140 };
 const DOT_COUNT = 20;

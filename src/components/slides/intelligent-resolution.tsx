@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+
 import { motion, AnimatePresence } from "framer-motion";
 import { useShareMode } from "@/lib/share-context";
 
@@ -372,8 +372,7 @@ function ConfiguredQuote() {
   );
 }
 
-export function IntelligentResolutionSlide({ step = 0, skipAnimation }: { step: number; skipAnimation?: boolean }) {
-  const { shareMode } = useShareMode();
+export function IntelligentResolutionSlide({ step = 0 }: { step: number; skipAnimation?: boolean }) {
   // step 0: subtitle only
   // step 1: email card appears
   // step 2: analysis annotations

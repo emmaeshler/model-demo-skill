@@ -83,8 +83,6 @@ const WATERFALL_ITEMS = [
   { label: "Relationship", value: 0.57,  color: GREEN },
 ];
 
-const HIGHLIGHT_IDX = 4;
-
 export function DealCardsHero() {
   const [beat, setBeat] = useState(0);
   const [paused, setPaused] = useState(false);

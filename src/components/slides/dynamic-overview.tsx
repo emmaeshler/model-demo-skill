@@ -106,7 +106,7 @@ export function DynamicOverviewSlide({ step }: DynamicOverviewSlideProps) {
   const showInputs = step >= 1;
   const showOutputs = step >= 2;
   const showFeedback = step >= 3;
-  const showComplete = step >= 4;
+
 
   return (
     <div className="mx-auto flex h-[calc(var(--slide-h,100vh)-7.5rem)] max-w-5xl flex-col items-center justify-center gap-3 px-6">
@@ -217,7 +217,7 @@ export function DynamicOverviewSlide({ step }: DynamicOverviewSlideProps) {
         </motion.text>
 
         {/* Input cards */}
-        {INPUTS.map((inp, i) => {
+        {INPUTS.map((inp) => {
           const active = step === 1;
           const visible = showInputs;
           return (
@@ -283,7 +283,7 @@ export function DynamicOverviewSlide({ step }: DynamicOverviewSlideProps) {
         </motion.g>
 
         {/* Output cards */}
-        {OUTPUTS.map((out, i) => {
+        {OUTPUTS.map((out) => {
           const active = step === 2;
           return (
             <motion.g

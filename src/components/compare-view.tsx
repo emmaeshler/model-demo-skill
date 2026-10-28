@@ -11,7 +11,7 @@ interface CompareViewProps {
   high: ComponentType;
 }
 
-export function CompareView({ slug: _slug, low: Low, medium: Medium, high: High }: CompareViewProps) {
+export function CompareView({ low: Low, medium: Medium, high: High }: CompareViewProps) {
   const columns = [
     { label: DEPTH_LABELS[0], Content: Low, bordered: false },
     { label: DEPTH_LABELS[1], Content: Medium, bordered: true },

@@ -382,7 +382,6 @@ export function PriceDriftHero() {
             const cardW = 110;
             const cardH = 26;
             const cardY = isOverpriced ? H - PB - 2 : PT + 2;
-            const dotY = isOverpriced ? py(MKT[3]) : py(MKT[13]);
             const midGapY = g.y;
 
             return (

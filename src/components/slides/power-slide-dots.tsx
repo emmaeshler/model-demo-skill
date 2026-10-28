@@ -3,8 +3,8 @@
 import { motion } from "framer-motion";
 import {
   EASE, DOTS, DOT_COUNT, CLUSTER_TARGETS, SQUARE_TARGETS, CLUSTER_SPREAD,
-  CLUSTER_COLORS, CLUSTER_R, DRIVERS, PLOT, PLOT_CX, PLOT_CY, PLOT_H,
-  TEAL, MUTED, SWEEP_DURATION, highlightDotsForCluster, CALLOUTS,
+  CLUSTER_COLORS, CLUSTER_R, DRIVERS, PLOT_CX, PLOT_CY,
+  TEAL, SWEEP_DURATION, highlightDotsForCluster, CALLOUTS,
 } from "./power-slide-data";
 
 interface DotFieldProps {
@@ -30,7 +30,7 @@ interface DotFieldProps {
 export function DotField({
   shareMode, chartStep, introPhase, feeding, factorsVisible, factorsPhase,
   customized, morphPhase, convergeReady, clustered, sweepActive, scanCardCount,
-  selectionPhase, skipAnimation, dotFill, dotOpacity, revealedClusters,
+  selectionPhase, dotFill, dotOpacity, revealedClusters,
 }: DotFieldProps) {
   return (
     <>

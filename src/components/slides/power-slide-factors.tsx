@@ -412,7 +412,7 @@ export function FactorGrid({
                         <div
                           style={{ display: "grid", gridTemplateColumns: "repeat(4, auto)", gap: 10, justifyContent: "start", alignContent: "start" }}
                         >
-                          {SQUARE_FACTORS.map((f, fi) => {
+                          {SQUARE_FACTORS.map((f) => {
                             const isSelected = SELECTED_FACTORS.some(sf => sf.label === f.label);
                             const catColor = CATEGORY_LAYOUT.find(c => c.key === f.category)?.color ?? MUTED;
                             return (

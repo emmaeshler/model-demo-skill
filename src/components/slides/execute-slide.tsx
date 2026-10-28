@@ -36,7 +36,7 @@ const RESULT_CARD_X = MODEL_X + MODEL_W + 100;
 
 /* ── Product ─────────────────────────────────────────── */
 
-const PRODUCT_NAME = "Precision Bearing SKU #A-7200";
+
 const LIST_PRICE = "$17.50";
 
 /* ── Customer scenarios ──────────────────────────────── */

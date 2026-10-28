@@ -1,14 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { makeCurve, makeParabolaPath, makeSigmoidPath } from "./demand-curve";
 
 const NAVY = "#00446A";
 const ORANGE = "#E56910";
-const TEAL = "#21A5D5";
 const MUTED = "#5A6A78";
-const GREEN = "#2e7d32";
 
 const LEFT_SLOT = { x: 10, y: 20, w: 170, h: 120 };
 const RIGHT_SLOT = { x: 10, y: 10, w: 170, h: 110 };
@@ -59,7 +57,6 @@ export function ObjectiveFunctionVisual() {
   const sigD = makeSigmoidPath(RIGHT_SLOT);
   const parabPt = parabolaYAtT(sweepT, RIGHT_SLOT);
 
-  const sigSamples = 64;
   const sigT = sweepT;
   const sigX = RIGHT_SLOT.x + 15 + sigT * (RIGHT_SLOT.w - 30);
   const sigYNorm = 1 / (1 + Math.exp(7 * (sigT - 0.5)));

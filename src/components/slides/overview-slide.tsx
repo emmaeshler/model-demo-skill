@@ -43,7 +43,7 @@ const MINI_START = CX - (MODULES.length - 1) * MINI_SPACING / 2;
 
 export const OVERVIEW_TOTAL_STEPS = 1;
 
-export function OverviewSlide({ step, skipAnimation, isActive }: { step: number; skipAnimation?: boolean; isActive: boolean }) {
+export function OverviewSlide({ skipAnimation, isActive }: { step: number; skipAnimation?: boolean; isActive: boolean }) {
   const { shareMode } = useShareMode();
   const [collapsed, setCollapsed] = useState(!!skipAnimation || shareMode);
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
