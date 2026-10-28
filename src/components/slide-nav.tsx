@@ -198,10 +198,6 @@ export function TopBar({
             {presentationTitle}
           </button>
 
-          <span className="mx-2 rounded bg-white/10 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-white/50">
-            V2 · Oct 28, 2026
-          </span>
-
           <button
             ref={triggerRef}
             onClick={() => setOpen(!open)}
@@ -326,7 +322,8 @@ export function TopBar({
             exit={{ x: -260 }}
             transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="h-full overflow-y-auto p-3">
+            <div className="flex h-full flex-col overflow-y-auto p-3">
+              <div className="flex-1">
               {groups.map((group, gi) => {
                 const groupDone = group.slides.every(
                   (s) =>
@@ -437,6 +434,10 @@ export function TopBar({
                   </div>
                 );
               })}
+              </div>
+              <div className="mt-3 border-t border-white/10 pt-3 text-center text-[11px] font-medium tracking-wide text-white/40">
+                V2 · Oct 28, 2026
+              </div>
             </div>
           </motion.div>
         )}
