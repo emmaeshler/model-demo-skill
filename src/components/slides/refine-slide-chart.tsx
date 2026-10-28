@@ -127,8 +127,8 @@ export function RefineChart({
             strokeWidth: isSpotlight && spotlightIdx === 1 ? 3 : 2,
           }}
           transition={isSpotlight ? {
-            opacity: { duration: 0.8, delay: 0.5, ease: "easeOut" },
-            strokeWidth: { duration: 0.4 },
+            opacity: { duration: 0.5, delay: 0.25, ease: "easeOut" },
+            strokeWidth: { duration: 0.3 },
           } : { duration: 1, ease: "easeOut" }}
         />
       )}
@@ -182,6 +182,9 @@ export function RefineChart({
         } else if (settling) {
           animCx = baseCx;
           animCy = waveActive ? scatterY : scatterY - 12;
+        } else if (dotOpacity === 0) {
+          animCx = baseCx;
+          animCy = scatterY;
         } else {
           animCx = [baseCx, baseCx + dot.driftDx, baseCx - dot.driftDx * 0.6, baseCx];
           animCy = [targetY, targetY + dot.driftDy, targetY - dot.driftDy * 0.6, targetY];
@@ -199,7 +202,12 @@ export function RefineChart({
               opacity: settling ? settlingOpacity : (waveActive ? dotOpacity : 0),
               scale: waveActive ? 1 : 0,
             }}
-            transition={{
+            transition={dotOpacity === 0 && !settling ? {
+              cx: { duration: 0.25 },
+              cy: { duration: 0.25 },
+              opacity: { duration: 0.25 },
+              scale: { duration: 0.2 },
+            } : {
               cx: settling
                   ? { duration: 0.01 }
                   : isAllToCurve
@@ -258,7 +266,7 @@ export function RefineChart({
                 stroke={seg.dotColor} strokeWidth={1} strokeDasharray="3 3"
                 initial={{ opacity: 0, y1: belowY, y2: belowY }}
                 animate={{ opacity: isAllToCurve ? 0.2 : 0.35, y1: targetCy, y2: targetCy }}
-                transition={{ opacity: { duration: 0.4, delay: 0.3 }, y1: { duration: 1.0, ease: EASE }, y2: { duration: 1.0, ease: EASE } }}
+                transition={{ opacity: { duration: 0.3, delay: 0.15 }, y1: { duration: 0.6, ease: EASE }, y2: { duration: 0.6, ease: EASE } }}
               />
             )}
 
@@ -269,7 +277,7 @@ export function RefineChart({
                 stroke={seg.dotColor} strokeWidth={1} strokeDasharray="3 3"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: dotLifted ? 0 : 0.3 }}
-                transition={{ duration: 0.4, delay: dotLifted ? 0 : 0.5 }}
+                transition={{ duration: 0.3, delay: dotLifted ? 0 : 0.2 }}
               />
             )}
 
@@ -283,7 +291,7 @@ export function RefineChart({
                 strokeDasharray={dotLifted ? "0" : "4 3"}
                 initial={{ opacity: 0, scale: 0.5 }}
                 animate={{ opacity: isAllToCurve ? 0.2 : dotLifted ? 0.5 : 0.3, scale: 1 }}
-                transition={{ duration: 0.5, delay: isActive ? 0.4 : 0.2 }}
+                transition={{ duration: 0.35, delay: isActive ? 0.15 : 0.1 }}
                 style={{ transformOrigin: `${pt.x}px ${pt.y}px` }}
               />
             )}
@@ -296,7 +304,7 @@ export function RefineChart({
               initial={{ cy: belowY, opacity: 0 }}
               animate={{ cy: targetCy, opacity: 1 }}
               transition={{
-                cy: { duration: 1.0, ease: EASE },
+                cy: { duration: 0.7, ease: EASE },
                 opacity: { duration: 0.3, delay: 0.1 },
               }}
               style={{ cursor: isActive ? "pointer" : "default" }}
@@ -304,7 +312,7 @@ export function RefineChart({
 
             {/* Label near dot (before lift) */}
             {isActive && !dotLifted && (
-              <motion.g initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6, duration: 0.4 }}>
+              <motion.g initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25, duration: 0.3 }}>
                 <text x={pt.x} y={seg.offsetY < 0 ? belowY - 26 : belowY + 16} fontSize="9" fontWeight="600" fill={seg.dotColor} textAnchor="middle" style={{ fontFamily: "inherit" }}>
                   {seg.label}
                 </text>
@@ -319,7 +327,7 @@ export function RefineChart({
               <motion.g
                 initial={{ opacity: 0 }}
                 animate={{ opacity: isActive ? 1 : isPast ? 0.5 : 0.7 }}
-                transition={{ delay: isActive ? 0.6 : 0, duration: 0.4 }}
+                transition={{ delay: isActive ? 0.35 : 0, duration: 0.3 }}
               >
                 <text x={pt.x} y={pt.y - 26} fontSize="9" fontWeight="600" fill={seg.dotColor} textAnchor="middle" style={{ fontFamily: "inherit" }}>
                   {seg.label}
@@ -342,13 +350,13 @@ export function RefineChart({
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    transition={{ delay: 0.3, duration: 0.4 }}
+                    transition={{ delay: 0.15, duration: 0.3 }}
                     style={{ cursor: "pointer" }}
                   >
                     <motion.g
                       initial={{ y: belowY }}
                       animate={{ y: dotLifted ? pt.y : belowY }}
-                      transition={{ y: { duration: 1.0, ease: EASE } }}
+                      transition={{ y: { duration: 0.7, ease: EASE } }}
                     >
                       <motion.rect
                         x={cardX} y={-CARD_H - 4}

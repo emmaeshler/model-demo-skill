@@ -294,8 +294,8 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
             <motion.div
               key="intro-title"
               className="absolute inset-0 flex flex-col items-center justify-start"
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.6, ease: "easeInOut" }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.25 }}
             >
               <motion.h2
                 className="text-center text-3xl font-bold tracking-tight sm:text-4xl"
@@ -419,10 +419,10 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
             <motion.div
               key={`step-title-${chartStep === 0 ? 'curve-intro' : `step-${chartStep}`}`}
               className="absolute inset-0 flex flex-col items-center justify-start"
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.35 }}
+              transition={{ duration: 0.3 }}
             >
               <motion.h2
                 className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
