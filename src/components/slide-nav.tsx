@@ -102,6 +102,10 @@ export function TopBar({
   const [expandedGroups, setExpandedGroups] = useState<Set<number | -1>>(new Set());
   const panelRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isExport, setIsExport] = useState(false);
+  useEffect(() => {
+    setIsExport(!!document.getElementById("__export_root"));
+  }, []);
 
   useEffect(() => {
     function onFsChange() {
@@ -244,7 +248,7 @@ export function TopBar({
                 />
               </div>
             </button>
-            {onStartPresenting && (
+            {onStartPresenting && !isExport && (
               <button
                 onClick={onStartPresenting}
                 className={cn(
@@ -260,7 +264,7 @@ export function TopBar({
             )}
             <FullPageButton isFullscreen={isFullscreen} compact={isFullscreen} />
             <DownloadLink compact={isFullscreen} />
-            <div className="relative" data-wt="kebab">
+            {!isExport && <div className="relative" data-wt="kebab">
               <button
                 ref={kebabBtnRef}
                 onClick={() => setKebabOpen(!kebabOpen)}
@@ -312,7 +316,7 @@ export function TopBar({
                   )}
                 </div>
               )}
-            </div>
+            </div>}
           </div>
         </div>
       </header>
