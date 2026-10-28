@@ -117,15 +117,19 @@ export function RefineChart({
       {/* Recommended price line (Acme's curve = base) */}
       {showCurve && (
         <motion.path
+          key={isSpotlight ? `curve-spot-${spotlightIdx}` : 'curve-main'}
           d={isIndexShift ? morphedIndexCurveD : curve.d}
           fill="none" stroke={NAVY} strokeLinecap="round"
-          initial={{ pathLength: 0, opacity: 0 }}
+          initial={isSpotlight ? { pathLength: 1, opacity: 0 } : { pathLength: 0, opacity: 0 }}
           animate={{
             pathLength: 1,
             opacity: isSpotlight ? (spotlightIdx === 1 ? 1 : 0.15) : 1,
             strokeWidth: isSpotlight && spotlightIdx === 1 ? 3 : 2,
           }}
-          transition={{ duration: 1, ease: "easeOut" }}
+          transition={isSpotlight ? {
+            opacity: { duration: 0.8, delay: 0.5, ease: "easeOut" },
+            strokeWidth: { duration: 0.4 },
+          } : { duration: 1, ease: "easeOut" }}
         />
       )}
 

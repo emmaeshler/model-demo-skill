@@ -419,10 +419,10 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
             <motion.div
               key={`step-title-${chartStep === 0 ? 'curve-intro' : `step-${chartStep}`}`}
               className="absolute inset-0 flex flex-col items-center justify-start"
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.5 }}
+              transition={{ duration: 0.35 }}
             >
               <motion.h2
                 className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
@@ -445,15 +445,15 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
                 ) : heading}
               </motion.h2>
               {subtitle && (
-                <AnimatePresence mode="wait">
+                <AnimatePresence>
                   <motion.p
                     key={chartStep === 0 ? 'curve-subtitle' : `step-${chartStep}`}
                     className="mx-auto mt-1 max-w-2xl text-center text-[1.05rem] font-medium leading-relaxed"
                     style={{ color: MUTED }}
-                    initial={{ opacity: 0, y: 6 }}
+                    initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.4, delay: 0.15 }}
+                    transition={{ duration: 0.3 }}
                   >
                     {subtitle}
                   </motion.p>
