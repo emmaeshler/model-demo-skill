@@ -197,37 +197,33 @@ export const LEGEND_ITEMS = (() => {
 export const STEP_CONTEXT: Record<number, { title: string; body: string }> = {
   0: {
     title: "Now we look across all your transactions",
-    body: "Every transaction, seen together, forms a market curve — and every price gets refined against it.",
+    body: "Together, they form a market curve — and every price gets refined against it.",
   },
   1: {
-    title: "Together, they form your market curve",
-    body: "A price–volume relationship built from your historical win/loss data.",
-  },
-  2: {
     title: "QuickParts",
     body: "The model detects a pricing gap and adjusts to the recommended price.",
   },
-  3: {
+  2: {
     title: "Acme",
     body: "The model detects a pricing gap and adjusts to the recommended price.",
   },
-  4: {
+  3: {
     title: "MedSupply",
     body: "The model detects a pricing gap and adjusts to the recommended price.",
   },
-  5: {
+  4: {
     title: "Every price, optimized",
     body: "Every transaction is now aligned to the model's recommended price — lifting underpriced deals while protecting wins.",
   },
-  6: {
+  5: {
     title: "The market moves. The model moves with it.",
     body: "External indices, win rates, price adoption, and margin — the model reads all four signals to decide when and how to reprice.",
   },
-  7: {
+  6: {
     title: "Every customer–market combination gets its own model",
     body: "Each with unique price sensitivities, calibrated independently.",
   },
-  8: {
+  7: {
     title: "We do this across your entire portfolio",
     body: "Every customer–end market combination gets its own model — continuously recalibrated as the market shifts.",
   },

@@ -147,12 +147,11 @@ const RAIL_TIMELINE: Partial<Record<number, (RailContent | null)[]>> = {
   ],
   [REFINE_INDEX]: [
     /* 0  */ { show: "mini-exec" },
-    /* 1  */ { show: "mini-exec" },
-    /* 2  */ { show: "mini-exec", activeCustomer: 0, refineStepForCustomer: 2 },
-    /* 3  */ { show: "mini-exec", activeCustomer: 1, refineStepForCustomer: 3 },
-    /* 4  */ { show: "mini-exec", activeCustomer: 2, refineStepForCustomer: 4 },
+    /* 1  */ { show: "mini-exec", activeCustomer: 0, refineStepForCustomer: 1 },
+    /* 2  */ { show: "mini-exec", activeCustomer: 1, refineStepForCustomer: 2 },
+    /* 3  */ { show: "mini-exec", activeCustomer: 2, refineStepForCustomer: 3 },
+    /* 4  */ { show: "mini-exec" },
     /* 5  */ { show: "mini-exec" },
-    /* 6  */ { show: "mini-exec" },
     null,
     null,
   ],
@@ -465,9 +464,9 @@ function MiniExecuteConnector({ refineStep, flyIn = false, onSelectCustomer, tim
   const adjustedSet = useMemo(() => {
     const s = new Set<number>();
     if (refineStep === undefined) return s;
-    if (refineStep >= 2) s.add(0);
-    if (refineStep >= 3) s.add(1);
-    if (refineStep >= 4) s.add(2);
+    if (refineStep >= 1) s.add(0);
+    if (refineStep >= 2) s.add(1);
+    if (refineStep >= 3) s.add(2);
     return s;
   }, [refineStep]);
 
@@ -504,7 +503,7 @@ function MiniExecuteConnector({ refineStep, flyIn = false, onSelectCustomer, tim
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3, delay: flyIn ? 0.7 : 0.2 }}
       >
-        {refineStep !== undefined && refineStep >= 2 ? "Customer Order Price, Refined" : "Customer Order Prices"}
+        {refineStep !== undefined && refineStep >= 1 ? "Customer Order Price, Refined" : "Customer Order Prices"}
       </motion.span>
 
       <div className="relative z-10 flex flex-col gap-1.5">
@@ -626,15 +625,14 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
     label: "4 | Refine",
     subtitle: "Optimizing prices along the demand curve",
     slides: [
-      { index: REFINE_INDEX, label: "Every product, priced right", subStep: 0 },
-      { index: REFINE_INDEX, label: "Your market curve", subStep: 1 },
-      { index: REFINE_INDEX, label: "QuickParts: underpriced", subStep: 2 },
-      { index: REFINE_INDEX, label: "Acme: rising win rate", subStep: 3 },
-      { index: REFINE_INDEX, label: "MedSupply: at risk", subStep: 4 },
-      { index: REFINE_INDEX, label: "Prices snap to the curve", subStep: 5 },
-      { index: REFINE_INDEX, label: "The curve adapts", subStep: 6 },
-      { index: REFINE_INDEX, label: "Segment models", subStep: 7 },
-      { index: REFINE_INDEX, label: "Full portfolio", subStep: 8 },
+      { index: REFINE_INDEX, label: "Your market curve", subStep: 0 },
+      { index: REFINE_INDEX, label: "QuickParts: underpriced", subStep: 1 },
+      { index: REFINE_INDEX, label: "Acme: rising win rate", subStep: 2 },
+      { index: REFINE_INDEX, label: "MedSupply: at risk", subStep: 3 },
+      { index: REFINE_INDEX, label: "Prices snap to the curve", subStep: 4 },
+      { index: REFINE_INDEX, label: "The curve adapts", subStep: 5 },
+      { index: REFINE_INDEX, label: "Segment models", subStep: 6 },
+      { index: REFINE_INDEX, label: "Full portfolio", subStep: 7 },
     ],
   },
   {
@@ -1274,7 +1272,7 @@ export function Home() {
       const currentMax = subStepConfig[slide] ?? 0;
 
       // Timeline phase navigation within the refine slide's timeline step
-      if (slide === REFINE_INDEX && subStep === 6) {
+      if (slide === REFINE_INDEX && subStep === 5) {
         if (target === slide + 1 && refineTimelinePhase < 3) {
           setRefineTimelinePhase(prev => prev + 1);
           return;
@@ -1290,7 +1288,7 @@ export function Home() {
         startTransition(() => {
           setSkipAnimation(false);
           setSubStep((s) => s + 1);
-          if (slide === REFINE_INDEX && subStep === 5) setRefineTimelinePhase(0);
+          if (slide === REFINE_INDEX && subStep === 4) setRefineTimelinePhase(0);
         });
         return;
       }
@@ -1299,7 +1297,7 @@ export function Home() {
         startTransition(() => {
           setSkipAnimation(true);
           setSubStep((s) => Math.max(0, s - 1));
-          if (slide === REFINE_INDEX && subStep === 7) setRefineTimelinePhase(3);
+          if (slide === REFINE_INDEX && subStep === 6) setRefineTimelinePhase(3);
         });
         return;
       }
@@ -1357,7 +1355,7 @@ export function Home() {
       if (walkthroughOpen) return;
       if (e.key === "ArrowRight" || e.key === "ArrowDown") {
         e.preventDefault();
-        const isRefineSpotlight = slide === REFINE_INDEX && subStep >= 2 && subStep <= 4;
+        const isRefineSpotlight = slide === REFINE_INDEX && subStep >= 1 && subStep <= 3;
         if (isRefineSpotlight && !spotlightRefinedRef.current) {
           setSpotlightAdvanceReq((r) => r + 1);
         } else {
@@ -1485,7 +1483,7 @@ export function Home() {
                           skipAnimation={effectiveSkip}
                           isActive={isActive}
                           onTimelinePhase={isActive ? handleRefineTimelinePhase : undefined}
-                          requestedPhase={isActive && subStep === 6 ? refineTimelinePhase : undefined}
+                          requestedPhase={isActive && subStep === 5 ? refineTimelinePhase : undefined}
                           advanceRequest={spotlightAdvanceReq}
                           onSpotlightRefined={handleSpotlightRefined}
                         />

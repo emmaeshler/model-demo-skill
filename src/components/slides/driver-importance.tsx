@@ -315,15 +315,15 @@ export function DriverImportanceSlide({
 
   const [introPhase, setIntroPhase] = useState(skipAnimation ? 5 : 0);
   useEffect(() => {
-    if (!isActive || !isIntro) { setIntroPhase(skipAnimation ? 5 : 0); return; }
+    if (!isActive || !isIntro) { setIntroPhase(0); return; }
     if (skipAnimation || shareMode) { setIntroPhase(5); autoAdvanceRef.current?.(); return; }
     setIntroPhase(0);
     const timers = [
-      setTimeout(() => setIntroPhase(1), 800),
-      setTimeout(() => setIntroPhase(2), 2000),
-      setTimeout(() => setIntroPhase(3), 3200),
-      setTimeout(() => setIntroPhase(4), 4400),
-      setTimeout(() => setIntroPhase(5), 6400),
+      setTimeout(() => setIntroPhase(1), 400),
+      setTimeout(() => setIntroPhase(2), 800),
+      setTimeout(() => setIntroPhase(3), 1200),
+      setTimeout(() => setIntroPhase(4), 1600),
+      setTimeout(() => setIntroPhase(5), 2200),
     ];
     return () => timers.forEach(clearTimeout);
   }, [isActive, isIntro, skipAnimation, shareMode]);

@@ -252,7 +252,7 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
   const heading = isPortfolio
     ? "We do this across your entire portfolio"
     : isPortfolioHero
-    ? STEP_CONTEXT[7]?.title || ""
+    ? STEP_CONTEXT[6]?.title || ""
     : isIndexShift
     ? "The market moves. The model moves with it."
     : isAllToCurve
@@ -264,7 +264,7 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
   const subtitle = isPortfolio
       ? "Every customer–end market combination gets its own model — continuously recalibrated as the market shifts."
       : isPortfolioHero
-      ? STEP_CONTEXT[7]?.body || null
+      ? STEP_CONTEXT[6]?.body || null
       : isIndexShift
       ? null
       : isSpotlight
@@ -297,49 +297,15 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.6, ease: "easeInOut" }}
             >
-              <div className="flex flex-col items-center gap-1">
-                <motion.h2
-                  className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
-                  style={{ color: NAVY }}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{
-                    opacity: introPhase >= 1 && introPhase < 3 ? 1 : 0,
-                    y: introPhase >= 1 && introPhase < 3 ? 0 : introPhase >= 3 ? -12 : 8,
-                    height: introPhase >= 3 ? 0 : "auto",
-                    marginBottom: introPhase >= 3 ? 0 : 4,
-                  }}
-                  transition={{ duration: 0.5 }}
-                >
-                  Every product, priced right
-                </motion.h2>
-                <motion.h2
-                  className="text-center text-2xl font-bold tracking-tight sm:text-3xl"
-                  style={{ color: NAVY }}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{
-                    opacity: introPhase >= 2 && introPhase < 3 ? 1 : 0,
-                    y: introPhase >= 2 && introPhase < 3 ? 0 : introPhase >= 3 ? -12 : 8,
-                    height: introPhase < 2 || introPhase >= 3 ? 0 : "auto",
-                    marginBottom: introPhase < 2 || introPhase >= 3 ? 0 : 4,
-                  }}
-                  transition={{ duration: 0.5 }}
-                >
-                  But each price was set on its own
-                </motion.h2>
-                <AnimatePresence>
-                  {introPhase >= 3 && (
-                    <motion.h2
-                      className="text-center text-3xl font-bold tracking-tight sm:text-4xl"
-                      style={{ color: STRAT_BLUE }}
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.6, ease: "easeOut" }}
-                    >
-                      Now we look across all your transactions
-                    </motion.h2>
-                  )}
-                </AnimatePresence>
-              </div>
+              <motion.h2
+                className="text-center text-3xl font-bold tracking-tight sm:text-4xl"
+                style={{ color: STRAT_BLUE }}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
+              >
+                Now we look across all your transactions
+              </motion.h2>
               <motion.p
                 className="mx-auto mt-2 max-w-xl text-center text-[1.05rem] font-medium leading-relaxed"
                 style={{ color: MUTED }}
@@ -347,7 +313,7 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
                 animate={{ opacity: introPhase >= 4 ? 1 : 0, y: introPhase >= 4 ? 0 : 6 }}
                 transition={{ duration: 0.4 }}
               >
-                All your transactions, seen together,{" "}
+                Together, they{" "}
                 <span className="font-bold" style={{ color: NAVY, whiteSpace: "nowrap", textDecoration: "underline", textDecorationColor: STRAT_BLUE, textUnderlineOffset: "4px", textDecorationThickness: "2px" }}>form a market curve</span>
                 &nbsp;— and every price gets refined against&nbsp;it.
               </motion.p>
@@ -451,7 +417,7 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
           )}
           {chartStep > 0 && !isPortfolio && !isPortfolioHero && (
             <motion.div
-              key={`step-title-${chartStep === 1 ? 'curve-intro' : `step-${chartStep}`}`}
+              key={`step-title-${chartStep === 0 ? 'curve-intro' : `step-${chartStep}`}`}
               className="absolute inset-0 flex flex-col items-center justify-start"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
@@ -481,7 +447,7 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
               {subtitle && (
                 <AnimatePresence mode="wait">
                   <motion.p
-                    key={chartStep === 1 ? 'curve-subtitle' : `step-${chartStep}`}
+                    key={chartStep === 0 ? 'curve-subtitle' : `step-${chartStep}`}
                     className="mx-auto mt-1 max-w-2xl text-center text-[1.05rem] font-medium leading-relaxed"
                     style={{ color: MUTED }}
                     initial={{ opacity: 0, y: 6 }}

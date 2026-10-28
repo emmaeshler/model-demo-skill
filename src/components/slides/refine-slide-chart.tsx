@@ -137,7 +137,7 @@ export function RefineChart({
           fontWeight="700" fill={NAVY} textAnchor="middle"
           style={{ fontFamily: "inherit" }}
           initial={{ opacity: 0 }}
-          animate={{ opacity: chartStep >= 2 ? 0 : 0.5 }}
+          animate={{ opacity: chartStep >= 1 ? 0 : 0.5 }}
           transition={{ delay: 0.8, duration: 0.5 }}
         >
           Market curve
