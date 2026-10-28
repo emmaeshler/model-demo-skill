@@ -440,7 +440,7 @@ export function TopBar({
                 );
               })}
               </div>
-              <div className="shrink-0 border-t border-white/10 px-3 py-2.5 text-center text-[11px] font-medium tracking-wide text-white/40">
+              <div className="shrink-0 px-3 py-2.5 text-center text-[11px] font-medium tracking-wide text-white/40">
                 V2 · Oct 28, 2026
               </div>
             </div>
