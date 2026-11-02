@@ -51,10 +51,18 @@ export function usePhaseSequence(
       return () => clearTimeout(t);
     }
 
-    const timers = delaysRef.current.map((delay, i) =>
-      setTimeout(() => setPhase(i), delay),
-    );
-    return () => timers.forEach(clearTimeout);
+    const raf = requestAnimationFrame(() => {
+      timers.push(
+        ...delaysRef.current.map((delay, i) =>
+          setTimeout(() => setPhase(i), delay),
+        ),
+      );
+    });
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    return () => {
+      cancelAnimationFrame(raf);
+      timers.forEach(clearTimeout);
+    };
   }, [active, skip, enabled, finalPhase]);
 
   return phase;

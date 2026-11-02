@@ -40,19 +40,27 @@ export function ShareProvider({ children }: { children: ReactNode }) {
   }, [shareMode]);
 
   useEffect(() => {
-    const bc = new BroadcastChannel(CHANNEL_NAME);
-    bc.onmessage = (e) => {
-      if (typeof e.data?.shareMode === "boolean") {
-        setShareModeState(e.data.shareMode);
-      }
-    };
-    return () => bc.close();
+    try {
+      const bc = new BroadcastChannel(CHANNEL_NAME);
+      bc.onmessage = (e) => {
+        if (typeof e.data?.shareMode === "boolean") {
+          setShareModeState(e.data.shareMode);
+        }
+      };
+      return () => bc.close();
+    } catch {
+      // BroadcastChannel unavailable (file:// protocol)
+    }
   }, []);
 
   useEffect(() => {
-    const bc = new BroadcastChannel(CHANNEL_NAME);
-    bc.postMessage({ shareMode });
-    bc.close();
+    try {
+      const bc = new BroadcastChannel(CHANNEL_NAME);
+      bc.postMessage({ shareMode });
+      bc.close();
+    } catch {
+      // BroadcastChannel unavailable (file:// protocol)
+    }
   }, [shareMode]);
 
   const setShareMode = useCallback((on: boolean) => setShareModeState(on), []);
