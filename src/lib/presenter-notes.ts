@@ -1,3 +1,5 @@
+import { segmentsMonitored } from "@/lib/prospect-config";
+
 const NOTES: Record<string, string[]> = {
   "intro": [
     "Welcome everyone to Inside Your Dynamic Model.",
@@ -28,13 +30,13 @@ const NOTES: Record<string, string[]> = {
   ],
   "driver-importance:6": [
     "These seven drivers now feed the pricing model — each selected because it explains meaningful price variance in your data.",
-    "Click to see how they collapse into one optimal price per SKU.",
+    "Click to see how they collapse into one optimal rate per room configuration.",
   ],
   "driver-importance:7": [
-    "All four driver categories converge — the model combines them into a single optimized price for each SKU.",
+    "All four driver categories converge — the model combines them into a single optimized rate for each room configuration.",
   ],
   "execute:0": [
-    "Here's where the model output meets the real world — it starts with one optimized price per SKU, then adjusts for each customer.",
+    "Here's where the model output meets the real world — it starts with one optimized rate per room configuration, then adjusts for each customer.",
     "Watch how a customer's profile feeds into the model and produces a tailored price.",
   ],
   "execute:1": [
@@ -75,7 +77,7 @@ const NOTES: Record<string, string[]> = {
     "Here are four examples — each calibrated independently based on its own price sensitivities.",
   ],
   "refine:8": [
-    "Now zoom out — we do this across 247 segments, continuously.",
+    `Now zoom out — we do this across ${segmentsMonitored} segments, continuously.`,
     "Every segment is monitored and recalibrated as the market shifts.",
   ],
   "end": [
@@ -102,8 +104,8 @@ const TRANSITION_HINTS: Record<string, string> = {
   "driver-importance:4": "Spotlights Market factors.",
   "driver-importance:5": "All factors appear together — the model's full input set.",
   "driver-importance:6": "Factors distill into 7 model drivers that explain the most price variance.",
-  "driver-importance:7": "Drivers collapse into one optimized price per SKU — transitions to Execute.",
-  "execute:0": "The Execute section: one optimized price per SKU, then adjusted for each customer's profile.",
+  "driver-importance:7": "Drivers collapse into one optimized rate per room configuration — transitions to Execute.",
+  "execute:0": "The Execute section: one optimized rate per room configuration, then adjusted for each customer's profile.",
   "execute:1": "Customer comparison view — click chips to see how different profiles shift the recommendation.",
   "refine:0": "Transitions to Refine. Strategic guidance meets the demand curve.",
   "refine:1": "The calibrated demand curve appears — price vs. volume built from win/loss history.",
@@ -113,7 +115,7 @@ const TRANSITION_HINTS: Record<string, string> = {
   "refine:5": "All three customers snap to the curve — optimized prices appear.",
   "refine:6": "The curve adapts over time — external indices, win rate, adoption, and margin all feed each evolution.",
   "refine:7": "Zooms out to show segment-level models — each customer–market combination gets its own.",
-  "refine:8": "Full portfolio view — 247 segments monitored and recalibrated continuously.",
+  "refine:8": `Full portfolio view — ${segmentsMonitored} segments monitored and recalibrated continuously.`,
   "end": "Closing slide — thank you and next steps.",
 };
 
