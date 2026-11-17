@@ -256,10 +256,14 @@ export interface SlideText {
   driverIntroSubtitle: string;
   driverCollapseTitle: string;
   driverCollapseSubtitle: string;
+  executeModelTitle: string;
   executeModelSubtitle: string;
+  executeWrapTitle: string;
+  executeDataSub: string;
   refineIntroTitle: string;
   refineIntroSubtitle: string;
   refineCurveTitle: string;
+  refineOptimizedBody: string;
   statusQuoLabels: string[];
   profitStepNarratives: string[];
 }
@@ -1020,10 +1024,14 @@ export const slideText: SlideText = {
   driverIntroSubtitle: "Tuned to your fire protection business — elevating what matters, removing what doesn’t.",
   driverCollapseTitle: "One optimal price per job",
   driverCollapseSubtitle: "All your drivers, one answer.",
+  executeModelTitle: "Applying the optimized price at the service contract level",
   executeModelSubtitle: "The model starts with one optimized price per job — then adjusts for each service contract’s unique factors.",
+  executeWrapTitle: "The ideal price, adjusted for each contract",
+  executeDataSub: "Millions of service records scanned for patterns",
   refineIntroTitle: "Now we look across all your service contracts",
   refineIntroSubtitle: "Together, they form a market curve — and every price gets refined against it.",
   refineCurveTitle: "Your calibrated demand curve",
+  refineOptimizedBody: "Every service contract is now aligned to the model's recommended price — lifting underpriced jobs while protecting wins.",
   statusQuoLabels: [
     "Quoted 18% below floor",
     "Emergency markup overridden",

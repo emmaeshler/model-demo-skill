@@ -394,7 +394,7 @@ const OV_OUT_H = 52;
 const OV_OUT_X = 600;
 
 const OV_INPUTS = [
-  { label: "Internal Data", sub: "Millions of transactions scanned for patterns", section: 0, color: ML_GREEN },
+  { label: "Internal Data", sub: slideText.executeDataSub, section: 0, color: ML_GREEN },
   { label: "Business Objectives", sub: "Business rules that shape strategic guidance", section: 0, color: STRAT_BLUE },
   { label: "External Data", sub: "Market signals driving competitive position", section: 1, color: ML_GREEN },
   { label: "Industry Expertise", sub: "Benchmarks behind the pricing drivers", section: 1, color: STRAT_BLUE },
@@ -754,12 +754,12 @@ export function ExecuteSlide({
                 transition={{ duration: didCollapse.current ? 0.5 : 0.4, delay: didCollapse.current ? 0.35 : 0 }}
               >
                 {revealPhase <= 1
-                  ? "Applying the optimized price at the customer order level"
+                  ? slideText.executeModelTitle
                   : revealPhase === 2
                     ? `${CUSTOMERS[0].label}’s drivers feed the pricing model`
                     : revealPhase === 3
                       ? `A price tailored to ${CUSTOMERS[0].label} emerges`
-                      : "The ideal price, adjusted for each customer"}
+                      : slideText.executeWrapTitle}
               </motion.h2>
             </AnimatePresence>
           </div>

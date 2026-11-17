@@ -175,7 +175,7 @@ export const STEP_CONTEXT: Record<number, { title: string; body: string }> = {
   },
   4: {
     title: "Every price, optimized",
-    body: "Every transaction is now aligned to the model's recommended price — lifting underpriced deals while protecting wins.",
+    body: slideText.refineOptimizedBody,
   },
   5: {
     title: "The market moves. The model moves with it.",
