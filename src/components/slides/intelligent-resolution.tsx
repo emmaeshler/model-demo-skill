@@ -137,8 +137,8 @@ function EmailCard({ step, analyzing }: { step: number; analyzing: boolean }) {
       </div>
       <div className="space-y-2 p-3.5">
         <div className="flex gap-6 text-xs">
-          <span><span className="font-semibold text-muted-foreground">FROM:</span> buyer@industrialco.com</span>
-          <span><span className="font-semibold text-muted-foreground">SUBJ:</span> Quote Request — Insulators</span>
+          <span><span className="font-semibold text-muted-foreground">FROM:</span> {resolution.emailFrom}</span>
+          <span><span className="font-semibold text-muted-foreground">SUBJ:</span> {resolution.emailSubject}</span>
         </div>
 
         <div className="rounded-lg bg-slate-50 p-3.5 text-sm leading-[1.8] text-foreground/80">
@@ -170,7 +170,9 @@ function EmailCard({ step, analyzing }: { step: number; analyzing: boolean }) {
             >
               <span className="font-bold text-amber-700">⚠ RESOLUTION CHALLENGES</span>
               <p className="mt-0.5 text-muted-foreground">
-                2.7KV ≠ catalog format · 3/8-16 ambiguous · Suffix variant (S5 vs A5)
+                {ANNOTATIONS.slice(1, 4).map((a, i) => (
+                  <span key={a.id}>{i > 0 ? " · " : ""}{a.text} → {a.title.toLowerCase()}</span>
+                ))}
               </p>
             </motion.div>
           )}
@@ -276,7 +278,7 @@ function ConfiguredQuote() {
               Prepared for
             </p>
             <p className="text-sm font-bold" style={{ color: NAVY }}>
-              Industrial Co. — buyer@industrialco.com
+              {resolution.vendor} — {resolution.emailFrom}
             </p>
           </div>
           <div className="text-right">
@@ -284,7 +286,7 @@ function ConfiguredQuote() {
               Matched SKU
             </p>
             <p className="text-base font-bold tracking-wide" style={{ color: NAVY }}>
-              STAOFFR4225A5
+              {resolution.sku}
             </p>
           </div>
         </div>
@@ -299,10 +301,10 @@ function ConfiguredQuote() {
             Resolved Product
           </p>
           <p className="mt-1 text-sm" style={{ color: NAVY }}>
-            STANDOFF, Rigid Insulation, R4225, 2700V, 2.25&quot;H, 3/8×16×9/16
+            {resolution.annotations.map(a => a.detail.split("→")[1]?.trim() || a.detail).join(", ")}
           </p>
           <p className="mt-0.5 text-[10px] text-muted-foreground">
-            Vendor: MAR-BAL INC. &nbsp;·&nbsp; Model: R4225A5 (variant S5→A5 resolved)
+            Vendor: {resolution.vendor} &nbsp;·&nbsp; SKU: {resolution.sku}
           </p>
         </motion.div>
 
@@ -326,27 +328,26 @@ function ConfiguredQuote() {
                 </tr>
               </thead>
               <tbody>
-                {[
-                  { qty: 1, unit: "$124.50", ext: "$124.50", disc: "—" },
-                  { qty: 5, unit: "$118.28", ext: "$591.38", disc: "5%" },
-                  { qty: 10, unit: "$112.05", ext: "$1,120.50", disc: "10%" },
-                  { qty: 25, unit: "$105.83", ext: "$2,645.63", disc: "15%" },
-                  { qty: 50, unit: "$99.60", ext: "$4,980.00", disc: "20%" },
-                  { qty: 100, unit: "$93.38", ext: "$9,337.50", disc: "25%" },
-                ].map((row, i) => (
-                  <motion.tr
-                    key={row.qty}
-                    className="border-t"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.5 + i * 0.06 }}
-                  >
-                    <td className="px-3 py-1.5 font-medium">{row.qty}</td>
-                    <td className="px-3 py-1.5 text-right tabular-nums">{row.unit}</td>
-                    <td className="px-3 py-1.5 text-right tabular-nums">{row.ext}</td>
-                    <td className="px-3 py-1.5 text-right tabular-nums text-muted-foreground">{row.disc}</td>
-                  </motion.tr>
-                ))}
+                {resolution.pricingTiers.map((tier, i) => {
+                  const unit = parseFloat(tier.price.replace(/[$,]/g, ""));
+                  const base = parseFloat(resolution.pricingTiers[0].price.replace(/[$,]/g, ""));
+                  const ext = unit * tier.qty;
+                  const disc = i === 0 ? "—" : `${Math.round((1 - unit / base) * 100)}%`;
+                  return (
+                    <motion.tr
+                      key={tier.qty}
+                      className="border-t"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.5 + i * 0.06 }}
+                    >
+                      <td className="px-3 py-1.5 font-medium">{tier.qty}</td>
+                      <td className="px-3 py-1.5 text-right tabular-nums">{tier.price}</td>
+                      <td className="px-3 py-1.5 text-right tabular-nums">${ext.toLocaleString("en-US", { minimumFractionDigits: 2 })}</td>
+                      <td className="px-3 py-1.5 text-right tabular-nums text-muted-foreground">{disc}</td>
+                    </motion.tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
