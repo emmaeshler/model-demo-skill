@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { TrendingUp, Target, ShieldCheck, ArrowDownRight, Zap } from "lucide-react";
 import { useShareMode } from "@/lib/share-context";
+import { kpis as cfgKpis, stepNarratives, dataCounts } from "@/lib/prospect-config";
 
 const NAVY = "#00446A";
 const ORANGE = "#E56910";
@@ -68,13 +69,9 @@ function generateDots(): Dot[] {
 const DOTS = generateDots();
 
 /* ── KPI data ── */
-const KPIS = [
-  { label: "Margin Uplift", before: "28%", after: "34%", icon: TrendingUp, color: GREEN },
-  { label: "Win Rate", before: "41%", after: "47%", icon: Target, color: TEAL },
-  { label: "Price Consistency", before: "Low", after: "High", icon: ShieldCheck, color: NAVY },
-  { label: "Override Rate", before: "38%", after: "12%", icon: ArrowDownRight, color: ORANGE },
-  { label: "Quote Speed", before: "3 days", after: "Real-time", icon: Zap, color: TEAL },
-];
+const KPI_ICONS = [TrendingUp, Target, ShieldCheck, ArrowDownRight, Zap];
+const KPI_COLORS = [GREEN, TEAL, NAVY, ORANGE, TEAL];
+const KPIS = cfgKpis.map((k, i) => ({ ...k, icon: KPI_ICONS[i], color: KPI_COLORS[i] }));
 
 /* ── Animated counter ── */
 function AnimatedCounter({ target, duration = 2 }: { target: number; duration?: number }) {
