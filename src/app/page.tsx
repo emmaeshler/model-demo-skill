@@ -8,7 +8,7 @@ import { useMode } from "@/lib/mode-context";
 import { useShareMode } from "@/lib/share-context";
 import { getPresenterNotes, getTransitionHint } from "@/lib/presenter-notes";
 import { cn } from "@/lib/utils";
-import { selectedDrivers } from "@/lib/prospect-config";
+import { selectedDrivers, categoryTitles } from "@/lib/prospect-config";
 import { OneModelSlide, ONE_MODEL_TOTAL_STEPS } from "@/components/slides/one-model";
 import { PowerSlide, POWER_TOTAL_STEPS } from "@/components/slides/power-slide";
 import { ExecuteSlide, EXECUTE_TOTAL_STEPS } from "@/components/slides/execute-slide";
@@ -76,10 +76,10 @@ const STRAT_BLUE = "#2A7BA5";
 type CategoryKey = "customer" | "product" | "market" | "order";
 
 const FACTOR_CATEGORIES: { key: CategoryKey; label: string; color: string; tint: string }[] = [
-  { key: "customer", label: "Customer", color: "#00446A", tint: "rgba(0,68,106,0.08)" },
-  { key: "product", label: "Product", color: "#E56910", tint: "rgba(229,105,16,0.08)" },
-  { key: "order", label: "Order", color: "#7B5EA7", tint: "rgba(123,94,167,0.08)" },
-  { key: "market", label: "Market", color: "#2e7d32", tint: "rgba(46,125,50,0.08)" },
+  { key: "customer", label: categoryTitles[0].replace(/ factors$/i, ""), color: "#00446A", tint: "rgba(0,68,106,0.08)" },
+  { key: "product", label: categoryTitles[1].replace(/ factors$/i, ""), color: "#E56910", tint: "rgba(229,105,16,0.08)" },
+  { key: "order", label: categoryTitles[2].replace(/ factors$/i, ""), color: "#7B5EA7", tint: "rgba(123,94,167,0.08)" },
+  { key: "market", label: categoryTitles[3].replace(/ factors$/i, ""), color: "#2e7d32", tint: "rgba(46,125,50,0.08)" },
 ];
 
 const DRIVER_RAIL_ITEMS: { label: string; color: string; tint: string }[] = selectedDrivers.map(d => {

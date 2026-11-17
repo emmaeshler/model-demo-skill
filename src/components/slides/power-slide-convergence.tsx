@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import {
   EASE, SQUARE_VERTS, PLOT_CX, PLOT_CY, CONVERGE_MODEL_R,
   DISSOLVE_DOTS, PRICE_SATELLITES, SELECTED_FACTORS,
-  SOLID_TINTS, ORANGE, GREEN, NAVY, PURPLE, TEAL, MUTED,
+  SOLID_TINTS, ORANGE, GREEN, NAVY, PURPLE, TEAL, MUTED, CATEGORY_TITLES,
 } from "./power-slide-data";
 
 interface ConvergenceModelProps {
@@ -23,10 +23,10 @@ export function ConvergenceModel({
 
   const MODEL_R = 80;
   const FEED_SOURCES = [
-    { vert: SQUARE_VERTS.product, color: ORANGE, label: "Product" },
-    { vert: SQUARE_VERTS.market, color: GREEN, label: "Market" },
-    { vert: SQUARE_VERTS.customer, color: NAVY, label: "Customer" },
-    { vert: SQUARE_VERTS.order, color: PURPLE, label: "Order" },
+    { vert: SQUARE_VERTS.product, color: ORANGE, label: CATEGORY_TITLES[1].replace(/ factors$/i, "") },
+    { vert: SQUARE_VERTS.market, color: GREEN, label: CATEGORY_TITLES[3].replace(/ factors$/i, "") },
+    { vert: SQUARE_VERTS.customer, color: NAVY, label: CATEGORY_TITLES[0].replace(/ factors$/i, "") },
+    { vert: SQUARE_VERTS.order, color: PURPLE, label: CATEGORY_TITLES[2].replace(/ factors$/i, "") },
   ];
 
   return (

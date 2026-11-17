@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import {
   EASE, NAVY, TEAL, GREEN, MUTED,
-  SQUARE_FACTORS, SELECTED_FACTORS, CATEGORY_ACTIONS, CATEGORY_ACTION_HINTS,
+  SQUARE_FACTORS, SELECTED_FACTORS, CATEGORY_ACTIONS, CATEGORY_ACTION_HINTS, CATEGORY_TITLES,
 } from "./power-slide-data";
 import { useShareMode } from "@/lib/share-context";
 
@@ -99,7 +99,7 @@ type DriverAdjustment = {
 };
 
 const DRIVER_ADJUSTMENTS: DriverAdjustment[] = (() => {
-  const catLabel: Record<string, string> = { customer: "Customer", product: "Product", market: "Market", order: "Order" };
+  const catLabel: Record<string, string> = { customer: CATEGORY_TITLES[0].replace(/ factors$/i, ""), product: CATEGORY_TITLES[1].replace(/ factors$/i, ""), market: CATEGORY_TITLES[3].replace(/ factors$/i, ""), order: CATEGORY_TITLES[2].replace(/ factors$/i, "") };
   const actionFactors = new Set<string>();
   for (const actions of Object.values(CATEGORY_ACTIONS)) {
     for (const a of actions) actionFactors.add(a.label);
