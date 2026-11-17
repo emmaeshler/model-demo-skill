@@ -279,19 +279,19 @@ export interface ProspectConfig {
 // ── Meta ───────────────────────────────────────────────────────────────────
 
 export const meta: ProspectMeta = {
-  prospectName: "Guardian Fire & Safety",
-  vertical: "fire-protection",
-  slug: "guardian-fire-safety",
+  prospectName: "Fire, Life & Safety",
+  vertical: "fire-life-safety",
+  slug: "fire-life-safety",
 };
 
 // ── Data Counts & Labels ───────────────────────────────────────────────────
 
 export const dataCounts: DataCounts = {
-  accounts: 300,
-  skus: 85,
-  orders: 8200,
-  marketFeatures: 30,
-  monthsOfData: 48,
+  accounts: 1200,
+  skus: 150,
+  orders: 18000,
+  marketFeatures: 32,
+  monthsOfData: 36,
 };
 
 export const dataLabels: DataLabels = {
@@ -306,7 +306,7 @@ export const dataLabels: DataLabels = {
 
 export const customers: CustomerScenario[] = [
   {
-    name: "Heartland Health Systems",
+    name: "Meridian Health Systems",
     segment: "High volume · contracted",
     price: "$14,800",
     delta: "+$2,100 above Historical Average",
@@ -326,7 +326,7 @@ export const customers: CustomerScenario[] = [
     color: "#00446A",
   },
   {
-    name: "Tri-County Schools",
+    name: "Lakeview School District",
     segment: "Price-sensitive · bid-driven",
     price: "$6,200",
     delta: "−$1,400 below Historical Average",
@@ -346,7 +346,7 @@ export const customers: CustomerScenario[] = [
     color: "#21A5D5",
   },
   {
-    name: "Apex Manufacturing",
+    name: "Ironworks Manufacturing",
     segment: "Complex install · captive",
     price: "$38,500",
     delta: "+$6,800 above Historical Average",
@@ -488,32 +488,32 @@ export const spotlights: Spotlight[] = [
     cluster: 2,
     icon: "people",
     label: "CLIENT",
-    count: "Found 300 commercial accounts",
+    count: "Found 1,200 commercial accounts",
   },
   {
     cluster: 3,
     icon: "chart",
     label: "SERVICE",
-    count: "Found 48 months of job data",
+    count: "Found 36 months of job data",
   },
   {
     cluster: 1,
     icon: "trend",
     label: "MARKET",
-    count: "Found 30 market signals",
+    count: "Found 32 market signals",
   },
   {
     cluster: 0,
     icon: "grid",
     label: "JOB",
-    count: "Found 8,200 job records",
+    count: "Found 18,000 job records",
   },
 ];
 
 // ── Titles & Subtitles ─────────────────────────────────────────────────────
 
 export const titles: string[] = [
-  "300 accounts × 85 service configurations",
+  "1,200 accounts × 150 service configurations",
   "The model scans for patterns",
   "Your customized factors now feed the model",
   "Your model drivers produce one optimized price per service configuration",
@@ -529,9 +529,9 @@ export const subtitles: string[] = [
 // ── Callouts ───────────────────────────────────────────────────────────────
 
 export const callouts: Callout[] = [
-  { label: "Heartland Health", price: "$14,800", x: 310, y: 115 },
-  { label: "Apex Manufacturing", price: "$38,500", x: 625, y: 185 },
-  { label: "Tri-County Schools", price: "$6,200", x: 475, y: 290 },
+  { label: "Meridian Health", price: "$14,800", x: 310, y: 115 },
+  { label: "Ironworks Manufacturing", price: "$38,500", x: 625, y: 185 },
+  { label: "Lakeview School District", price: "$6,200", x: 475, y: 290 },
   { label: "CrossPoint Logistics", price: "$11,400", x: 165, y: 195 },
   { label: "Metro Parking Auth", price: "$4,800", x: 760, y: 320 },
 ];
@@ -597,7 +597,7 @@ export const timelineEvents: TimelineEvent[] = [
 export const segmentHighlights: SegmentHighlight[] = [
   {
     t: 0.12,
-    label: "Apex Manufacturing",
+    label: "Ironworks Manufacturing",
     oldPrice: "$38,500",
     newPrice: "$43,200",
     change: "+$4,700",
@@ -612,7 +612,7 @@ export const segmentHighlights: SegmentHighlight[] = [
   },
   {
     t: 0.35,
-    label: "Heartland Health",
+    label: "Meridian Health",
     oldPrice: "$14,800",
     newPrice: "$16,200",
     change: "+$1,400",
@@ -627,7 +627,7 @@ export const segmentHighlights: SegmentHighlight[] = [
   },
   {
     t: 0.72,
-    label: "Tri-County Schools",
+    label: "Lakeview School District",
     oldPrice: "$6,800",
     newPrice: "$5,600",
     change: "−$1,200",
@@ -645,9 +645,9 @@ export const segmentHighlights: SegmentHighlight[] = [
 // ── Portfolio Segments ─────────────────────────────────────────────────────
 
 export const portfolioSegmentNames: string[] = [
-  "Heartland Health – Fire Alarm Upgrade",
-  "Tri-County Schools – Annual Inspection",
-  "Apex Manufacturing – Wet Suppression Install",
+  "Meridian Health – Fire Alarm Upgrade",
+  "Lakeview School District – Annual Inspection",
+  "Ironworks Manufacturing – Wet Suppression Install",
   "Midwest Medical Center – Sprinkler Retrofit",
   "CrossPoint Logistics – Emergency Lighting",
   "First Federal Credit Union – Alarm Monitoring",
@@ -733,9 +733,9 @@ export const resolution: ResolutionContent = {
     },
     {
       id: "branch",
-      text: "GFS-CIN-03",
+      text: "BR-MW-03",
       title: "Branch Resolution",
-      detail: "Shorthand → Guardian Cincinnati Branch (verified location)",
+      detail: "Branch code → Midwest Regional Branch (verified location)",
     },
     {
       id: "suppression",
@@ -744,10 +744,10 @@ export const resolution: ResolutionContent = {
       detail: "WET suffix → Wet Chemical Suppression (hood system, kitchen)",
     },
   ],
-  emailFrom: "procurement@apexmfg.com",
+  emailFrom: "procurement@ironworksmfg.com",
   emailSubject: "Suppression System Quote — Plant 4 Expansion",
-  sku: "APXP4-WETSUPP-KIT",
-  vendor: "Guardian Fire & Safety — Cincinnati Branch",
+  sku: "IWM-P4-WETSUPP-KIT",
+  vendor: "Midwest Regional Branch",
   pricingTiers: [
     { qty: 1, price: "$38,500" },
     { qty: 2, price: "$36,200" },
@@ -968,7 +968,7 @@ export const segmentsMonitored: number = 180;
 
 export const stepNarratives: StepNarratives = {
   profitGrowthIntro:
-    "The model now manages 8,200 jobs × 300 accounts — let's see the impact with vs. without it.",
+    "The model now manages 18,000 jobs × 1,200 accounts — let's see the impact with vs. without it.",
   listPrice: "$10,500",
 };
 

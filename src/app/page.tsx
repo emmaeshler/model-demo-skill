@@ -8,7 +8,7 @@ import { useMode } from "@/lib/mode-context";
 import { useShareMode } from "@/lib/share-context";
 import { getPresenterNotes, getTransitionHint } from "@/lib/presenter-notes";
 import { cn } from "@/lib/utils";
-import { selectedDrivers, categoryTitles } from "@/lib/prospect-config";
+import { selectedDrivers, categoryTitles, customers as prospectCustomers, segmentHighlights } from "@/lib/prospect-config";
 import { OneModelSlide, ONE_MODEL_TOTAL_STEPS } from "@/components/slides/one-model";
 import { PowerSlide, POWER_TOTAL_STEPS } from "@/components/slides/power-slide";
 import { ExecuteSlide, EXECUTE_TOTAL_STEPS } from "@/components/slides/execute-slide";
@@ -424,20 +424,33 @@ function ModelStatusRail({
   );
 }
 
-const CUSTOMER_DOT_COLORS: Record<string, string> = {
-  Acme: "#00446A",
-  MedSupply: "#4A8FA8",
-  QuickParts: "#C27A3A",
-};
+function _parsePrice(s: string): number {
+  return parseFloat(s.replace(/[$,]/g, ""));
+}
+function _fmtPrice(n: number, ref: string): string {
+  const hasCents = ref.includes(".");
+  if (hasCents) return `$${n.toFixed(2)}`;
+  return `$${Math.round(n).toLocaleString("en-US")}`;
+}
 
-const RAIL_CUSTOMERS = [
-  { label: "QuickParts LLC", price: "$22.10", newPrice: "$24.20", change: "+$2.10", dot: CUSTOMER_DOT_COLORS.QuickParts, reason: "No competition — cost pass-through",
-    timelinePrices: ["$24.20", "$25.90", "$25.10", "$28.10"] },
-  { label: "Acme Industrial", price: "$19.24", newPrice: "$19.80", change: "+$0.56", dot: CUSTOMER_DOT_COLORS.Acme, reason: "Win rate climbing — margin available",
-    timelinePrices: ["$19.80", "$21.10", "$20.40", "$22.80"] },
-  { label: "MedSupply Co", price: "$18.40", newPrice: "$17.95", change: "−$0.45", dot: CUSTOMER_DOT_COLORS.MedSupply, reason: "New entrant undercutting — defend deal",
-    timelinePrices: ["$17.95", "$19.10", "$18.60", "$20.30"] },
-];
+const RAIL_CUSTOMERS = segmentHighlights.map((h) => {
+  const cust = prospectCustomers.find(c => h.label.includes(c.name.split(" ")[0]));
+  const base = _parsePrice(h.newPrice);
+  const mults = [1.0, 1.07, 1.04, 1.15];
+  return {
+    label: cust?.name ?? h.label,
+    price: h.oldPrice,
+    newPrice: h.newPrice,
+    change: h.change,
+    dot: cust?.color ?? "#00446A",
+    reason: h.shortReason,
+    timelinePrices: mults.map(m => _fmtPrice(base * m, h.newPrice)),
+  };
+});
+
+const CUSTOMER_DOT_COLORS: Record<string, string> = Object.fromEntries(
+  RAIL_CUSTOMERS.map(c => [c.label.split(" ")[0], c.dot])
+);
 
 const RAIL_CUSTOMER_TO_REFINE_STEP: Record<number, number> = Object.fromEntries(
   Object.entries(RAIL_CONFIG)
