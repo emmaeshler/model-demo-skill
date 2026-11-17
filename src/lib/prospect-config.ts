@@ -445,7 +445,7 @@ export const driverClusters: DriverCluster[] = [
 
 export const factorActions: Record<string, FactorAction[]> = {
   customer: [{ label: "Sales Channel", action: "remove" }],
-  product: [{ label: "Urgency Score", action: "add" }],
+  product: [{ label: "Urgency Score", action: "elevate" }],
   market: [{ label: "Competitor Pricing", action: "add" }],
   order: [{ label: "Contract Terms", action: "lower" }],
 };
@@ -459,9 +459,9 @@ export const factorActionHints: ActionHint[] = [
       "Sales Channel is an acquisition path — it doesn't determine what the work is worth.",
   },
   {
-    icon: "+",
+    icon: "↑",
     color: "#21A5D5",
-    headline: "Add a factor",
+    headline: "Elevate a factor",
     detail:
       "Urgency Score captures how emergency vs. planned a job is — the biggest hidden margin signal.",
   },
