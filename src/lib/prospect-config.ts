@@ -10,6 +10,7 @@ export interface ProspectMeta {
   prospectName: string;
   vertical: string;
   slug: string;
+  presentationTitle?: string;
 }
 
 export interface DataCounts {
@@ -282,7 +283,10 @@ export const meta: ProspectMeta = {
   prospectName: "Fire, Life & Safety",
   vertical: "fire-life-safety",
   slug: "fire-life-safety",
+  presentationTitle: "Inside Your Dynamic Model | Fire, Life & Safety",
 };
+
+export const presentationTitle: string = meta.presentationTitle ?? "Inside Your Dynamic Model";
 
 // ── Data Counts & Labels ───────────────────────────────────────────────────
 

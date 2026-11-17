@@ -6,6 +6,7 @@ import {
   EASE, NAVY, TEAL, GREEN, MUTED,
   SQUARE_FACTORS, SELECTED_FACTORS, CATEGORY_ACTIONS, CATEGORY_ACTION_HINTS, CATEGORY_TITLES,
 } from "./power-slide-data";
+import { driverImportance as DI_CONFIG } from "@/lib/prospect-config";
 import { useShareMode } from "@/lib/share-context";
 
 export const DRIVER_IMPORTANCE_TOTAL_STEPS = 5;
@@ -61,21 +62,9 @@ const EXAMPLE_STEPS: ExampleStep[] = (() => {
   return steps;
 })();
 
-const IMPORTANCE_VALUES = [15.2, 13.6, 11.8, 10.4, 8.8, 7.6, 6.4, 5.8, 5.0, 4.6, 4.0, 3.4, 3.2, 3.0, 2.6, 2.0, 2.0, 2.0, 1.4, 1.2, 1.0, 0.8, 0.6, 0.4];
+const IMPORTANCE: Record<string, number> = DI_CONFIG.importance;
 
-const IMPORTANCE: Record<string, number> = (() => {
-  const driverLabels = new Set(SELECTED_FACTORS.map(d => d.label));
-  const drivers = SQUARE_FACTORS.filter(f => driverLabels.has(f.label));
-  const rest = SQUARE_FACTORS.filter(f => !driverLabels.has(f.label));
-  const ordered = [...drivers, ...rest];
-  const result: Record<string, number> = {};
-  ordered.forEach((f, i) => { result[f.label] = IMPORTANCE_VALUES[i] ?? 0.4; });
-  return result;
-})();
-
-const FACTOR_ORDER = Object.entries(IMPORTANCE)
-  .sort(([, a], [, b]) => b - a)
-  .map(([label]) => label);
+const FACTOR_ORDER = DI_CONFIG.factorOrder;
 
 const ALL_FACTORS = SQUARE_FACTORS
   .filter(f => f.label in IMPORTANCE)

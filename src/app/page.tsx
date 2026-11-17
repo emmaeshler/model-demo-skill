@@ -8,7 +8,7 @@ import { useMode } from "@/lib/mode-context";
 import { useShareMode } from "@/lib/share-context";
 import { getPresenterNotes, getTransitionHint } from "@/lib/presenter-notes";
 import { cn } from "@/lib/utils";
-import { selectedDrivers, categoryTitles, customers as prospectCustomers, segmentHighlights } from "@/lib/prospect-config";
+import { selectedDrivers, categoryTitles, customers as prospectCustomers, segmentHighlights, presentationTitle } from "@/lib/prospect-config";
 import { OneModelSlide, ONE_MODEL_TOTAL_STEPS } from "@/components/slides/one-model";
 import { PowerSlide, POWER_TOTAL_STEPS } from "@/components/slides/power-slide";
 import { ExecuteSlide, EXECUTE_TOTAL_STEPS } from "@/components/slides/execute-slide";
@@ -853,7 +853,7 @@ export function Home() {
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(22);
     pdf.setTextColor(6, 40, 61);
-    pdf.text("Inside Your Dynamic Model", PAGE_W / 2, 22, { align: "center" });
+    pdf.text(presentationTitle, PAGE_W / 2, 22, { align: "center" });
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(11);
     pdf.setTextColor(120, 130, 140);
@@ -1008,7 +1008,7 @@ export function Home() {
       }
     }
 
-    pdf.save("Inside Your Dynamic Model — Slides.pdf");
+    pdf.save(`${presentationTitle} — Slides.pdf`);
   }, [allClickSteps]);
 
   useEffect(() => {
@@ -1061,7 +1061,7 @@ export function Home() {
         link.href = "data:image/svg+xml," + encodeURIComponent(presenterIcon);
       }
     } else {
-      document.title = "Inside Your Dynamic Model | INSIGHT2PROFIT";
+      document.title = `${presentationTitle} | INSIGHT2PROFIT`;
       const link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
       if (link) link.href = "/icon.svg";
     }
@@ -1546,6 +1546,7 @@ export function Home() {
           groups={displayNavGroups}
           current={slide}
           currentSubStep={hasSubSteps ? subStep : undefined}
+          presentationTitle={presentationTitle}
         />
       ) : (
         <SlideNav
@@ -1554,6 +1555,7 @@ export function Home() {
           total={total}
           groups={displayNavGroups}
           onNavigate={navigate}
+          presentationTitle={presentationTitle}
           animationDone={animationDone}
           onStartPresenting={startPresenting}
           onAnimationGlossary={() => setGlossaryOpen(true)}
