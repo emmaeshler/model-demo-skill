@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { TrendingUp, Target, ShieldCheck, ArrowDownRight, Zap } from "lucide-react";
 import { useShareMode } from "@/lib/share-context";
-import { kpis as cfgKpis, stepNarratives, dataCounts } from "@/lib/prospect-config";
+import { kpis as cfgKpis, stepNarratives, dataCounts, slideText } from "@/lib/prospect-config";
 
 const NAVY = "#00446A";
 const ORANGE = "#E56910";
@@ -106,16 +106,7 @@ const HIGHLIGHT_GROUPS: number[][] = [];
   }
 }
 
-const REVIEW_LABELS = [
-  "Priced 12% below floor",
-  "Margin override approved",
-  "Stale quote sent to customer",
-  "Discount exceeded threshold",
-  "Missed price increase window",
-  "Inconsistent regional pricing",
-  "Manual exception — no audit trail",
-  "Competitor intel ignored",
-];
+const REVIEW_LABELS = slideText.statusQuoLabels;
 
 const LEAKAGE_PER_CYCLE = [
   4200, 3800, 5100, 2900, 6300, 4700, 3400, 5600,
@@ -155,10 +146,7 @@ const DOT_SWEEP_DELAY = DOTS.map(
 /* ── Step narratives ── */
 const STEP_NARRATIVES = [
   stepNarratives.profitGrowthIntro,
-  "Each manual review introduces errors and inconsistency — margin leaks with every decision.",
-  "The Dynamic Pricing Model optimizes every price point simultaneously.",
-  "The model analyzes segment elasticity, margins, and competitive position across every combination.",
-  "Prices snap to model-optimized positions — tighter to the demand curve, less leakage.",
+  ...slideText.profitStepNarratives,
 ];
 
 /* ── Main slide ── */

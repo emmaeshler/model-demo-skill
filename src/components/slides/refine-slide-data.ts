@@ -158,8 +158,8 @@ export const LEGEND_ITEMS = (() => {
 
 export const STEP_CONTEXT: Record<number, { title: string; body: string }> = {
   0: {
-    title: "Now we look across all your transactions",
-    body: "Together, they form a market curve — and every price gets refined against it.",
+    title: slideText.refineIntroTitle,
+    body: slideText.refineIntroSubtitle,
   },
   1: {
     title: customers[2].name.split(" ")[0],

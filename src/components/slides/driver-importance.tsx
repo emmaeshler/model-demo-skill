@@ -394,7 +394,7 @@ export function DriverImportanceSlide({
                       transition: "opacity 0.5s ease-out, transform 0.5s ease-out",
                     }}
                   >
-                    Pricing factors across four dimensions
+                    {slideText.driverIntroTitle}
                   </h2>
                   <p
                     className="mx-auto max-w-2xl text-center text-[1.05rem] font-medium leading-relaxed"
@@ -405,7 +405,7 @@ export function DriverImportanceSlide({
                       transition: introPhase >= 1 ? "opacity 0.4s 0.15s, transform 0.4s 0.15s" : "opacity 0.3s, transform 0.3s",
                     }}
                   >
-                    Tuned to your business — elevating what matters, removing what doesn&rsquo;t.
+                    {slideText.driverIntroSubtitle}
                   </p>
                 </div>
               </motion.div>
@@ -1039,7 +1039,7 @@ function CollapseView({ phase, skipAnimation }: { phase: number; skipAnimation?:
             PRICE
           </span>
           <span style={{ fontSize: 18, fontWeight: 500, color: "#5A6A78" }}>
-            per SKU
+            {`per ${vocabulary.productUnit}`}
           </span>
         </div>
       </motion.div>
