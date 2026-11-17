@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useShareMode } from "@/lib/share-context";
 import { useMode } from "@/lib/mode-context";
-import { customers as prospectCustomers, stepNarratives, selectedDrivers } from "@/lib/prospect-config";
+import { customers as prospectCustomers, stepNarratives, selectedDrivers, vocabulary, slideText } from "@/lib/prospect-config";
 
 const NAVY = "#00446A";
 const SLATE = "#1B4F72";
@@ -783,7 +783,7 @@ export function ExecuteSlide({
                 transition={{ duration: 0.3 }}
               >
                 {revealPhase <= 1
-                  ? "The model starts with one optimized price per SKU — then adjusts for each customer order's unique factors."
+                  ? slideText.executeModelSubtitle
                   : revealPhase === 2
                     ? `The model weighs each factor to calculate ${CUSTOMERS[0].label}’s calibrated price.`
                     : revealPhase === 3
@@ -842,7 +842,7 @@ export function ExecuteSlide({
                         </text>
                         <text x={MODEL_CX} y={MODEL_CY + 36} textAnchor="middle"
                           style={{ fontSize: 13, fontWeight: 500, fill: "#5A6A78" }}>
-                          per SKU
+                          {`per ${vocabulary.productUnit}`}
                         </text>
                       </motion.g>
 
@@ -867,7 +867,7 @@ export function ExecuteSlide({
                         </text>
                         <text x={MODEL_CX} y={MODEL_CY + 36} textAnchor="middle"
                           style={{ fontSize: 12, fontWeight: 500, fill: "#5A6A78" }}>
-                          SKU #A-7200
+                          {vocabulary.unitId}
                         </text>
 
                       </motion.g>

@@ -6,7 +6,7 @@ import {
   EASE, NAVY, TEAL, GREEN, MUTED,
   SQUARE_FACTORS, SELECTED_FACTORS, CATEGORY_ACTIONS, CATEGORY_ACTION_HINTS, CATEGORY_TITLES,
 } from "./power-slide-data";
-import { driverImportance as DI_CONFIG } from "@/lib/prospect-config";
+import { driverImportance as DI_CONFIG, vocabulary, slideText } from "@/lib/prospect-config";
 import { useShareMode } from "@/lib/share-context";
 
 export const DRIVER_IMPORTANCE_TOTAL_STEPS = 5;
@@ -371,10 +371,10 @@ export function DriverImportanceSlide({
                 transition={{ duration: 0.5, ease: EASE }}
               >
                 <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: TEAL }}>
-                  One optimal price per SKU
+                  {slideText.driverCollapseTitle}
                 </h2>
                 <p className="mx-auto max-w-xl text-center text-[1.05rem] leading-relaxed" style={{ color: MUTED }}>
-                  All your drivers, one answer.
+                  {slideText.driverCollapseSubtitle}
                 </p>
               </motion.div>
             ) : isIntro ? (

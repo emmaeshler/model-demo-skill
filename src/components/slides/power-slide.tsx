@@ -10,6 +10,7 @@ import {
   SPOTLIGHTS, TITLES, SUBTITLES, SWEEP_DURATION,
   DOTS,
 } from "./power-slide-data";
+import { slideText } from "@/lib/prospect-config";
 import { DotField } from "./power-slide-dots";
 import { FactorGrid } from "./power-slide-factors";
 import { ConvergenceModel } from "./power-slide-convergence";
@@ -164,7 +165,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                     transition: "opacity 0.7s ease-out, transform 0.7s ease-out",
                   }}
                 >
-                  You have millions of unique price points
+                  {slideText.powerTitle}
                 </h2>
                 <p
                   className="mx-auto max-w-lg text-center text-[1.05rem] font-medium leading-relaxed"
@@ -175,7 +176,7 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                     transition: introPhase >= 1 ? "opacity 0.6s 0.2s ease-out, transform 0.6s 0.2s ease-out" : "opacity 0.3s, transform 0.3s",
                   }}
                 >
-                  Far too many for any team to set manually&nbsp;— the&nbsp;model finds&nbsp;the&nbsp;patterns.
+                  {slideText.powerSubtitle}
                 </p>
               </div>
             </motion.div>
@@ -232,8 +233,8 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
             {[[180,120],[250,200],[350,160],[420,280],[500,220],[300,340],[600,300],[700,260],[150,310],[550,150],[450,370],[200,250],[650,180],[380,100],[800,320],[280,80],[520,350],[750,140],[160,380],[620,240],[230,150],[470,310],[580,200],[340,250],[720,350],[140,220],[680,130],[400,400],[560,280],[850,250]].map(([cx, cy], i) => (
               <circle key={`sg-d${i}`} cx={cx} cy={cy} r={3.5} fill={TEAL} opacity={0.12} />
             ))}
-            <text x={PLOT.left + PLOT_W / 2} y={PLOT.bottom + 38} textAnchor="middle" style={{ fill: NAVY, fontSize: 11, fontWeight: 600, opacity: 0.15 }}>Monthly Transaction Volume</text>
-            <text textAnchor="middle" style={{ fill: NAVY, fontSize: 11, fontWeight: 600, opacity: 0.15 }} transform={`translate(28, ${PLOT.top + PLOT_H / 2}) rotate(-90)`}>Selling Price ($)</text>
+            <text x={PLOT.left + PLOT_W / 2} y={PLOT.bottom + 38} textAnchor="middle" style={{ fill: NAVY, fontSize: 11, fontWeight: 600, opacity: 0.15 }}>{slideText.powerAxisX}</text>
+            <text textAnchor="middle" style={{ fill: NAVY, fontSize: 11, fontWeight: 600, opacity: 0.15 }} transform={`translate(28, ${PLOT.top + PLOT_H / 2}) rotate(-90)`}>{slideText.powerAxisY}</text>
           </svg>
         </motion.div>
 
@@ -247,8 +248,8 @@ export function PowerSlide({ step = 0, onAutoAdvance, skipAnimation, onActiveCat
                 <line x1={PLOT.left} y1={PLOT.bottom} x2={PLOT.right} y2={PLOT.bottom} stroke={`${NAVY}30`} strokeWidth={1.2} />
                 {Y_TICKS.map((label, i) => { const y = yForTick(i); return (<g key={`yt${i}`}><line x1={PLOT.left - 4} y1={y} x2={PLOT.left} y2={y} stroke={`${NAVY}40`} strokeWidth={1} /><text x={PLOT.left - 8} y={y + 3.5} textAnchor="end" style={{ fill: MUTED, fontSize: 10, fontFamily: "inherit" }}>{label}</text></g>); })}
                 {X_TICKS.map((label, i) => { const x = xForTick(i); return (<g key={`xt${i}`}><line x1={x} y1={PLOT.bottom} x2={x} y2={PLOT.bottom + 4} stroke={`${NAVY}40`} strokeWidth={1} /><text x={x} y={PLOT.bottom + 16} textAnchor="middle" style={{ fill: MUTED, fontSize: 10, fontFamily: "inherit" }}>{label}</text></g>); })}
-                <text x={PLOT.left + PLOT_W / 2} y={PLOT.bottom + 38} textAnchor="middle" style={{ fill: NAVY, fontSize: 11, fontWeight: 600, fontFamily: "inherit", letterSpacing: "0.03em" }}>Monthly Transaction Volume</text>
-                <text textAnchor="middle" style={{ fill: NAVY, fontSize: 11, fontWeight: 600, fontFamily: "inherit", letterSpacing: "0.03em" }} transform={`translate(28, ${PLOT.top + PLOT_H / 2}) rotate(-90)`}>Selling Price ($)</text>
+                <text x={PLOT.left + PLOT_W / 2} y={PLOT.bottom + 38} textAnchor="middle" style={{ fill: NAVY, fontSize: 11, fontWeight: 600, fontFamily: "inherit", letterSpacing: "0.03em" }}>{slideText.powerAxisX}</text>
+                <text textAnchor="middle" style={{ fill: NAVY, fontSize: 11, fontWeight: 600, fontFamily: "inherit", letterSpacing: "0.03em" }} transform={`translate(28, ${PLOT.top + PLOT_H / 2}) rotate(-90)`}>{slideText.powerAxisY}</text>
               </motion.g>
 
               {sweepActive && (

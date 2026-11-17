@@ -6,6 +6,7 @@ import {
   DISSOLVE_DOTS, PRICE_SATELLITES, SELECTED_FACTORS,
   SOLID_TINTS, ORANGE, GREEN, NAVY, PURPLE, TEAL, MUTED, CATEGORY_TITLES,
 } from "./power-slide-data";
+import { vocabulary } from "@/lib/prospect-config";
 
 interface ConvergenceModelProps {
   feeding: boolean;
@@ -260,7 +261,7 @@ export function ConvergenceModel({
             animate={{ opacity: allAbsorbed ? 0.85 : 0.35 }}
             transition={{ duration: 0.4, delay: skipAnimation ? 0 : 0.9 }}
           >
-            per SKU
+            {`per ${vocabulary.productUnit}`}
           </motion.text>
           {allAbsorbed && SELECTED_FACTORS.map((sf, si) => {
             const angle = -Math.PI / 2 + (si / SELECTED_FACTORS.length) * Math.PI * 2;

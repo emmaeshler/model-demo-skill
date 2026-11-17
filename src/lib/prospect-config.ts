@@ -240,6 +240,30 @@ export interface StepNarratives {
   listPrice: string;
 }
 
+export interface Vocabulary {
+  productUnit: string;
+  productUnitPlural: string;
+  transactionTerm: string;
+  unitId: string;
+}
+
+export interface SlideText {
+  powerTitle: string;
+  powerSubtitle: string;
+  powerAxisX: string;
+  powerAxisY: string;
+  driverIntroTitle: string;
+  driverIntroSubtitle: string;
+  driverCollapseTitle: string;
+  driverCollapseSubtitle: string;
+  executeModelSubtitle: string;
+  refineIntroTitle: string;
+  refineIntroSubtitle: string;
+  refineCurveTitle: string;
+  statusQuoLabels: string[];
+  profitStepNarratives: string[];
+}
+
 export interface ProspectConfig {
   meta: ProspectMeta;
   dataCounts: DataCounts;
@@ -273,6 +297,8 @@ export interface ProspectConfig {
   driverImportance: DriverImportanceConfig;
   segmentsMonitored: number;
   stepNarratives: StepNarratives;
+  vocabulary: Vocabulary;
+  slideText: SlideText;
 }
 
 // ── Default Values ─────────────────────────────────────────────────────────
@@ -976,6 +1002,46 @@ export const stepNarratives: StepNarratives = {
   listPrice: "$10,500",
 };
 
+// ── Vocabulary & Slide Text ───────────────────────────────────────────────
+
+export const vocabulary: Vocabulary = {
+  productUnit: "job",
+  productUnitPlural: "jobs",
+  transactionTerm: "service contracts",
+  unitId: "Job #FP-4821",
+};
+
+export const slideText: SlideText = {
+  powerTitle: "Every fire protection contract is priced differently",
+  powerSubtitle: "Inspections, installations, emergency calls — far too many combinations for any team to price manually.",
+  powerAxisX: "Monthly Job Volume",
+  powerAxisY: "Average Job Price ($)",
+  driverIntroTitle: "Pricing factors across four dimensions",
+  driverIntroSubtitle: "Tuned to your fire protection business — elevating what matters, removing what doesn’t.",
+  driverCollapseTitle: "One optimal price per job",
+  driverCollapseSubtitle: "All your drivers, one answer.",
+  executeModelSubtitle: "The model starts with one optimized price per job — then adjusts for each service contract’s unique factors.",
+  refineIntroTitle: "Now we look across all your service contracts",
+  refineIntroSubtitle: "Together, they form a market curve — and every price gets refined against it.",
+  refineCurveTitle: "Your calibrated demand curve",
+  statusQuoLabels: [
+    "Quoted 18% below floor",
+    "Emergency markup overridden",
+    "Stale estimate sent to GC",
+    "Discount exceeded threshold",
+    "Missed price increase on renewals",
+    "Inconsistent territory pricing",
+    "Manual exception — no audit trail",
+    "Competitor intel ignored on bid",
+  ],
+  profitStepNarratives: [
+    "Each manual estimate introduces errors and inconsistency — margin leaks with every job priced by gut.",
+    "The Dynamic Pricing Model optimizes every job price simultaneously.",
+    "The model analyzes facility type, urgency, territory, and competitive position across every combination.",
+    "Prices snap to model-optimized positions — tighter to the demand curve, less leakage.",
+  ],
+};
+
 // ── Full Config Object ─────────────────────────────────────────────────────
 
 export const PROSPECT_CONFIG: ProspectConfig = {
@@ -1011,6 +1077,8 @@ export const PROSPECT_CONFIG: ProspectConfig = {
   driverImportance,
   segmentsMonitored,
   stepNarratives,
+  vocabulary,
+  slideText,
 };
 
 export default PROSPECT_CONFIG;
