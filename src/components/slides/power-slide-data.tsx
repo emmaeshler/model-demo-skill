@@ -115,12 +115,7 @@ export const SELECTED_FACTORS = selectedDrivers;
 export const CATEGORY_ACTIONS: Record<string, { label: string; action: "elevate" | "remove" | "lower" | "add"; step?: number }[]> = factorActions;
 
 type ActionHint = { icon: string; color: string; headline: string; detail: string };
-export const CATEGORY_ACTION_HINTS: (ActionHint | ActionHint[])[] = [
-  { icon: "×", color: TEAL, headline: "Remove a factor", detail: "Sales Rep is behavioral — it doesn't belong in the model." },
-  { icon: "+", color: TEAL, headline: "Add a factor", detail: "Product Importance indicates price sensitivity for a product within a customer." },
-  { icon: "↓", color: PURPLE, headline: "Lower its weight", detail: "Seasonality has minimal impact for this customer — dial it down." },
-  { icon: "+", color: GREEN, headline: "Add a factor", detail: "Competitor Pricing is low weight, but adds a final positioning check." },
-];
+export const CATEGORY_ACTION_HINTS: (ActionHint | ActionHint[])[] = factorActionHints;
 
 export const FEED_NUDGE_Y = [130, 35, -170, -75];
 
@@ -140,56 +135,21 @@ export const DISSOLVE_DOTS = Array.from({ length: 16 }, (_, i) => {
 });
 
 export const PRICE_SATELLITES = [
-  { label: "Customer", price: "+$0.60", value: 0.60, color: NAVY, cx: 185, cy: 240, r: 65 },
-  { label: "Product", price: "+$0.85", value: 0.85, color: ORANGE, cx: 810, cy: 90, r: 65 },
-  { label: "Market", price: "−$0.30", value: -0.30, color: GREEN, cx: 250, cy: 410, r: 60 },
-  { label: "Order", price: "+$0.45", value: 0.45, color: PURPLE, cx: 855, cy: 370, r: 68 },
+  { ...priceSatellites[0], color: NAVY, cx: 185, cy: 240, r: 65 },
+  { ...priceSatellites[1], color: ORANGE, cx: 810, cy: 90, r: 65 },
+  { ...priceSatellites[2], color: GREEN, cx: 250, cy: 410, r: 60 },
+  { ...priceSatellites[3], color: PURPLE, cx: 855, cy: 370, r: 68 },
 ];
-export const BASE_PRICE = 15.90;
+export const BASE_PRICE = basePriceValue;
 export const CONVERGE_MODEL_R = 170;
 
 /* ─── Spotlight data (steps 1-4) ─── */
 
-export const SPOTLIGHTS = [
-  {
-    cluster: 2,
-    icon: "people",
-    label: "CUSTOMER",
-    count: "Found 2,400 customer accounts",
-  },
-  {
-    cluster: 3,
-    icon: "chart",
-    label: "PRODUCT",
-    count: "Found 18 months of product data",
-  },
-  {
-    cluster: 1,
-    icon: "trend",
-    label: "MARKET",
-    count: "Found 36 market features",
-  },
-  {
-    cluster: 0,
-    icon: "grid",
-    label: "ORDER",
-    count: "Found 14,200 order records",
-  },
-];
+export const SPOTLIGHTS = spotlights;
 
-export const TITLES = [
-  "2,400 accounts × 15,000 SKUs",
-  "The model scans for patterns",
-  "Your customized factors now feed the model",
-  "Your model drivers produce one optimized price per SKU",
-];
+export const TITLES = titles;
 
-export const SUBTITLES = [
-  "That's millions of unique price points — far too many for any team to set manually. The model finds the patterns hiding inside.",
-  "We look at pricing factors across four dimensions — tailored to what matters for your business.",
-  "Every business is different. We analyze what matters to you — adding key factors, removing what doesn't apply, and tuning the balance.",
-  "Seven tailored drivers — drawn from the factors that matter most to you — feed the model to arrive at the right price for every SKU.",
-];
+export const SUBTITLES = subtitles;
 
 /* ─── Pre-compute dot positions ─── */
 
@@ -329,11 +289,11 @@ export function highlightDotsForCluster(cluster: number) {
 /* ─── Callout dots ─── */
 
 export const CALLOUTS = [
-  { label: "Acme Industrial", price: "$58.20", x: 245, y: 105, anchor: "start" as const, labelDx: 14, labelDy: -12, color: NAVY, cluster: 0 },
-  { label: "QuickParts LLC", price: "$34.50", x: 620, y: 280, anchor: "start" as const, labelDx: 14, labelDy: 4, color: ORANGE, cluster: 1 },
-  { label: "MedSupply Co", price: "$47.10", x: 420, y: 185, anchor: "end" as const, labelDx: -14, labelDy: -12, color: TEAL, cluster: 3 },
-  { label: "Coastal Dist.", price: "$62.80", x: 780, y: 72, anchor: "start" as const, labelDx: 14, labelDy: 14, color: GREEN, cluster: 2 },
-  { label: "Delta Mfg", price: "$29.40", x: 150, y: 345, anchor: "start" as const, labelDx: 14, labelDy: 2, color: PURPLE, cluster: 2 },
+  { label: callouts[0].label, price: callouts[0].price, x: callouts[0].x, y: callouts[0].y, anchor: "start" as const, labelDx: 14, labelDy: -12, color: NAVY, cluster: 0 },
+  { label: callouts[1].label, price: callouts[1].price, x: callouts[1].x, y: callouts[1].y, anchor: "start" as const, labelDx: 14, labelDy: 4, color: ORANGE, cluster: 1 },
+  { label: callouts[2].label, price: callouts[2].price, x: callouts[2].x, y: callouts[2].y, anchor: "end" as const, labelDx: -14, labelDy: -12, color: TEAL, cluster: 3 },
+  { label: callouts[3].label, price: callouts[3].price, x: callouts[3].x, y: callouts[3].y, anchor: "start" as const, labelDx: 14, labelDy: 14, color: GREEN, cluster: 2 },
+  { label: callouts[4].label, price: callouts[4].price, x: callouts[4].x, y: callouts[4].y, anchor: "start" as const, labelDx: 14, labelDy: 2, color: PURPLE, cluster: 2 },
 ];
 
 /* ─── Icons ─── */

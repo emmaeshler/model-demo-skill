@@ -40,7 +40,7 @@ function mulberry32(seed: number) {
 }
 
 export type DotStatus = "won" | "lost" | "overridden" | "adjusted";
-export type Customer = "QuickParts" | "Acme" | "MedSupply";
+export type Customer = string;
 
 export const STATUS_COLORS: Record<DotStatus, string> = {
   won: GREEN,
@@ -128,58 +128,16 @@ export const SCATTER_DOTS: ScatterDot[] = Array.from({ length: DOT_COUNT }, () =
     chaosX: CURVE_SLOT.x + 10 + rng() * (CURVE_SLOT.w - 20),
     chaosY: CURVE_SLOT.y + 5 + rng() * (CURVE_SLOT.h - 10),
     residualY: (() => { const r = rng(); return r < 0.55 ? 0 : r < 0.8 ? 2 + rng() * 6 : 6 + rng() * 10; })(),
-    customer: (t < 0.25 ? "QuickParts" : t < 0.55 ? "Acme" : "MedSupply") as Customer,
+    customer: (t < 0.25 ? customers[2].name.split(" ")[0] : t < 0.55 ? customers[0].name.split(" ")[0] : customers[1].name.split(" ")[0]) as Customer,
     birthMonth: (() => { const r = rng(); if (r < 0.22) return 0; if (r < 0.38) return 4; if (r < 0.54) return 8; if (r < 0.70) return 12; if (r < 0.85) return 16; return 20; })(),
   };
 });
 
-export const SEGMENT_HIGHLIGHTS = [
-  {
-    t: 0.12,
-    label: "QuickParts",
-    offsetY: 22,
-    oldPrice: "$22.10",
-    newPrice: "$24.20",
-    change: "+$2.10",
-    dotColor: ORANGE,
-    beforeTitle: "Priced too low",
-    shortReason: "No competition",
-    beforeBody: "No competition in this niche, but cost increases aren't reflected in the price.",
-    afterTitle: "Adjusted +$2.10",
-    afterBody: "Cost pressure passes through — price moves to the market curve.",
-    marketSignal: "Cost pressure, no competition",
-  },
-  {
-    t: 0.35,
-    label: "Acme",
-    offsetY: 6,
-    oldPrice: "$19.24",
-    newPrice: "$19.80",
-    change: "+$0.56",
-    dotColor: NAVY,
-    beforeTitle: "Underpriced",
-    shortReason: "Win rate climbing",
-    beforeBody: "Win rate is climbing — a pattern, not noise. There's room to price higher.",
-    afterTitle: "Adjusted +$0.56",
-    afterBody: "Price rises to capture margin the data says is available.",
-    marketSignal: "Win rate climbing, margin available",
-  },
-  {
-    t: 0.72,
-    label: "MedSupply",
-    offsetY: -18,
-    oldPrice: "$18.40",
-    newPrice: "$17.95",
-    change: "−$0.45",
-    dotColor: TEAL,
-    beforeTitle: "At risk",
-    shortReason: "New entrant undercutting",
-    beforeBody: "A new entrant is undercutting — willingness to pay is dropping in this region.",
-    afterTitle: "Adjusted −$0.45",
-    afterBody: "Price drops to defend the deal against the competitive threat.",
-    marketSignal: "New entrant undercutting",
-  },
-];
+export const SEGMENT_HIGHLIGHTS = segmentHighlights.map((h, i) => ({
+  ...h,
+  offsetY: [22, 6, -18][i] ?? 0,
+  dotColor: [ORANGE, NAVY, TEAL][i] ?? NAVY,
+}));
 
 export const LEGEND_ITEMS = (() => {
   const items = [
@@ -204,15 +162,15 @@ export const STEP_CONTEXT: Record<number, { title: string; body: string }> = {
     body: "Together, they form a market curve — and every price gets refined against it.",
   },
   1: {
-    title: "QuickParts",
+    title: customers[2].name.split(" ")[0],
     body: "The model detects a pricing gap and adjusts to the recommended price.",
   },
   2: {
-    title: "Acme",
+    title: customers[0].name.split(" ")[0],
     body: "The model detects a pricing gap and adjusts to the recommended price.",
   },
   3: {
-    title: "MedSupply",
+    title: customers[1].name.split(" ")[0],
     body: "The model detects a pricing gap and adjusts to the recommended price.",
   },
   4: {
@@ -239,26 +197,7 @@ export type PortfolioFeature = "scatter" | "delta" | "price-dot" | "live" | "pla
 
 export const PORTFOLIO_SEGMENTS = (() => {
   const pRng = mulberry32(42);
-  const names = [
-    "Acme Mfg – Industrial MRO", "BearingCo – Heavy Equipment", "AutoParts Direct – Automotive OEM",
-    "SeaGuard – Marine Offshore", "ClimaTech – HVAC Systems", "MedSupply Co – Medical Devices",
-    "AeroSpec – Aerospace Def.", "PetroChem Ltd – Oil & Gas", "CoastLine – Marine Coatings",
-    "FlowTech – Comm. Plumbing", "NetWire Corp – Telecom", "ThermalPro – Commercial",
-    "DriveLink – Auto Aftermkt.", "CircuitEdge – Electronics", "HomeFit – Furniture",
-    "ArmorTech – Defense Sys.", "SteelRise – Construction", "SunBuild – Solar Energy",
-    "SignCraft – Signage", "SkyFast – Aerospace Mfg.", "RailWorks – Rail Transport",
-    "DeepCore – Mining Ops.", "PetroFlow – Petrochemical", "MicroPin – Electronics",
-    "PackRight – Packaging", "PrecisionCo – Precision", "StructurePro – Structural",
-    "HydraForce – Hydraulic", "WindPower – Wind Energy", "AgriChain – Agriculture",
-    "VoltEdge – Power Dist.", "ClearCoat – Ind. Coatings", "TitanGrip – Fasteners",
-    "AquaPure – Water Treat.", "FiberLink – Fiber Optics", "ChemFlow – Spec. Chem.",
-    "ProWeld – Welding Supply", "GeoTech – Geotech Equip.", "BrightSteel – Steel Fab.",
-    "CoolAir – Refrigeration", "SpectraLens – Optics MRO", "CoreDrill – Drilling Ops.",
-    "AlphaValve – Valve Dist.", "NexGen Parts – Gen. Ind.",
-    "SolidPipe – Pipeline Eng.", "LaserCut – CNC Fab.",
-    "TrueGauge – Instruments", "IronClad – Metal Svcs.",
-    "BlueWave – Marine Sys.", "VertexAir – Ventilation",
-  ];
+  const names = portfolioSegmentNames;
   const features: PortfolioFeature[] = [
     "scatter", "delta", "price-dot", "live", "plain", "scatter",
     "delta", "plain", "price-dot", "scatter", "live", "delta",
