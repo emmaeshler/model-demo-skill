@@ -687,7 +687,7 @@ export function Home() {
   const handleSpotlightRefined = useCallback(() => { spotlightRefinedRef.current = true; }, []);
   const [dynamicActiveCategories, setDynamicActiveCategories] = useState<CategoryKey[] | null>(null);
   const handleActiveCategoryChange = useCallback((cats: string[]) => setDynamicActiveCategories(cats as CategoryKey[]), []);
-  const [executeCustomer, setExecuteCustomer] = useState("Acme");
+  const [executeCustomer, setExecuteCustomer] = useState(prospectCustomers[0].name.split(" ")[0]);
   const handleExecuteCustomerChange = useCallback((c: string) => setExecuteCustomer(c), []);
   const [executeRailHidden, setExecuteRailHidden] = useState(false);
   const executeHideRailRef = useRef(() => setExecuteRailHidden(true));
