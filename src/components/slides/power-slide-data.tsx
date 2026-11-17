@@ -78,11 +78,18 @@ export const CLUSTER_R = 95;
 
 /* ─── Square factor layout ─── */
 
+export const CATEGORY_TO_SPOTLIGHT: Record<string, number> = {
+  customer: 2,
+  product: 3,
+  market: 1,
+  order: 0,
+};
+
 export const SQUARE_VERTS = {
-  customer: { x: 180, y: 60, label: "CLIENT", color: NAVY },
-  product: { x: 830, y: 60, label: "SCOPE", color: ORANGE },
-  market: { x: 180, y: 400, label: "MARKET", color: GREEN },
-  order: { x: 830, y: 400, label: "CONTRACT", color: PURPLE },
+  customer: { x: 180, y: 60, label: spotlights[CATEGORY_TO_SPOTLIGHT.customer].label, color: NAVY },
+  product: { x: 830, y: 60, label: spotlights[CATEGORY_TO_SPOTLIGHT.product].label, color: ORANGE },
+  market: { x: 180, y: 400, label: spotlights[CATEGORY_TO_SPOTLIGHT.market].label, color: GREEN },
+  order: { x: 830, y: 400, label: spotlights[CATEGORY_TO_SPOTLIGHT.order].label, color: PURPLE },
 };
 
 export const SQUARE_FACTORS: { label: string; category: "product" | "market" | "customer" | "order"; emphasis?: "highlight" | "crossoff" | "deemphasize" }[] = [
@@ -98,13 +105,6 @@ export const CATEGORY_LAYOUT = [
   { key: "order" as const, x: 10, y: 250, w: 490, h: 210, color: PURPLE, labelDelay: 0.3, baseDelay: 1.0 },
   { key: "market" as const, x: 520, y: 250, w: 490, h: 210, color: GREEN, labelDelay: 0.35, baseDelay: 1.3 },
 ];
-
-export const CATEGORY_TO_SPOTLIGHT: Record<string, number> = {
-  customer: 2,
-  product: 3,
-  market: 1,
-  order: 0,
-};
 
 export const CATEGORY_TITLES = categoryTitles;
 
