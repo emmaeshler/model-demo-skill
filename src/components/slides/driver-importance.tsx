@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import {
   EASE, NAVY, TEAL, GREEN, MUTED,
-  SQUARE_FACTORS,
+  SQUARE_FACTORS, SELECTED_FACTORS, CATEGORY_ACTIONS, CATEGORY_ACTION_HINTS,
 } from "./power-slide-data";
 import { useShareMode } from "@/lib/share-context";
 
@@ -27,98 +27,55 @@ interface ExampleStep {
   icon: string;
 }
 
-const EXAMPLE_STEPS: ExampleStep[] = [
-  {
-    supertitle: "Removing a factor",
-    headline: "Sales Rep",
-    detail: "Behavioral, not a pricing driver — the model stays focused on structural patterns.",
-    dismissLine: "Variance explained by who sells, not what's sold.",
-    color: TEAL,
-    action: "remove",
-    highlight: ["Sales Rep"],
-    remove: new Set(["Sales Rep"]),
-    add: [],
-    icon: "✕",
-  },
-  {
-    supertitle: "Elevating a factor",
-    headline: "Product Importance",
-    detail: "Captures how price-sensitive a product is within a customer — a hidden signal worth surfacing.",
-    dismissLine: "Adds precision to the product dimension of the model.",
-    color: TEAL,
-    action: "elevate",
-    highlight: ["Product Importance"],
-    remove: new Set(),
-    add: ["Product Importance"],
-    icon: "↑",
-  },
-  {
-    supertitle: "Adding a factor",
-    headline: "Competitor Pricing",
-    detail: "A final positioning check — keeping the model's price in a competitive range.",
-    dismissLine: "A market guardrail that sharpens the final price.",
-    color: TEAL,
-    action: "add",
-    highlight: ["Competitor Pricing"],
-    remove: new Set(),
-    add: ["Competitor Pricing"],
-    icon: "+",
-  },
-];
+const EXAMPLE_STEPS: ExampleStep[] = (() => {
+  const actionMap: Record<string, { supertitle: string; dismissLine: string }> = {
+    remove: { supertitle: "Removing a factor", dismissLine: "Variance explained by behavior, not structure." },
+    add: { supertitle: "Adding a factor", dismissLine: "A market guardrail that sharpens the final price." },
+    elevate: { supertitle: "Elevating a factor", dismissLine: "Adds precision to the model." },
+    lower: { supertitle: "Lowering a factor", dismissLine: "Minimal impact for this customer." },
+  };
+  const iconMap: Record<string, string> = { remove: "✕", add: "+", elevate: "↑", lower: "↓" };
+  const steps: ExampleStep[] = [];
+  for (const [, actions] of Object.entries(CATEGORY_ACTIONS)) {
+    for (const a of actions) {
+      const hint = CATEGORY_ACTION_HINTS.find(h => {
+        const flat = Array.isArray(h) ? h : [h];
+        return flat.some(hh => hh.detail.includes(a.label));
+      });
+      const flatHint = hint && (Array.isArray(hint) ? hint[0] : hint);
+      const mapping = actionMap[a.action] ?? actionMap.add;
+      steps.push({
+        supertitle: mapping.supertitle,
+        headline: a.label,
+        detail: flatHint?.detail ?? "",
+        dismissLine: mapping.dismissLine,
+        color: TEAL,
+        action: a.action === "lower" ? "remove" : a.action as ExampleAction,
+        highlight: [a.label],
+        remove: a.action === "remove" ? new Set([a.label]) : new Set(),
+        add: a.action === "add" || a.action === "elevate" ? [a.label] : [],
+        icon: iconMap[a.action] ?? "+",
+      });
+    }
+  }
+  return steps;
+})();
 
-const IMPORTANCE: Record<string, number> = {
-  "Product Category": 15.2,
-  "Geography": 13.6,
-  "Sales Rep": 11.8,
-  "End Market": 10.4,
-  "Order Frequency": 8.8,
-  "Customer Tenure": 7.6,
-  "Product Specialization": 6.4,
-  "Seasonality": 5.8,
-  "Order size": 5.0,
-  "Product family": 4.6,
-  "Customer size": 4.0,
-  "Customer channel": 3.4,
-  "Cost to serve": 3.0,
-  "Market share": 2.6,
-  "Willingness to pay": 2.0,
-  "Industry trends": 2.0,
-  "Commodity index": 2.0,
-  "Lead time": 1.4,
-  "Contract type": 1.2,
-  "Payment terms": 1.0,
-  "Price sensitivity": 0.8,
-  "Competitor activity": 0.6,
-  "Product Importance": 0.4,
-  "Competitor Pricing": 3.2,
-};
+const IMPORTANCE_VALUES = [15.2, 13.6, 11.8, 10.4, 8.8, 7.6, 6.4, 5.8, 5.0, 4.6, 4.0, 3.4, 3.2, 3.0, 2.6, 2.0, 2.0, 2.0, 1.4, 1.2, 1.0, 0.8, 0.6, 0.4];
 
-const FACTOR_ORDER = [
-  "Product Category",
-  "Geography",
-  "Sales Rep",
-  "End Market",
-  "Order Frequency",
-  "Customer Tenure",
-  "Product Specialization",
-  "Seasonality",
-  "Order size",
-  "Product family",
-  "Customer size",
-  "Customer channel",
-  "Competitor Pricing",
-  "Cost to serve",
-  "Market share",
-  "Willingness to pay",
-  "Industry trends",
-  "Commodity index",
-  "Lead time",
-  "Contract type",
-  "Payment terms",
-  "Price sensitivity",
-  "Competitor activity",
-  "Product Importance",
-];
+const IMPORTANCE: Record<string, number> = (() => {
+  const driverLabels = new Set(SELECTED_FACTORS.map(d => d.label));
+  const drivers = SQUARE_FACTORS.filter(f => driverLabels.has(f.label));
+  const rest = SQUARE_FACTORS.filter(f => !driverLabels.has(f.label));
+  const ordered = [...drivers, ...rest];
+  const result: Record<string, number> = {};
+  ordered.forEach((f, i) => { result[f.label] = IMPORTANCE_VALUES[i] ?? 0.4; });
+  return result;
+})();
+
+const FACTOR_ORDER = Object.entries(IMPORTANCE)
+  .sort(([, a], [, b]) => b - a)
+  .map(([label]) => label);
 
 const ALL_FACTORS = SQUARE_FACTORS
   .filter(f => f.label in IMPORTANCE)
@@ -141,16 +98,42 @@ type DriverAdjustment = {
   category: string;
 };
 
-const DRIVER_ADJUSTMENTS: DriverAdjustment[] = [
-  { label: "Sales Rep", action: "remove", color: MUTED, icon: "✕", reason: "Behavioral, not a structural pricing driver", category: "Customer" },
-  { label: "Product Category", action: "emphasized", color: DRIVER_HIGHLIGHT, icon: "★", reason: "Strongest product-level signal", category: "Product" },
-  { label: "Geography", action: "emphasized", color: DRIVER_HIGHLIGHT, icon: "★", reason: "Regional pricing patterns", category: "Customer" },
-  { label: "End Market", action: "emphasized", color: DRIVER_HIGHLIGHT, icon: "★", reason: "Industry-level price segmentation", category: "Customer" },
-  { label: "Order Frequency", action: "emphasized", color: DRIVER_HIGHLIGHT, icon: "★", reason: "Correlates with loyalty and price tolerance", category: "Order" },
-  { label: "Customer Tenure", action: "emphasized", color: DRIVER_HIGHLIGHT, icon: "★", reason: "Long-term relationship pricing signal", category: "Customer" },
-  { label: "Product Importance", action: "elevate", color: DRIVER_HIGHLIGHT, icon: "↑", reason: "Hidden signal for price sensitivity", category: "Product" },
-  { label: "Competitor Pricing", action: "add", color: DRIVER_HIGHLIGHT, icon: "+", reason: "Final positioning check for competitiveness", category: "Market" },
-];
+const DRIVER_ADJUSTMENTS: DriverAdjustment[] = (() => {
+  const catLabel: Record<string, string> = { customer: "Customer", product: "Product", market: "Market", order: "Order" };
+  const actionFactors = new Set<string>();
+  for (const actions of Object.values(CATEGORY_ACTIONS)) {
+    for (const a of actions) actionFactors.add(a.label);
+  }
+  const adjustments: DriverAdjustment[] = [];
+  for (const [cat, actions] of Object.entries(CATEGORY_ACTIONS)) {
+    for (const a of actions) {
+      const iconMap: Record<string, string> = { remove: "✕", add: "+", elevate: "↑", lower: "↓" };
+      adjustments.push({
+        label: a.label,
+        action: a.action === "lower" ? "remove" : a.action === "elevate" ? "emphasized" : a.action as DriverAdjustment["action"],
+        color: a.action === "remove" ? MUTED : DRIVER_HIGHLIGHT,
+        icon: iconMap[a.action] ?? "★",
+        reason: CATEGORY_ACTION_HINTS.map(h => Array.isArray(h) ? h[0] : h).find(h => h.detail.includes(a.label))?.detail ?? "",
+        category: catLabel[cat] ?? cat,
+      });
+    }
+  }
+  for (const d of SELECTED_FACTORS) {
+    if (!actionFactors.has(d.label)) {
+      const factor = SQUARE_FACTORS.find(f => f.label === d.label);
+      const cat = factor?.category ?? "customer";
+      adjustments.push({
+        label: d.label,
+        action: "emphasized",
+        color: DRIVER_HIGHLIGHT,
+        icon: "★",
+        reason: `Key ${catLabel[cat]?.toLowerCase() ?? cat}-level pricing signal`,
+        category: catLabel[cat] ?? cat,
+      });
+    }
+  }
+  return adjustments;
+})();
 
 type BeforeRisk = { icon: string; title: string; detail: React.ReactNode };
 
@@ -179,6 +162,10 @@ export function DriverImportanceSlide({
   const { shareMode } = useShareMode();
   const autoAdvanceRef = useRef(onAutoAdvance);
   autoAdvanceRef.current = onAutoAdvance;
+  const removedFactorLabel = EXAMPLE_STEPS.find(e => e.action === "remove")?.headline ?? "";
+  const elevatedFactorLabel = EXAMPLE_STEPS.find(e => e.action === "elevate")?.headline ?? "";
+  const addedFactorLabel = EXAMPLE_STEPS.find(e => e.action === "add")?.headline ?? "";
+
   const isCollapse = step === 5;
   const isIntro = step === 0;
   const isChart = step >= 1 && step <= 4;

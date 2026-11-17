@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { ChevronPipeline } from "./chevron-pipeline";
+import { scenarios } from "@/lib/prospect-config";
 
 const NAVY = "#00446A";
 const TEAL = "#21A5D5";
@@ -19,28 +20,7 @@ interface Scenario {
   newTraits: string[];
 }
 
-const SCENARIOS: Scenario[] = [
-  {
-    id: "A",
-    price: "$17.96",
-    traits: ["Strategic Customer", "Specialized Product", "High Product Mix", "Industrial End Market", "40% Win Rate"],
-    response: { volume: "Flat", winRate: "Up" },
-    adjustment: "++",
-    newId: "A2",
-    newPrice: "$19.24",
-    newTraits: ["Strategic Customer", "Specialized Product", "High Product Mix", "Industrial End Market", "43% Win Rate"],
-  },
-  {
-    id: "B",
-    price: "$16.73",
-    traits: ["Strategic Customer", "Specialized Product", "Low Product Mix", "Healthcare End Market", "40% Win Rate"],
-    response: { volume: "Down", winRate: "Down" },
-    adjustment: "–",
-    newId: "B2",
-    newPrice: "$18.40",
-    newTraits: ["Strategic Customer", "Specialized Product", "Low Product Mix", "Healthcare End Market", "38% Win Rate"],
-  },
-];
+const SCENARIOS: Scenario[] = scenarios.items;
 
 const fadeUp = (delay: number) => ({
   initial: { opacity: 0, y: 16 } as const,

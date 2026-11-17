@@ -154,7 +154,7 @@ const DOT_SWEEP_DELAY = DOTS.map(
 
 /* ── Step narratives ── */
 const STEP_NARRATIVES = [
-  "The model now manages 14,200 prices × 2,400 accounts — let's see the impact with vs. without it.",
+  stepNarratives.profitGrowthIntro,
   "Each manual review introduces errors and inconsistency — margin leaks with every decision.",
   "The Dynamic Pricing Model optimizes every price point simultaneously.",
   "The model analyzes segment elasticity, margins, and competitive position across every combination.",
@@ -305,9 +305,9 @@ export function ProfitGrowthSlide({ step = 0, onAutoAdvance, skipAnimation }: { 
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.2, duration: 0.5, type: "spring", stiffness: 150, damping: 15 }}
               >
-                <span style={{ color: TEAL }}><AnimatedCounter target={14200} duration={2.5} /> prices</span>
+                <span style={{ color: TEAL }}><AnimatedCounter target={dataCounts.orders} duration={2.5} /> prices</span>
                 {" "}×{" "}
-                <span style={{ color: ORANGE }}><AnimatedCounter target={2400} duration={2} /> accounts</span>
+                <span style={{ color: ORANGE }}><AnimatedCounter target={dataCounts.accounts} duration={2} /> accounts</span>
               </motion.p>
               <motion.p
                 className="text-sm font-medium"

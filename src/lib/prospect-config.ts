@@ -194,6 +194,46 @@ export interface SegmentationTree {
   labels: string[];
 }
 
+export interface DemandCurveDot {
+  label: string;
+  t: number;
+  color: string;
+}
+
+export interface DriverExampleStep {
+  supertitle: string;
+  headline: string;
+  detail: string;
+  dismissLine: string;
+  action: "remove" | "elevate" | "add";
+  highlight: string[];
+  remove: string[];
+  add: string[];
+  icon: string;
+}
+
+export interface DriverAdjustmentItem {
+  label: string;
+  action: "remove" | "elevate" | "add" | "emphasized";
+  icon: string;
+  reason: string;
+  category: string;
+}
+
+export interface DriverBeforeRisk {
+  icon: string;
+  title: string;
+  detail: string;
+}
+
+export interface DriverImportanceConfig {
+  importance: Record<string, number>;
+  factorOrder: string[];
+  exampleSteps: DriverExampleStep[];
+  adjustments: DriverAdjustmentItem[];
+  beforeRisks: DriverBeforeRisk[];
+}
+
 export interface StepNarratives {
   profitGrowthIntro: string;
   listPrice: string;
@@ -227,6 +267,9 @@ export interface ProspectConfig {
   complexity: ComplexityContent;
   scenarios: ScenarioContent;
   segmentationTree: SegmentationTree;
+  demandCurveDots: DemandCurveDot[];
+  treeOutputPrice: string;
+  driverImportance: DriverImportanceConfig;
   segmentsMonitored: number;
   stepNarratives: StepNarratives;
 }

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { makeCurve } from "../visuals/demand-curve";
 import { useShareMode } from "@/lib/share-context";
+import { segmentationTree, scenarios } from "@/lib/prospect-config";
 
 const NAVY = "#00446A";
 const ORANGE = "#E56910";
@@ -14,10 +15,10 @@ const BASE_Y = SLOT.y + SLOT.h;
 const curve = makeCurve(SLOT, 5);
 
 const CUSTOMERS = [
-  { label: "A2: $19.24", t: 0.18, color: NAVY },
-  { label: "A: $17.96", t: 0.28, color: NAVY },
-  { label: "B: $16.73", t: 0.38, color: TEAL },
-  { label: "B2: $18.40", t: 0.52, color: ORANGE },
+  { label: `A2: ${scenarios.items[0].newPrice}`, t: 0.18, color: NAVY },
+  { label: `A: ${scenarios.items[0].price}`, t: 0.28, color: NAVY },
+  { label: `B: ${scenarios.items[1].price}`, t: 0.38, color: TEAL },
+  { label: `B2: ${scenarios.items[1].newPrice}`, t: 0.52, color: ORANGE },
 ];
 
 const TREE_LEVELS = [
@@ -38,7 +39,7 @@ function StaticTree() {
         transition={{ delay: TREE_LEVELS[0].delay, duration: 0.4 }}
       >
         <rect x={110} y={10} width={80} height={28} rx={4} fill={NAVY} />
-        <text x={150} y={28} fontSize="10" fontWeight="600" fill="white" textAnchor="middle">Customer</text>
+        <text x={150} y={28} fontSize="10" fontWeight="600" fill="white" textAnchor="middle">{segmentationTree.labels[0]}</text>
       </motion.g>
 
       {/* Level 1 branches */}
@@ -50,9 +51,9 @@ function StaticTree() {
         <line x1={150} y1={38} x2={80} y2={60} stroke={NAVY} strokeWidth={1.5} opacity={0.4} />
         <line x1={150} y1={38} x2={220} y2={60} stroke={NAVY} strokeWidth={1.5} opacity={0.4} />
         <rect x={40} y={60} width={80} height={24} rx={4} fill={NAVY} fillOpacity={0.7} />
-        <text x={80} y={76} fontSize="9" fill="white" textAnchor="middle">Strategic</text>
+        <text x={80} y={76} fontSize="9" fill="white" textAnchor="middle">{segmentationTree.labels[1]}</text>
         <rect x={180} y={60} width={80} height={24} rx={4} fill={NAVY} fillOpacity={0.4} />
-        <text x={220} y={76} fontSize="9" fill="white" textAnchor="middle">Standard</text>
+        <text x={220} y={76} fontSize="9" fill="white" textAnchor="middle">{segmentationTree.labels[2]}</text>
       </motion.g>
 
       {/* Level 2 */}
@@ -64,9 +65,9 @@ function StaticTree() {
         <line x1={80} y1={84} x2={45} y2={106} stroke={NAVY} strokeWidth={1} opacity={0.3} />
         <line x1={80} y1={84} x2={115} y2={106} stroke={NAVY} strokeWidth={1} opacity={0.3} />
         <rect x={15} y={106} width={60} height={22} rx={3} fill={TEAL} fillOpacity={0.6} />
-        <text x={45} y={121} fontSize="8" fill="white" textAnchor="middle">Specialized</text>
+        <text x={45} y={121} fontSize="8" fill="white" textAnchor="middle">{segmentationTree.labels[3]}</text>
         <rect x={85} y={106} width={60} height={22} rx={3} fill={TEAL} fillOpacity={0.3} />
-        <text x={115} y={121} fontSize="8" fill="white" textAnchor="middle">Commodity</text>
+        <text x={115} y={121} fontSize="8" fill="white" textAnchor="middle">{segmentationTree.labels[4]}</text>
       </motion.g>
 
       {/* Leaf nodes */}

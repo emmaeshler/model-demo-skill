@@ -7,6 +7,7 @@ import {
   PORTFOLIO_SEGMENTS,
   HERO_SEGMENTS, HERO_VIEWBOX,
 } from "./refine-slide-data";
+import { segmentsMonitored } from "@/lib/prospect-config";
 
 interface PortfolioGridProps {
   isPortfolio: boolean;
@@ -226,7 +227,7 @@ export function PortfolioGrid({ isPortfolio, isPortfolioHero, isActive, shareMod
             animate={{ opacity: portfolioPhase >= 4 ? 1 : 0 }}
             transition={{ duration: 0.5 }}
           >
-            Showing 50 of <span style={{ color: NAVY, fontWeight: 700 }}>247 segments</span> monitored continuously
+            Showing 50 of <span style={{ color: NAVY, fontWeight: 700 }}>{segmentsMonitored} segments</span> monitored continuously
           </motion.p>
         </motion.div>
       )}

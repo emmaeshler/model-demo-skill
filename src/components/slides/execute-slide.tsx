@@ -756,9 +756,9 @@ export function ExecuteSlide({
                 {revealPhase <= 1
                   ? "Applying the optimized price at the customer order level"
                   : revealPhase === 2
-                    ? "Acme’s drivers feed the pricing model"
+                    ? `${CUSTOMERS[0].label}’s drivers feed the pricing model`
                     : revealPhase === 3
-                      ? "A price tailored to Acme emerges"
+                      ? `A price tailored to ${CUSTOMERS[0].label} emerges`
                       : "The ideal price, adjusted for each customer"}
               </motion.h2>
             </AnimatePresence>
@@ -785,7 +785,7 @@ export function ExecuteSlide({
                 {revealPhase <= 1
                   ? "The model starts with one optimized price per SKU — then adjusts for each customer order's unique factors."
                   : revealPhase === 2
-                    ? "The model weighs each factor to calculate Acme’s calibrated price."
+                    ? `The model weighs each factor to calculate ${CUSTOMERS[0].label}’s calibrated price.`
                     : revealPhase === 3
                       ? <>{cust.price} — sales relationship, order frequency, and tenure push the price{" "}<span style={{ fontWeight: 700, color: cust.price > LIST_PRICE ? "#2e7d32" : "#c62828", whiteSpace: "nowrap" }}>{cust.delta}</span>.</>
                       : cust.narrative}

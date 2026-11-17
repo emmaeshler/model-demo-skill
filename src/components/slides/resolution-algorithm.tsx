@@ -2,23 +2,15 @@
 
 import { motion } from "framer-motion";
 import { useShareMode } from "@/lib/share-context";
+import { complexity } from "@/lib/prospect-config";
 
 const NAVY = "#00446A";
 const ORANGE = "#E56910";
 const TEAL = "#21A5D5";
 
-const COMPLEXITY_ITEMS = [
-  "Finish Type", "Material Grade", "Surface Treatment", "Edge Profile",
-  "Base Thickness", "Copper Weight", "Layer Count", "Impedance Control",
-  "Via Type", "Solder Mask", "Silkscreen", "Panelization",
-  "Stack-up Config", "Drill Aspect Ratio", "UL Rating",
-];
+const COMPLEXITY_ITEMS = complexity.items;
 
-const KEY_INPUTS = [
-  { icon: "👤", label: "Customer", items: ["End Market", "Customer importance"] },
-  { icon: "📦", label: "Product", items: ["Key material", "Finish material", "Thickness", "Hardware", "Quantity"] },
-  { icon: "📋", label: "Deal Context", items: ["Leadtime", "Plant capacity"] },
-];
+const KEY_INPUTS = complexity.keyInputs;
 
 const fadeUp = (delay: number) => ({
   initial: { opacity: 0, y: 16 } as const,
@@ -44,7 +36,7 @@ export function ResolutionAlgorithmSlide() {
         {...fadeUp(0.1)}
       >
         <span className="text-xs font-semibold tracking-wide" style={{ color: NAVY }}>
-          EXAMPLE: Specialty Parts Manufacturer
+          {complexity.exampleLabel}
         </span>
       </motion.div>
 

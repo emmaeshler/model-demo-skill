@@ -10,6 +10,7 @@ import {
   CURVE_SLOT, BASE_Y, BASELINE_KPI, TIMELINE_EVENTS,
   SEGMENT_HIGHLIGHTS, STEP_CONTEXT,
 } from "./refine-slide-data";
+import { customers } from "@/lib/prospect-config";
 import { TimelineStrip } from "./refine-slide-timeline";
 import { RefineChart } from "./refine-slide-chart";
 import { KpiSidebar } from "./refine-slide-kpi";
@@ -29,8 +30,8 @@ export function RefineSlideV2({ step, onAutoAdvance, skipAnimation, isActive, on
     });
     const ghostCurvePts: { x: number; y: number }[][] = [];
     const ghostCurves = [
-      { steepness: 2, customer: "MedSupply", color: "#4A8FA8" },
-      { steepness: 14, customer: "QuickParts", color: "#C27A3A" },
+      { steepness: 2, customer: customers[1].name.split(" ")[0], color: "#4A8FA8" },
+      { steepness: 14, customer: customers[2].name.split(" ")[0], color: "#C27A3A" },
     ].map(({ steepness, customer, color }) => {
       const g = makeCurve(CURVE_SLOT, steepness);
       const gPts = Array.from({ length: n + 1 }, (_, i) => {

@@ -3,6 +3,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useShareMode } from "@/lib/share-context";
+import { resolution } from "@/lib/prospect-config";
 
 const NAVY = "#00446A";
 const ORANGE = "#E56910";
@@ -86,13 +87,13 @@ interface Annotation {
   delay: number;
 }
 
-const ANNOTATIONS: Annotation[] = [
-  { id: "insulator", text: "INSULATOR", title: "Token Extraction", detail: "Product type identified → STANDOFF (Rigid Insulation)", color: TEAL, delay: 0.2 },
-  { id: "voltage", text: "2.7KV", title: "Unit Normalization", detail: "Non-standard unit → 2700V (catalog format)", color: ORANGE, delay: 0.8 },
-  { id: "thread", text: "3/8-16", title: "Fuzzy SKU Lookup", detail: "Ambiguous spec → 3/8×16×9/16 (thread matched)", color: NAVY, delay: 1.4 },
-  { id: "vendor", text: "MAR-BAL", title: "Vendor Resolution", detail: "Shorthand → MAR-BAL INC. (verified vendor)", color: TEAL, delay: 2.0 },
-  { id: "variant", text: "R4225-S5", title: "Variant Disambiguation", detail: "S5 suffix → A5 (metric variant rejected)", color: GREEN, delay: 2.6 },
-];
+const ANNOTATION_COLORS = [TEAL, ORANGE, NAVY, TEAL, GREEN];
+const ANNOTATION_DELAYS = [0.2, 0.8, 1.4, 2.0, 2.6];
+const ANNOTATIONS: Annotation[] = resolution.annotations.map((a, i) => ({
+  ...a,
+  color: ANNOTATION_COLORS[i],
+  delay: ANNOTATION_DELAYS[i],
+}));
 
 function HighlightedToken({
   annotation,
