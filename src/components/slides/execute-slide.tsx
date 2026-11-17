@@ -393,19 +393,14 @@ const OV_OUT_W = 195;
 const OV_OUT_H = 52;
 const OV_OUT_X = 600;
 
-const OV_INPUTS = [
-  { label: "Internal Data", sub: slideText.executeDataSub, section: 0, color: ML_GREEN },
-  { label: "Business Objectives", sub: "Business rules that shape strategic guidance", section: 0, color: STRAT_BLUE },
-  { label: "External Data", sub: "Market signals driving competitive position", section: 1, color: ML_GREEN },
-  { label: "Industry Expertise", sub: "Benchmarks behind the pricing drivers", section: 1, color: STRAT_BLUE },
-];
+const SECTION_COLORS = [ML_GREEN, STRAT_BLUE] as const;
+const OV_INPUTS = slideText.executeInputs.map((item, i) => ({
+  ...item,
+  section: i < 2 ? 0 : 1,
+  color: i % 2 === 0 ? SECTION_COLORS[0] : SECTION_COLORS[1],
+}));
 
-const OV_OUTPUTS = [
-  { label: "Calibrated Price", sub: "Scenario-specific guidance" },
-  { label: "Win Probability", sub: "Likelihood at recommended price" },
-  { label: "Margin Impact", sub: "Projected uplift vs. current" },
-  { label: "Confidence Score", sub: "Statistical certainty range" },
-];
+const OV_OUTPUTS = slideText.executeOutputs;
 
 const OV_INPUT_POS = [
   { x: 40, y: 26 },

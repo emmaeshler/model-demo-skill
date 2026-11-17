@@ -260,6 +260,8 @@ export interface SlideText {
   executeModelSubtitle: string;
   executeWrapTitle: string;
   executeDataSub: string;
+  executeInputs: { label: string; sub: string }[];
+  executeOutputs: { label: string; sub: string }[];
   executeNavSubtitle: string;
   executeRecapDesc: string;
   powerRecapDesc: string;
@@ -1033,6 +1035,18 @@ export const slideText: SlideText = {
   executeModelSubtitle: "The model starts with one optimized price per job — then adjusts for each service contract’s unique factors.",
   executeWrapTitle: "The ideal price, adjusted for each contract",
   executeDataSub: "Millions of service records scanned for patterns",
+  executeInputs: [
+    { label: "Internal Data", sub: "Millions of service records scanned for patterns" },
+    { label: "Business Objectives", sub: "Business rules that shape strategic guidance" },
+    { label: "External Data", sub: "Market signals driving competitive position" },
+    { label: "Fire Code Expertise", sub: "NFPA standards and inspection benchmarks" },
+  ],
+  executeOutputs: [
+    { label: "Calibrated Price", sub: "Job-specific guidance" },
+    { label: "Win Probability", sub: "Likelihood at recommended price" },
+    { label: "Margin Impact", sub: "Projected uplift vs. current" },
+    { label: "Confidence Score", sub: "Statistical certainty range" },
+  ],
   executeNavSubtitle: "Job-level prices tailored to each customer",
   executeRecapDesc: "Job-level prices tailored to each customer, delivered where your team works.",
   powerRecapDesc: "ML finds pricing patterns across millions of service contracts humans can't see.",
