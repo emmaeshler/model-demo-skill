@@ -16,13 +16,13 @@ export const RED = "#A65A52";
 
 export const CURVE_SLOT = { x: 50, y: 20, w: 460, h: 140 };
 export const BASE_Y = CURVE_SLOT.y + CURVE_SLOT.h;
-export const BASELINE_KPI = { winRate: 62, priceAdoption: 71, marginImpact: 1.8 };
-export const TOTAL_MONTHS = 18;
-export const TIMELINE_EVENTS = [
-  { month: 6, label: "Steel +8%", dotLabel: "Steel", factor: "Steel index rises — combined with declining win rates, the model reprices upward to protect margin.", steepness: 5, shift: -12, kpi: { winRate: 59, priceAdoption: 76, marginImpact: 2.1 } },
-  { month: 12, label: "Freight −6%", dotLabel: "Freight", factor: "Freight costs drop and adoption climbs — the model splits the savings between price and margin.", steepness: 5, shift: -6, kpi: { winRate: 66, priceAdoption: 80, marginImpact: 2.4 } },
-  { month: 18, label: "Industry +12%", dotLabel: "Industry", factor: "Industry-wide increase — win rate holds, adoption is high, so the model reprices confidently.", steepness: 5, shift: -30, kpi: { winRate: 63, priceAdoption: 84, marginImpact: 2.5 } },
-];
+export const BASELINE_KPI = baselineKpi;
+export const TOTAL_MONTHS = dataCounts.monthsOfData;
+export const TIMELINE_EVENTS = cfgTimelineEvents.map((e, i) => ({
+  ...e,
+  steepness: 5,
+  shift: [-12, -6, -30][i] ?? -12,
+}));
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 export function getMonthLabel(month: number): string {
