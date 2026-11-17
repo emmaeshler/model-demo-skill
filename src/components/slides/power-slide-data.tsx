@@ -79,10 +79,10 @@ export const CLUSTER_R = 95;
 /* ─── Square factor layout ─── */
 
 export const SQUARE_VERTS = {
-  customer: { x: 180, y: 60, label: "CUSTOMER", color: NAVY },
-  product: { x: 830, y: 60, label: "PRODUCT", color: ORANGE },
+  customer: { x: 180, y: 60, label: "CLIENT", color: NAVY },
+  product: { x: 830, y: 60, label: "SCOPE", color: ORANGE },
   market: { x: 180, y: 400, label: "MARKET", color: GREEN },
-  order: { x: 830, y: 400, label: "ORDER", color: PURPLE },
+  order: { x: 830, y: 400, label: "CONTRACT", color: PURPLE },
 };
 
 export const SQUARE_FACTORS: { label: string; category: "product" | "market" | "customer" | "order"; emphasis?: "highlight" | "crossoff" | "deemphasize" }[] = [

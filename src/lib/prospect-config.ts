@@ -449,15 +449,15 @@ export const factors: PricingFactors = {
 
 export const categoryTitles: string[] = [
   "Client factors",
-  "Service factors",
-  "Job factors",
+  "Scope factors",
+  "Contract factors",
   "Market factors",
 ];
 
 export const categoryNarration: string[] = [
   "Who the client is — facility type, channel, territory, revenue, tenure, and contract structure.",
-  "What's being delivered — service line, complexity, scope, cost, and price sensitivity.",
-  "How jobs flow — frequency, duration, lead time, terms, pricing structure, and seasonality.",
+  "What's being delivered — service line, system complexity, scope of work, cost, and price sensitivity.",
+  "How engagements are structured — frequency, duration, lead time, terms, pricing, and seasonality.",
   "Where you compete — coverage, code cycles, construction activity, and competitive dynamics.",
 ];
 
@@ -534,8 +534,8 @@ export const spotlights: Spotlight[] = [
   {
     cluster: 3,
     icon: "chart",
-    label: "SERVICE",
-    count: "Found 36 months of job data",
+    label: "SCOPE",
+    count: "Found 150 service configurations",
   },
   {
     cluster: 1,
@@ -546,8 +546,8 @@ export const spotlights: Spotlight[] = [
   {
     cluster: 0,
     icon: "grid",
-    label: "JOB",
-    count: "Found 18,000 job records",
+    label: "CONTRACT",
+    count: "Found 18,000 work orders",
   },
 ];
 
@@ -583,9 +583,9 @@ export const basePriceValue: number = 10500;
 
 export const priceSatellites: PriceSatellite[] = [
   { label: "Client", price: "+$1,800", value: 1800 },
-  { label: "Service", price: "+$2,100", value: 2100 },
+  { label: "Scope", price: "+$2,100", value: 2100 },
   { label: "Market", price: "−$900", value: -900 },
-  { label: "Job", price: "+$1,300", value: 1300 },
+  { label: "Contract", price: "+$1,300", value: 1300 },
 ];
 
 // ── KPIs ───────────────────────────────────────────────────────────────────
