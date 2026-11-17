@@ -55,15 +55,15 @@ const NOTES: Record<string, string[]> = {
     "The model learns different price sensitivities for each relationship.",
   ],
   "refine:3": [
-    "QuickParts' curve appears — the model detects it's underpriced and adjusts automatically.",
+    "Evergreen Events' curve appears — the model detects it's underpriced and adjusts automatically.",
     "Each customer gets a tailored recommendation based on their segment and behavior.",
   ],
   "refine:4": [
-    "Acme shows a different pattern — the model catches a subtler margin opportunity.",
+    "Meridian shows a different pattern — the model catches a subtler margin opportunity.",
     "The model adjusts its recommendations based on each customer's unique profile.",
   ],
   "refine:5": [
-    "MedSupply is at risk from a competitor — the model lowers price to defend the deal.",
+    "SunCoast is at risk from a competitor — the model lowers the rate to defend the booking.",
     "Different segments, different calibrated prices — that's the power of dynamic pricing.",
   ],
   "refine:6": [
@@ -107,9 +107,9 @@ const TRANSITION_HINTS: Record<string, string> = {
   "execute:1": "Customer comparison view — click chips to see how different profiles shift the recommendation.",
   "refine:0": "Transitions to Refine. Strategic guidance meets the demand curve.",
   "refine:1": "The calibrated demand curve appears — price vs. volume built from win/loss history.",
-  "refine:2": "QuickParts appears on the curve — the model detects it's underpriced.",
-  "refine:3": "Acme's curve — a subtler margin opportunity with a rising win rate.",
-  "refine:4": "MedSupply is at risk from a competitor — the model lowers price to defend.",
+  "refine:2": "Evergreen Events appears on the curve — the model detects it's underpriced.",
+  "refine:3": "Meridian's curve — a subtler margin opportunity with climbing conversion.",
+  "refine:4": "SunCoast is at risk from Marriott — the model lowers the rate to defend.",
   "refine:5": "All three customers snap to the curve — optimized prices appear.",
   "refine:6": "The curve adapts over time — external indices, win rate, adoption, and margin all feed each evolution.",
   "refine:7": "Zooms out to show segment-level models — each customer–market combination gets its own.",
