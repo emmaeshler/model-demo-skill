@@ -863,6 +863,105 @@ export const segmentationTree: SegmentationTree = {
 
 // ── Segments Monitored ─────────────────────────────────────────────────────
 
+export const demandCurveDots: DemandCurveDot[] = [
+  { label: "A2: $189.00", t: 0.18, color: "#00446A" },
+  { label: "A: $168.00", t: 0.28, color: "#00446A" },
+  { label: "B: $155.00", t: 0.38, color: "#21A5D5" },
+  { label: "B2: $142.00", t: 0.52, color: "#E56910" },
+];
+
+export const treeOutputPrice: string = "A: $168.00";
+
+export const driverImportance: DriverImportanceConfig = {
+  importance: {
+    "Room Type": 14.8,
+    "Guest Segment": 13.2,
+    "Market Region": 11.6,
+    "Booking Channel": 10.4,
+    "Seasonal Demand": 9.2,
+    "Competitor ADR": 8.0,
+    "Booking Lead Time": 7.4,
+    "Property Tier": 6.8,
+    "Account Volume": 6.0,
+    "Event Calendar Index": 5.6,
+    "Guest Loyalty": 5.0,
+    "Willingness to Pay": 4.4,
+    "Corporate vs. Leisure": 3.8,
+    "Room Amenities": 3.4,
+    "Cost per Occupied Room": 3.0,
+    "Rate Sensitivity": 2.6,
+    "Booking Frequency": 2.2,
+    "Tourism Trends": 2.0,
+    "Market Penetration": 1.8,
+    "Length of Stay": 1.6,
+    "Competitor Occupancy": 1.4,
+    "Cancellation Terms": 1.2,
+    "Rate Plan Type": 1.0,
+    "Room Demand Score": 0.4,
+  },
+  factorOrder: [
+    "Room Type", "Guest Segment", "Market Region", "Booking Channel",
+    "Seasonal Demand", "Booking Lead Time", "Property Tier", "Account Volume",
+    "Event Calendar Index", "Guest Loyalty", "Willingness to Pay",
+    "Corporate vs. Leisure", "Competitor ADR", "Room Amenities",
+    "Cost per Occupied Room", "Rate Sensitivity", "Booking Frequency",
+    "Tourism Trends", "Market Penetration", "Length of Stay",
+    "Competitor Occupancy", "Cancellation Terms", "Rate Plan Type",
+    "Room Demand Score",
+  ],
+  exampleSteps: [
+    {
+      supertitle: "Removing a factor",
+      headline: "Booking Channel",
+      detail: "A distribution mechanism, not a pricing driver — the model stays focused on rate-driving patterns.",
+      dismissLine: "Variance explained by how the guest books, not what the room is worth.",
+      action: "remove",
+      highlight: ["Booking Channel"],
+      remove: ["Booking Channel"],
+      add: [],
+      icon: "✕",
+    },
+    {
+      supertitle: "Elevating a factor",
+      headline: "Room Demand Score",
+      detail: "Captures how urgently each room type needs to be filled — a hidden signal worth surfacing.",
+      dismissLine: "Adds precision to the room dimension of the model.",
+      action: "elevate",
+      highlight: ["Room Demand Score"],
+      remove: [],
+      add: ["Room Demand Score"],
+      icon: "↑",
+    },
+    {
+      supertitle: "Adding a factor",
+      headline: "Competitor ADR",
+      detail: "A final positioning check — keeping the model's rate competitive against Marriott and others.",
+      dismissLine: "A market guardrail that sharpens the final rate.",
+      action: "add",
+      highlight: ["Competitor ADR"],
+      remove: [],
+      add: ["Competitor ADR"],
+      icon: "+",
+    },
+  ],
+  adjustments: [
+    { label: "Booking Channel", action: "remove", icon: "✕", reason: "Distribution mechanism, not a structural pricing driver", category: "Guest" },
+    { label: "Room Type", action: "emphasized", icon: "★", reason: "Strongest room-level signal", category: "Room" },
+    { label: "Guest Segment", action: "emphasized", icon: "★", reason: "Corporate vs. leisure pricing patterns", category: "Guest" },
+    { label: "Market Region", action: "emphasized", icon: "★", reason: "Regional demand and competitive dynamics", category: "Guest" },
+    { label: "Seasonal Demand", action: "emphasized", icon: "★", reason: "Peak/off-season rate optimization", category: "Booking" },
+    { label: "Booking Lead Time", action: "emphasized", icon: "★", reason: "Advance booking patterns and urgency pricing", category: "Booking" },
+    { label: "Room Demand Score", action: "elevate", icon: "↑", reason: "Hidden signal for room fill urgency", category: "Room" },
+    { label: "Competitor ADR", action: "add", icon: "+", reason: "Final positioning check against Marriott and others", category: "Market" },
+  ],
+  beforeRisks: [
+    { icon: "🏨", title: "Booking Channel drives pricing", detail: "How the guest books matters more than what the room is worth — <b>rates shift with channel, not demand.</b>" },
+    { icon: "📉", title: "Hidden signals stay buried", detail: "Room Demand Score sits near the bottom — <b>a key urgency signal the model doesn't surface.</b>" },
+    { icon: "🔇", title: "No competitive check", detail: "Without Competitor ADR, <b>the model sets rates blind to Marriott.</b>" },
+    { icon: "⚖️", title: "Noise outweighs signal", detail: "24 untuned factors dilute the drivers that actually explain <b>rate variation.</b>" },
+  ],
+};
+
 export const segmentsMonitored: number = 320;
 
 // ── Step Narratives ────────────────────────────────────────────────────────
@@ -903,6 +1002,9 @@ export const PROSPECT_CONFIG: ProspectConfig = {
   complexity,
   scenarios,
   segmentationTree,
+  demandCurveDots,
+  treeOutputPrice,
+  driverImportance,
   segmentsMonitored,
   stepNarratives,
 };

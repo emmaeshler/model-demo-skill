@@ -137,12 +137,17 @@ const DRIVER_ADJUSTMENTS: DriverAdjustment[] = (() => {
 
 type BeforeRisk = { icon: string; title: string; detail: React.ReactNode };
 
-const BEFORE_RISKS: BeforeRisk[] = [
-  { icon: "👤", title: "Sales Rep drives pricing", detail: <>Who sells it matters more than what&rsquo;s sold — <b>prices shift with headcount, not market reality.</b></> },
-  { icon: "📉", title: "Hidden signals stay buried", detail: <>Product Importance sits near the bottom — <b>a key sensitivity signal the model doesn&rsquo;t surface.</b></> },
-  { icon: "🔇", title: "No competitive check", detail: <>Without Competitor Pricing, <b>the model sets prices blind to the market.</b></> },
-  { icon: "⚖️", title: "Noise outweighs signal", detail: <>22 untuned factors dilute the drivers that actually explain <b>price variation.</b></> },
-];
+const BEFORE_RISKS: BeforeRisk[] = (() => {
+  const removed = EXAMPLE_STEPS.find(e => e.action === "remove");
+  const elevated = EXAMPLE_STEPS.find(e => e.action === "elevate");
+  const added = EXAMPLE_STEPS.find(e => e.action === "add");
+  return [
+    { icon: "👤", title: `${removed?.headline ?? "Noise"} drives pricing`, detail: <>{removed?.detail ?? "Behavioral factors dominate"} — <b>prices shift with noise, not market reality.</b></> },
+    { icon: "📉", title: "Hidden signals stay buried", detail: <>{elevated?.headline ?? "Key factors"} sits near the bottom — <b>a key sensitivity signal the model doesn&rsquo;t surface.</b></> },
+    { icon: "🔇", title: "No competitive check", detail: <>Without {added?.headline ?? "market data"}, <b>the model sets prices blind to the market.</b></> },
+    { icon: "⚖️", title: "Noise outweighs signal", detail: <>{SQUARE_FACTORS.length} untuned factors dilute the drivers that actually explain <b>price variation.</b></> },
+  ];
+})();
 
 const BAR_MAX_W = 480;
 
@@ -256,31 +261,31 @@ export function DriverImportanceSlide({
   const showBefore = showToggle && compareMode === "before";
 
   const visibleFactors = useMemo(() => {
-    if (showBefore) return ALL_FACTORS.filter(f => f.label !== "Competitor Pricing");
+    if (showBefore) return ALL_FACTORS.filter(f => f.label !== addedFactorLabel);
     if (isCollapse) {
       const allRemovals = new Set<string>();
       for (const ex of EXAMPLE_STEPS) ex.remove.forEach(l => allRemovals.add(l));
       const factors = ALL_FACTORS.filter(f => !allRemovals.has(f.label));
       return factors.map(f =>
-        f.label === "Product Importance" ? { ...f, value: ELEVATED_VALUE } : f
+        f.label === elevatedFactorLabel ? { ...f, value: ELEVATED_VALUE } : f
       );
     }
-    const productRevealed = exampleIndex >= 1 && (exampleIndex > 1 || actionRevealed);
-    const competitorRevealed = exampleIndex >= 2;
+    const elevatedRevealed = exampleIndex >= 1 && (exampleIndex > 1 || actionRevealed);
+    const addedRevealed = exampleIndex >= 2;
     let factors = ALL_FACTORS.filter(f => {
-      if (f.label === "Product Importance" && !productRevealed) return false;
-      if (f.label === "Competitor Pricing" && !competitorRevealed) return false;
+      if (f.label === elevatedFactorLabel && !elevatedRevealed) return false;
+      if (f.label === addedFactorLabel && !addedRevealed) return false;
       return true;
     });
     if (productValueGrown) {
       factors = factors.map(f =>
-        f.label === "Product Importance" ? { ...f, value: ELEVATED_VALUE } : f
+        f.label === elevatedFactorLabel ? { ...f, value: ELEVATED_VALUE } : f
       );
     }
     if (productElevated) {
-      const pi = factors.find(f => f.label === "Product Importance");
+      const pi = factors.find(f => f.label === elevatedFactorLabel);
       if (pi) {
-        factors = factors.filter(f => f.label !== "Product Importance");
+        factors = factors.filter(f => f.label !== elevatedFactorLabel);
         factors.splice(ELEVATED_POSITION, 0, pi);
       }
     }
@@ -601,7 +606,7 @@ export function DriverImportanceSlide({
                           : (isAdd || isKeep || willBeKept || showColor) ? TEAL
                           : `${MUTED}40`;
                         const effectiveBarMax = BAR_MAX_W;
-                        const tunedValue = f.label === "Competitor Pricing" && competitorOvershoot ? 12.0 : f.value;
+                        const tunedValue = f.label === addedFactorLabel && competitorOvershoot ? 12.0 : f.value;
                         const barW = (tunedValue / MAX_VALUE) * effectiveBarMax;
 
                         const opacity = showBefore ? 1
