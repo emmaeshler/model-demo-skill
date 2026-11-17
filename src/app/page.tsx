@@ -8,6 +8,7 @@ import { useMode } from "@/lib/mode-context";
 import { useShareMode } from "@/lib/share-context";
 import { getPresenterNotes, getTransitionHint } from "@/lib/presenter-notes";
 import { cn } from "@/lib/utils";
+import { selectedDrivers } from "@/lib/prospect-config";
 import { OneModelSlide, ONE_MODEL_TOTAL_STEPS } from "@/components/slides/one-model";
 import { PowerSlide, POWER_TOTAL_STEPS } from "@/components/slides/power-slide";
 import { ExecuteSlide, EXECUTE_TOTAL_STEPS } from "@/components/slides/execute-slide";
@@ -81,15 +82,12 @@ const FACTOR_CATEGORIES: { key: CategoryKey; label: string; color: string; tint:
   { key: "market", label: "Market", color: "#2e7d32", tint: "rgba(46,125,50,0.08)" },
 ];
 
-const DRIVER_RAIL_ITEMS: { label: string; color: string; tint: string }[] = [
-  { label: "Product Category", color: "#E56910", tint: "rgba(229,105,16,0.08)" },
-  { label: "Geography", color: "#00446A", tint: "rgba(0,68,106,0.08)" },
-  { label: "End Market", color: "#00446A", tint: "rgba(0,68,106,0.08)" },
-  { label: "Product Importance", color: "#E56910", tint: "rgba(229,105,16,0.08)" },
-  { label: "Order Frequency", color: "#7B5EA7", tint: "rgba(123,94,167,0.08)" },
-  { label: "Customer Tenure", color: "#00446A", tint: "rgba(0,68,106,0.08)" },
-  { label: "Competitor Pricing", color: "#2e7d32", tint: "rgba(46,125,50,0.08)" },
-];
+const DRIVER_RAIL_ITEMS: { label: string; color: string; tint: string }[] = selectedDrivers.map(d => {
+  const r = parseInt(d.color.slice(1, 3), 16);
+  const g = parseInt(d.color.slice(3, 5), 16);
+  const b = parseInt(d.color.slice(5, 7), 16);
+  return { label: d.label, color: d.color, tint: `rgba(${r},${g},${b},0.08)` };
+});
 
 type RailType = "model" | "mini-exec" | null;
 

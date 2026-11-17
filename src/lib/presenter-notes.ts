@@ -39,7 +39,7 @@ const NOTES: Record<string, string[]> = {
   ],
   "execute:1": [
     "Same product, same list price — but each customer gets a different answer.",
-    "Acme's strong sales relationship, high order frequency, and long tenure push the price above Historical Average.",
+    "Meridian's strong corporate relationship, high booking frequency, and long tenure push the rate above Historical Average.",
     "Click the customer chips to compare how different profiles shift the recommendation.",
   ],
   "refine:0": [

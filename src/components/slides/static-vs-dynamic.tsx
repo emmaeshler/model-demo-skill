@@ -93,7 +93,7 @@ function StaticTree() {
       >
         <line x1={80} y1={172} x2={80} y2={190} stroke={ORANGE} strokeWidth={2} opacity={0.5} />
         <rect x={40} y={190} width={80} height={26} rx={6} fill={ORANGE} />
-        <text x={80} y={207} fontSize="11" fontWeight="700" fill="white" textAnchor="middle">A: $17.96</text>
+        <text x={80} y={207} fontSize="11" fontWeight="700" fill="white" textAnchor="middle">{`A: ${scenarios.items[0].price}`}</text>
       </motion.g>
 
       <motion.text
