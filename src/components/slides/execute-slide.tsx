@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useShareMode } from "@/lib/share-context";
 import { useMode } from "@/lib/mode-context";
+import { customers as prospectCustomers, stepNarratives, selectedDrivers } from "@/lib/prospect-config";
 
 const NAVY = "#00446A";
 const SLATE = "#1B4F72";
@@ -37,7 +38,7 @@ const RESULT_CARD_X = MODEL_X + MODEL_W + 100;
 /* ── Product ─────────────────────────────────────────── */
 
 
-const LIST_PRICE = "$17.50";
+const LIST_PRICE = stepNarratives.listPrice;
 
 /* ── Customer scenarios ──────────────────────────────── */
 
@@ -58,65 +59,17 @@ interface CustomerScenario {
   narrative: string;
 }
 
-const CUSTOMERS: CustomerScenario[] = [
-  {
-    label: "Acme Industrial",
-    segment: "High volume · loyal",
-    sliders: [
-      { label: "Product Category", value: 0.75 },
-      { label: "Geography", value: 0.60 },
-      { label: "End Market", value: 0.85 },
-      { label: "Product Importance", value: 0.70 },
-      { label: "Order Frequency", value: 0.82 },
-      { label: "Customer Tenure", value: 0.90 },
-      { label: "Competitor Pricing", value: 0.55 },
-    ],
-    color: NAVY,
-    price: "$19.24",
-    delta: "+$1.74 above Historical Average",
-    winProb: "68%",
-    margin: "+9.9%",
-    narrative: "Same product, but now the model layers in the customer — high order frequency, long tenure, and strong end market positioning push the price above Historical Average.",
-  },
-  {
-    label: "MedSupply Co",
-    segment: "Price-sensitive · contested",
-    sliders: [
-      { label: "Product Category", value: 0.65 },
-      { label: "Geography", value: 0.50 },
-      { label: "End Market", value: 0.55 },
-      { label: "Product Importance", value: 0.80 },
-      { label: "Order Frequency", value: 0.45 },
-      { label: "Customer Tenure", value: 0.40 },
-      { label: "Competitor Pricing", value: 0.70 },
-    ],
-    color: TEAL,
-    price: "$16.60",
-    delta: "−$0.90 below Historical Average",
-    winProb: "74%",
-    margin: "−1.2%",
-    narrative: "Different customer, different answer — high product importance and competitive pressure push the price below Historical Average to protect win rate.",
-  },
-  {
-    label: "QuickParts LLC",
-    segment: "Niche need · captive",
-    sliders: [
-      { label: "Product Category", value: 0.80 },
-      { label: "Geography", value: 0.35 },
-      { label: "End Market", value: 0.70 },
-      { label: "Product Importance", value: 0.90 },
-      { label: "Order Frequency", value: 0.22 },
-      { label: "Customer Tenure", value: 0.15 },
-      { label: "Competitor Pricing", value: 0.20 },
-    ],
-    color: SLATE,
-    price: "$22.10",
-    delta: "+$4.60 above Historical Average",
-    winProb: "81%",
-    margin: "+5.7%",
-    narrative: "Same bearing, highest price — this buyer's niche application and high product importance mean few alternatives, driving the price up.",
-  },
-];
+const CUSTOMERS: CustomerScenario[] = prospectCustomers.map(c => ({
+  label: c.name,
+  segment: c.segment,
+  sliders: c.sliders,
+  color: c.color,
+  price: c.price,
+  delta: c.delta,
+  winProb: c.winProb,
+  margin: c.margin,
+  narrative: c.narrative,
+}));
 
 /* ── Bezier helpers ──────────────────────────────────── */
 
@@ -252,21 +205,11 @@ function FlowLabels({
 
 /* ── Slider ↔ Driver color mapping ──────────────────── */
 
-const SLIDER_DRIVER_DOT: Record<string, string> = {
-  "Product Category": "#E56910",
-  "Geography": "#00446A",
-  "End Market": "#00446A",
-  "Product Importance": "#E56910",
-  "Order Frequency": "#7B5EA7",
-  "Customer Tenure": "#00446A",
-  "Competitor Pricing": "#2e7d32",
-};
+const SLIDER_DRIVER_DOT: Record<string, string> = Object.fromEntries(
+  selectedDrivers.map(d => [d.label, d.color])
+);
 
-const RAIL_DRIVER_LABELS = new Set([
-  "Product Category", "Geography", "End Market",
-  "Product Importance", "Order Frequency", "Customer Tenure",
-  "Competitor Pricing",
-]);
+const RAIL_DRIVER_LABELS = new Set(selectedDrivers.map(d => d.label));
 
 /* ── Profile card with sliders (SVG) ─────────────────── */
 

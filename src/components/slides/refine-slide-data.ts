@@ -1,4 +1,8 @@
 import { makeCurve } from "../visuals/demand-curve";
+import {
+  baselineKpi, dataCounts, timelineEvents as cfgTimelineEvents, segmentHighlights,
+  portfolioSegmentNames, portfolioSegmentDeltas, customers,
+} from "@/lib/prospect-config";
 
 export const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
 

@@ -1,3 +1,9 @@
+import {
+  factors, categoryTitles, categoryNarration, selectedDrivers, driverClusters,
+  factorActions, factorActionHints, spotlights, titles, subtitles, callouts,
+  priceSatellites, basePriceValue,
+} from "@/lib/prospect-config";
+
 export const NAVY = "#00446A";
 export const TEAL = "#21A5D5";
 export const ORANGE = "#E56910";
@@ -46,17 +52,17 @@ export function xForTick(i: number) {
 /* ─── Driver clusters ─── */
 
 export const DRIVERS = [
-  { label: "Cost Trends", color: NAVY, cx: 230, cy: 135 },
-  { label: "Competitive Position", color: ORANGE, cx: 620, cy: 150 },
-  { label: "Volume & Elasticity", color: GREEN, cx: 250, cy: 330 },
-  { label: "Win / Loss Patterns", color: PURPLE, cx: 610, cy: 315 },
+  { label: driverClusters[0].label, color: NAVY, cx: 230, cy: 135 },
+  { label: driverClusters[1].label, color: ORANGE, cx: 620, cy: 150 },
+  { label: driverClusters[2].label, color: GREEN, cx: 250, cy: 330 },
+  { label: driverClusters[3].label, color: PURPLE, cx: 610, cy: 315 },
 ];
 
 export const MODEL_DRIVERS = [
-  { label: "Cost Trends", color: NAVY },
-  { label: "Competitive Position", color: ORANGE },
-  { label: "Volume & Elasticity", color: GREEN },
-  { label: "Win / Loss Patterns", color: PURPLE },
+  { label: driverClusters[0].label, color: NAVY },
+  { label: driverClusters[1].label, color: ORANGE },
+  { label: driverClusters[2].label, color: GREEN },
+  { label: driverClusters[3].label, color: PURPLE },
   { label: "Customer Value", color: TEAL },
 ];
 
@@ -80,30 +86,10 @@ export const SQUARE_VERTS = {
 };
 
 export const SQUARE_FACTORS: { label: string; category: "product" | "market" | "customer" | "order"; emphasis?: "highlight" | "crossoff" | "deemphasize" }[] = [
-  { label: "Product Category", category: "product" },
-  { label: "Product family", category: "product" },
-  { label: "Product Specialization", category: "product" },
-  { label: "Cost to serve", category: "product" },
-  { label: "Willingness to pay", category: "product" },
-  { label: "Price sensitivity", category: "product" },
-  { label: "Product Importance", category: "product" },
-  { label: "Market share", category: "market" },
-  { label: "Commodity index", category: "market" },
-  { label: "Industry trends", category: "market" },
-  { label: "Competitor activity", category: "market" },
-  { label: "Competitor Pricing", category: "market" },
-  { label: "End Market", category: "customer" },
-  { label: "Sales Rep", category: "customer" },
-  { label: "Geography", category: "customer" },
-  { label: "Customer size", category: "customer" },
-  { label: "Customer Tenure", category: "customer" },
-  { label: "Customer channel", category: "customer" },
-  { label: "Order Frequency", category: "order" },
-  { label: "Order size", category: "order" },
-  { label: "Lead time", category: "order" },
-  { label: "Payment terms", category: "order" },
-  { label: "Contract type", category: "order" },
-  { label: "Seasonality", category: "order", emphasis: "deemphasize" },
+  ...factors.product,
+  ...factors.market,
+  ...factors.customer,
+  ...factors.order,
 ];
 
 export const CATEGORY_LAYOUT = [
@@ -120,44 +106,13 @@ export const CATEGORY_TO_SPOTLIGHT: Record<string, number> = {
   order: 0,
 };
 
-export const CATEGORY_TITLES = [
-  "Customer factors",
-  "Product factors",
-  "Order factors",
-  "Market factors",
-];
+export const CATEGORY_TITLES = categoryTitles;
 
-export const CATEGORY_NARRATION = [
-  "Who is the customer — geography, tenure, size, channel, and sales relationship.",
-  "What's being sold — category, family, specialization, cost, and price sensitivity.",
-  "How orders behave — frequency, size, lead time, terms, and seasonality.",
-  "Where you compete — share, commodities, trends, and competitive dynamics.",
-];
+export const CATEGORY_NARRATION = categoryNarration;
 
-export const SELECTED_FACTORS = [
-  { label: "Product Category", color: ORANGE, weight: 4, note: "" },
-  { label: "Geography", color: NAVY, weight: 3, note: "" },
-  { label: "End Market", color: NAVY, weight: 4, note: "" },
-  { label: "Product Importance", color: ORANGE, weight: 3, note: "Added" },
-  { label: "Order Frequency", color: PURPLE, weight: 2, note: "" },
-  { label: "Customer Tenure", color: NAVY, weight: 3, note: "" },
-  { label: "Competitor Pricing", color: GREEN, weight: 2, note: "Added" },
-];
+export const SELECTED_FACTORS = selectedDrivers;
 
-export const CATEGORY_ACTIONS: Record<string, { label: string; action: "elevate" | "remove" | "lower" | "add"; step?: number }[]> = {
-  customer: [
-    { label: "Sales Rep", action: "remove" },
-  ],
-  product: [
-    { label: "Product Importance", action: "add" },
-  ],
-  market: [
-    { label: "Competitor Pricing", action: "add" },
-  ],
-  order: [
-    { label: "Seasonality", action: "lower" },
-  ],
-};
+export const CATEGORY_ACTIONS: Record<string, { label: string; action: "elevate" | "remove" | "lower" | "add"; step?: number }[]> = factorActions;
 
 type ActionHint = { icon: string; color: string; headline: string; detail: string };
 export const CATEGORY_ACTION_HINTS: (ActionHint | ActionHint[])[] = [
