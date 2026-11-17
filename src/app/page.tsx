@@ -8,7 +8,7 @@ import { useMode } from "@/lib/mode-context";
 import { useShareMode } from "@/lib/share-context";
 import { getPresenterNotes, getTransitionHint } from "@/lib/presenter-notes";
 import { cn } from "@/lib/utils";
-import { selectedDrivers, categoryTitles, customers as prospectCustomers, segmentHighlights, presentationTitle } from "@/lib/prospect-config";
+import { selectedDrivers, categoryTitles, customers as prospectCustomers, segmentHighlights, presentationTitle, slideText } from "@/lib/prospect-config";
 import { OneModelSlide, ONE_MODEL_TOTAL_STEPS } from "@/components/slides/one-model";
 import { PowerSlide, POWER_TOTAL_STEPS } from "@/components/slides/power-slide";
 import { ExecuteSlide, EXECUTE_TOTAL_STEPS } from "@/components/slides/execute-slide";
@@ -615,7 +615,7 @@ const DEFAULT_NAV_GROUPS: NavGroup[] = [
   },
   {
     label: "Execute",
-    subtitle: "SKU-level prices tailored to each customer",
+    subtitle: slideText.executeNavSubtitle,
     slides: [
       { index: EXECUTE_INDEX, label: "Execute", subStep: 0 },
       { index: EXECUTE_INDEX, label: "Customer walkthrough", subStep: 1 },
@@ -2194,8 +2194,8 @@ function RefineIcon() {
 
 const END_RECAP = [
   { section: "Design", title: "Your Model", desc: "One model built around your business — your data, your factors, your rules.", Icon: DesignIcon },
-  { section: "Power", title: "Searching Transactions", desc: "ML finds pricing patterns across millions of transactions humans can't see.", Icon: PowerIcon },
-  { section: "Execute", title: "Pricing Decisions", desc: "SKU-level prices tailored to each customer, delivered where your team works.", Icon: ExecuteIcon },
+  { section: "Power", title: "Searching Transactions", desc: slideText.powerRecapDesc, Icon: PowerIcon },
+  { section: "Execute", title: "Pricing Decisions", desc: slideText.executeRecapDesc, Icon: ExecuteIcon },
   { section: "Refine", title: "Continuous Learning", desc: "The model continuously recalibrates as costs, competition, and markets shift.", Icon: RefineIcon },
 ];
 

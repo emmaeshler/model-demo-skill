@@ -3,7 +3,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useShareMode } from "@/lib/share-context";
-import { resolution } from "@/lib/prospect-config";
+import { resolution, slideText } from "@/lib/prospect-config";
 
 const NAVY = "#00446A";
 const ORANGE = "#E56910";
@@ -283,7 +283,7 @@ function ConfiguredQuote() {
           </div>
           <div className="text-right">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Matched SKU
+              {slideText.resolutionMatchLabel}
             </p>
             <p className="text-base font-bold tracking-wide" style={{ color: NAVY }}>
               {resolution.sku}
@@ -304,7 +304,7 @@ function ConfiguredQuote() {
             {resolution.annotations.map(a => a.detail.split("→")[1]?.trim() || a.detail).join(", ")}
           </p>
           <p className="mt-0.5 text-[10px] text-muted-foreground">
-            Vendor: {resolution.vendor} &nbsp;·&nbsp; SKU: {resolution.sku}
+            Vendor: {resolution.vendor} &nbsp;·&nbsp; {slideText.resolutionIdLabel}: {resolution.sku}
           </p>
         </motion.div>
 

@@ -859,7 +859,7 @@ export function ExecuteSlide({
 
                         <text x={MODEL_CX} y={MODEL_CY - 28} textAnchor="middle"
                           style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.18em", fill: "#5A6A78" }}>
-                          OPTIMIZED SKU
+                          {`OPTIMIZED ${vocabulary.productUnit.toUpperCase()}`}
                         </text>
                         <text x={MODEL_CX} y={MODEL_CY + 14} textAnchor="middle"
                           style={{ fontSize: 38, fontWeight: 800, fill: NAVY }}>

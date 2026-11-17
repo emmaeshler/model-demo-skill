@@ -260,6 +260,11 @@ export interface SlideText {
   executeModelSubtitle: string;
   executeWrapTitle: string;
   executeDataSub: string;
+  executeNavSubtitle: string;
+  executeRecapDesc: string;
+  powerRecapDesc: string;
+  resolutionMatchLabel: string;
+  resolutionIdLabel: string;
   refineIntroTitle: string;
   refineIntroSubtitle: string;
   refineCurveTitle: string;
@@ -1028,6 +1033,11 @@ export const slideText: SlideText = {
   executeModelSubtitle: "The model starts with one optimized price per job — then adjusts for each service contract’s unique factors.",
   executeWrapTitle: "The ideal price, adjusted for each contract",
   executeDataSub: "Millions of service records scanned for patterns",
+  executeNavSubtitle: "Job-level prices tailored to each customer",
+  executeRecapDesc: "Job-level prices tailored to each customer, delivered where your team works.",
+  powerRecapDesc: "ML finds pricing patterns across millions of service contracts humans can't see.",
+  resolutionMatchLabel: "Matched Job",
+  resolutionIdLabel: "Job Code",
   refineIntroTitle: "Now we look across all your service contracts",
   refineIntroSubtitle: "Together, they form a market curve — and every price gets refined against it.",
   refineCurveTitle: "Your calibrated demand curve",
