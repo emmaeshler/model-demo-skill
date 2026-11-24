@@ -11,6 +11,7 @@ export interface ProspectMeta {
   vertical: string;
   slug: string;
   presentationTitle?: string;
+  usePresenterMode?: boolean;
 }
 
 export interface DataCounts {
@@ -321,9 +322,11 @@ export const meta: ProspectMeta = {
   vertical: "fire-life-safety",
   slug: "fire-life-safety",
   presentationTitle: "Inside Your Dynamic Model | Fire, Life & Safety",
+  usePresenterMode: true,
 };
 
 export const presentationTitle: string = meta.presentationTitle ?? "Inside Your Dynamic Model";
+export const usePresenterMode: boolean = meta.usePresenterMode ?? true;
 
 // ── Data Counts & Labels ───────────────────────────────────────────────────
 
