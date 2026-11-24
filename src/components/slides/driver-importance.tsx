@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import {
   EASE, NAVY, TEAL, GREEN, MUTED,
-  SQUARE_FACTORS, SELECTED_FACTORS, CATEGORY_ACTIONS, CATEGORY_ACTION_HINTS, CATEGORY_TITLES,
+  SQUARE_FACTORS, SELECTED_FACTORS, CATEGORY_TITLES,
 } from "./power-slide-data";
 import { driverImportance as DI_CONFIG, vocabulary, slideText } from "@/lib/prospect-config";
 import { useShareMode } from "@/lib/share-context";
@@ -28,39 +28,11 @@ interface ExampleStep {
   icon: string;
 }
 
-const EXAMPLE_STEPS: ExampleStep[] = (() => {
-  const actionMap: Record<string, { supertitle: string; dismissLine: string }> = {
-    remove: { supertitle: "Removing a factor", dismissLine: "Variance explained by behavior, not structure." },
-    add: { supertitle: "Adding a factor", dismissLine: "A market guardrail that sharpens the final price." },
-    elevate: { supertitle: "Elevating a factor", dismissLine: "Adds precision to the model." },
-    lower: { supertitle: "Lowering a factor", dismissLine: "Minimal impact for this customer." },
-  };
-  const iconMap: Record<string, string> = { remove: "✕", add: "+", elevate: "↑", lower: "↓" };
-  const steps: ExampleStep[] = [];
-  for (const [, actions] of Object.entries(CATEGORY_ACTIONS)) {
-    for (const a of actions) {
-      const hint = CATEGORY_ACTION_HINTS.find(h => {
-        const flat = Array.isArray(h) ? h : [h];
-        return flat.some(hh => hh.detail.includes(a.label));
-      });
-      const flatHint = hint && (Array.isArray(hint) ? hint[0] : hint);
-      const mapping = actionMap[a.action] ?? actionMap.add;
-      steps.push({
-        supertitle: mapping.supertitle,
-        headline: a.label,
-        detail: flatHint?.detail ?? "",
-        dismissLine: mapping.dismissLine,
-        color: TEAL,
-        action: a.action === "lower" ? "remove" : a.action as ExampleAction,
-        highlight: [a.label],
-        remove: a.action === "remove" ? new Set([a.label]) : new Set(),
-        add: a.action === "add" || a.action === "elevate" ? [a.label] : [],
-        icon: iconMap[a.action] ?? "+",
-      });
-    }
-  }
-  return steps;
-})();
+const EXAMPLE_STEPS: ExampleStep[] = DI_CONFIG.exampleSteps.map(s => ({
+  ...s,
+  color: TEAL,
+  remove: new Set(s.remove),
+}));
 
 const IMPORTANCE: Record<string, number> = DI_CONFIG.importance;
 
@@ -87,56 +59,22 @@ type DriverAdjustment = {
   category: string;
 };
 
-const DRIVER_ADJUSTMENTS: DriverAdjustment[] = (() => {
-  const catLabel: Record<string, string> = { customer: CATEGORY_TITLES[0].replace(/ factors$/i, ""), product: CATEGORY_TITLES[1].replace(/ factors$/i, ""), market: CATEGORY_TITLES[3].replace(/ factors$/i, ""), order: CATEGORY_TITLES[2].replace(/ factors$/i, "") };
-  const actionFactors = new Set<string>();
-  for (const actions of Object.values(CATEGORY_ACTIONS)) {
-    for (const a of actions) actionFactors.add(a.label);
-  }
-  const adjustments: DriverAdjustment[] = [];
-  for (const [cat, actions] of Object.entries(CATEGORY_ACTIONS)) {
-    for (const a of actions) {
-      const iconMap: Record<string, string> = { remove: "✕", add: "+", elevate: "↑", lower: "↓" };
-      adjustments.push({
-        label: a.label,
-        action: a.action === "lower" ? "remove" : a.action === "elevate" ? "emphasized" : a.action as DriverAdjustment["action"],
-        color: a.action === "remove" ? MUTED : DRIVER_HIGHLIGHT,
-        icon: iconMap[a.action] ?? "★",
-        reason: CATEGORY_ACTION_HINTS.map(h => Array.isArray(h) ? h[0] : h).find(h => h.detail.includes(a.label))?.detail ?? "",
-        category: catLabel[cat] ?? cat,
-      });
-    }
-  }
-  for (const d of SELECTED_FACTORS) {
-    if (!actionFactors.has(d.label)) {
-      const factor = SQUARE_FACTORS.find(f => f.label === d.label);
-      const cat = factor?.category ?? "customer";
-      adjustments.push({
-        label: d.label,
-        action: "emphasized",
-        color: DRIVER_HIGHLIGHT,
-        icon: "★",
-        reason: `Key ${catLabel[cat]?.toLowerCase() ?? cat}-level pricing signal`,
-        category: catLabel[cat] ?? cat,
-      });
-    }
-  }
-  return adjustments;
-})();
+const DRIVER_ADJUSTMENTS: DriverAdjustment[] = DI_CONFIG.adjustments.map(a => ({
+  label: a.label,
+  action: a.action as DriverAdjustment["action"],
+  color: a.action === "remove" ? MUTED : DRIVER_HIGHLIGHT,
+  icon: a.icon,
+  reason: a.reason,
+  category: a.category,
+}));
 
 type BeforeRisk = { icon: string; title: string; detail: React.ReactNode };
 
-const BEFORE_RISKS: BeforeRisk[] = (() => {
-  const removed = EXAMPLE_STEPS.find(e => e.action === "remove");
-  const elevated = EXAMPLE_STEPS.find(e => e.action === "elevate");
-  const added = EXAMPLE_STEPS.find(e => e.action === "add");
-  return [
-    { icon: "👤", title: `${removed?.headline ?? "Noise"} drives pricing`, detail: <>{removed?.detail ?? "Behavioral factors dominate"} — <b>prices shift with noise, not market reality.</b></> },
-    { icon: "📉", title: "Hidden signals stay buried", detail: <>{elevated?.headline ?? "Key factors"} sits near the bottom — <b>a key sensitivity signal the model doesn&rsquo;t surface.</b></> },
-    { icon: "🔇", title: "No competitive check", detail: <>Without {added?.headline ?? "market data"}, <b>the model sets prices blind to the market.</b></> },
-    { icon: "⚖️", title: "Noise outweighs signal", detail: <>{SQUARE_FACTORS.length} untuned factors dilute the drivers that actually explain <b>price variation.</b></> },
-  ];
-})();
+const BEFORE_RISKS: BeforeRisk[] = DI_CONFIG.beforeRisks.map(r => ({
+  icon: r.icon,
+  title: r.title,
+  detail: <span dangerouslySetInnerHTML={{ __html: r.detail }} />,
+}));
 
 const BAR_MAX_W = 480;
 
